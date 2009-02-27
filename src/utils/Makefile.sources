@@ -1,0 +1,11 @@
+utils_SRCS = \
+  $(top_srcdir)/src/utils/aleatorias.c \
+  $(top_srcdir)/src/utils/cp.c \
+  $(top_srcdir)/src/utils/list.c \
+  $(top_srcdir)/src/utils/mallocame.c \
+  $(top_srcdir)/src/utils/random.c \
+  $(top_srcdir)/src/utils/subr.c
+
+utils_OBJS = $(utils_SRCS:.c=.o)
+
+utils_INCLUDES = -I$(top_srcdir)/src/utils

@@ -1,0 +1,8 @@
+license_SRCS = \
+  $(top_srcdir)/src/license/dimemas.LC.c \
+  $(top_srcdir)/src/license/internal.c
+
+license_OBJS = $(license_SRCS:.c=.o)
+
+license_INCLUDES = -I$(top_srcdir)/src/license
+

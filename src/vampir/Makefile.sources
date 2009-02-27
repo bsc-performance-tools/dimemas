@@ -1,0 +1,6 @@
+vampir_SRCS = \
+  $(top_srcdir)/src/vampir/vampir.c
+
+vampir_OBJS = $(vampir_SRCS:.c=.o)
+
+vampir_INCLUDES = -I$(top_srcdir)/src/vampir
