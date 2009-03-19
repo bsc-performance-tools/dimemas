@@ -735,6 +735,7 @@ get_array_conteiner (long int **conteiner, int conteiner_size,
 	array_size: is a size of a array
 	item_index: is a item id number
 */
+// PETA
 long int
 get_array_item (long int *array, int array_size, int item_index)
 {
@@ -2153,6 +2154,7 @@ DAP_int_field_read (char *buffer, int buffer_size, char *field,
   int c_read = 0;
   int r = 0;
 
+
   c_read = DAP_read_field (buffer, buffer_size, field, field_size, offset);
   if (c_read < 0)
   {
@@ -2680,13 +2682,14 @@ DAP_exame_register_seek_off (char *buffer, int buffer_size, char *field,
     if (fchar == -1)
       return -1;
     offset = fchar;
-    off_v = DAP_get_offset_thread (app, task - 1, thread - 1);
+
+    off_v = DAP_get_offset_thread (app, task, thread);
     if (off_v == 0)
     {
       // Set offset
       f_pos = ftell (stream);
       f_pos = f_pos - rchar;
-      res = DAP_set_offset_thread (app, task - 1, thread - 1, f_pos);
+      res = DAP_set_offset_thread (app, task, thread, f_pos);
     }
   }
 
@@ -2786,9 +2789,9 @@ DAP_exam_seek (FILE * stream, struct app_struct *app, char *buffer,
     return ERROR_CASE;
   if (task == first_task && thread == first_thread)
   {
-    if (DAP_get_offset_thread (app, task - 1, thread - 1) > offset_first)
+    if (DAP_get_offset_thread (app, task, thread) > offset_first)
     {
-      DAP_set_offset_thread (app, task - 1, thread - 1, offset_first);
+      DAP_set_offset_thread (app, task, thread, offset_first);
       *offset = cut_point;
     }
     return LOWER;
@@ -2878,10 +2881,10 @@ DAP_advaced_offset_seek (FILE * stream, struct app_struct *app,
   DAP_set_rdef_flag (app, 1);
   task_num = DAP_get_task_num (app);
   // Modified due to task, thread index numeration changed
-  for (i = 1; i < task_num + 1 && end == 0; i++)
+  for (i = 0; i < task_num  && end == 0; i++)
   {
-    thread_num = DAP_get_threads_num_task (app, i - 1);
-    for (j = 1; j < thread_num + 1 && end == 0; j++)
+    thread_num = DAP_get_threads_num_task (app, i);
+    for (j = 0; j < thread_num  && end == 0; j++)
     {
       dic_res =
 	DAP_dicotomic_seek (stream, app, file_size, buffer, buffer_size,
@@ -2943,7 +2946,7 @@ DAP_seek_offsets (char *buffer, int buffer_size, char *field, int field_size,
 			    stream);
   }
   else
-  {
+  { 
     // Advanced search method
     res =
       DAP_advaced_offset_seek (stream, app, file_size, buffer, buffer_size,
