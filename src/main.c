@@ -1,5 +1,5 @@
 /*******************************************************************************
-* $Id: main.c,v 1.31 2007/04/20 12:42:46 jgonzale Exp $
+* $Id: main.c,v 1.32 2009/02/18 10:27:43 xaguilar Exp $
 *
 * Description: main routine. Initializes modules and starts main simulator loop
 *
@@ -49,7 +49,9 @@
 #include "vampir.h"
 #include "internal.h"
 
+#ifdef VENUS_ENABLED
 #include "venusclient.h"
+#endif
 
 
 #include <errno.h>
@@ -289,12 +291,23 @@ parse_special_cfg(FILE* special_cfg)
   }
 }
 
+
+#ifdef VENUS_ENABLED
 #define USAGE \
 "Usage: %s [-h] [-v] [-d] [-x[s|e|p]] [-o[l] output-file] [-T time] [-l] [-C]\n"\
 "\t[-V[a|b] vampir-file [-Vd] [-Vy time] [-Vz time]]\n" \
 "\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
 "\t[-e event_type] [-g event_output_info] [-A sddf-file]\n" \
 "\t[-F] [-S sync_size] [-venus] [-venusconn host:port] config-file\n"
+#else
+#define USAGE \
+"Usage: %s [-h] [-v] [-d] [-x[s|e|p]] [-o[l] output-file] [-T time] [-l] [-C]\n"\
+"\t[-V[a|b] vampir-file [-Vd] [-Vy time] [-Vz time]]\n" \
+"\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
+"\t[-e event_type] [-g event_output_info] [-A sddf-file]\n" \
+"\t[-F] [-S sync_size] config-file\n"
+#endif
+
 
 static void
 show_version(char *name)
@@ -357,8 +370,10 @@ help_message(char *tname)
   printf ("\t-F\t\tIgnore synchronism send trace field\n");
   printf ("\t-S sync_size\tMinimum message size to use Rendez vous\n");
 
+#ifdef VENUS_ENABLED
   printf ("\t-venus\tConnect to a Venus server at localhost:'default venus port'\n");
   printf ("\t-venusconn host:port\tConnect to a Venus server at host:port\n");
+#endif
 }
 
 
@@ -730,6 +745,7 @@ main (int argc, char *argv[])
           j++;
           sddf_filename = argv[j];
           break;
+#ifdef VENUS_ENABLED
         case 'v':
 	  if (!strcmp(argv[j], "-venus")) {
 	    venus_enabled = 1;
@@ -745,6 +761,7 @@ main (int argc, char *argv[])
 	    exit (0);
 	  }
           break;
+#endif
         case 'i':
           j++;
           output_level = atoi (argv[j]);
@@ -989,6 +1006,7 @@ main (int argc, char *argv[])
   }
 
 
+#ifdef VENUS_ENABLED
   if (venus_enabled) {
     int rc = 1;
     rc = vc_initialize(venusconn); /* VENUS CLIENT */
@@ -997,7 +1015,7 @@ main (int argc, char *argv[])
             return -100;
     }
   }
-
+#endif
 
 
   EVENT_init ();
@@ -1032,7 +1050,11 @@ main (int argc, char *argv[])
 
   ASS_ALL_TIMER (to_parent, current_time);
 
+#ifdef VENUS_ENABLED
   while ((top_event (&Event_queue) != E_NIL) || (venus_enabled && (top_event(&Interactive_event_queue) != E_NIL)))
+#else
+while (top_event (&Event_queue) != E_NIL)
+#endif
   {
     /*
     if ((NEQ_0_TIMER (time_limit)) && GT_TIMER (current_time, time_limit))
@@ -1075,9 +1097,11 @@ main (int argc, char *argv[])
   SDDF_do ();
 
 
+#ifdef VENUS_ENABLED
   if (venus_enabled) {
     vc_finish();
   }
+#endif
 
 
   /* Es calcula el temps final de la simulacio */

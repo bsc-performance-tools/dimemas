@@ -1,4 +1,4 @@
-char events_c_rcsid[]="$Id: events.c,v 1.6 2006/09/18 13:18:03 jgonzale Exp $";
+char events_c_rcsid[]="$Id: events.c,v 1.7 2009/02/18 10:27:43 xaguilar Exp $";
 /*
  * Event routines
  * 
@@ -24,7 +24,9 @@ char events_c_rcsid[]="$Id: events.c,v 1.6 2006/09/18 13:18:03 jgonzale Exp $";
 #include "schedule.h"
 #include "subr.h"
 
+#ifdef VENUS_CLIENT
 #include "venusclient.h"
+#endif
 
 struct t_queue  Event_queue;
 struct t_queue  Interactive_event_queue;

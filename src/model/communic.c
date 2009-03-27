@@ -1,4 +1,4 @@
-char communic_c_rcsid[]="$Id: communic.c,v 1.41 2007/11/28 13:48:34 jgonzale Exp $";
+char communic_c_rcsid[]="$Id: communic.c,v 1.43 2009/02/18 11:29:25 xaguilar Exp $";
 /*
  * Communication routines
  *
@@ -35,8 +35,9 @@ char communic_c_rcsid[]="$Id: communic.c,v 1.41 2007/11/28 13:48:34 jgonzale Exp
 #include "task.h"
 #include "vampir.h"
 
+#ifdef VENUS_ENABLED
 #include "venusclient.h"
-
+#endif
 
 /******************************************************************************
  * Global variables                                                           *
@@ -433,12 +434,17 @@ periodic_external_network_traffic_init()
   /* Es prepara la primera execucio de la rutina que cal executar periodicament
    * per recalcular el traffic de la xarxa externa no produit per l'aplicacio
    * que s'esta simulant. */
+#ifdef VENUS_ENABLED
   if (venus_enabled) {
     ADD_TIMER (1e6, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
   }
   else {
     ADD_TIMER (10e6, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
   }
+#else
+  ADD_TIMER (10e6, current_time, tmp_timer);
+#endif
+
   EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, NULL, COM_EXT_NET_TRAFFIC_TIMER);
 
   /* Intenta llegir els parametres que determinen el traffic */
@@ -493,17 +499,26 @@ periodic_recompute_external_network_traffic()
 */
 
   /* Es prepara la seguen execucio d'aquesta rutina */
+#ifdef VENUS_ENABLED
   if ((top_event (&Event_queue) != E_NIL) || (venus_enabled && (top_event(&Interactive_event_queue) != E_NIL))) /* grodrigu: venus! */
+#else
+  if (top_event (&Event_queue) != E_NIL)
+#endif
   {
     /* Si queden events es que cal seguir simulant, per tant, es pot encuar
        aquest event. Si no en quedessin no el podriem encuar perque es
        seguiria simulant sense que hi hagues cap altre event que aquests. */
+#ifdef VENUS_ENABLED
     if (venus_enabled) {
       ADD_TIMER (1e6, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
     }
     else {
       ADD_TIMER (10e6, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
     }
+#else
+     ADD_TIMER (10e6, current_time, tmp_timer);
+#endif
+
     EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, NULL, COM_EXT_NET_TRAFFIC_TIMER);
   }
 }
@@ -1338,9 +1353,11 @@ COMMUNIC_internal_network_COM_TIMER_OUT(struct t_thread *thread)
   {
     case SEND:
       message_received (copy_thread);
+#ifdef VENUS_ENABLED
       if (venus_enabled) {
         venusmsgs_in_flight--;
       }
+#endif
       break;
     case MPI_OS:
       os_completed (copy_thread);
@@ -2619,6 +2636,7 @@ COMMUNIC_send (struct t_thread *thread)
    * a un Irecv que permeti continuar a aquest send encara que sigui sincron. */
   hi_ha_irecv = COMMUNIC_send_reached(thread,mess);
 
+#ifdef VENUS_ENABLED
   if (venus_enabled && (kind == INTERNAL_NETWORK_COM_TYPE)) {
       double dtime;
       TIMER_TO_FLOAT(current_time, dtime);
@@ -2626,6 +2644,7 @@ COMMUNIC_send (struct t_thread *thread)
         vc_command_rdvz_send(dtime, node_s->nodeid - 1, node_r->nodeid - 1, mess->mess_tag, mess->mess_size);
       }
   }
+#endif
 
   partner = locate_receiver (&(task_partner->recv),
                              task->taskid,
@@ -3845,6 +3864,7 @@ really_send_single_machine(struct t_thread *thread)
     FLOAT_TO_TIMER (ti, tmp_timer2);
     ADD_TIMER (current_time, tmp_timer2, tmp_timer2);
 
+#ifdef VENUS_ENABLED
     if ((!venus_enabled) || (mess->comm_type != INTERNAL_NETWORK_COM_TYPE)) {
       EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
       thread->event =
@@ -3867,6 +3887,11 @@ really_send_single_machine(struct t_thread *thread)
         vc_command_send(dtime, node->nodeid - 1, node_partner->nodeid - 1, mess->mess_size, thread->event, out_resources_ev);
       }
     }
+#else
+      EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
+      thread->event =
+        EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
+#endif
   }
 }
 

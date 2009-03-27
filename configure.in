@@ -396,6 +396,21 @@ AC_ARG_ENABLE(
   AC_DEFINE(IDLE_ACCOUNTING)
 )
 
+
+dnl VENUS_ENABLED: if defined, venus client are compiled and included in Dimemas
+AC_ARG_ENABLE(
+  venus,
+  AC_HELP_STRING(
+    [--enable-venus],
+    [compile with Venus simulator]
+  ),
+  [ CFLAGS="$CFLAGS -DVENUS_ENABLED",
+    venus_enabled="yes" ]
+)
+
+AM_CONDITIONAL(VENUS_ENABLED, test "x$venus_enabled" = "xyes")
+
+
 dnl =======================================================================
 dnl Additional checks
 dnl =======================================================================

@@ -1,4 +1,4 @@
-char list_c_rcsid[]="$Id: list.c,v 1.7 2005/06/28 10:58:15 paraver Exp $";
+char list_c_rcsid[]="$Id: list.c,v 1.8 2009/02/18 10:27:43 xaguilar Exp $";
 /*
  * Lists routines
  * 
@@ -16,7 +16,11 @@ char list_c_rcsid[]="$Id: list.c,v 1.7 2005/06/28 10:58:15 paraver Exp $";
 #include "mallocame.h"
 #include "subr.h"
 
+
+#ifdef VENUS_ENABLED
 #include "venusclient.h"
+#endif
+
 
 /*
  * Create empty queue
@@ -496,9 +500,12 @@ outFIFO_event(struct t_queue *q)
    register struct t_item *e = Q_NIL;
    register struct t_event *event = E_NIL;
 
+#ifdef VENUS_ENABLED
    if (venus_enabled) {
    	venus_outFIFO_event(q,e);
    }
+#endif
+
    e = q->first;
    if (e == Q_NIL)
       return (E_NIL);

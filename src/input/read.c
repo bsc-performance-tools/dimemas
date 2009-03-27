@@ -1,4 +1,4 @@
-char read_c_rcsid[]="$Id: read.c,v 1.28 2007/06/13 07:56:44 jgonzale Exp $";
+char read_c_rcsid[]="$Id: read.c,v 1.29 2009/02/18 10:27:43 xaguilar Exp $";
 /*
  * Input/Output routines
  * 
@@ -1844,10 +1844,10 @@ Ptasks_init()
     {
       printf ("* Loading Ptask %02d\n", Ptask->Ptaskid);
     }
-    
+
     if (DATA_ACCESS_init(Ptask->Ptaskid, TraceFile) == FALSE)
       panic(DATA_ACCESS_get_error());
-    
+
     if (DATA_ACCESS_get_communicators(Ptask->Ptaskid, &comms_queue) == FALSE)
       panic(DATA_ACCESS_get_error());
     
@@ -1860,7 +1860,7 @@ Ptasks_init()
                    (char*) comm,
                    (t_priority)comm->communicator_id);
     }
-    
+
     /* Load initial actions to each thread */
     for ( task  = (struct t_task *) head_queue (&(Ptask->tasks));
           task != T_NIL;

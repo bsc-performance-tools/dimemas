@@ -11,10 +11,10 @@ if [ "$1" = "special" ]; then
   AUTOMAKE_HOME=/usr/local/share/automake-1.8.2
   ACLOCAL_HOME=/usr/local/share/automake-1.8.2
 elif [ -z "$1" ]; then
-  AUTOCONF_HOME=/usr/
-  AUTOHEADER_HOME=/usr/bin/
-  AUTOMAKE_HOME=/usr/bin/
-  ACLOCAL_HOME=/usr/bin/
+  AUTOCONF_HOME=/usr
+  AUTOHEADER_HOME=/usr
+  AUTOMAKE_HOME=/usr
+  ACLOCAL_HOME=/usr
 else
   echo "Incorrect parameter"
 fi
@@ -22,17 +22,17 @@ fi
 # Hi ha maquines que tenen alguns binaris sota el directori a sac
 # del paquet!
 
-if [ -e ${AUTOMAKE_HOME}bin/automake ]; then
-AUTOMAKE=${AUTOMAKE_HOME}bin/automake
-ACLOCAL=${ACLOCAL_HOME}bin/aclocal
+if [ -e ${AUTOMAKE_HOME}/bin/automake ]; then
+AUTOMAKE=${AUTOMAKE_HOME}/bin/automake
+ACLOCAL=${ACLOCAL_HOME}/bin/aclocal
 else
-AUTOMAKE=${AUTOMAKE_HOME}automake
-ACLOCAL=${ACLOCAL_HOME}aclocal
+AUTOMAKE=${AUTOMAKE_HOME}/automake
+ACLOCAL=${ACLOCAL_HOME}/aclocal
 fi
 
-AUTOHEADER=${AUTOHEADER_HOME}bin/autoheader
-AUTOCONF=${AUTOCONF_HOME}bin/autoconf
-AUTOM4TE=${AUTOCONF_HOME}bin/autom4te
+AUTOHEADER=${AUTOHEADER_HOME}/bin/autoheader
+AUTOCONF=${AUTOCONF_HOME}/bin/autoconf
+AUTOM4TE=${AUTOCONF_HOME}/bin/autom4te
 export AUTOCONF
 export AUTOM4TE
 
