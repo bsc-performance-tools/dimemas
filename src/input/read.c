@@ -946,7 +946,7 @@ is_it_new_format()
 
   if((tracefile = fopen(((struct t_Ptask *) head_queue (&Ptask_queue))->tracefile, "r")) == NULL)
   {
-
+    panic ("Tracefile %s can't be opened\n", ((struct t_Ptask *) head_queue (&Ptask_queue))->tracefile);
   }
 
   while(strlen(fgets(buffer, 32, tracefile)) == 1);
