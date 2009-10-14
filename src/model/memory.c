@@ -183,7 +183,8 @@ really_copy_segment(struct t_thread *thread, struct t_node *node_s,
 		 node_s->nodeid, node_d->nodeid);
       }
       remote_comm = (node_s == node_d ? FALSE : TRUE);
-      ti = transferencia (si, remote_comm, thread, NULL, NULL);
+      /* ti = transferencia (si, remote_comm, thread, NULL, NULL); */
+     transferencia (si, remote_comm, thread, NULL, &ti, NULL);
       FLOAT_TO_TIMER (ti, tmp_timer);
       ADD_TIMER (current_time, tmp_timer, tmp_timer);
       thread->event = EVENT_timer (tmp_timer, NOT_DAEMON, M_MEM, thread, 0);
@@ -311,7 +312,9 @@ really_RMA (register struct t_thread *thread)
       printf (": Really RMA for P%d T%d th%d start RMA operation size %d\n",
               IDENTIFIERS(thread), mpi_os->size);
     }
-    ti = transferencia (mpi_os->size, remote_comm, thread, NULL, NULL);
+    /* ti = transferencia (mpi_os->size, remote_comm, thread, NULL, NULL); */
+    transferencia (mpi_os->size, remote_comm, thread, NULL, &ti, NULL);
+    
     FLOAT_TO_TIMER (ti, tmp_timer);
     ADD_TIMER (current_time, tmp_timer, tmp_timer);
     thread->event = EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, RMA_TIMER_OUT);

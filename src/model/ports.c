@@ -518,7 +518,10 @@ really_port_send(struct t_port *port, struct t_thread *thread_s,
    if (get_links_port (thread_s, node_s, thread_r, node_r))
    {
       remote_comm = (node_s == node_r ? FALSE : TRUE);
-      ti = transferencia (thread_s->size_port, remote_comm, thread_s, NULL, NULL);
+
+      /* ti = transferencia (thread_s->size_port, remote_comm, thread_s, NULL, NULL); */
+      transferencia (thread_s->size_port, remote_comm, thread_s, NULL, &ti, NULL);
+     
       thread_s->port = port;
       port->sending++;
       if (debug&D_PORT)
