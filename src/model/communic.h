@@ -26,12 +26,23 @@ COMMUNIC_recv(struct t_thread *thread);
 extern void 
 COMMUNIC_block_after_busy_wait(struct t_thread *thread);
 
-extern t_micro 
+/*extern t_micro 
 transferencia(
   int size, 
   t_boolean remote, 
   struct t_thread *thread,
   struct t_dedicated_connection *connection,
+  t_micro *temps_recursos
+);
+*/
+
+void
+transferencia(
+  int size, 
+  t_boolean remote, 
+  struct t_thread *thread,
+  struct t_dedicated_connection *connection,
+  t_micro *temps_total,
   t_micro *temps_recursos
 );
 

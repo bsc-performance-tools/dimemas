@@ -3449,12 +3449,14 @@ new_global_op (int identificator, char *name)
 /*
  * Transfer message time function
  */
-t_micro
+/*t_micro */
+void
 transferencia(
   int                            size,
   int                            communication_type,
   struct t_thread               *thread,
   struct t_dedicated_connection *connection,
+  t_micro                       *temps_total,
   t_micro                       *temps_recursos
 )
 {
@@ -3494,8 +3496,12 @@ transferencia(
       {
         bandw = recompute_bandwith (thread);
         thread->last_comm.bandwith = bandw;
-        thread->last_comm.bytes = size;
+        thread->last_comm.bytes    = size;
         ASS_ALL_TIMER (thread->last_comm.ti, current_time);
+
+        /* DEBUG 
+        printf("Original BW = %.10f\n", bandw); */
+        
         temps = (bandw * size);
         /* Es calcula el temps d'utilització dels recursos amb l'ample
            de banda maxim possible */
@@ -3505,6 +3511,9 @@ transferencia(
         {
           bandw = (t_micro) ((t_micro) (1000000) / (1 << 20) / bandw);
         }
+
+        /* DEBUG 
+        printf("Resources BW = %.10f\n", bandw); */
 
         t_recursos = (bandw * size);
       }
@@ -3570,6 +3579,11 @@ transferencia(
       break;
   }
 
+  if (temps_total != NULL)
+  {
+    *temps_total = temps;
+  }
+  
   /* Si es volia calcular el temps d'ocupacio dels recursos, tambe s'ha
      de retornar. */
   if (temps_recursos != NULL)
@@ -3592,7 +3606,7 @@ transferencia(
   }
 
   /* Es retorna el temps necessari estimat per fer la transferencia */
-  return(temps);
+  /* return(temps); */
 }
 
 
@@ -3821,10 +3835,18 @@ really_send_single_machine(struct t_thread *thread)
     account->block_due_resources,account->block_due_resources);
     thread->physical_send = current_time;
     thread->last_paraver = current_time;
-    ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos);
+    /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
+    transferencia(mess->mess_size, comm_type, thread, NULL, &ti, &t_recursos);
+
     if (t_recursos>ti)
     {
+      /* DEBUG */
+      printf("Internal Network. Resources time = %f - Transfer Time = %f\n",
+             t_recursos,
+             ti);
+      
       panic("resources > transmission time!\n");
+      
     }
     /* Abans de programar la fi de la comunicacio, es programa la fi de la
      * utilització dels recursos reservats. */
@@ -3957,15 +3979,32 @@ really_send_external_network (struct t_thread *thread)
     );
     thread->physical_send = current_time;
     thread->last_paraver  = current_time;
-    ti = transferencia(
+    /* ti = transferencia(
            mess->mess_size,
            EXTERNAL_NETWORK_COM_TYPE,
            thread,
            NULL,
            &t_recursos
-         );
+         ); */
 
-    if (t_recursos>ti) panic("resources > transmission time!\n");
+    transferencia(
+      mess->mess_size,
+      EXTERNAL_NETWORK_COM_TYPE,
+      thread,
+      NULL,
+      &ti,
+      &t_recursos
+    );
+
+    if (t_recursos > ti)
+    {
+      /* DEBUG */
+      printf("Resources time = %.20f - Transfer Time = %.20f\n",
+             t_recursos,
+             ti);
+      
+      panic("resources > transmission time!\n");
+    }
     /* Abans de programar la fi de la comunicacio, es programa la fi de la
        utilització dels recursos reservats. Però, de moment, ho deixo al
        mateix instant de temps. */
@@ -4006,15 +4045,30 @@ really_send_dedicated_connection(
     );
     thread->physical_send = current_time;
     thread->last_paraver = current_time;
-    ti = transferencia(
+    /* ti = transferencia(
            mess->mess_size,
            DEDICATED_CONNECTION_COM_TYPE,
            thread,
            connection,
            &t_recursos
-         );
+         ); */
+
+    transferencia(
+      mess->mess_size,
+      EXTERNAL_NETWORK_COM_TYPE,
+      thread,
+      NULL,
+      &ti,
+      &t_recursos
+    );
+
     if (t_recursos>ti)
     {
+      /* DEBUG */
+      printf("Resources time = %.20f - Transfer Time = %.20f\n",
+             t_recursos,
+             ti);
+      
       panic("resources > transmission time!\n");
     }
     /* Abans de programar la fi de la comunicacio, es programa la fi de la

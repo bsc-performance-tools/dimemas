@@ -7,6 +7,11 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2009/10/14 - jgonzale
+	BUGFIX:		Solved a bug in 'transferencia' function, which did not
+				return the total transfer time correctly. Right now, resources
+				time and transfer time are return using output parameters
+
 2007/11/28 - jgonzale
 	CHANGES:	The output binary is now called Dimemas3
 	CHANGES:	Modifications in data access layer to use traces numbered in
