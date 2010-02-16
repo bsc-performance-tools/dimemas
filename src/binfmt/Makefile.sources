@@ -1,5 +1,0 @@
-binfmt_SRCS = $(top_srcdir)/src/binfmt/binlib.c
-
-binfmt_OBJS = $(binfmt_SRCS:.c=.o)
-
-binfmt_INCLUDES = -I$(top_srcdir)/src/binfmt/include
