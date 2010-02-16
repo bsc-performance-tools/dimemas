@@ -68,7 +68,7 @@ void malloc_end()
 
 #else
 
-char malloc_c_rcsid[]="$Id: mallocame.c,v 1.7 2005/06/28 10:58:56 paraver Exp $";
+char malloc_c_rcsid[]="$Id$";
 
 #include "define.h"
 #include "types.h"

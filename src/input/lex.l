@@ -33,7 +33,7 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 %{
-char lex_l_rcsid[]="$Id: lex.l,v 1.3 2005/04/22 16:46:31 paraver Exp $";
+char lex_l_rcsid[]="$Id$";
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
