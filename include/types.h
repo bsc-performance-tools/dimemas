@@ -35,15 +35,6 @@
 #ifndef __types_h
 #define __types_h
 
-/*
- * Types.h
- * 
- * Sergi Girona (sergi@ac.upc.es)
- * 
- * (c) DAC-UPC 1993-94
- * 
- */
-
 #include <stdio.h>
 #include <limits.h>
 #include <sys/types.h>

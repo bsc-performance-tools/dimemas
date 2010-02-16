@@ -38,10 +38,6 @@
 /*
  * Constants
  * 
- * Sergi Girona (sergi@ac.upc.es)
- * 
- * (c) DAC-UPC 1993-94
- * 
  */
 
 #if defined(ENABLE_LARGE_TRACES) && !defined(ARCH_MACOSX)
