@@ -1,0 +1,45 @@
+input_SRCS = \
+  $(top_srcdir)/src/input/file_data_access.c \
+  $(top_srcdir)/src/input/check.c \
+  $(top_srcdir)/src/input/read.c \
+  $(top_srcdir)/src/input/sddf.c
+
+input_noinst_HEADERS = \
+  $(top_srcdir)/src/input/file_data_access.h \
+  $(top_srcdir)/src/input/check.h \
+  $(top_srcdir)/src/input/read.h \
+  $(top_srcdir)/src/input/sddf.h \
+  $(top_srcdir)/src/input/sddf_records.h \
+  $(top_srcdir)/src/input/ts.h \
+  $(top_srcdir)/src/input/yacc.y \
+  $(top_srcdir)/src/input/lex.l
+
+input_nodist_SRCS = \
+  $(top_srcdir)/src/input/yacc.c \
+  $(top_srcdir)/src/input/lexical.c 
+
+input_nodist_HEADERS = \
+  $(top_srcdir)/src/input/yacc.h
+
+input_noinstdir = $(top_srcdir)/src/input
+input_nodistdir = $(top_srcdir)/src/input
+
+input_OBJS = \
+  $(input_nodist_SRCS:.c=.o) \
+  $(input_SRCS:.c=.o) 
+
+input_TRASH = \
+  $(top_srcdir)/src/input/yacc.c \
+  $(top_srcdir)/src/input/yacc.h \
+  $(top_srcdir)/src/input/lexical.c 
+
+$(top_srcdir)/src/input/yacc.h: $(top_srcdir)/src/input/yacc.c
+
+$(top_srcdir)/src/input/lexical.c: $(top_srcdir)/src/input/yacc.c
+	$(LEX) -o$(top_srcdir)/src/input/lexical.c $(top_srcdir)/src/input/lex.l
+
+$(top_srcdir)/src/input/yacc.c: $(top_srcdir)/src/input/yacc.y
+	$(YACC) $(top_srcdir)/src/input/yacc.y -o $(top_srcdir)/src/input/yacc.c
+
+
+input_INCLUDES = -I$(top_srcdir)/src/input

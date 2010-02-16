@@ -1,0 +1,17 @@
+prv_utils_SRCS = \
+  $(top_srcdir)/src/prv_utils/paraver.c \
+  $(top_srcdir)/src/prv_utils/paraver_pcf.c \
+  $(top_srcdir)/../common-files/ParaverBinaryTrace.c\
+  $(top_srcdir)/../common-files/Dimemas2Prv.c \
+  $(top_srcdir)/../common-files/EventEncoding.c
+
+prv_utilst_noinst_HEADERS = \
+  $(top_srcdir)/src/prv_utils/MPI_EventEncoding.h \
+  $(top_srcdir)/src/prv_utils/paraver.h \
+  $(top_srcdir)/src/prv_utils/paraver_pcf.h
+
+prv_utilst_noinstdir = $(top_srcdir)/src/prv_utils
+
+prv_utils_OBJS = $(prv_utils_SRCS:.c=.o)
+
+prv_utils_INCLUDES = -I$(top_srcdir)/src/prv_utils -I$(top_srcdir)/../../common-files

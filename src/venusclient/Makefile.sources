@@ -1,0 +1,19 @@
+venusclient_CPPSRCS = \
+  $(top_srcdir)/src/venusclient/ClientSocket.cc \
+  $(top_srcdir)/src/venusclient/ServerSocket.cc \
+  $(top_srcdir)/src/venusclient/Socket.cc \
+  $(top_srcdir)/src/venusclient/venusclient.cc
+
+venusclient_noinst_HEADERS = \
+  $(top_srcdir)/src/venusclient/ClientSocket.h \
+  $(top_srcdir)/src/venusclient/ServerSocket.h \
+  $(top_srcdir)/src/venusclient/SocketException.h \
+  $(top_srcdir)/src/venusclient/Socket.h \
+  $(top_srcdir)/src/venusclient/venusclient.h
+
+venusclient_SRCS = 
+
+venusclient_OBJS = $(venusclient_CPPSRCS:.cc=.o) $(venusclient_SRCS:.c=.o)
+
+venusclient_INCLUDES = -I$(top_srcdir)/src/venusclient
+

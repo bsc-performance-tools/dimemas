@@ -1,0 +1,27 @@
+model_SRCS = \
+  $(top_srcdir)/src/model/communic.c \
+  $(top_srcdir)/src/model/cpu.c \
+  $(top_srcdir)/src/model/fs.c \
+  $(top_srcdir)/src/model/links.c \
+  $(top_srcdir)/src/model/memory.c \
+  $(top_srcdir)/src/model/ports.c \
+  $(top_srcdir)/src/model/semaphore.c \
+  $(top_srcdir)/src/model/task.c \
+  $(top_srcdir)/src/model/thread_states.c 
+  
+model_noinst_HEADERS = \
+  $(top_srcdir)/src/model/communic.h \
+  $(top_srcdir)/src/model/cpu.h \
+  $(top_srcdir)/src/model/fs.h \
+  $(top_srcdir)/src/model/links.h \
+  $(top_srcdir)/src/model/memory.h \
+  $(top_srcdir)/src/model/ports.h \
+  $(top_srcdir)/src/model/semaphore.h \
+  $(top_srcdir)/src/model/task.h \
+  $(top_srcdir)/src/model/thread_states.h
+  
+model_noinstdir = $(top_srcdir)/src/model
+
+model_OBJS = $(model_SRCS:.c=.o)
+
+model_INCLUDES = -I$(top_srcdir)/src/model

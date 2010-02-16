@@ -1,0 +1,34 @@
+This package contains the source code of Dimemas simulator.
+
+Dependencies
+============
+
+   In order to compile this tool, you need to copy the BSC Performance Tools 
+'common-files' source code directoy at the same level where the 'dimemas-3.00' 
+folder is. This package will use some of files located there and needs this
+directory hierarchy.
+
+   To correctly compile Dimemas you will need Lex and Yacc compatible packages
+installed on your system. Free source versions of this tools can be obtained
+at:
+
+   * Flex (open source Lex implementation)
+        http://flex.sourceforge.net/
+        
+   * Bison (open source Yacc implementation)
+        http://www.gnu.org/software/bison/
+
+
+Specific Compilation Options
+============================
+
+   There is a wide range of compilation options, to fine tune the simulation.
+Check 'configure --help' for specific compilation options.
+
+   Do not hesitate to contact us to solve any doubts regarding the specific
+Dimemas tune.
+
+   Dimemas support e-mail: tools@bsc.es
+
+    
+     
