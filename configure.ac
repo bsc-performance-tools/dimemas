@@ -1,6 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT(dimemas, 3.00.$Rev$, tools@bsc.es)
+SVN_REVISION=$Rev$
+
+AC_INIT(dimemas, 3.00, tools@bsc.es)
 AC_CANONICAL_SYSTEM
 
 AM_INIT_AUTOMAKE
