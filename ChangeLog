@@ -7,6 +7,12 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2010/03/03 - jgonzale
+	BUGFIX:		Solved a small misuse when generating the distribution
+				package
+	CHANGES:	Minor cosmetic changes in 'README' file and elimination of
+				very old configuration options
+
 2010/02/15 - jgonzale
 	CHANGES:	Cleaning to liberate Dimemas code
 

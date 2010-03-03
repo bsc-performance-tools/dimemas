@@ -9,7 +9,7 @@ model_SRCS = \
   $(top_srcdir)/src/model/task.c \
   $(top_srcdir)/src/model/thread_states.c 
   
-model_noinst_HEADERS = \
+noinst_HEADERS += \
   $(top_srcdir)/src/model/communic.h \
   $(top_srcdir)/src/model/cpu.h \
   $(top_srcdir)/src/model/fs.h \
@@ -20,8 +20,6 @@ model_noinst_HEADERS = \
   $(top_srcdir)/src/model/task.h \
   $(top_srcdir)/src/model/thread_states.h
   
-model_noinstdir = $(top_srcdir)/src/model
-
 model_OBJS = $(model_SRCS:.c=.o)
 
 model_INCLUDES = -I$(top_srcdir)/src/model

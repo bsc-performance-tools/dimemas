@@ -8,7 +8,7 @@ sched_SRCS = \
   $(top_srcdir)/src/sched/SCH_rr.c \
   $(top_srcdir)/src/sched/SCH_svr4.c 
 
-sched_noinst_HEADERS = \
+noinst_HEADERS += \
   $(top_srcdir)/src/sched/events.h \
   $(top_srcdir)/src/sched/SCH_boost.h \
   $(top_srcdir)/src/sched/schedule.h \
@@ -17,8 +17,6 @@ sched_noinst_HEADERS = \
   $(top_srcdir)/src/sched/SCH_prio_fifo.h \
   $(top_srcdir)/src/sched/SCH_rr.h \
   $(top_srcdir)/src/sched/SCH_svr4.h 
-
-sched_noinstdir = $(top_srcdir)/src/sched/
 
 sched_OBJS = $(sched_SRCS:.c=.o)
 

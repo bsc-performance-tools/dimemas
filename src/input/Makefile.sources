@@ -4,7 +4,7 @@ input_SRCS = \
   $(top_srcdir)/src/input/read.c \
   $(top_srcdir)/src/input/sddf.c
 
-input_noinst_HEADERS = \
+noinst_HEADERS += \
   $(top_srcdir)/src/input/file_data_access.h \
   $(top_srcdir)/src/input/check.h \
   $(top_srcdir)/src/input/read.h \
@@ -14,24 +14,23 @@ input_noinst_HEADERS = \
   $(top_srcdir)/src/input/yacc.y \
   $(top_srcdir)/src/input/lex.l
 
-input_nodist_SRCS = \
+nodist_input_SRCS = \
   $(top_srcdir)/src/input/yacc.c \
   $(top_srcdir)/src/input/lexical.c 
 
-input_nodist_HEADERS = \
+nodist_HEADERS += \
   $(top_srcdir)/src/input/yacc.h
 
-input_noinstdir = $(top_srcdir)/src/input
-input_nodistdir = $(top_srcdir)/src/input
-
 input_OBJS = \
-  $(input_nodist_SRCS:.c=.o) \
+  $(nodist_input_SRCS:.c=.o) \
   $(input_SRCS:.c=.o) 
 
 input_TRASH = \
   $(top_srcdir)/src/input/yacc.c \
   $(top_srcdir)/src/input/yacc.h \
   $(top_srcdir)/src/input/lexical.c 
+
+$(top_srcdir)/src/input/check.o: $(top_srcdir)/src/input/yacc.h $(top_srcdir)/src/input/check.c
 
 $(top_srcdir)/src/input/yacc.h: $(top_srcdir)/src/input/yacc.c
 

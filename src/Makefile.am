@@ -13,6 +13,13 @@ bin_PROGRAMS = Dimemas3
 # De estos subdirectorios tan solo necesitamos los objetos (no se genera una
 # libreria o un binario)
 
+noinst_HEADERS = 
+noinst_SRCS =
+nodist_HEADERS =
+
+noinstdir = $(srcdir)/.tmp
+nodistdir = $(srcdir)/.tmp
+
 include $(srcdir)/input/Makefile.sources
 include $(srcdir)/model/Makefile.sources
 include $(srcdir)/prv_utils/Makefile.sources
@@ -39,19 +46,23 @@ Dimemas3_INCLUDES = \
 
 Dimemas3_SOURCES = \
 	$(input_SRCS) \
+    $(nodist_input_SRCS) \
 	$(model_SRCS) \
 	$(prv_utils_SRCS) \
 	$(sched_SRCS) \
 	$(utils_SRCS) \
 	main.c
 
-noinst_HEADERS = \
-  $(input_noinst_HEADERS) \
-	$(model_noinst_HEADERS) \
-	$(prv_utils_noinst_HEADERS) \
-	$(sched_noinst_HEADERS) \
-	$(utils_noinst_HEADERS) \
-	$(venusclient_noinst_HEADERS)
+#noinst_HEADERS = \
+#	$(input_noinst_HEADERS) \
+#	$(model_noinst_HEADERS) \
+#	$(prv_utils_noinst_HEADERS) \
+#	$(sched_noinst_HEADERS) \
+#	$(utils_noinst_HEADERS) \
+#	$(venusclient_noinst_HEADERS)
+
+#nodist_HEADERS = \
+#	$(input_nodist_HEADERS))
 
 if VENUS_ENABLED
   include $(srcdir)/venusclient/Makefile.sources

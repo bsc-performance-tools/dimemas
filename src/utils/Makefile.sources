@@ -6,15 +6,13 @@ utils_SRCS = \
   $(top_srcdir)/src/utils/random.c \
   $(top_srcdir)/src/utils/subr.c
 
-utils_noinst_HEADERS = \
+noinst_HEADERS += \
   $(top_srcdir)/src/utils/aleatorias.h \
   $(top_srcdir)/src/utils/cp.h \
   $(top_srcdir)/src/utils/list.h \
   $(top_srcdir)/src/utils/mallocame.h \
   $(top_srcdir)/src/utils/random.h \
   $(top_srcdir)/src/utils/subr.h
-
-utils_noinstdir = $(top_srcdir)/src/utils
 
 utils_OBJS = $(utils_SRCS:.c=.o)
 
