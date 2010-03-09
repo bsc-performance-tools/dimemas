@@ -35,6 +35,8 @@
 #ifndef __define_h
 #define __define_h
 
+#include <config.h>
+
 /*
  * Constants
  * 

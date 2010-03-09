@@ -43,10 +43,10 @@
 
 
 #ifdef ENABLE_LARGE_TRACES 
-  #ifdef ARCH_CYGWIN
+  #ifdef OS_CYGWIN
     #define t_off_fitxer _off64_t
   #else
-    #ifdef ARCH_MACOSX
+    #ifdef OS_MACOSX
       #define t_off_fitxer off_t
     #else
       #define t_off_fitxer off64_t

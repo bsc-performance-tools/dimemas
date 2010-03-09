@@ -37,7 +37,7 @@
 #include <math.h>
 #include <string.h>
 
-#if defined(ARCH_MACOSX) || defined(ARCH_CYGWIN)
+#if defined(OS_MACOSX) || defined(OS_CYGWIN)
 #include "macosx_limits.h"
 #else
 #include <values.h>

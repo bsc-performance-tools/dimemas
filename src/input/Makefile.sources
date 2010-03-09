@@ -1,44 +1,38 @@
-input_SRCS = \
-  $(top_srcdir)/src/input/file_data_access.c \
-  $(top_srcdir)/src/input/check.c \
-  $(top_srcdir)/src/input/read.c \
-  $(top_srcdir)/src/input/sddf.c
+Dimemas3_SOURCES += \
+  input/check.c \
+  input/check.h \
+  input/read.c \
+  input/read.h \
+  input/sddf.c \
+  input/sddf.h \
+  input/sddf_records.h \
+  input/ts.h \
+  input/file_data_access.c \
+  input/file_data_access.h
 
-noinst_HEADERS += \
-  $(top_srcdir)/src/input/file_data_access.h \
-  $(top_srcdir)/src/input/check.h \
-  $(top_srcdir)/src/input/read.h \
-  $(top_srcdir)/src/input/sddf.h \
-  $(top_srcdir)/src/input/sddf_records.h \
-  $(top_srcdir)/src/input/ts.h \
-  $(top_srcdir)/src/input/yacc.y \
-  $(top_srcdir)/src/input/lex.l
+nodist_Dimemas3_SOURCES += \
+  input/yacc.c \
+  input/yacc.h \
+  input/lex.c
 
-nodist_input_SRCS = \
-  $(top_srcdir)/src/input/yacc.c \
-  $(top_srcdir)/src/input/lexical.c 
+# Kindof hack to easy create the packaging
 
-nodist_HEADERS += \
-  $(top_srcdir)/src/input/yacc.h
+noinst_HEADERS = \
+  input/yacc.y \
+  input/lex.l
 
-input_OBJS = \
-  $(nodist_input_SRCS:.c=.o) \
-  $(input_SRCS:.c=.o) 
-
-input_TRASH = \
-  $(top_srcdir)/src/input/yacc.c \
-  $(top_srcdir)/src/input/yacc.h \
-  $(top_srcdir)/src/input/lexical.c 
-
-$(top_srcdir)/src/input/check.o: $(top_srcdir)/src/input/yacc.h $(top_srcdir)/src/input/check.c
-
-$(top_srcdir)/src/input/yacc.h: $(top_srcdir)/src/input/yacc.c
-
-$(top_srcdir)/src/input/lexical.c: $(top_srcdir)/src/input/yacc.c
-	$(LEX) -o$(top_srcdir)/src/input/lexical.c $(top_srcdir)/src/input/lex.l
-
-$(top_srcdir)/src/input/yacc.c: $(top_srcdir)/src/input/yacc.y
-	$(YACC) $(top_srcdir)/src/input/yacc.y -o $(top_srcdir)/src/input/yacc.c
+BUILT_SOURCES=\
+  input/yacc.c \
+  input/yacc.h \
+  input/lex.c
 
 
-input_INCLUDES = -I$(top_srcdir)/src/input
+input/yacc.c: input/yacc.y
+	$(YACC) input/yacc.y -o input/yacc.c
+
+input/lex.c: input/lex.l
+	$(LEX) -o input/lex.c input/lex.l
+
+Dimemas3_CFLAGS += -Iinput
+Dimemas3_CXXFLAGS += -Iinput
+

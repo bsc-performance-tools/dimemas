@@ -816,10 +816,14 @@ SDDF_do()
     return;
   
   fclose (sddf_file);
-  c = tempnam (".", nom1);
+  /* NOT USE TEMPNAM 
+  c = tempnam (".", nom1); */
+  c = "Dimemas_SDDF.tmp";
   i = rename (sddf_filename, c);
-  
+
+  unlink (c);
   sour = MYFOPEN (c, "r");
+  
   if (sour == (FILE *) 0)
   {
     printf ("Can't open source file %s\n", c);
@@ -843,5 +847,4 @@ SDDF_do()
   }
   fclose (sour);
   fclose (sddf_file);
-  unlink (c);
 }

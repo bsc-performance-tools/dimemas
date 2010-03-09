@@ -1,0 +1,18 @@
+data_pkgpath=$(JAVAROOT)/data
+
+dist_noinst_JAVA += \
+  $(data_pkgpath)/BlockData.java \
+  $(data_pkgpath)/ConfigurationData.java \
+  $(data_pkgpath)/Data.java \
+  $(data_pkgpath)/DedicatedConnectionData.java \
+  $(data_pkgpath)/EnvironmentData.java \
+  $(data_pkgpath)/FileSystemData.java \
+  $(data_pkgpath)/MachineDataBase.java \
+  $(data_pkgpath)/MappingData.java \
+  $(data_pkgpath)/NetworkDataBase.java \
+  $(data_pkgpath)/NodeData.java \
+  $(data_pkgpath)/Node.java \
+  $(data_pkgpath)/SimulatorCallData.java \
+  $(data_pkgpath)/WideAreaNetworkData.java
+
+CLEANFILES += $(data_pkgpath)/*.class

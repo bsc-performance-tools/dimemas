@@ -43,9 +43,9 @@ export AUTOM4TE
 #
 
 echo 'Running "aclocal"'
-${ACLOCAL} 
-#echo 'Running "autoheader"'
-#${AUTOHEADER}
+${ACLOCAL} -I m4
+echo 'Running "autoheader"'
+${AUTOHEADER}
 echo 'Running "autoconf"'
 ${AUTOMAKE} --add-missing --copy
 echo 'Running "automake"'

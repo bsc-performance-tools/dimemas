@@ -1,19 +1,24 @@
-venusclient_CPPSRCS = \
-  $(top_srcdir)/src/venusclient/ClientSocket.cc \
-  $(top_srcdir)/src/venusclient/ServerSocket.cc \
-  $(top_srcdir)/src/venusclient/Socket.cc \
-  $(top_srcdir)/src/venusclient/venusclient.cc
+if VENUS_ENABLED
 
-venusclient_noinst_HEADERS = \
-  $(top_srcdir)/src/venusclient/ClientSocket.h \
-  $(top_srcdir)/src/venusclient/ServerSocket.h \
-  $(top_srcdir)/src/venusclient/SocketException.h \
-  $(top_srcdir)/src/venusclient/Socket.h \
-  $(top_srcdir)/src/venusclient/venusclient.h
+  Dimemas3_SOURCES += \
+    venusclient/ClientSocket.cc \
+    venusclient/ClientSocket.h \
+    venusclient/ServerSocket.cc \
+    venusclient/ServerSocket.h \
+    venusclient/SocketException.h \
+    venusclient/Socket.cc \
+    venusclient/Socket.h \
+    venusclient/venusclient.cc \
+    venusclient/venusclient.h
 
-venusclient_SRCS = 
+  Dimemas3_CFLAGS   += -Ivenusclient
+  Dimemas3_CXXFLAGS += -Ivenusclient
 
-venusclient_OBJS = $(venusclient_CPPSRCS:.cc=.o) $(venusclient_SRCS:.c=.o)
+endif
 
-venusclient_INCLUDES = -I$(top_srcdir)/src/venusclient
+# venusclient_SRCS = 
+
+# venusclient_OBJS = $(venusclient_CPPSRCS:.cc=.o) $(venusclient_SRCS:.c=.o)
+
+#venusclient_INCLUDES = -I venusclient
 

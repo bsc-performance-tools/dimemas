@@ -50,16 +50,6 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
-#if (ALPHA|SUN4|SGI64)
-#include <sys/time.h>
-#include <sys/resource.h>
-#endif
-
-#if (HPPA)
-#include <unistd.h>
-#include <sys/times.h>
-#endif
-
 #ifdef CHECK
 #define T(x) x,
 #define L(x) x

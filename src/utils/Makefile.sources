@@ -1,19 +1,22 @@
-utils_SRCS = \
-  $(top_srcdir)/src/utils/aleatorias.c \
-  $(top_srcdir)/src/utils/cp.c \
-  $(top_srcdir)/src/utils/list.c \
-  $(top_srcdir)/src/utils/mallocame.c \
-  $(top_srcdir)/src/utils/random.c \
-  $(top_srcdir)/src/utils/subr.c
+Dimemas3_SOURCES += \
+  utils/aleatorias.c \
+  utils/aleatorias.h \
+  utils/cp.c \
+  utils/cp.h \
+  utils/list.c \
+  utils/list.h \
+  utils/mallocame.c \
+  utils/mallocame.h \
+  utils/random.c \
+  utils/random.h \
+  utils/subr.c \
+  utils/subr.h
 
-noinst_HEADERS += \
-  $(top_srcdir)/src/utils/aleatorias.h \
-  $(top_srcdir)/src/utils/cp.h \
-  $(top_srcdir)/src/utils/list.h \
-  $(top_srcdir)/src/utils/mallocame.h \
-  $(top_srcdir)/src/utils/random.h \
-  $(top_srcdir)/src/utils/subr.h
+Dimemas3_CFLAGS += -Iutils
+Dimemas3_CXXFLAGS += -Iutils
 
-utils_OBJS = $(utils_SRCS:.c=.o)
+# noinst_HEADERS += \
+# utils_OBJS = $(utils_SRCS:.c=.o)
 
-utils_INCLUDES = -I$(top_srcdir)/src/utils
+#utils_INCLUDES = -I utils
+

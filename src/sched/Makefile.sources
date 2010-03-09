@@ -1,23 +1,27 @@
-sched_SRCS = \
-  $(top_srcdir)/src/sched/events.c \
-  $(top_srcdir)/src/sched/SCH_boost.c \
-  $(top_srcdir)/src/sched/schedule.c \
-  $(top_srcdir)/src/sched/sched_vars.c \
-  $(top_srcdir)/src/sched/SCH_fifo.c \
-  $(top_srcdir)/src/sched/SCH_prio_fifo.c \
-  $(top_srcdir)/src/sched/SCH_rr.c \
-  $(top_srcdir)/src/sched/SCH_svr4.c 
+Dimemas3_SOURCES += \
+  sched/events.c \
+  sched/events.h \
+  sched/schedule.c \
+  sched/schedule.h \
+  sched/sched_vars.c \
+  sched/sched_vars.h \
+  sched/SCH_boost.c \
+  sched/SCH_boost.h \
+  sched/SCH_fifo.c \
+  sched/SCH_fifo.h \
+  sched/SCH_prio_fifo.c \
+  sched/SCH_prio_fifo.h \
+  sched/SCH_rr.c \
+  sched/SCH_rr.h \
+  sched/SCH_svr4.c \
+  sched/SCH_svr4.h 
 
-noinst_HEADERS += \
-  $(top_srcdir)/src/sched/events.h \
-  $(top_srcdir)/src/sched/SCH_boost.h \
-  $(top_srcdir)/src/sched/schedule.h \
-  $(top_srcdir)/src/sched/sched_vars.h \
-  $(top_srcdir)/src/sched/SCH_fifo.h \
-  $(top_srcdir)/src/sched/SCH_prio_fifo.h \
-  $(top_srcdir)/src/sched/SCH_rr.h \
-  $(top_srcdir)/src/sched/SCH_svr4.h 
+Dimemas3_CFLAGS += -Isched
+Dimemas3_CXXFLAGS += -Isched
 
-sched_OBJS = $(sched_SRCS:.c=.o)
+# noinst_HEADERS += 
 
-sched_INCLUDES = -I$(top_srcdir)/src/sched
+# sched_OBJS = $(sched_SRCS:.c=.o)
+
+# sched_INCLUDES = -I sched
+

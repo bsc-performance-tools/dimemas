@@ -35,10 +35,5 @@
 #ifndef __DIMEMAS_DEF_H
 #define __DIMEMAS_DEF_H
  
-/****************************************************************************
- * Tool-specific defines for the license checker
- ****************************************************************************/
-#define PAL_TOOLNAME            "DIMEMAS"
-#define LC_PRODUCTSTRING        "DA10"
- 
+
 #endif /* __DIMEMAS_DEF_H */

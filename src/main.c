@@ -374,6 +374,7 @@ help_message(char *tname)
 }
 
 
+/*
 void
 show_all_information()
 {
@@ -390,110 +391,34 @@ show_all_information()
   {
     f = machine->network.total_time_in_queue/ ct;
     g = machine->network.utilization/ct;
-  /*  fprintf (salida_datos,"Mean queue lenght for machine %d is: %le and utilization %le\n",machine->id,f,g);*/
+  /*  fprintf (salida_datos,"Mean queue lenght for machine %d is: %le and utilization %le\n",machine->id,f,g);
   }
-
 }
+*/
 
-#ifndef PALLAS
+/*
 static void
 cotilleo (char *comando)
 {
-   char            hostname[255];
-   char            username[L_cuserid + 1];
-   int             p[2];
-   char            buffer[1024];
-   int             i;
-   char            hora[80];
-   time_t          t;
+  char            hostname[255];
+  char            username[L_cuserid + 1];
+  int             p[2];
+  char            buffer[1024];
+  int             i;
+  char            hora[80];
+  time_t          t;
 
-#if (ALPHA|SUN4|SGI64)
-   struct rusage   ru;
+  char           *date = DATE;
 
-#endif
-
-#if (HPPA)
-   struct tms      ru;
-   int             time_ticks;
-
-#endif
-   char           *date = DATE;
-
-#if (HPPA)
-   time_ticks = sysconf (_SC_CLK_TCK);
-#endif
-
-   cuserid (username);
-   username[L_cuserid] = (char) 0;
-   if (strcmp ("sergi", username) == 0)
-   {
-     show_all_information();
-     return;
-   }
-/*
-   if (strcmp ("paraver", username) == 0)
-      return;
-   if (strcmp ("mcarlo2", username) == 0)
-      return;
-   if (strcmp ("luisg", username) == 0)
-      return;
-   if (strcmp ("toni", username) == 0)
-      return;
-   gethostname (hostname, 255);
-
-   pipe (p);
-   if (fork () == 0)
-   {
-      dup2 (p[0], 0);
-      close (p[0]);
-      close (p[1]);
-      execlp ("mail", "dimemas_mail", "sergi@ac.upc.es", (char *) 0);
-      exit (0);
-   }
-   sprintf (buffer, "\nUtilizacion de Dimemas v%d.%d\n", VERSION, SUBVERSION);
-   write (p[1], buffer, strlen (buffer));
-   sprintf (buffer, "Compiled %s\n\n", date);
-   write (p[1], buffer, strlen (buffer));
-   sprintf (buffer, "User:\t\t%s\nHostname:\t%s\n", username, hostname);
-   write (p[1], buffer, strlen (buffer));
-
-   time (&t);
-   strftime (hora, 80, "%a %e %b at %H:%M:%S", localtime (&t));
-   sprintf (buffer, "Fecha:\t\t%s\n\n", hora);
-   write (p[1], buffer, strlen (buffer));
-
-#if ALPHA| SUN4 |SGI64
-   getrusage (RUSAGE_SELF, &ru);
-
-   sprintf (buffer, "User time:\t%d.%06d s\nSystem time:\t%d.%06d s\n",
-	    (int) ru.ru_utime.tv_sec, (int) ru.ru_utime.tv_usec,
-	    (int) ru.ru_stime.tv_sec, (int) ru.ru_stime.tv_usec);
-   write (p[1], buffer, strlen (buffer));
-
-   i = getpagesize ();
-   sprintf (buffer, "Max. rss:\t%d bytes (%d pages of %d bytes)\n",
-	    (int) ru.ru_maxrss * i, (int) ru.ru_maxrss, i);
-   write (p[1], buffer, strlen (buffer));
-#endif
-
-#if HPPA
-   times (&ru);
-
-   sprintf (buffer, "User time:\t%d.%06d s\nSystem time:\t%d.%06d s\n",
-	    ru.tms_utime / time_ticks,
-	    (ru.tms_utime * 1000000 / time_ticks) % 1000000,
-	    ru.tms_stime / time_ticks,
-	    (ru.tms_stime * 1000000 / time_ticks) % 1000000);
-   write (p[1], buffer, strlen (buffer));
-#endif
-
-   sprintf (buffer, "\nLinea de comando:\n%s\n", comando);
-   write (p[1], buffer, strlen (buffer));
-*/
+  cuserid (username);
+  username[L_cuserid] = (char) 0;
+  if (strcmp ("sergi", username) == 0)
+  {
+    show_all_information();
+    return;
+  }
 }
-
-#endif /* PALLAS */
-
+*/
 
 static dimemas_timer
 read_timer(char *c)
@@ -1046,7 +971,9 @@ while (top_event (&Event_queue) != E_NIL)
 
   /* Statistical results */
   if (Critical_Path_Analysis==FALSE)
+  {
     show_statistics (Pallas_output);
+  }
   else
   {
     fprintf (salida_datos,"Execution time:\t");
@@ -1057,25 +984,26 @@ while (top_event (&Event_queue) != E_NIL)
 
   Paraver_fini();
 
-  #ifndef PALLAS
   strcpy (message_buffer, "");
   for (i = 0; i < argc; i++)
   {
     strcat (message_buffer, argv[i]);
     strcat (message_buffer, " ");
   }
-  cotilleo (message_buffer);
-  #endif /* PALLAS */
 
   /* Free reserved pointers */
   free_all_reserved_pointers();
   
   malloc_end ();
   fclose (salida_datos);
-  if (fichero_salida!=(char *)0)
+
+  /* Change output tabs per spaces */
+  if (fichero_salida != (char *)0)
   {
-    c = (char *)tempnam (".", nom1);
+    /* c = (char *)tempnam (".", nom1);*/
+    c = "Dimemas_OUTPUT.tmp";
     rename (fichero_salida, c);
+
     close (0);
     MYOPEN (c, O_RDONLY);
     unlink (c);
@@ -1083,5 +1011,6 @@ while (top_event (&Event_queue) != E_NIL)
     MYOPEN (fichero_salida, O_WRONLY| O_TRUNC| O_CREAT,0600);
     execlp ("col", "dimemas_col", "-x", (char *)0);
   }
+  
   exit(0);
 }

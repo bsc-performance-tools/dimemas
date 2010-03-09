@@ -1274,13 +1274,14 @@ more_actions (struct t_thread *thread)
   struct t_cpu   *cpu;
   struct t_node  *node;
 
-#ifdef PALLAS
+
   if ((load_interactive) && (thread->action == AC_NIL))
   {
     /* Using the wrapper ti mask whether we read old or new trace format */ 
     get_next_action_wrapper(thread);
   }
-#else /* !PALLAS */
+
+  /* Never used
   if (thread->task->Ptask->synthetic_application)
   {
     more_actions_to_sintetic (thread);
@@ -1289,11 +1290,11 @@ more_actions (struct t_thread *thread)
   {
     if ((load_interactive) && (thread->action == AC_NIL))
     {
-      /* Using the wrapper ti mask whether we read old or new trace format */ 
+      /* Using the wrapper ti mask whether we read old or new trace format 
       get_next_action_wrapper(thread);
     }
   }
-#endif /* PALLAS */
+  */
 
   action = thread->action;
   account = current_account (thread);
