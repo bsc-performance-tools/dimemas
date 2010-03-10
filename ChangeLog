@@ -8,6 +8,9 @@ Date - user
 	CHANGES:  	explanation of codification changes
 
 2010/03/10 - jgonzale
+	CHANGES:	Minor changes on GUI
+
+2010/03/09 - jgonzale
 	CHANGES:	Completed changes to integrate the Java GUI into the main
 				Dimemas packaging. See DimemasGUI directory
 	CHANGES:	Added 'm4' directories to add automake macros

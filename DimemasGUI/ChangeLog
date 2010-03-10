@@ -7,6 +7,10 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2010/03/10 - jgonzale
+	CHANGES:	added headers to all .java files
+	CHANGES:	modified the 'About' dialog and the application coporate icon
+
 2010/03/09 - jgonzale
 	CHANGES:	full integration into the Dimemas3 open source packaging
 	CHANGES:	the default files are automatically installed
