@@ -38,12 +38,9 @@ Check 'configure --help' for specific compilation options.
 
    * ./configure --enable-large-traces --with-time-limit=<simulation_limit_in_seconds>
 
-   Other useful options are:
-
-   * --enable-debug: to produce a more accurate description of the simulation
-
-   * --enable-optimization: to compile the simulator with higher compiler
-     optimization.
+   In order to adjust the compiler in terms of optimization or debugging options, 
+you must provide specific compiler parameters using the CFLAGS and CXXFLAGS 
+environment variables.
 
    Rest of the options usually regard to very specific simulation facts.Do not
 hesitate to contact us to solve any doubts regarding the specific Dimemas 

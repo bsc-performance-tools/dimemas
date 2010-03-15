@@ -15,6 +15,8 @@ common_filesdir = @common_filesdir@
 Dimemas3_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include -I$(common_filesdir)
 Dimemas3_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include -I$(common_filesdir)
 
+# Dimemas3_LIBS= @AM_LIBS@
+
 Dimemas3_SOURCES = main.c
 
 # BUILT_SOURCES = yacc.c yacc.h lex.c

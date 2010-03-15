@@ -10,9 +10,12 @@ Date - user
 2010/03/15 - jgonzale
 	BUGFIX:		GUI is only compiled if Java Compiler is present. Previously it
 				tried to compile it always.
-
 	CHANGES:	Java m4 macros don't stop when no available compiler/VM/jar is
 				found
+	CHANGES:	Configure script no longer offers debug/optimization flags.
+				User must provide this information using CFLAGS/CXXFLAGS.
+	CHANGES:	Removed 'aclocal.m4' from the package distribution.
+
 
 2010/03/10 - jgonzale
 	CHANGES:	Minor changes on GUI

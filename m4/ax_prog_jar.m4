@@ -52,7 +52,7 @@ fi
 if test "x$JAR" = x; then
   AC_MSG_WARN([no acceptable jar program found in \$PATH])
 else
-  ac_prog_jar_exists=yes
+  ac_cv_prog_jar_exists=yes
 fi
 
 AC_PROVIDE([$0])dnl

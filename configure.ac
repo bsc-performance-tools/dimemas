@@ -11,19 +11,21 @@ AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 
+
+dnl Check if CFLAGS/CXXFLAGS have been defined by user
 AC_MSG_CHECKING([whether configure should try to set CFLAGS])
-if test "x${CFLAGS+set}" = xset; then
-   enable_cflags_setting=yes
+if test "x$CFLAGS" = "x"; then
+  enable_cflags_setting=yes
 else
-   enable_cflags_setting=no
+  enable_cflags_setting=no
 fi
 AC_MSG_RESULT($enable_cflags_setting)
 
 AC_MSG_CHECKING([whether configure should try to set CXXFLAGS])
-if test "x${CXXFLAGS+set}" = xset; then
-   enable_cxxflags_setting=yes
+if test "x$CXXFLAGS" = "x"; then
+  enable_cxxflags_setting=yes
 else
-   enable_cxxflags_setting=no
+  enable_cxxflags_setting=no
 fi
 AC_MSG_RESULT($enable_cxxflags_setting)
 
@@ -55,8 +57,6 @@ AC_PROG_YACC
 AM_PROG_LEX
 test -n "$YACC" && YACC="$YACC -d"
 
-dnl CFLAGS="$CFLAGS $"
-dnl CXXFLAGS="$CXXFLAGS $Z_FLAGS"
 LIBS="$LIBS $LEXLIB"
 
 dnl If the package is not flat
@@ -65,13 +65,16 @@ AC_PROG_MAKE_SET
 AC_DEFINE_UNQUOTED(DATE, ["`date`"], [Current date of compilation] )
 
 dnl =========================================================================
-dnl Check for previously defined FLAGS
+dnl Set default xxxFLAGS if not defined
 dnl =========================================================================
 
-if test CFLAGS=""; then
-  AC_WARN(CFLAGS previously defined!)
+if test "x$enable_cflags_setting" = "xyes"; then
+  CFLAGS="-O3 -Os"
 fi
 
+if test "x$enable_cxxflags_setting" = "xyes"; then
+  CXXFLAGS="-O3 -Os"
+fi
 
 dnl =========================================================================
 dnl Architecture and OS detection
@@ -97,28 +100,6 @@ case "x$host_os" in
   xcygwin* ) Operating_System="cygwin";;
 esac
 
-dnl =========================================================================
-dnl Check which compiler we are using to use the adequate parameter to 
-dnl generate all the warnings in the source code
-dnl =========================================================================
-
-dnl AC_MSG_CHECKING([for full warnings option in compiler])
-dnl if test "$ac_compiler_gnu" = "yes" ; then
-dnl   WARNINGS_IN_COMPILER="-Wall -W"
-dnl elif test "$CC" = "xlc" ; then
-dnl   WARNINGS_IN_COMPILER=""
-dnl elif test "$CC" = "icc" ; then
-dnl   WARNING_IN_COMPILER="-Wall"
-dnl elif test "$CC" = "cc" ; then
-dnl   if test "$Architecture" = "mips" -a "$Operating_System" = "irix" ; then
-dnl     WARNINGS_IN_COMPILER="-fullwarn"
-dnl   elif test "$Architecture" = "alpha" -a "$Operating_System" = "dec" ; then
-dnl     WARNINGS_IN_COMPILER="-warnprotos -w0"
-dnl   fi
-dnl fi
-dnl AC_MSG_RESULT([$WARNINGS_IN_COMPILER])
-dnl CFLAGS="$CFLAGS $WARNINGS_IN_COMPILER"
-dnl CXXFLAGS="$CXXFLAGS $WARNINGS_IN_COMPILER"
 
 dnl =========================================================================
 dnl Check whether the compilers need additional parameters
@@ -130,8 +111,8 @@ if test "x$enable_cflags_setting" = "yes"; then
     ADDITIONAL_FLAGS_CC=""
     ADDITIONAL_FLAGS_CXX=""
   elif test "$CC" = "xlc" ; then
-    ADDITIONAL_FLAGS_CC="-O -qcpluscmt"
-    ADDITIONAL_FLAGS_CXX="-O -qstaticinline"
+    ADDITIONAL_FLAGS_CC="-qcpluscmt"
+    ADDITIONAL_FLAGS_CXX="-qstaticinline"
   elif test "$CC" = "cc" ; then
     if test "$Architecture" = "mips" -a "$Operating_System" = "irix" ; then
       ADDITIONAL_FLAGS_CC=""
@@ -177,130 +158,12 @@ AM_CONDITIONAL(OS_MACOSX,    test "${OperatingSystem}" = "osx"     )
 AM_CONDITIONAL(OS_CYGWIN,    test "${OperatingSystem}" = "cygwin"  )
 
 dnl =======================================================================
-dnl Optional defines
-dnl =======================================================================
-
-
-dnl =======================================================================
-dnl Conditional compilation flags
-dnl =======================================================================
-
-dnl == General Debug ==
-
-debug_active="no"
-AC_ARG_ENABLE(
-  debug,
-  AS_HELP_STRING(
-    [--enable-debug],
-    [compile with general debug information]
-  ),
-  [
-    if test "x$enable_cflags_setting" = "xyes"; then
-      CFLAGS="-g"
-    fi
-
-    if test "x$enable_cxxflags_setting" = "xyes"; then
-      CXXFLAGS="-g"
-    fi
-    debug_active="yes"
-  ]
-)
-AM_CONDITIONAL(DEBUG_ACTIVE, test "x$debug_active" = "xyes")
-
-dnl == GPROF Debug ==
-profiling_active="no"
-AC_ARG_ENABLE(
-  gprof-debug,
-  AS_HELP_STRING(
-    [--enable-gprof-debug],
-    [compile with gprof profiling information]
-  ),
-  [
-    if test "x$enable_cflags_setting" = "xyes"; then
-      if test "x$enable_cxxflags_setting" = "xyes"; then
-        CFLAGS="$CFLAGS -pg"
-        CXXFLAGS="$CXXFLAGS -pg"
-        LDFLAGS="$LDDFLAGS -pg"
-        profiling_active="yes"
-      fi
-    fi
-  ]
-)
-AM_CONDITIONAL(PROFILING, test "x$profiling_active" = "xyes")
-
-dnl == Code Coverage compile ==
-
-code_coverage_active="no"
-AC_ARG_ENABLE(
-  code-coverage,
-  AS_HELP_STRING(
-    [--enable-code-coverage],
-    [compile with code coverage information (only GCC)]
-  ),
-  [
-    if test "x$enable_cflags_setting" = "xyes"; then
-      if test "x$enable_cxxflags_setting" = "xyes"; then
-        if test "$ac_compiler_gnu" = "yes"; then
-          CFLAGS="-fprofile-arcs -ftest-coverage"
-          CXXFLAGS="-fprofile-arcs -ftest-coverage"
-          code_coverage_active="yes"
-        else
-          AC_WARN(Code coverage is only supported with GNU compilers)
-        fi
-      fi
-    fi
-  ]
-)
-AM_CONDITIONAL(CODE_COVERAGE, test "x$code_coverage_active" = "yes")
-
-dnl == High optimization ==
-
-AC_ARG_ENABLE(
-  optimization,
-  AS_HELP_STRING(
-    [--enable-optimization],
-    [compile with high optimization]
-  ),
-  [
-   if test "x$enable_cflags_setting" = "xyes"; then
-    if test "x$enable_cxxflags_setting" = "xyes"; then
-      if test "x$debug_active" = "xno" &&
-        test "x$profiling_active" = "xno" &&
-        test "x$code_coverage_active" = "xno"; then
-  
-        dnl C Compiler Optimization
-        if test "$CC" = "xlc" ; then
-          CFLAGS="$CFLAGS -O3"
-        elif test "$CC" = "icc" ; then
-          CFLAGS="$CFLAGS -ipo5 -O3 -Os"
-        else
-          CFLAGS="$CFLAGS -O3 -Os -funroll-loops"
-        fi
-  
-        dnl C++ Compiler Optimization
-        if test "$CXX" = "xlC"; then
-          CXXFLAGS="$CXXFLAGS -O3"
-        elif test "$CXX" = "icpc"; then
-          CXXFLAGS="$CXXFLAGS -ipo5 -O3 -Os"
-        else
-          CXXFLAGS="$CXXFLAGS -O3 -Os -funroll-loops"
-        fi
-      else
-        AC_WARN(Debug/Profile/Coverage active, optimization not allowed)
-      fi
-    fi
-  fi
-  ]
-)
-
-dnl =======================================================================
 dnl Conditional defines
 dnl =======================================================================
 
 
 dnl STARTUP_ALS_IRECV: if defined Dimemas considers initial startups on 
 dnl MPI_Irecv functions
-
 AC_ARG_ENABLE(
   irecv-startup, 
   AS_HELP_STRING(
@@ -314,7 +177,6 @@ AC_ARG_ENABLE(
 
 dnl LOGICAL_RECEIVE_ALS_WAIT: if defined Dimemas puts logical receive time
 dnl when MPI_Wait is called (not on MPI_Irecv)
-
 AC_ARG_ENABLE(
   wait-logical-recv,
   AS_HELP_STRING(
@@ -328,7 +190,6 @@ AC_ARG_ENABLE(
 )
 
 dnl ENABLE_LARGE_TRACES: if defined Dimemas can use traces larger than 2Gb
-
 AC_ARG_ENABLE(
   large-traces,
   AS_HELP_STRING(
@@ -359,7 +220,6 @@ AC_ARG_ENABLE(
 )
 
 dnl WRITE_TRACE_SEEKS: if defined Dimemas adds lseek information on traces
-
 AC_ARG_ENABLE(
   write-trace-seeks,
   AS_HELP_STRING(
@@ -384,7 +244,6 @@ AC_ARG_ENABLE(
 dnl TIME_LIMIT: this variable is used on 'define.h' and indicates the maximum
 dnl clock value on simulations. By default, it assumes 7h (2.52e10 us) of 
 dnl maximum clock time
-
 AC_ARG_WITH(
   time_limit,
   AS_HELP_STRING(
@@ -478,19 +337,6 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h limits.h malloc.h strings.h sys/time.h unistd.h)
 
-dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_OFF_T
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_HEADER_TIME
-AC_STRUCT_TM
-
-dnl Checks for library functions.
-AC_FUNC_STRFTIME
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(gethostname gettimeofday strdup strerror strstr strtoul uname)
-
 AC_CHECK_LIB(z, [gzopen,gzputs],[
     AC_DEFINE(HAVE_LIBZ,[1],[libz present on the system])
       if test "x${Z_DIR}" != "x"; then
@@ -504,8 +350,6 @@ CFLAGS="$CFLAGS $Z_FLAGS"
 CXXFLAGS="$CXXFLAGS $Z_FLAGS"
 LIBS="$LIBS $Z_LIBS"
 
-dnl AC_SUBST(Z_CFLAGS)
-dnl AC_SUBST(Z_LIBS)
 
 dnl =======================================================================
 dnl Java checks
@@ -513,24 +357,28 @@ dnl =======================================================================
 AC_CHECK_CLASSPATH
 AX_PROG_JAVAC
 AX_PROG_JAVA
+AX_PROG_JAR
 
 have_java=yes 
 if test "x$ac_cv_prog_java_works" = "x"; then
+  echo "NOT JAVA"
   have_java=no;
 fi
 
 if test "x$ac_cv_prog_javac_works" = "x"; then
+  echo "NOT JAVAC"
   have_java=no;
 fi 
 
 if test "x$ac_cv_prog_jar_exists" = "x"; then
+  echo "NOT JAR"
   have_java=no;
 fi 
 
 if test "x$have_java" = "xno"; then
-  echo "---------------------"
-  echo " Some Java tools not found - continuing without GUI support."
-  echo "---------------------"
+  echo "------------------------------------------------------------"
+  echo " Some Java tools not found - continuing without GUI support"
+  echo "------------------------------------------------------------"
 fi
 
 AM_CONDITIONAL([HAVE_JAVA], [test "x$have_java" = xyes])
@@ -564,7 +412,8 @@ dnl =======================================================================
 dnl Compiling options resume
 dnl =======================================================================
 echo "
-  $PACKAGE_NAME version $PACKAGE_VERSION
+  $PACKAGE_NAME version $PACKAGE_VERSION.$SVNREV
+
   Prefix.................: $prefix
   Debug Build............: $debug
   C Compiler Flags.......: $CFLAGS
