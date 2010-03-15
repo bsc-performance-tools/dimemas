@@ -11,6 +11,23 @@ AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 
+AC_MSG_CHECKING([whether configure should try to set CFLAGS])
+if test "x${CFLAGS+set}" = xset; then
+   enable_cflags_setting=yes
+else
+   enable_cflags_setting=no
+fi
+AC_MSG_RESULT($enable_cflags_setting)
+
+AC_MSG_CHECKING([whether configure should try to set CXXFLAGS])
+if test "x${CXXFLAGS+set}" = xset; then
+   enable_cxxflags_setting=yes
+else
+   enable_cxxflags_setting=no
+fi
+AC_MSG_RESULT($enable_cxxflags_setting)
+
+
 AC_PROG_CC(icc xlc cc gcc)
 AC_PROG_CXX(icpc xlC CC g++)
 AC_PROG_CPP
@@ -85,58 +102,60 @@ dnl Check which compiler we are using to use the adequate parameter to
 dnl generate all the warnings in the source code
 dnl =========================================================================
 
-AC_MSG_CHECKING([for full warnings option in compiler])
-if test "$ac_compiler_gnu" = "yes" ; then
-  WARNINGS_IN_COMPILER="-Wall -W"
-elif test "$CC" = "xlc" ; then
-  WARNINGS_IN_COMPILER=""
-elif test "$CC" = "icc" ; then
-  WARNING_IN_COMPILER="-Wall"
-elif test "$CC" = "cc" ; then
-  if test "$Architecture" = "mips" -a "$Operating_System" = "irix" ; then
-    WARNINGS_IN_COMPILER="-fullwarn"
-  elif test "$Architecture" = "alpha" -a "$Operating_System" = "dec" ; then
-    WARNINGS_IN_COMPILER="-warnprotos -w0"
-  fi
-fi
-AC_MSG_RESULT([$WARNINGS_IN_COMPILER])
-CFLAGS="$CFLAGS $WARNINGS_IN_COMPILER"
-CXXFLAGS="$CXXFLAGS $WARNINGS_IN_COMPILER"
+dnl AC_MSG_CHECKING([for full warnings option in compiler])
+dnl if test "$ac_compiler_gnu" = "yes" ; then
+dnl   WARNINGS_IN_COMPILER="-Wall -W"
+dnl elif test "$CC" = "xlc" ; then
+dnl   WARNINGS_IN_COMPILER=""
+dnl elif test "$CC" = "icc" ; then
+dnl   WARNING_IN_COMPILER="-Wall"
+dnl elif test "$CC" = "cc" ; then
+dnl   if test "$Architecture" = "mips" -a "$Operating_System" = "irix" ; then
+dnl     WARNINGS_IN_COMPILER="-fullwarn"
+dnl   elif test "$Architecture" = "alpha" -a "$Operating_System" = "dec" ; then
+dnl     WARNINGS_IN_COMPILER="-warnprotos -w0"
+dnl   fi
+dnl fi
+dnl AC_MSG_RESULT([$WARNINGS_IN_COMPILER])
+dnl CFLAGS="$CFLAGS $WARNINGS_IN_COMPILER"
+dnl CXXFLAGS="$CXXFLAGS $WARNINGS_IN_COMPILER"
 
 dnl =========================================================================
 dnl Check whether the compilers need additional parameters
 dnl =========================================================================
 
 AC_MSG_CHECKING([for additional options in compilers C/C++])
-if test "$ac_compiler_gnu" = "yes" ; then
-  ADDITIONAL_FLAGS_CC=""
-  ADDITIONAL_FLAGS_CXX=""
-elif test "$CC" = "xlc" ; then
-  ADDITIONAL_FLAGS_CC="-O -qcpluscmt"
-  ADDITIONAL_FLAGS_CXX="-O -qstaticinline"
-elif test "$CC" = "cc" ; then
-  if test "$Architecture" = "mips" -a "$Operating_System" = "irix" ; then
+if test "x$enable_cflags_setting" = "yes"; then
+  if test "$ac_compiler_gnu" = "yes" ; then
     ADDITIONAL_FLAGS_CC=""
     ADDITIONAL_FLAGS_CXX=""
-  elif test "$Architecture" = "alpha" -a "$Operating_System" = "dec" ; then
-    ADDITIONAL_FLAGS_CC=""
-    ADDITIONAL_FLAGS_CXX=""
+  elif test "$CC" = "xlc" ; then
+    ADDITIONAL_FLAGS_CC="-O -qcpluscmt"
+    ADDITIONAL_FLAGS_CXX="-O -qstaticinline"
+  elif test "$CC" = "cc" ; then
+    if test "$Architecture" = "mips" -a "$Operating_System" = "irix" ; then
+      ADDITIONAL_FLAGS_CC=""
+      ADDITIONAL_FLAGS_CXX=""
+    elif test "$Architecture" = "alpha" -a "$Operating_System" = "dec" ; then
+      ADDITIONAL_FLAGS_CC=""
+      ADDITIONAL_FLAGS_CXX=""
+    fi
   fi
-fi
-CFLAGS="$CFLAGS $ADDITIONAL_FLAGS_CC"
-CXXFLAGS="$CXXFLAGS $ADDITIONAL_FLAGS_CXX"
+  CFLAGS="$CFLAGS $ADDITIONAL_FLAGS_CC"
+  CXXFLAGS="$CXXFLAGS $ADDITIONAL_FLAGS_CXX"
 
-dnl Just to write a nice message to the user 
-if test "$ADDITIONAL_FLAGS_CC"  = "" ; then
-  ADDITIONAL_FLAGS_CC="none"
-fi
-if test "$ADDITIONAL_FLAGS_CXX" = "" ; then
-  ADDITIONAL_FLAGS_CXX="none"
-fi
+  dnl Just to write a nice message to the user 
+  if test "$ADDITIONAL_FLAGS_CC"  = "" ; then
+    ADDITIONAL_FLAGS_CC="none"
+  fi
+  if test "$ADDITIONAL_FLAGS_CXX" = "" ; then
+    ADDITIONAL_FLAGS_CXX="none"
+  fi
 
-dnl Specific LDFLAGS for Intel C Compiler
-if test "$CC" = "icc" ; then
-  LDFLAGS="-i-static $LDFLAGS"
+  dnl Specific LDFLAGS for Intel C Compiler
+  if test "$CC" = "icc" ; then
+    LDFLAGS="-i-static $LDFLAGS"
+  fi
 fi
 
 dnl Do we have inline?
@@ -176,8 +195,13 @@ AC_ARG_ENABLE(
     [compile with general debug information]
   ),
   [
-    CFLAGS="-g"
-    CXXFLAGS="-g"
+    if test "x$enable_cflags_setting" = "xyes"; then
+      CFLAGS="-g"
+    fi
+
+    if test "x$enable_cxxflags_setting" = "xyes"; then
+      CXXFLAGS="-g"
+    fi
     debug_active="yes"
   ]
 )
@@ -192,10 +216,14 @@ AC_ARG_ENABLE(
     [compile with gprof profiling information]
   ),
   [
-    CFLAGS="$CFLAGS -pg"
-    CXXFLAGS="$CXXFLAGS -pg"
-    LDFLAGS="$LDDFLAGS -pg"
-    profiling_active="yes"
+    if test "x$enable_cflags_setting" = "xyes"; then
+      if test "x$enable_cxxflags_setting" = "xyes"; then
+        CFLAGS="$CFLAGS -pg"
+        CXXFLAGS="$CXXFLAGS -pg"
+        LDFLAGS="$LDDFLAGS -pg"
+        profiling_active="yes"
+      fi
+    fi
   ]
 )
 AM_CONDITIONAL(PROFILING, test "x$profiling_active" = "xyes")
@@ -210,12 +238,16 @@ AC_ARG_ENABLE(
     [compile with code coverage information (only GCC)]
   ),
   [
-    if test "$ac_compiler_gnu" = "yes"; then
-      CFLAGS="-fprofile-arcs -ftest-coverage"
-      CXXFLAGS="-fprofile-arcs -ftest-coverage"
-      code_coverage_active="yes"
-    else
-      AC_WARN(Code coverage is only supported with GNU compilers)
+    if test "x$enable_cflags_setting" = "xyes"; then
+      if test "x$enable_cxxflags_setting" = "xyes"; then
+        if test "$ac_compiler_gnu" = "yes"; then
+          CFLAGS="-fprofile-arcs -ftest-coverage"
+          CXXFLAGS="-fprofile-arcs -ftest-coverage"
+          code_coverage_active="yes"
+        else
+          AC_WARN(Code coverage is only supported with GNU compilers)
+        fi
+      fi
     fi
   ]
 )
@@ -230,30 +262,34 @@ AC_ARG_ENABLE(
     [compile with high optimization]
   ),
   [
-    if test "x$debug_active" = "xno" &&
-       test "x$profiling_active" = "xno" &&
-       test "x$code_coverage_active" = "xno"; then
-
-      dnl C Compiler Optimization
-      if test "$CC" = "xlc" ; then
-        CFLAGS="$CFLAGS -O3"
-      elif test "$CC" = "icc" ; then
-        CFLAGS="$CFLAGS -ipo5 -O3 -Os"
+   if test "x$enable_cflags_setting" = "xyes"; then
+    if test "x$enable_cxxflags_setting" = "xyes"; then
+      if test "x$debug_active" = "xno" &&
+        test "x$profiling_active" = "xno" &&
+        test "x$code_coverage_active" = "xno"; then
+  
+        dnl C Compiler Optimization
+        if test "$CC" = "xlc" ; then
+          CFLAGS="$CFLAGS -O3"
+        elif test "$CC" = "icc" ; then
+          CFLAGS="$CFLAGS -ipo5 -O3 -Os"
+        else
+          CFLAGS="$CFLAGS -O3 -Os -funroll-loops"
+        fi
+  
+        dnl C++ Compiler Optimization
+        if test "$CXX" = "xlC"; then
+          CXXFLAGS="$CXXFLAGS -O3"
+        elif test "$CXX" = "icpc"; then
+          CXXFLAGS="$CXXFLAGS -ipo5 -O3 -Os"
+        else
+          CXXFLAGS="$CXXFLAGS -O3 -Os -funroll-loops"
+        fi
       else
-        CFLAGS="$CFLAGS -O3 -Os -funroll-loops"
+        AC_WARN(Debug/Profile/Coverage active, optimization not allowed)
       fi
-
-      dnl C++ Compiler Optimization
-      if test "$CXX" = "xlC"; then
-        CXXFLAGS="$CXXFLAGS -O3"
-      elif test "$CXX" = "icpc"; then
-        CXXFLAGS="$CXXFLAGS -ipo5 -O3 -Os"
-      else
-        CXXFLAGS="$CXXFLAGS -O3 -Os -funroll-loops"
-      fi
-    else
-      AC_WARN(Debug/Profile/Coverage active, optimization not allowed)
     fi
+  fi
   ]
 )
 
@@ -474,36 +510,34 @@ dnl AC_SUBST(Z_LIBS)
 dnl =======================================================================
 dnl Java checks
 dnl =======================================================================
-AC_PROG_JAVA
-AC_PROG_JAVAC
-AC_PROG_JAR
+AC_CHECK_CLASSPATH
+AX_PROG_JAVAC
+AX_PROG_JAVA
 
 have_java=yes 
-
-if test -x "$JAVA"; then
+if test "x$ac_cv_prog_java_works" = "x"; then
   have_java=no;
 fi
 
-if test -z “$JAVAC”; then
-  have_java=no;
-fi 
-
-if test -z “$JAR”; then
+if test "x$ac_cv_prog_javac_works" = "x"; then
   have_java=no;
 fi 
 
-if test “x$have_java” = xno; then 
-  echo “————————————————————-” 
-  echo ” Some Java tools not found - continuing” 
-  echo ” without GUI support.” 
-  echo “————————————————————-” 
+if test "x$ac_cv_prog_jar_exists" = "x"; then
+  have_java=no;
+fi 
+
+if test "x$have_java" = "xno"; then
+  echo "---------------------"
+  echo " Some Java tools not found - continuing without GUI support."
+  echo "---------------------"
 fi
 
-AM_CONDITIONAL([HAVE_JAVA], [test “x$have_java” = xyes])
+AM_CONDITIONAL([HAVE_JAVA], [test "x$have_java" = xyes])
 
-if test “x$have_java” = xyes; then
-  AC_DEFINE(HAVE_JAVA, 1, Define to 1 if JAVA is installed in the system)
-fi
+dnl if test "x$have_java" = xyes; then
+dnl  AC_DEFINE(HAVE_JAVA, 1, Define to 1 if JAVA is installed in the system)
+dnl fi
 
 dnl =======================================================================
 dnl Mandatory FLAGS
@@ -511,7 +545,7 @@ dnl =======================================================================
 
 CFLAGS="$CFLAGS -DDIMEMAS_COMPILATION"
 CXXFLAGS="$CXXFLAGS -DDIMEAMS_COMPILATION"
-LDFLAGS="$LDFLAGS -DDIMEMAS_COMPILATION"
+LDFLAGS="$LDFLAGS"
 
 dnl =======================================================================
 dnl Final Makefile generation
@@ -519,15 +553,10 @@ dnl =======================================================================
 
 AC_CONFIG_FILES([
   Makefile
+  DimemasGUI/Makefile
   include/Makefile
   src/Makefile
 ])
-
-if test "x$have_java" = "xyes"; then
-  AC_CONFIG_FILES(
-    DimemasGUI/Makefile
-  )
-fi
 
 AC_OUTPUT
 

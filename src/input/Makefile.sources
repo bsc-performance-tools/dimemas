@@ -31,7 +31,7 @@ input/yacc.c: input/yacc.y
 	$(YACC) input/yacc.y -o input/yacc.c
 
 input/lex.c: input/lex.l
-	$(LEX) -o input/lex.c input/lex.l
+	$(LEX) -oinput/lex.c input/lex.l
 
 Dimemas3_CFLAGS += -Iinput
 Dimemas3_CXXFLAGS += -Iinput
