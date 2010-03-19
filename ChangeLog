@@ -9,6 +9,7 @@ Date - user
 
 2010/03/19 - jgonzale
 	CHANGES:    Only 'javac' is checked when looking for Java compilers
+	BUGFIX:		Solved used of 'getenv' into the Dimemas GUI
 
 2010/03/15 - jgonzale
 	BUGFIX:		GUI is only compiled if Java Compiler is present. Previously it

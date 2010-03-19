@@ -50,8 +50,9 @@ import tools.*;
 */
 public class SimulatorCallData
 {
-  private final String DIMEMAS_PATH = System.getenv("DIMEMAS_HOME") + "/bin/Dimemas3";
+  // private final String DIMEMAS_PATH = System.getenv("DIMEMAS_HOME") + "/bin/Dimemas3";
   // private final String DIMEMAS_PATH = __PREFIX__+"/bin/Dimemas3";
+  private final String DIMEMAS_PATH = System.getProperty("DIMEMAS_HOME") + "/bin/Dimemas3";
 
   private final int OUTPUT_NONE = 0;
   private final int OUTPUT_PARAVER = 1;
