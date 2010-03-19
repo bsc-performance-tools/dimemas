@@ -71,9 +71,9 @@ AC_DEFUN([AX_PROG_JAVAC],[
 AC_REQUIRE([AC_EXEEXT])dnl
 
 if test "x$JAVAPREFIX" = x; then
-  test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, "gcj$EXEEXT -C" guavac$EXEEXT jikes$EXEEXT javac$EXEEXT)
+  test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, javac$EXEEXT)
 else
-  test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, "gcj$EXEEXT -C" guavac$EXEEXT jikes$EXEEXT javac$EXEEXT, $JAVAPREFIX)
+  test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, javac$EXEEXT, $JAVAPREFIX)
 fi
 
 if test "x$JAVAC" = x; then
