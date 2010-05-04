@@ -1400,6 +1400,12 @@ locate_first_cpu_burst (
           k,
           taskid);
   */
+
+  if (feof(file))
+  {
+    if (i == -1)
+      panic ("No actions on tracefile. Is it empty?");
+  }
   
   while (1)
   {

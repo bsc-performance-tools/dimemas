@@ -7,6 +7,10 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2010/05/04 - jgonzale
+	CHANGES:	Increase value of 'BUFSIZE' and 'YYMAXDEPTH' to improve
+				scalability. Should be revised
+
 2010/03/19 - jgonzale
 	CHANGES:    Only 'javac' is checked when looking for Java compilers
 	BUGFIX:		Solved used of 'getenv' into the Dimemas GUI

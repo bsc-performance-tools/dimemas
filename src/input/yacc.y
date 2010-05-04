@@ -46,7 +46,7 @@
 #include "check.h"
 
 #define YYSTYPE long
-#define YYMAXDEPTH 5000
+#define YYMAXDEPTH 30000
 
   static void     yyerror(char *);
   static int      free_memory(void);

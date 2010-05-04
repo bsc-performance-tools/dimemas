@@ -513,7 +513,7 @@
 
             
 /* Mida dels buffers utilitzats (basicament per llegir fitxers) */
-#define BUFSIZE 10000
+#define BUFSIZE 50000
 
 #define GLOBAL_OPS_COUNT 14
 
