@@ -1671,11 +1671,11 @@ Paraver_trace_event(
  
   if ((translate) && ((tipus == BLOCK_BEGIN) || (tipus == BLOCK_END)))
   {
-    /* Pot ser un block MPI o block de l'usuari */
+    /* Pot ser un block MPI o block de l'usuari 
     if ((valor >= 1) && (valor <= 128))
     {
       /* Es el començament o final d'un block MPI */
-      /* S'assigna el valor i el tipus que correspon */
+      /* S'assigna el valor i el tipus que correspon 
       BLOCK_TRF2PRV(valor, tipus_final, valor_final);
       if (tipus == BLOCK_END)
       {
@@ -1685,12 +1685,22 @@ Paraver_trace_event(
     else
     {
       /* Es el començament o final d'un block d'usuari */
-      /* S'assigna el valor i el tipus que correspon */
+      /* S'assigna el valor i el tipus que correspon 
       BLOCK_TRF2PRV(valor, tipus_final, valor_final);
       if (tipus == BLOCK_END)
       {
         valor_final = 0;
       }
+    }
+    */
+    /* Now we use the function instead of the macro 
+    BLOCK_TRF2PRV(valor, tipus_final, valor_final); */
+      
+    Block_Dimemas2Paraver_TypeAndValue(valor, &tipus_final, &valor_final);
+    
+    if (tipus == BLOCK_END)
+    {
+      valor_final=0;
     }
   }
   else

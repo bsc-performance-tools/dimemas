@@ -7,6 +7,10 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2010/05/11 - jgonzale
+	CHANGES:	Cluster blocks are now translated coherently when generating
+				Paraver trace
+
 2010/05/04 - jgonzale
 	CHANGES:	Increase value of 'BUFSIZE' and 'YYMAXDEPTH' to improve
 				scalability. Should be revised

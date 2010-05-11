@@ -295,7 +295,7 @@ int MakeParaverPCF(const char *nom)
   {
 #ifndef PUT_ALL_VALUES
     /* Es recorren tots els possibles grups de blocs */
-    for (i = 0; i<NUM_BLOCK_GROUPS; i++)
+    for (i = 0; i < NUM_BLOCK_GROUPS; i++)
     {
       /* Es posa la capc,alera d'aquest tipus */
       fprintf(
@@ -304,18 +304,19 @@ int MakeParaverPCF(const char *nom)
         PRV_BLOCK_TYPE(i),
         PRV_BLOCK_LABEL(i)
       );
+
       /* S'afegeixen com a valors tots els blocs utilitzats d'aquest grup */
       for (
-        mod=(struct t_module *)head_queue(&ptask->Modules);
-        mod!=(struct t_module *) 0;
-        mod=(struct t_module *)next_queue(&ptask->Modules)
+        mod  = (struct t_module *)head_queue(&ptask->Modules);
+        mod != (struct t_module *) 0;
+        mod  = (struct t_module *)next_queue(&ptask->Modules)
       )
       {
         if (
-          (mod->activity_name!=NULL) &&
-          (mod->block_name!=NULL) &&
+          (mod->activity_name != NULL) &&
+          (mod->block_name    != NULL) &&
           (mod->used) &&
-          (BLOCK_TRF2PRV_TYPE(mod->identificator)==PRV_BLOCK_TYPE(i))
+          (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i))
         )
         {
           /* Es un block correctament definit i que ha estat utilitzat */
@@ -329,7 +330,7 @@ int MakeParaverPCF(const char *nom)
           fprintf(
             fd,
             "%d\t%s\n",
-            BLOCK_TRF2PRV_VALUE(mod->identificator),
+            Block_Dimemas2Paraver_Value(mod->identificator),
             mod->block_name
           );
         }
