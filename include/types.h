@@ -512,6 +512,10 @@ struct t_communicator
   struct t_queue machines_threads;     /* One thread from each machine used */
   struct t_queue m_threads_with_links; /* Els anteriors que ja tenen links 
                                         * reservats */
+
+  struct t_thread* current_root;       /* Root thread of the 'in-flight' 
+                                          operation */
+  t_boolean in_flight_op;              /* True when simulating an operation */
 };
 
 

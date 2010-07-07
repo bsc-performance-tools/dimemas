@@ -1164,21 +1164,21 @@ reload_new_Ptask (struct t_Ptask *Ptask)
   /* Putting and initial event in every Ptask simulation */
 
   for (task  = (struct t_task *) head_queue (&(Ptask->tasks));
-         task != T_NIL;
-         task  = (struct t_task *) next_queue (&(Ptask->tasks)))
+       task != T_NIL;
+       task  = (struct t_task *) next_queue (&(Ptask->tasks)))
   {
 
-         thread = (struct t_thread *) head_queue (&(task->threads));
+    thread = (struct t_thread *) head_queue (&(task->threads));
 
-         cpu = get_cpu_of_thread(thread);
+    cpu = get_cpu_of_thread(thread);
 
-         Paraver_event (cpu->unique_number,
-                    Ptask->Ptaskid,
-                    task->taskid,
-                    thread->threadid,
-                    current_time,
-                    (long long int)40000000,
-                    (long long int)Ptask->n_rerun);
+    Paraver_event (cpu->unique_number,
+                  Ptask->Ptaskid,
+                  task->taskid,
+                  thread->threadid,
+                  current_time,
+                  (long long int)40000000,
+                  (long long int)Ptask->n_rerun);
 
   }
 
@@ -1920,8 +1920,6 @@ void MAIN_TEST_print_communicator(struct t_communicator* comm) {
   }
   printf("\n");
 }
-
-
 
 
 void

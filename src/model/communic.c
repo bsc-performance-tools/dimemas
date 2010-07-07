@@ -4586,7 +4586,7 @@ global_op_get_all_in_links (struct t_thread *thread)
   )
   {}
 
-  /* Search the root task */
+  /* Search the root task 
   root_task =
     from_rank_to_taskid (communicator, action->desc.global_op.root_rank);
 
@@ -4607,6 +4607,11 @@ global_op_get_all_in_links (struct t_thread *thread)
     panic("Unable to locate root %d for global operation\n", root_task);
     exit(1);
   }
+  */
+
+  /* JGG (07/07/2010): New way to manage root thread */
+  others = communicator->current_root;
+  
   /* NO ES TREU el thread de root de la cua. Els tracto tots igual! */
 
   /* S'inicia l'operacio col.lectiva !! */
@@ -5473,6 +5478,9 @@ close_global_communication(struct t_thread *thread)
     );
   }
 
+  communicator->current_root = TH_NIL;
+  communicator->in_flight_op = FALSE;
+  
   glop_id = action->desc.global_op.glop_id;
   glop    = (struct t_global_op_definition *)
             query_prio_queue(&Global_op, (t_priority)glop_id);
@@ -5621,6 +5629,7 @@ from_rank_to_taskid (struct t_communicator *comm, int root_rank)
   int *root_task;
   int  i;
 
+  /* TEST: Root_Rank is the Root Task ID 
   root_task = (int *)head_queue(&comm->global_ranks);
 
   i = 0;
@@ -5638,6 +5647,8 @@ from_rank_to_taskid (struct t_communicator *comm, int root_rank)
     i++;
   }
   return (*root_task);
+  */
+  return root_rank;
 }
 
 
@@ -5704,23 +5715,44 @@ GLOBAL_operation (
   {
     PRINT_TIMER (current_time);
     printf (
-      ": GLOBAL_operation P%02d T%02d (t%02d) Starting %s\n",
+      ": GLOBAL_operation P%02d T%02d (t%02d) Starting %s (Root = %d)\n",
       IDENTIFIERS (thread),
-      glop->name
+      glop->name,
+      root_rank
     );
+  }
+
+  if (communicator->in_flight_op != TRUE)
+  {
+    communicator->in_flight_op = TRUE;
+  }
+
+  /* JGG (07/07/2010): New way to choose the root */
+  if (root_rank == 1)
+  {
+    communicator->current_root = thread;
+
+    if (debug&D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": GLOBAL_operation P%02d T%02d (t%02d) is the root\n",
+        IDENTIFIERS (thread)
+      );
+    }
   }
 
   Total_threads_involved = count_queue(&communicator->global_ranks);
 
   /* FEC: Debugant! */
-/*
+
   printf(
     "El comid de l'operacio global es %d, te %d threads i %d estan bloquejats\n",
     comm_id,
     Total_threads_involved,
     count_queue(&communicator->threads)
   );
-*/
+
   ASS_ALL_TIMER(thread->collective_timers.arrive_to_collective, current_time);
 
   if (Total_threads_involved != count_queue(&communicator->threads)+1)
@@ -5744,7 +5776,7 @@ GLOBAL_operation (
     {
       PRINT_TIMER (current_time);
       printf (
-        ": GLOBAL_operation P%02d T%02d (t%02d) Blocked on '%s' (%d: %dw / %dT)\n",
+        ": GLOBAL_operation P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
         IDENTIFIERS (thread),
         glop->name,
         comm_id,
@@ -5761,7 +5793,7 @@ GLOBAL_operation (
   {
     PRINT_TIMER (current_time);
     printf (
-      ": GLOBAL_operation P%02d T%02d (t%02d) Initiate '%s' (%d: %dT)\n",
+      ": GLOBAL_operation P%02d T%02d (t%02d) Initiate '%s' (Comm.%d: %dT)\n",
       IDENTIFIERS (thread),
       glop->name,
       comm_id,
@@ -5800,11 +5832,12 @@ GLOBAL_operation (
     others->last_paraver = current_time;
   }
 
-  /* Search the root task */
-  inFIFO_queue (&communicator->threads, (char *)thread);
+  
+  /*
+  inFIFO_queue (&communicator->threads, (char*)thread);
   root_task = from_rank_to_taskid (communicator, root_rank);
 
-  /* Es busca el thread de la root task */
+  /* Es busca el thread de la root task 
   for (
     others  = (struct t_thread *)head_queue(&communicator->threads);
     others != TH_NIL;
@@ -5822,8 +5855,39 @@ GLOBAL_operation (
     panic("Unable to locate root %d for global operation\n", root_task);
     exit(1);
   }
-  /* El thread 'others' pertany a la 'root_task' */
+  /* El thread 'others' pertany a la 'root_task' 
   root_th = others;
+ */
+
+  /* Insert current thread to the communicator list */
+  inFIFO_queue (&communicator->threads, (char*)thread);
+
+  /* Search the root task */
+  if (communicator->current_root == TH_NIL)
+  {
+    /* Ja jan arribat tots els threads a aquest punt */
+    if (debug&D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": GLOBAL_operation P%02d T%02d (t%02d) Root-less operation. Current thread will be the root\n",
+        IDENTIFIERS (thread),
+        glop->name,
+        comm_id,
+        Total_threads_involved
+      );
+    }
+
+    communicator->current_root = thread;
+    
+    root_th = thread;
+    others  = thread;
+  }
+  else
+  {
+    root_th = communicator->current_root;
+    others  = communicator->current_root;
+  }
 
 
   /* JGG (08/11/2004): Comportamiento de una operación global según el

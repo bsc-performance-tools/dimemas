@@ -184,11 +184,13 @@ TASK_end()
       Ptask->file = NULL;
     }
     
-    for (communicator=(struct t_communicator *)head_queue(&Ptask->Communicator);
-         communicator!=(struct t_communicator *)0;
-         communicator=(struct t_communicator *)next_queue(&Ptask->Communicator))
+    for (communicator  = (struct t_communicator *)head_queue(&Ptask->Communicator);
+         communicator != (struct t_communicator *)0;
+         communicator  = (struct t_communicator *)next_queue(&Ptask->Communicator))
     {
-      if (count_queue(&communicator->threads)!=0)
+      /* JGG (07/07/2010): Easy way to check if it is a global operation in flight */
+      /* if (count_queue(&communicator->threads)!=0) */
+      if (communicator->in_flight_op == TRUE)
       {
         for(thread  = (struct t_thread *)head_queue(&communicator->threads);
             thread != (struct t_thread *)0;
@@ -322,6 +324,8 @@ new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
   create_queue (&comm->threads);
   create_queue (&comm->machines_threads);
   create_queue (&comm->m_threads_with_links);
+  comm->current_root = TH_NIL;
+  comm->in_flight_op = FALSE;
   
   insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);
 }
