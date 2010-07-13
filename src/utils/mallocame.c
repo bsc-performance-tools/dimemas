@@ -47,7 +47,7 @@ char *mallocame(int s)
 {
   char *adreca;
   
-  adreca=(char*)malloc(s);
+  adreca = (char*) malloc(s);
   if (adreca==NULL)
   {
     fprintf(stderr,"Not enough MEMORY!!!!\n");

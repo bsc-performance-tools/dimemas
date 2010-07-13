@@ -183,7 +183,7 @@ static char *pcf_tail[PCF_TAIL_LINES]={
 int MakeParaverPCF(const char *nom)
 {
   int                             i;
-  FILE                            *fd;
+  FILE                           *fd;
   struct t_Ptask                 *ptask;
   struct t_module                *mod;
   char                           *pcf_name;
@@ -287,12 +287,11 @@ int MakeParaverPCF(const char *nom)
 #endif
   
   /* S'escriuen els events que ha definit l'usuari manualment */
-  for(
-    ptask  = (struct t_Ptask *)head_queue(&Ptask_queue);
-    ptask != P_NIL;
-    ptask  = (struct t_Ptask *)next_queue(&Ptask_queue)
-  )
+  for(ptask  = (struct t_Ptask *) head_queue(&Ptask_queue);
+      ptask != P_NIL;
+      ptask  = (struct t_Ptask *) next_queue(&Ptask_queue))
   {
+
 #ifndef PUT_ALL_VALUES
     /* Es recorren tots els possibles grups de blocs */
     for (i = 0; i < NUM_BLOCK_GROUPS; i++)
@@ -306,19 +305,23 @@ int MakeParaverPCF(const char *nom)
       );
 
       /* S'afegeixen com a valors tots els blocs utilitzats d'aquest grup */
-      for (
-        mod  = (struct t_module *)head_queue(&ptask->Modules);
-        mod != (struct t_module *) 0;
-        mod  = (struct t_module *)next_queue(&ptask->Modules)
+      for(mod  = (struct t_module*) head_queue (&ptask->Modules);
+          mod != (struct t_module*) 0;
+          mod  = (struct t_module*) next_queue (&ptask->Modules)
       )
       {
-        if (
-          (mod->activity_name != NULL) &&
-          (mod->block_name    != NULL) &&
-          (mod->used) &&
-          (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i))
+        /* DEBUG 
+        printf ("Block = %d Event Type = %d PRV Block Type = %d\n",
+                i,
+                Block_Dimemas2Paraver_Type(mod->identificator),
+                PRV_BLOCK_TYPE(i)); */
+                
+        if ((mod->activity_name != NULL) && (mod->block_name    != NULL) &&
+            (mod->used) &&
+            (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i))
         )
         {
+          char* local_block_name;
           /* Es un block correctament definit i que ha estat utilitzat */
           /* No es mostra l'activitat per tal que la trac,a .prv quedi 
            * exactament com si hagues estat creada directament amb el mpitrace.
@@ -327,22 +330,22 @@ int MakeParaverPCF(const char *nom)
                   mod->activity_name,
                   mod->block_name);
           */
-          fprintf(
-            fd,
-            "%d\t%s\n",
-            Block_Dimemas2Paraver_Value(mod->identificator),
-            mod->block_name
-          );
+          
+          fprintf(fd,
+                  "%lld\t%s \n",
+                  Block_Dimemas2Paraver_Value(mod->identificator),
+                  mod->block_name);
         }
       }
       fprintf(fd,"\n\n");
     }
 #endif
+
     /* Es recorren tots els possibles tipus d'user event */
     for(
-      evinfo  = (struct t_user_event_info *)head_queue(&ptask->UserEventsInfo);
-      evinfo != (struct t_user_event_info *)0;
-      evinfo  = (struct t_user_event_info *)next_queue(&ptask->UserEventsInfo)
+      evinfo  = (struct t_user_event_info *) head_queue(&ptask->UserEventsInfo);
+      evinfo != (struct t_user_event_info *) 0;
+      evinfo  = (struct t_user_event_info *) next_queue(&ptask->UserEventsInfo)
     )
     {
       /* Es posa la capc,alera d'aquest tipus */
@@ -356,15 +359,13 @@ int MakeParaverPCF(const char *nom)
       
       /* Es recorren tots els possibles valors d'aquest tipus */
       for(
-        evinfo_val  =
-          (struct t_user_event_value_info *)head_queue(&evinfo->values);
-        evinfo_val != (struct t_user_event_value_info *)0;
-        evinfo_val  = 
-          (struct t_user_event_value_info *)next_queue(&evinfo->values)
+        evinfo_val  = (struct t_user_event_value_info *) head_queue(&evinfo->values);
+        evinfo_val != (struct t_user_event_value_info *) 0;
+        evinfo_val  = (struct t_user_event_value_info *) next_queue(&evinfo->values)
       )
       {
         /* Es posa l'etiqueta d'aquest valor */
-        fprintf(fd, "%d\t%s\n", evinfo_val->value, evinfo_val->name);      
+        fprintf(fd, "%d\t%s\n", evinfo_val->value, evinfo_val->name);
       }
       fprintf(fd,"\n\n");
     }
@@ -378,8 +379,10 @@ int MakeParaverPCF(const char *nom)
   }
 
   /* Es tanca el fitxer i es retorna que ha anat bé */
+  fflush(fd);
   fclose(fd);
   chmod (pcf_name, 0600);
   free(pcf_name);
+
   return(0);
 }

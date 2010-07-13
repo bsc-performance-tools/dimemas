@@ -1316,44 +1316,67 @@ locate_first_cpu_burst_binary (FILE *file, int taskid)
 }
 
 void 
-module_name(
-  struct t_Ptask *Ptask,
-  int   block_id,
-  char *block_name,
-  char *activity_name,
-  int   src_file,
-  int   src_line
+module_name(struct t_Ptask *Ptask,
+            int             block_id,
+            char           *block_name,
+            char           *activity_name,
+            int             src_file,
+            int             src_line
 )
 {
   register struct t_module *mod;
     
   mod = 
-    (struct t_module*) query_prio_queue (&Ptask->Modules, (t_priority)block_id);
+    (struct t_module*) query_prio_queue (&Ptask->Modules, (t_priority) block_id);
   
-  if (mod==M_NIL)
+  if (mod == M_NIL)
   {
-    mod = (struct t_module *)mallocame (sizeof(struct t_module));
+      
+    mod = (struct t_module*) malloc (sizeof(struct t_module));
     mod->identificator = block_id;
     mod->ratio = 1.0;
-    mod->block_name = block_name;
+
+
+    mod->block_name    = block_name;
     mod->activity_name = activity_name;
-    mod->src_file = src_file;
-    mod->src_line = src_line;
-    mod->used=0; /* De moment no ha estat utilitzat */
-    insert_queue (&Ptask->Modules, (char *)mod, (t_priority) block_id);
+    
+    /*
+    mod->block_name    = (char*) malloc(strlen(block_name)+1);
+    strcpy(mod->block_name, block_name);
+    
+    mod->activity_name = (char*) malloc(strlen(activity_name)+1);
+    strcpy(mod->activity_name, activity_name); */
+    
+    mod->src_file      = src_file;
+    mod->src_line      = src_line;
+    mod->used          = 0; /* De moment no ha estat utilitzat */
+    
+    insert_queue (&Ptask->Modules, (char*) mod, (t_priority) block_id);
   }
   else
   {
-    if (mod->block_name!=(char *)0)
+    if (mod->block_name != (char*) 0)
     {
       printf ("Warning: redefinition of module %d\n",block_id);
     }
     else
     {
-      mod->block_name = block_name;
-      mod->activity_name = activity_name;
-      mod->src_file = src_file;
-      mod->src_line = src_line;
+      free(mod->block_name);
+      mod->block_name = strdup(block_name);
+      /*
+      mod->block_name    = (char*) malloc (strlen(block_name)+1);
+      strcpy(mod->block_name, block_name);
+      */
+
+      free(mod->activity_name);
+      mod->activity_name = strdup(activity_name);
+      /*
+      mod->activity_name = (char*) malloc (strlen(activity_name)+1);
+      strcpy(mod->activity_name, activity_name);
+      */
+      
+      mod->src_file      = src_file;
+      mod->src_line      = src_line;
     }
   }
 }
@@ -1484,10 +1507,8 @@ locate_first_cpu_burst (
     
     if (i == 5)
     {
-      bn = (char *)mallocame (strlen(block_name)+1);
-      strcpy (bn, block_name);
-      an = (char *)mallocame (strlen(activity_name)+1);
-      strcpy (an, activity_name);
+      bn = strdup(block_name);
+      an = strdup(activity_name);
       module_name(Ptask, block_id, bn, an, src_file, src_line);
     }
     }
@@ -2069,12 +2090,12 @@ module_new (struct t_Ptask *Ptask, int identificator, double ratio)
   {
     mod = (struct t_module *)mallocame (sizeof(struct t_module));
     mod->identificator = identificator;
-    mod->ratio = ratio;
-    mod->block_name = (char *)0;
+    mod->ratio         = ratio;
+    mod->block_name    = (char *)0;
     mod->activity_name = (char *)0;
-    mod->src_file = -1;
-    mod->src_line = -1;
-    mod->used=0; /* De moment no ha estat utilitzat */
+    mod->src_file      = -1;
+    mod->src_line      = -1;
+    mod->used          =  0; /* De moment no ha estat utilitzat */
     insert_queue (&Ptask->Modules, (char *)mod, (t_priority) identificator);
   }
   else
@@ -2085,27 +2106,27 @@ module_new (struct t_Ptask *Ptask, int identificator, double ratio)
   }
 }
 
-
 void
 module_entrance (struct t_Ptask *Ptask, int tid, int thid, int identificator)
 {
   register struct t_thread *thread;
   register struct t_module *mod;
-  
+
+  /*
   if (debug&D_TASK)
   {
     PRINT_TIMER (current_time);
     printf (": Going into module: %d for P%d T%d th%d\n",identificator,
             Ptask->Ptaskid, tid, thid);
   }
+  */
 
   thread = locate_thread (Ptask, tid, thid);
-  mod = (struct t_module*) query_prio_queue(&Ptask->Modules, 
-                                            (t_priority)identificator);
+  mod = (struct t_module*) query_prio_queue(&Ptask->Modules, (t_priority) identificator);
   
-  if (mod==M_NIL)
+  if (mod == M_NIL)
   {
-    mod = (struct t_module *)mallocame (sizeof(struct t_module));
+    mod = (struct t_module *) mallocame (sizeof(struct t_module));
     mod->identificator = identificator;
     mod->ratio = 1.0;
     mod->block_name = (char *)0;
@@ -2114,8 +2135,20 @@ module_entrance (struct t_Ptask *Ptask, int tid, int thid, int identificator)
     mod->src_line = -1;
     insert_queue (&Ptask->Modules, (char *)mod, (t_priority) identificator);
   }
-  mod->used=1; /* Ara ja ha estat utilitzat! */
+
+  mod->used = 1; /* Ara ja ha estat utilitzat! */
   inLIFO_queue (&(thread->modules), (char *)mod);
+
+  if (debug&D_TASK)
+  {
+    PRINT_TIMER (current_time);
+    printf (": Going into module: %d (%s) for P%d T%d th%d\n",
+            identificator,
+            mod->block_name,
+            Ptask->Ptaskid,
+            tid,
+            thid);
+  }
 }
 
 int
@@ -2129,20 +2162,14 @@ module_exit (struct t_Ptask *Ptask, int tid, int thid, int identificator)
   struct t_node *node;
   float fo;
   struct t_machine *machine;
-
-  if (debug&D_TASK)
-  {
-    PRINT_TIMER (current_time);
-    printf (": Going out module: %d for P%d T%d th%d\n",identificator,
-            Ptask->Ptaskid, tid, thid);
-  }
   
   thread = locate_thread (Ptask, tid, thid);
   
-  #ifdef BLOCK_SPECIAL
-  if (((identificator==3) ||(identificator==6) || (identificator==7) || 
-      (identificator==13)|| (identificator==4)) &&
-      (thread->global_op_done==FALSE))
+#ifdef BLOCK_SPECIAL
+  if (((identificator ==  3) || (identificator == 6) || (identificator == 7) ||
+       (identificator == 13) || (identificator == 4))
+      &&
+      (thread->global_op_done == FALSE))
   {
     if (count_queue(&(thread->task->Ptask->tasks)) ==
         1 + count_queue (&(thread->task->Ptask->global_operation)))
@@ -2170,15 +2197,17 @@ module_exit (struct t_Ptask *Ptask, int tid, int thid, int identificator)
     {
       inFIFO_queue (&(thread->task->Ptask->global_operation), (char *)thread);
       thread->global_op_done = TRUE;
-      return(1);
+      return (1);
     }
   }
   else
   {
     thread->global_op_done = FALSE;
-    #endif
-    mod = (struct t_module *)outFIFO_queue(&(thread->modules));
-    if (mod==M_NIL)
+#endif
+
+    mod = (struct t_module *) outFIFO_queue(&(thread->modules));
+
+    if (mod == M_NIL)
     {
       /*
        * FEC: Converteixo aquest panic en un Warning perque si la trac,a s'ha 
@@ -2192,14 +2221,38 @@ module_exit (struct t_Ptask *Ptask, int tid, int thid, int identificator)
               "WARNING: Exiting module %d, but no information recorderd P%d T%d th%d\n",
               identificator,IDENTIFIERS(thread));
     }
-    else if (mod->identificator!=identificator)
+    else if (mod->identificator != identificator)
     {
       panic("Exiting module %d, but this is not the current one (%d) for P%d T%d th%d\n",
-            identificator, mod->identificator, IDENTIFIERS(thread));  
+            identificator, mod->identificator, IDENTIFIERS(thread));
     }
-  #ifdef BLOCK_SPECIAL  
+#ifdef BLOCK_SPECIAL
   }
-  #endif
+#endif
+
+  if (debug&D_TASK)
+  {
+    if (mod != M_NIL)
+    {
+      PRINT_TIMER (current_time);
+      printf (": Going out module: %d (%s) for P%d T%d th%d\n",
+              identificator,
+              mod->block_name,
+              Ptask->Ptaskid,
+              tid,
+              thid);
+    }
+    else
+    {
+      PRINT_TIMER (current_time);
+      printf (": Going out module: %d (Unknown) for P%d T%d th%d\n",
+              identificator,
+              Ptask->Ptaskid,
+              tid,
+              thid);
+    }
+  }
+  
   return(0);
 }
 
@@ -2208,8 +2261,10 @@ recompute_work_upon_modules(struct t_thread *thread, struct t_action *action)
 {
   register struct t_module *mod;
    
-  if (action->action!=WORK)
+  if (action->action != WORK)
+  {
     panic("Improper call to recompute_work_upon_modules\n");
+  }
    
   mod = (struct t_module*) head_queue(&(thread->modules));
   

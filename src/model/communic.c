@@ -5744,7 +5744,7 @@ GLOBAL_operation (
 
   Total_threads_involved = count_queue(&communicator->global_ranks);
 
-  /* FEC: Debugant! */
+  /* FEC: Debugant!
 
   printf(
     "El comid de l'operacio global es %d, te %d threads i %d estan bloquejats\n",
@@ -5752,6 +5752,7 @@ GLOBAL_operation (
     Total_threads_involved,
     count_queue(&communicator->threads)
   );
+  */
 
   ASS_ALL_TIMER(thread->collective_timers.arrive_to_collective, current_time);
 
@@ -5815,11 +5816,9 @@ GLOBAL_operation (
 
   ASS_ALL_TIMER(thread->collective_timers.sync_time, current_time);
 
-  for (
-    others  = (struct t_thread *)head_queue(&communicator->threads);
-    others != TH_NIL;
-    others  = (struct t_thread *)next_queue(&communicator->threads)
-  )
+  for (others  = (struct t_thread*)head_queue(&communicator->threads);
+       others != TH_NIL;
+       others  = (struct t_thread*)next_queue(&communicator->threads))
   {
     ASS_ALL_TIMER(others->collective_timers.sync_time, current_time);
     Paraver_thread_wait (
@@ -5831,7 +5830,6 @@ GLOBAL_operation (
     );
     others->last_paraver = current_time;
   }
-
   
   /*
   inFIFO_queue (&communicator->threads, (char*)thread);
@@ -5907,12 +5905,10 @@ GLOBAL_operation (
   /* S'obte la maquina corresponent al thread de root */
   node_usat     = get_node_of_thread (others);
   maquina_usada = node_usat->machine;
-  /* S'afegeix root a la llista de maquines utilitzades */
-  insert_queue(
-    &communicator->machines_threads,
-    (char *)others,
-    maquina_usada->id
-  );
+
+/* S'afegeix root a la llista de maquines utilitzades */
+  insert_queue(&communicator->machines_threads, (char*)others, maquina_usada->id);
+
   /* Es treu de la llista de threads per poder detectar quan esta tot reservat*/
   extract_from_queue (&communicator->threads, (char *)others);
 
@@ -5924,9 +5920,9 @@ GLOBAL_operation (
          others!=(struct t_thread *)0;
          others=(struct t_thread *)next_queue(&communicator->threads))
    */
-  others = (struct t_thread *) head_queue(&communicator->threads);
+  others = (struct t_thread*) head_queue(&communicator->threads);
 
-  for (i=0; i < (Total_threads_involved - 1); i++)
+  for (i = 0; i < (Total_threads_involved - 1); i++)
   {
     /* S'obte la maquina corresponent a aquest thread */
     node_usat     = get_node_of_thread (others);
@@ -5939,29 +5935,26 @@ GLOBAL_operation (
     {
       /* Es una maquina nova */
       /* S'afegeix el thread a la llista de maquines utilitzades */
-      insert_queue(
-        &communicator->machines_threads,
-        (char *)others,
-        maquina_usada->id
-      );
+      insert_queue(&communicator->machines_threads,
+                  (char *)others,
+                  maquina_usada->id);
       /* Es treu de la llista de threads per poder detectar quan esta tot reservat */
       extract_from_queue (&communicator->threads, (char *)others);
     }
-    others = (struct t_thread *) next_queue(&communicator->threads);
+    others = (struct t_thread*) next_queue(&communicator->threads);
+    
     if ( (others == NULL) && (i < (Total_threads_involved - 2)) )
     {
       /* En aquest cas es deu haver extret el primer element de la llista,
        * pero encara hauria de quedar algun thread. Per tant, agafo el
        * primer que queda. */
-      others = (struct t_thread *) head_queue(&communicator->threads);
+      others = (struct t_thread*) head_queue(&communicator->threads);
     }
   }
   /* Un thread de cada maquina reserva els recursos */
-  for(
-    others  =(struct t_thread *)head_queue(&communicator->machines_threads);
-    others != TH_NIL;
-    others  = (struct t_thread *)next_queue(&communicator->machines_threads)
-  )
+  for(others  = (struct t_thread*) head_queue(&communicator->machines_threads);
+      others != TH_NIL;
+      others  = (struct t_thread*) next_queue(&communicator->machines_threads))
   {
     /* Aquest thread reserva els recursos necessaris de la seva maquina */
     /* Aixo no es podia anar fent directament al bucle anterior perque

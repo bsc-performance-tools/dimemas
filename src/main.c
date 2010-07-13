@@ -496,7 +496,7 @@ main (int argc, char *argv[])
   t_boolean Pallas_output = TRUE;
   struct t_machine  *machine;
   FILE              *special_cfg;
-  int               venusconn = "";
+  int               venusconn = 0;
 
 
   ASS_TIMER (current_time, 0);
@@ -573,6 +573,9 @@ main (int argc, char *argv[])
               break;
             case 'p':
               debug |= D_PRV;
+              break;
+            case 't':
+              debug |= D_TASK;
               break;
             default:
               fprintf (stderr, USAGE, argv[0]);
@@ -970,7 +973,7 @@ while (top_event (&Event_queue) != E_NIL)
   calculate_execution_end_time();
 
   /* Statistical results */
-  if (Critical_Path_Analysis==FALSE)
+  if (Critical_Path_Analysis == FALSE)
   {
     show_statistics (Pallas_output);
   }
@@ -994,7 +997,7 @@ while (top_event (&Event_queue) != E_NIL)
   /* Free reserved pointers */
   free_all_reserved_pointers();
   
-  malloc_end ();
+  malloc_end();
   fclose (salida_datos);
 
   /* Change output tabs per spaces */

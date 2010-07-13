@@ -7,6 +7,10 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2010/07/13 - jgonzale
+	BUGFIX:		Solved an error in the PCF generation, caused by the macro
+				change. It generated 'null' event value names
+
 2010/07/07 - jgonzale
 	BUGFIX:		Solved a *big* issue regarding to the use of communicators
 				when simulating collective operations. The 'global OP' records

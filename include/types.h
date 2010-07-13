@@ -103,11 +103,11 @@ struct t_module
 {
   int    identificator;
   double ratio;
-  char  *block_name;
-  char  *activity_name;
   int    src_file;
   int    src_line;
   int    used;     /* Indica si el bloc ha estat utilitzat (a part de definit) */
+  char  *block_name;
+  char  *activity_name;
 };
 
 struct t_filed

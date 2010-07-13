@@ -841,7 +841,7 @@ next_one:
                &taskid, &thid, &fd);
   if (i == 3)
   {
-    tmp_action->action = FS;
+    tmp_action->action                        = FS;
     (tmp_action->desc).fs_op.which_fsop       = CLOSE;
     (tmp_action->desc).fs_op.fs_o.fs_close.fd = fd;
     *tid = taskid + 1;
@@ -856,7 +856,7 @@ next_one:
                &taskid, &thid, &fd, &re );
   if (i == 4)
   {
-    tmp_action->action = FS;
+    tmp_action->action                          = FS;
     (tmp_action->desc).fs_op.which_fsop         = DUP;
     (tmp_action->desc).fs_op.fs_o.fs_dup.old_fd = fd;
     (tmp_action->desc).fs_op.fs_o.fs_dup.new_fd = re;
@@ -876,7 +876,8 @@ next_one:
     (tmp_action->desc).fs_op.which_fsop = UNLINK;
     strncpy ((tmp_action->desc).fs_op.fs_o.fs_unlink.filename, new, FILEMAX);
     (tmp_action->desc).fs_op.fs_o.fs_unlink.filename[FILEMAX] = (char) 0;
-    *tid = taskid + 1;
+    
+    *tid   = taskid + 1;
     *th_id = thid + 1;
     return (tmp_action);
   }
@@ -976,23 +977,21 @@ is_it_new_format()
   while(strlen(fgets(buffer, 32, tracefile)) == 1);
 
   if(strstr(buffer, "#DIMEMAS:") != NULL)
-	new_format = TRUE;
+  {
+    new_format = TRUE;
+  }
   else
-	new_format = FALSE;
+  {
+    new_format = FALSE;
+  }
 
 
   fclose(tracefile);
   return new_format;
 }
 
-
-
-
 static void
-read_trace_file_for_Ptask (
-  struct t_Ptask *Ptask,
-  char           *TraceFile
-)
+read_trace_file_for_Ptask (struct t_Ptask *Ptask, char *TraceFile)
 {
   current_file = TraceFile;
 
@@ -1038,7 +1037,7 @@ read_trace_file_for_Ptask (
   {
     sddf_load_initial_work_to_threads (Ptask);
   }
-  else if (gzip_files)/* gzip_files */
+  else if (gzip_files) /* gzip_files */
   {
     /* GZIP load inital work */
     panic("Compressed tracefiles not supported yet!\n");
@@ -1111,8 +1110,6 @@ reload_new_Ptask (struct t_Ptask *Ptask)
   struct t_thread *thread;
   struct t_cpu    *cpu;
 
-
-  
   for (P  = (struct t_Ptask *) head_queue (&Ptask_queue);
        P != P_NIL;
        P  = (struct t_Ptask *) next_queue (&Ptask_queue))
@@ -1162,7 +1159,6 @@ reload_new_Ptask (struct t_Ptask *Ptask)
 
 
   /* Putting and initial event in every Ptask simulation */
-
   for (task  = (struct t_task *) head_queue (&(Ptask->tasks));
        task != T_NIL;
        task  = (struct t_task *) next_queue (&(Ptask->tasks)))
@@ -1189,7 +1185,6 @@ reload_new_Ptask (struct t_Ptask *Ptask)
 void
 init_simul_char()
 {
-
   /* Assign default values */
   sim_char.number_machines               = 1;
   sim_char.general_net.name              = (char *)0;
@@ -1450,7 +1445,7 @@ void calculate_execution_end_time()
 /*******************************************************************************
  * MACROS PARA LA FUNCION 'show_individual_statistics_pallas'
  ******************************************************************************/
-#define SP_TOTAL_INDEX 0   
+#define SP_TOTAL_INDEX 0
 #define SP_AVG_INDEX   1
 #define SP_MAX_INDEX   2
 #define SP_MIN_INDEX   3
@@ -1596,28 +1591,25 @@ show_individual_statistics_pallas (struct t_Ptask *Ptask)
      }
   }
 
-
-
   /* Estadistiques per iteracio */
   if(Ptask->n_rerun > 0)
   {
-     fprintf(salida_datos, "\n**** Statistics by iteration ****\n\n");
-     for(n_rerun = 0; n_rerun <= Ptask->n_rerun; n_rerun++)
-     {
-             fprintf(salida_datos,"Execution time Iteration %d:\t", n_rerun);
+    fprintf(salida_datos, "\n**** Statistics by iteration ****\n\n");
+    for(n_rerun = 0; n_rerun <= Ptask->n_rerun; n_rerun++)
+    {
+      fprintf(salida_datos,"Execution time Iteration %d:\t", n_rerun);
 
-             FPRINT_TIMER (salida_datos, (acc_Ptask_rerun[n_rerun]->final_time - acc_Ptask_rerun[n_rerun]->initial_time));
+      FPRINT_TIMER (salida_datos, (acc_Ptask_rerun[n_rerun]->final_time - acc_Ptask_rerun[n_rerun]->initial_time));
 
-             TIMER_TO_FLOAT(acc_Ptask_rerun[n_rerun]->cpu_time, x);
-             TIMER_TO_FLOAT((acc_Ptask_rerun[n_rerun]->final_time - acc_Ptask_rerun[n_rerun]->initial_time), y);
-             fprintf (salida_datos,"\nSpeedup Iteration %d:\t\t%.2f \n",n_rerun, x/y);
+      TIMER_TO_FLOAT(acc_Ptask_rerun[n_rerun]->cpu_time, x);
+      TIMER_TO_FLOAT((acc_Ptask_rerun[n_rerun]->final_time - acc_Ptask_rerun[n_rerun]->initial_time), y);
+      fprintf (salida_datos,"\nSpeedup Iteration %d:\t\t%.2f \n",n_rerun, x/y);
 
-             fprintf (salida_datos,"CPU Time Iteration %d:\t\t", n_rerun);
-             FPRINT_TIMER (salida_datos, acc_Ptask_rerun[n_rerun]->cpu_time);
-             fprintf (salida_datos,"\n\n");
+      fprintf (salida_datos,"CPU Time Iteration %d:\t\t", n_rerun);
+      FPRINT_TIMER (salida_datos, acc_Ptask_rerun[n_rerun]->cpu_time);
+      fprintf (salida_datos,"\n\n");
      }
   }
-
 
 
   /* Estadistiques totals */
@@ -1900,7 +1892,9 @@ Ptasks_init()
   }
 }
 
-void MAIN_TEST_print_communicator(struct t_communicator* comm) {
+void MAIN_TEST_print_communicator(struct t_communicator* comm)
+{
+
   char* item = NULL;
   int* task = NULL;
   struct t_queue* rank = NULL;
@@ -1918,9 +1912,9 @@ void MAIN_TEST_print_communicator(struct t_communicator* comm) {
     
     item = next_queue(rank);
   }
+  
   printf("\n");
 }
-
 
 void
 get_next_action(struct t_thread *thread)
@@ -1950,28 +1944,32 @@ get_next_action(struct t_thread *thread)
   
   if (new_action->action == WORK)
   {
-    new_action->desc.compute.cpu_time *= 1e6; 
+    new_action->desc.compute.cpu_time *= 1e6;
+    
     if (PREEMP_enabled)
+    {
       new_action->desc.compute.cpu_time += PREEMP_overhead(thread->task);
-      {
-	  struct t_module* mod;
-	  t_priority identificator = 0;
-
-	  mod = (struct t_module*) query_prio_queue(&Ptask_current->Modules,
-						    (t_priority)identificator);
-	  if (mod==M_NIL)
-	  {
-	    mod = (struct t_module *)mallocame (sizeof(struct t_module));
-	    mod->identificator = identificator;
-	    mod->ratio = 1.0;
-	    mod->block_name = (char *)0;
-	    mod->activity_name = (char *)0;
-	    mod->src_file = -1;
-	    mod->src_line = -1;
-	    insert_queue (&Ptask_current->Modules, (char *)mod, (t_priority) identificator);
-	  }
-  	  inLIFO_queue (&(thread->modules), (char *)mod);
     }
+    
+    struct t_module* mod;
+    t_priority identificator = 0;
+
+    mod = (struct t_module*) query_prio_queue(&Ptask_current->Modules, (t_priority)identificator);
+
+    if (mod == M_NIL)
+    {
+      mod = (struct t_module*) mallocame (sizeof(struct t_module));
+
+      mod->identificator = identificator;
+      mod->ratio         = 1.0;
+      mod->block_name    = (char*)0;
+      mod->activity_name = (char*)0;
+      mod->src_file      = -1;
+      mod->src_line      = -1;
+      insert_queue (&Ptask_current->Modules, (char *)mod, (t_priority) identificator);
+    }
+    inLIFO_queue (&(thread->modules), (char *)mod);
+
     recompute_work_upon_modules(thread, new_action);
   }
   
@@ -2011,8 +2009,12 @@ get_next_action(struct t_thread *thread)
 void 
 get_next_action_wrapper(struct t_thread *th)
 {
-    if(new_trace_format)
-	get_next_action(th);
-    else
-	sddf_seek_next_action_to_thread (th);
+  if(new_trace_format)
+  {
+    get_next_action(th);
+  }
+  else
+  {
+    sddf_seek_next_action_to_thread (th);
+  }
 }

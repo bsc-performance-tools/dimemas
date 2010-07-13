@@ -260,20 +260,21 @@ Paraver_fini()
   ParaverTrace_MergeBinaryFiles (paraver_file, (long long) tmp1, &ph, &rh );
 
   /* S'allibera la memoria utilitzada */
-  for(
-    ptask  = (struct t_Ptask*) head_queue (&Ptask_queue);
-    ptask != P_NIL;
-    ptask = (struct t_Ptask *) next_queue (&Ptask_queue))
+  for(ptask  = (struct t_Ptask*) head_queue (&Ptask_queue);
+      ptask != P_NIL;
+      ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
     free(ph.appls[ptask->Ptaskid-1].nthreads);
     free(bin_handles[ptask->Ptaskid-1]);
   }
 
-  free(ph.appls);
-  free(bin_handles);
+  
   
   /* Es genera el fitxer .pcf corresponent */
   MakeParaverPCF(paraver_file);
+
+  free(ph.appls);
+  free(bin_handles);
 }
 
 void 

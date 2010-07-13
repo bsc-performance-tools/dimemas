@@ -628,10 +628,11 @@ next_op:
             
             if (action->desc.even.type == BLOCK_BEGIN)
             {
-              module_entrance (thread->task->Ptask, 
-                               thread->task->taskid, 
-                               thread->threadid, 
+              module_entrance (thread->task->Ptask,
+                               thread->task->taskid,
+                               thread->threadid,
                                action->desc.even.value);
+
               cpu = get_cpu_of_thread (thread);
               
               if (action->desc.even.value != IDLE_BLOCK)
@@ -649,12 +650,16 @@ next_op:
 
             if (action->desc.even.type == BLOCK_END)
             {
-              if (module_exit (thread->task->Ptask, 
-                               thread->task->taskid, 
-                               thread->threadid, 
+              if (module_exit (thread->task->Ptask,
+                               thread->task->taskid,
+                               thread->threadid,
                                action->desc.even.value))
+              {
                 break;
+              }
+              
               cpu = get_cpu_of_thread(thread);
+              
               if (action->desc.even.value != IDLE_BLOCK)
               {
                 Paraver_translate_event (cpu->unique_number,
@@ -671,8 +676,8 @@ next_op:
                              0);
               */
             }
-            if ((action->desc.even.type!=BLOCK_BEGIN) && 
-                (action->desc.even.type!=BLOCK_END))
+            if ((action->desc.even.type != BLOCK_BEGIN) && 
+                (action->desc.even.type != BLOCK_END))
             {
               cpu = get_cpu_of_thread(thread);
               

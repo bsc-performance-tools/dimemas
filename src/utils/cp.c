@@ -57,8 +57,8 @@ new_cp_node(struct t_thread *thread, int status)
   if (Critical_Path_Analysis==FALSE)
     return;
 
-  mod = (struct t_module *)head_queue(&(thread->modules));
-  if (mod==M_NIL)
+  mod = (struct t_module *) head_queue (&(thread->modules));
+  if (mod == M_NIL)
   {
     return;
   }
