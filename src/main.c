@@ -625,19 +625,19 @@ main (int argc, char *argv[])
           break;
 #ifdef VENUS_ENABLED
         case 'v':
-	  if (!strcmp(argv[j], "-venus")) {
-	    venus_enabled = 1;
-	    venusconn = "";
-	  }
-	  else if (!strcmp(argv[j], "-venusconn")) {
-	    venus_enabled = 1;
-	    j++;
-	    venusconn = strdup(argv[j]);
-	  }
-	  else {
-	    show_version (argv[0]);
-	    exit (0);
-	  }
+          if (!strcmp(argv[j], "-venus")) {
+            venus_enabled = 1;
+            venusconn = "";
+          }
+          else if (!strcmp(argv[j], "-venusconn")) {
+            venus_enabled = 1;
+            j++;
+            venusconn = strdup(argv[j]);
+          }
+          else {
+            show_version (argv[0]);
+            exit (0);
+          }
           break;
 #endif
         case 'i':

@@ -4624,19 +4624,17 @@ global_op_get_all_in_links (struct t_thread *thread)
  ** per una etapa d'una operacio col.lectiva.
  **************************************************************************/
 void
-calcula_fan(
-  t_micro bandw,    /* MBytes per segon */
-  int num_tasks,    /* Numero de tasks d'aquesta etapa */
-  int num_busos,    /* Numero de busos disponibles */
-  int tipus_de_fan, /* 0 = IN / 1 = OUT */
-  int model,        /* 0, CONSTANT, LINEAL, LOGARITHMIC */
-  int size_type,    /* MIN, MAX, average, 2*MAX, send+recv */
-  int bytes_send,   /* Number of bytes send */
-  int bytes_recvd,  /* Number of bytes received */
-  t_micro startup,
-  t_micro *temps,
-  t_micro *latencia
-)
+calcula_fan(t_micro bandw,    /* MBytes per segon */
+            int num_tasks,    /* Numero de tasks d'aquesta etapa */
+            int num_busos,    /* Numero de busos disponibles */
+            int tipus_de_fan, /* 0 = IN / 1 = OUT */
+            int model,        /* 0, CONSTANT, LINEAL, LOGARITHMIC */
+            int size_type,    /* MIN, MAX, average, 2*MAX, send+recv */
+            int bytes_send,   /* Number of bytes send */
+            int bytes_recvd,  /* Number of bytes received */
+            t_micro startup,
+            t_micro *temps,
+            t_micro *latencia)
 {
   int mes_si;
   float fo;
@@ -4720,7 +4718,8 @@ calcula_temps_maxim_intra_nodes(
   t_micro *max_tnode_in,
   t_micro *max_lnode_in,
   t_micro *max_tnode_out,
-  t_micro *max_lnode_out
+  t_micro *max_lnode_out,
+  int      num_tasks
 )
 {
   struct t_node  *node;
@@ -4733,9 +4732,9 @@ calcula_temps_maxim_intra_nodes(
   suma_maxim=0;
 
   /* Es calcula a tots els nodes de la maquina */
-  for (node  = (struct t_node *)head_queue(&Node_queue);
-       node != (struct t_node *)0;
-       node  = (struct t_node *)next_queue(&Node_queue))
+  for (node  = (struct t_node *) head_queue(&Node_queue);
+       node != (struct t_node *) 0;
+       node  = (struct t_node *) next_queue(&Node_queue))
   {
     /* Nomes s'agafen els nodes d'aquesta maquina. */
     if (node->machine != machine) continue;
@@ -4745,7 +4744,7 @@ calcula_temps_maxim_intra_nodes(
     /* Cal calcular els temps dins d'aquest node */
     calcula_fan(
       node->bandwith,
-      num_cpus,
+      num_tasks,
       0, /* Infinits busos */
       0, /* FAN IN */
       glop_info->FIN_model,
@@ -4759,7 +4758,7 @@ calcula_temps_maxim_intra_nodes(
 
     calcula_fan(
       node->bandwith,
-      num_cpus,
+      num_tasks,
       0, /* Infinits busos */
       1, /* FAN OUT */
       glop_info->FOUT_model, glop_info->FOUT_size,
@@ -4854,12 +4853,10 @@ calcula_maxim_flight_times(
  ** col.lectiva.
  **************************************************************************/
 void
-calcula_temps_operacio_global(
-  struct t_thread *thread,
-  dimemas_timer   *temps_latencia,
-  dimemas_timer   *temps_recursos,
-  dimemas_timer   *temps_final
-)
+calcula_temps_operacio_global(struct t_thread *thread,
+                              dimemas_timer   *temps_latencia,
+                              dimemas_timer   *temps_recursos,
+                              dimemas_timer   *temps_final)
 {
   struct t_Ptask                 *Ptask;
   struct t_communicator          *communicator;
@@ -4869,7 +4866,7 @@ calcula_temps_operacio_global(
   struct t_node                  *node;
   struct t_machine               *machine;
   struct t_global_op_information *glop_info;
-  int comm_id, glop_id, num_maquines;
+  int                             comm_id, glop_id, num_maquines, num_tasks;
 
   t_micro tfin_node, lfin_node, tfout_node, lfout_node;
   t_micro tfin_int,  lfin_int,  tfout_int,  lfout_int;
@@ -4888,11 +4885,8 @@ calcula_temps_operacio_global(
 
   if (communicator == COM_NIL)
   {
-    panic (
-      "Communication get_buses trough an invalid communicator %d to P%02d T%02d (t%02d)\n",
-      comm_id,
-      IDENTIFIERS (thread)
-    );
+    panic ("Communication get_buses trough an invalid communicator %d to P%02d T%02d (t%02d)\n",
+           comm_id, IDENTIFIERS (thread));
   }
 
   glop_id = action->desc.global_op.glop_id;
@@ -4908,6 +4902,9 @@ calcula_temps_operacio_global(
     );
   }
 
+  /* Communicator size */
+  num_tasks = count_queue (&communicator->threads);
+
   /* S'inicialitzen els temps */
   tfin_node    = lfin_node = tfout_node = lfout_node = 0;
   tfin_int     = lfin_int  = tfout_int  = lfout_int  = 0;
@@ -4916,9 +4913,9 @@ calcula_temps_operacio_global(
   suma_maxim   = 0;
 
   /* Es calcula el temps de cada maquina */
-  for (others  =(struct t_thread *)head_queue(&communicator->machines_threads);
+  for (others  =(struct t_thread*) head_queue(&communicator->machines_threads);
        others != TH_NIL;
-       others  =(struct t_thread *)next_queue(&communicator->machines_threads))
+       others  =(struct t_thread*) next_queue(&communicator->machines_threads))
   {
     /* S'obte el node i la maquina corresponent al thread */
     node    = get_node_of_thread (others);
@@ -4927,10 +4924,8 @@ calcula_temps_operacio_global(
     /* S'obte la informacio de les operacions col.lectives dins
        d'aquesta maquina. */
     glop_info = (struct t_global_op_information *)
-      query_prio_queue(
-        &machine->communication.global_ops_info,
-        (t_priority)glop_id
-      );
+      query_prio_queue(&machine->communication.global_ops_info,
+                       (t_priority)glop_id);
 
     if (glop_info == (struct t_global_op_information *)0)
     {
@@ -4942,51 +4937,46 @@ calcula_temps_operacio_global(
     }
 
     /* Es calculen els temps entre nodes d'aquesta maquina */
-    calcula_fan(
-      machine->communication.remote_bandwith,
-      machine->number_nodes,
-      machine->communication.num_messages_on_network,
-      FAN_IN,
-      glop_info->FIN_model,
-      glop_info->FIN_size,
-      action->desc.global_op.bytes_send,
-      action->desc.global_op.bytes_recvd,
-      node->remote_startup,
-      &taux_in,
-      &laux_in
-    );
+    calcula_fan(machine->communication.remote_bandwith,
+                num_tasks,
+                machine->communication.num_messages_on_network,
+                FAN_IN,
+                glop_info->FIN_model,
+                glop_info->FIN_size,
+                action->desc.global_op.bytes_send,
+                action->desc.global_op.bytes_recvd,
+                node->remote_startup,
+                &taux_in,
+                &laux_in);
 
-    calcula_fan(
-      machine->communication.remote_bandwith,
-      machine->number_nodes,
-      machine->communication.num_messages_on_network,
-      FAN_OUT,
-      glop_info->FOUT_model,
-      glop_info->FOUT_size,
-      action->desc.global_op.bytes_send,
-      action->desc.global_op.bytes_recvd,
-      node->remote_startup,
-      &taux_out,
-      &laux_out
-    );
+    calcula_fan(machine->communication.remote_bandwith,
+                num_tasks,
+                machine->communication.num_messages_on_network,
+                FAN_OUT,
+                glop_info->FOUT_model,
+                glop_info->FOUT_size,
+                action->desc.global_op.bytes_send,
+                action->desc.global_op.bytes_recvd,
+                node->remote_startup,
+                &taux_out,
+                &laux_out);
 
     /* Es calculen els temps dins de cada node de la maquina i
        s'agafen els maxims. */
-    calcula_temps_maxim_intra_nodes(
-      machine,
-      glop_info,
-      action->desc.global_op.bytes_send,
-      action->desc.global_op.bytes_recvd,
-      &tauxn_in,
-      &lauxn_in,
-      &tauxn_out,
-      &lauxn_out
-    );
+    calcula_temps_maxim_intra_nodes(machine,
+                                    glop_info,
+                                    action->desc.global_op.bytes_send,
+                                    action->desc.global_op.bytes_recvd,
+                                    &tauxn_in,
+                                    &lauxn_in,
+                                    &tauxn_out,
+                                    &lauxn_out,
+                                    num_tasks);
 
     /* Es calcula la suma total de temps entre nodes d'aquesta maquina
        mes els temps del node d'aquesta maquina de mes durada */
-    suma_aux  = (double)(taux_in+laux_in+taux_out+laux_out);
-    suma_aux += (double)(tauxn_in+lauxn_in+tauxn_out+lauxn_out);
+    suma_aux  = (double)(taux_in + laux_in + taux_out + laux_out);
+    suma_aux += (double)(tauxn_in + lauxn_in + tauxn_out + lauxn_out);
 
     /* S'agafen els temps corresponents a la maquina de mes temps total */
     if (suma_aux > suma_maxim)
@@ -5013,9 +5003,9 @@ calcula_temps_operacio_global(
 */
 
     if (debug&D_COMM)
-	  {
-	    PRINT_TIMER (current_time);
-	    printf (
+    {
+      PRINT_TIMER (current_time);
+      printf (
         ": Machine %d: tfin_int=%f lfin_int=%f tfout_int=%f lfout_int=%f\n",
         machine->id,
         taux_in,
@@ -5023,7 +5013,7 @@ calcula_temps_operacio_global(
         taux_out,
         laux_out
       );
-	  }
+    }
   }
 
   /* Cal contar el temps a la xarxa externa */
@@ -5059,57 +5049,51 @@ calcula_temps_operacio_global(
     }
 
     /* Es calculen els temps */
-    calcula_fan(
-      bandw_externa,
-      num_maquines,
-      0, /* Infinits busos */
-      FAN_IN,
-      glop_info->FIN_model, glop_info->FIN_size,
-      action->desc.global_op.bytes_send,
-      action->desc.global_op.bytes_recvd,
-      node->external_net_startup,
-      &tfin_ext,
-      &lfin_ext
-    );
+    calcula_fan( bandw_externa,
+                num_tasks,
+                0, /* Infinits busos */
+                FAN_IN,
+                glop_info->FIN_model, glop_info->FIN_size,
+                action->desc.global_op.bytes_send,
+                action->desc.global_op.bytes_recvd,
+                node->external_net_startup,
+                &tfin_ext,
+                &lfin_ext);
 
-    calcula_fan(
-      bandw_externa,
-      num_maquines,
-      0, /* Infinits busos */
-      FAN_OUT, /* FAN OUT */
-      glop_info->FOUT_model, glop_info->FOUT_size,
-      action->desc.global_op.bytes_send,
-      action->desc.global_op.bytes_recvd,
-      node->external_net_startup,
-      &tfout_ext,
-      &lfout_ext
-    );
+    calcula_fan(bandw_externa,
+                num_tasks,
+                0, /* Infinits busos */
+                FAN_OUT, /* FAN OUT */
+                glop_info->FOUT_model, glop_info->FOUT_size,
+                action->desc.global_op.bytes_send,
+                action->desc.global_op.bytes_recvd,
+                node->external_net_startup,
+                &tfout_ext,
+                &lfout_ext);
 
     /* Es calculen els flight times */
-    calcula_maxim_flight_times(
-      thread,
-      communicator,
-      &flightin_ext,
-      &flightout_ext
-    );
+    calcula_maxim_flight_times(thread,
+                               communicator,
+                               &flightin_ext,
+                               &flightout_ext);
 
     if (debug&D_COMM)
-	  {
-	    PRINT_TIMER (current_time);
-	    printf (
+    {
+      PRINT_TIMER (current_time);
+      printf (
         ": External net: tfin_ext=%f lfin_ext=%f tfout_ext=%f lfout_ext=%f\n",
         tfin_ext,
         lfin_ext,
         tfout_ext,
         lfout_ext
       );
-	    PRINT_TIMER (current_time);
-	    printf (
+      PRINT_TIMER (current_time);
+      printf (
         ": Num maquines %d startup xarxa externa %f\n",
         num_maquines,
         node->external_net_startup
       );
-	  }
+    }
   }
 
   /* S'acumulen els temps de totes les fases */
@@ -5929,8 +5913,7 @@ GLOBAL_operation (
     maquina_usada = node_usat->machine;
     /* Es mira si ja hem trobat un thread d'aquesta maquina */
     if
-    ( query_prio_queue(&communicator->machines_threads, maquina_usada->id) ==
-      A_NIL
+    ( query_prio_queue(&communicator->machines_threads, maquina_usada->id) == A_NIL
     )
     {
       /* Es una maquina nova */

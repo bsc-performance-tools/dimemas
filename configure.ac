@@ -34,9 +34,10 @@ AC_PROG_CC(icc xlc cc gcc)
 AC_PROG_CXX(icpc xlC CC g++)
 AC_PROG_CPP
 
+AM_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
-SVNREV=`svnversion $srcdir | sed 's/:.*//'`
+SVNREV=`svnversion $srcdir | sed 's/.*://'`
 which svnversion > /dev/null 
 if test $? -ne 0  -o  "x$SVNREV" = "xexported";
   then SVNREV=`cat $srcdir/SVNREV`
@@ -350,6 +351,7 @@ CFLAGS="$CFLAGS $Z_FLAGS"
 CXXFLAGS="$CXXFLAGS $Z_FLAGS"
 LIBS="$LIBS $Z_LIBS"
 
+AC_CHECK_LIB([m],[sqrt])
 
 dnl =======================================================================
 dnl Java checks
@@ -404,7 +406,18 @@ AC_CONFIG_FILES([
   DimemasGUI/Makefile
   include/Makefile
   src/Makefile
+  src/input/Makefile
+  src/model/Makefile
+  src/prv_utils/Makefile
+  src/sched/Makefile
+  src/utils/Makefile
 ])
+
+if test "x$venus_enabled" = "yes"; then
+  AC_CONFIG_FILES([
+    src/venusclient/Makefile
+  ])
+fi
 
 AC_OUTPUT
 
@@ -414,14 +427,15 @@ dnl =======================================================================
 echo "
   $PACKAGE_NAME version $PACKAGE_VERSION.$SVNREV
 
-  Prefix.................: $prefix
-  Debug Build............: $debug
-  C Compiler Flags.......: $CFLAGS
-  C++ Compiler Flags.....: $CXXFLAGS $CPPFLAGS
-  Linker flags...........: $LDFLAGS $LIBS
-  Java VM................: ${JAVA:-NONE}
-  Java Compiler..........: ${JAVAC:-NONE} $JAVACFLAGS
-  Jar Utility............: ${JAR:-NONE} $JARFLAGS 
-  Common files directory.: ${common_filesdir:-default}
+  Prefix...................: $prefix
+  Debug Build..............: $debug
+  C Compiler Flags.........: $CFLAGS
+  C++ Compiler Flags.......: $CXXFLAGS $CPPFLAGS
+  IBM Venus Module Enabled.: ${venus_enabled:-no}
+  Linker flags.............: $LDFLAGS $LIBS
+  Java VM..................: ${JAVA:-NONE}
+  Java Compiler............: ${JAVAC:-NONE} $JAVACFLAGS
+  Jar Utility..............: ${JAR:-NONE} $JARFLAGS 
+  Common files directory...: ${common_filesdir:-default}
 "
 

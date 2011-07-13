@@ -1,35 +1,40 @@
-#SUBDIRS = \
-#	binfmt \
-#	input \
-#	license \
-#	model \
-#	prv_utils \
-#	sched \
-#	utils \
-#	vampir 
+common_filesdir = @common_filesdir@
+
+SUBDIRS = input model prv_utils sched utils
+
+if VENUS_ENABLED
+  SUBDIRS += venusclient
+endif
+
+INCLUDES = \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src/input \
+	-I$(top_srcdir)/src/model \
+	-I$(top_srcdir)/src/prv_utils \
+	-I$(top_srcdir)/src/sched \
+	-I$(top_srcdir)/src/utils \
+	-I$(top_srcdir)/src/venusclient
 
 bin_PROGRAMS = Dimemas3
 
-common_filesdir = @common_filesdir@
+Dimemas3_SOURCES = main.c
+
+nodist_Dimemas3_SOURCES = \
+	$(common_filesdir)/ParaverBinaryTrace.c\
+	$(common_filesdir)/Dimemas2Prv.c \
+	$(common_filesdir)/EventEncoding.c
 
 Dimemas3_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include -I$(common_filesdir)
 Dimemas3_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include -I$(common_filesdir)
 
-# Dimemas3_LIBS= @AM_LIBS@
+Dimemas3_LDADD = \
+	$(top_srcdir)/src/input/libDimemasInput.la \
+	$(top_srcdir)/src/model/libDimemasModel.la \
+	$(top_srcdir)/src/prv_utils/libDimemas2ParaverUtils.la \
+	$(top_srcdir)/src/sched/libDimemasScheduling.la \
+	$(top_srcdir)/src/utils/libDimemasUtils.la 
 
-Dimemas3_SOURCES = main.c
-
-# BUILT_SOURCES = yacc.c yacc.h lex.c
-
-nodist_Dimemas3_SOURCES = \
-  $(common_filesdir)/ParaverBinaryTrace.c\
-  $(common_filesdir)/Dimemas2Prv.c \
-  $(common_filesdir)/EventEncoding.c
-  
-include $(srcdir)/input/Makefile.sources
-include $(srcdir)/model/Makefile.sources
-include $(srcdir)/prv_utils/Makefile.sources
-include $(srcdir)/sched/Makefile.sources
-include $(srcdir)/utils/Makefile.sources
-include $(srcdir)/venusclient/Makefile.sources
+if VENUS_ENABLED
+	Dimemas3_LDADD += $(top_srcdir)/src/venusclient/libDimemasVenusClient.la
+endif
 

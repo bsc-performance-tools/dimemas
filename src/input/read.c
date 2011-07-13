@@ -218,7 +218,7 @@ next_one:
     cpu_time = cpu_time * 1e6;
     relative = node->relative;
     /*
-    if (randomness.processor_ratio.distribution!=NO_DISTRIBUTION)
+    if (randomness.processor_ratio.distribution != NO_DISTRIBUTION)
     {
       relative += random_dist(&randomness.processor_ratio);
     }

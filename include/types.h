@@ -506,7 +506,7 @@ struct t_global_op_information
 
 struct t_communicator
 {
-  int communicator_id;
+  int            communicator_id;
   struct t_queue global_ranks;         /* Queue of integers, rank of tasks */
   struct t_queue threads;              /* Threads block until syncronization */
   struct t_queue machines_threads;     /* One thread from each machine used */
