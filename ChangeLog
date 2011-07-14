@@ -7,6 +7,11 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2011/0//14 - jgonzale
+	CHANGES:	MAJOR modifications in building system. Now, each big module
+				of core code is compiled as a facility library. That was
+				modified in previous update, but not added up to this one
+
 2011/07/13 - jgonzale
 	CHANGES:	Minor cosmetic changes in building system
 
