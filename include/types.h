@@ -25,10 +25,10 @@
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+  $URL::                                          $:  File
+  $Rev::                                          $:  Revision of last commit
+  $Author::                                       $:  Author of last commit
+  $Date::                                         $:  Date of last commit
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
@@ -40,7 +40,11 @@
 #include <sys/types.h>
 #include "define.h"
 
-
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h> 
+#include <stdint.h>
 
 #ifdef ENABLE_LARGE_TRACES 
   #ifdef OS_CYGWIN
@@ -62,6 +66,8 @@ typedef double  t_priority; /* priority for queue elements */
 typedef int     t_count;    /* number of elements in queue */
 
 typedef double  t_micro;
+
+typedef int modules_map;    /* see 'modules_map.h' */
 
 #ifdef PACA
 
@@ -101,13 +107,14 @@ struct t_queue
 
 struct t_module
 {
-  int    identificator;
-  double ratio;
-  int    src_file;
-  int    src_line;
-  int    used;     /* Indica si el bloc ha estat utilitzat (a part de definit) */
-  char  *block_name;
-  char  *activity_name;
+  long long type;
+  long long value;
+  double    ratio;
+  int       src_file;
+  int       src_line;
+  int       used;     /* Indica si el bloc ha estat utilitzat (a part de definit) */
+  char     *module_name;
+  char     *activity_name;
 };
 
 struct t_filed
@@ -128,25 +135,30 @@ struct t_cp_node
   struct t_cp_node *recv;
   struct t_cp_node *send;
   int               status; /* Work, block, communication overhead */
-  int               block_identificator;
+  long long         module_type;
+  long long         module_value;
   dimemas_timer     final_time;
   struct t_thread  *thread;
 };
 
 struct t_module_cp
 {
-  int identifier;
+  long long module_type;
+  long long module_value;
+  
   dimemas_timer timer;
   dimemas_timer timer_comm;
 };
 /* This structers was previously found on 'random.h' */
 /* Distribution parameters for gaussian and uniform */
-struct t_normal{
+struct t_normal
+{
   double mean;
   double stdev;
 };
 
-struct t_uniform {
+struct t_uniform
+{
   double left;
   double right;
 };
@@ -156,12 +168,15 @@ struct t_uniform {
 #define NORMAL_DISTRIBUTION  1
 #define UNIFORM_DISTRIBUTION 2
 
-struct t_rand_type {
+struct t_rand_type
+{
   int distribution;
-  union {
+
+  union
+  {
     struct t_normal  normal;
     struct t_uniform uniform;
-  }parameters;
+  } parameters;
 };
 
 /* JGG (31/03/2006): Structure to store burst categories, used on synthetic 
@@ -294,6 +309,7 @@ struct t_send
 {
   int                 mess_size;    /* Size of message */
   int                 dest;         /* Taskid of partner (receiver) */
+  int                 dest_thread;  /* Thread_id of partner (receiver) */
   int                 mess_tag;     /* Message tag */
   int                 communic_id;  /* Communicator id */
   
@@ -312,6 +328,7 @@ struct t_send
 struct t_recv
 {
   int ori;         /* Taskid of partner(sender) */
+  int ori_thread;  /* Thread_id of partner(sender) */
   int mess_tag;    /* Message tag */
   int mess_size;   /* Size of message */
   int communic_id; /* Communicator id */
@@ -388,6 +405,7 @@ struct t_user_event
 struct t_fs_op
 {
   int                   which_fsop;
+
   union
   {
     struct t_open       fs_open;
@@ -433,7 +451,8 @@ struct t_global_op
   int bytes_recvd; /* Number of bytes received */
 };
 
-struct t_mpi_io {
+struct t_mpi_io
+{
   int which_io;
   int commid;      /* Only valid for metadata operation */
   int fh;          /* File handle */
@@ -442,7 +461,8 @@ struct t_mpi_io {
   int request;     /* Match point for non-blocking operations */
 };
 
-struct t_mpi_os {
+struct t_mpi_os
+{
   int which_os;
   int Oop;
   int target_rank;
@@ -477,11 +497,13 @@ struct t_action
 
 struct t_link
 {
-  union {
-    struct t_node  *node;       /* Belongs to processor */
-    struct t_machine *machine;  /* Maquina d'aquest link */
+  union
+  {
+    struct t_node                 *node;       /* Belongs to processor */
+    struct t_machine              *machine;    /* Maquina d'aquest link */
     struct t_dedicated_connection *connection; /* Connexio dedicada */
   } info;
+
   int              kind;        /* NODE_LINK/MACHINE_LINK/CONNECTION_LINK */   
   int              type;        /* IN_LINK/OUT_LINK */
   int              linkid;      /* Identifier */
@@ -552,7 +574,8 @@ struct t_window
                                             * and the mode is post */
 };
 
-struct t_request_thread{
+struct t_request_thread
+{
   int request;
   struct t_thread *thread;
 };
@@ -573,26 +596,43 @@ struct t_Ptask
   int             Ptaskid;
   char           *tracefile;
   char           *configfile;
-  FILE           *file;
+  
+/*
+  HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
+  AND THAN READ THE TRF FILE AS IT WAS A STRING 
+*/  
+//   FILE           *file;
+  char           *mmapped_file;
+  unsigned long   mmap_position;
+  struct stat     sb;
+  int             is_there_seek_info;
+  
+  
   int             n_rerun;
   t_boolean       synthetic_application;
   struct t_queue  tasks;
   struct t_queue  global_operation; /* Threads pending for sincronization 
                                      * in global operation */
-  struct t_queue  Communicator;
-  struct t_queue  Window;
-  struct t_queue  MPI_IO_fh_to_commid;
-  struct t_queue  MPI_IO_request_thread;
-  struct t_queue  Modules;
-  struct t_queue  Filesd;
-  struct t_queue  UserEventsInfo; /* Cua amb les informacions dels possibles
-                                   * events d'usuari */
+  struct t_queue      Communicator;
+  struct t_queue      Window;
+  struct t_queue      MPI_IO_fh_to_commid;
+  struct t_queue      MPI_IO_request_thread;
+  modules_map         Modules;
+  struct t_queue      Filesd;
+  struct t_queue      UserEventsInfo; /* Cua amb les informacions dels possibles
+                                       * events d'usuari */
 };
 
 struct t_task
 {
   int             taskid;
+  int             nodeid;
   struct t_queue  threads;
+
+/*Vladimir: for optimization, when a task has many threads*/
+  int             num_of_threads;
+  struct t_thread **threads_array;
+  
   struct t_Ptask *Ptask;
   struct t_queue  mess_recv; /* Queue for received messages */
   struct t_queue  recv;      /* Queue of threads waiting for message */
@@ -651,6 +691,47 @@ struct t_thread
   int              threadid; /* Thread id within task */
   struct t_task   *task;
   struct t_queue   account;
+
+  /* Vladimir: to remember sstask_id and sstask_type of the thread
+     so these events could be marked again when preempting
+  */
+  unsigned long    sstask_id;
+  unsigned long    sstask_type;
+  
+
+    /* making these queues separate for every thread
+       only DEPENDENCIES go to this queues
+       REAL MPI TRANSFERS go the the queues of the task    */
+  struct t_queue  mess_recv; /* Queue for received messages */
+  struct t_queue  recv;      /* Queue of threads waiting for message */
+  struct t_queue  send;      /* Queue of threads waiting for a partner
+                              * when sending a message */
+  /****************************************************************************/
+  /* Les dues cues seguents s'han hagut d'afegir per poder tractar
+   * correctament els Irecv/Wait */
+   struct t_queue  recv_without_send; /* Cua de threads (d'aquesta task) que
+                                       * han arribat a un recv o Irecv
+                                       * sense que s'hagi arribat al send
+                                       * corresponent. La diferencia
+                                       * principal amb la cua recv es que el
+                                       * thread original no te perque estar
+                                       * bloquejat (si era irecv). Una altra
+                                       * diferencia es que els threads d'aquesta
+                                       * cua es treuen quan s'arriba al send,
+                                       * no quan s'acaba la transmisio fisica.*/
+   struct t_queue  send_without_recv; /* Aquesta cua es la inversa de
+                                       * l'anterior. Hi ha els threads de
+                                       * qualsevol task que han arribat a un
+                                       * send sense cap a aquesta task que
+                                       * s'hagi arribat al recv o Irecv
+                                       * corresponent.
+                                       * Els threads d'aquesta cua es treuen de
+                                       * seguida que s'arriba al recv o Irecv
+                                       * corresponent, no quan es fa realment
+                                       * la transmisio. */
+  /****************************************************************************/
+
+  
   struct t_action *action;
   struct t_action *last_action;
   t_boolean        original_thread;
@@ -702,15 +783,27 @@ struct t_thread
   int              portid; /* thread user port */
   struct t_event  *event;
     
-  struct t_last_comm {
+  struct t_last_comm
+  {
     dimemas_timer ti;
     t_micro       bandwith;
     int           bytes;
-  }last_comm;
+  } last_comm;
   
   dimemas_timer     initial_communication_time;
-  FILE             *file;
-  t_boolean         file_shared;               /* TRUE if sharing file pointer*/
+  
+/*
+  HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
+  AND THAN READ THE TRF FILE AS IT WAS A STRING 
+*/  
+//   FILE           *file;
+  char            *mmapped_file;
+  unsigned long   mmap_position;  
+  
+//   FILE             *file;
+//   t_boolean         file_shared;               /* TRUE if sharing file pointer*/
+  
+  
   struct t_queue    modules;
   struct t_queue    Activity;
   struct t_cp_node *last_cp_node;
@@ -718,12 +811,13 @@ struct t_thread
   int               number_buses;
   dimemas_timer     last_time_event_number;
   
-  struct{
+  struct
+  {
     dimemas_timer arrive_to_collective;
     dimemas_timer sync_time;
     dimemas_timer with_resources;
     dimemas_timer conclude_communication;
-  }collective_timers;
+  } collective_timers;
   
   int    IO_blocking_point;
   int    marked_for_deletion; /* Indica que s'ha d'eliminar quan es pugui */
@@ -752,7 +846,8 @@ struct t_port
 };
 
 
-struct t_file_system_parameters {
+struct t_file_system_parameters
+{
   double disk_latency;
   double disk_bandwidth;
   double block_size;
@@ -950,13 +1045,10 @@ struct t_simulator
   } dedicated_connections;
 };
 
-
-
-
 struct t_user_event_value_info
 {
-  int value;  /* Valor */
-  char *name; /* Nom d'aquest valor */
+  int   value;  /* Valor */
+  char *name;   /* Nom d'aquest valor */
 };
 
 
@@ -1026,9 +1118,11 @@ struct t_scheduler_actions
   void             (*init_scheduler_parameters) ();
   void             (*clear_parameters) ();
   int              (*info) ();
-  void             (*scheduler_init) ();
+  void             (*scheduler_init) (char*, struct t_machine*);
   void             (*scheduler_copy_parameters) ();
   void             (*scheduler_free_parameters) ();
+  void             (*modify_priority) ();
+  void             (*modify_preemption) ();
 };
 
 struct t_communic_actions

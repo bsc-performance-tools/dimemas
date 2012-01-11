@@ -53,7 +53,7 @@ extern void
 TASK_end (void);
 
 extern void
-new_communicator_definition(struct t_Ptask *, int);
+new_communicator_definition (struct t_Ptask *Ptask, int communicator_id);
 
 extern void
 new_identificator_to_communicator(struct t_Ptask *, int, int);
@@ -80,17 +80,17 @@ extern void
 max_account (struct t_account *to, struct t_account *from);
 
 extern void
-new_thread_in_Ptask(
+new_task_in_Ptask(
   struct t_Ptask *Ptask,
   int taskid,
-  int nodeid,
-  int number_of_threads,
-  int priority,
-  int where
+  int nodeid
 );
 
 extern struct t_thread*
 locate_thread(struct t_Ptask *Ptask, int taskid, int thid);
+
+extern struct t_thread*
+locate_thread_of_task (struct t_task *task, int thid);
 
 extern void
 new_action_to_thread(
@@ -147,37 +147,30 @@ more_actions_to_sintetic (struct t_thread *thread);
 extern struct t_node*
 get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid);
 
-extern void
-module_new (struct t_Ptask *Ptask, int identificator, double ratio);
+extern void module_new (struct t_Ptask *Ptask,
+                        long long       type,
+                        long long       value,
+                        double          ratio);
 
 extern void
 file_name (struct t_Ptask *Ptask, int file_id, char *location);
 
-extern void
-module_name(
-  struct t_Ptask *Ptask,
-  int   block_id,
-  char *block_name,
-  char *activity_name,
-  int   src_file,
-  int   src_line
-);
+/*
+void module_name(struct t_Ptask *Ptask,
+                 long long       module_type,
+                 long long       module_value,
+                 char           *module_name,
+                 char           *activity_name,
+                 int             src_file,
+                 int             src_line);
+*/
 
-extern void
-module_entrance(
-  struct t_Ptask *Ptask,
-  int tid,
-  int thid,
-  int identificator
-);
+extern void module_entrance(struct t_thread *thread,
+                            long long        module_type,
+                            long long        module_value);
 
-extern int
-module_exit (
-  struct t_Ptask *Ptask,
-  int tid,
-  int thid,
-  int identificator
-);
+extern int module_exit(struct t_thread *thread,
+                       long long        module_type);
 
 void
 user_event_type_name(
@@ -197,4 +190,35 @@ user_event_value_name(
 
 extern void
 recompute_work_upon_modules(struct t_thread *thread, struct t_action *action);
+
+
+void
+set_tasks_number_of_threads (struct t_task *task, int number_of_threads);
+
+void
+add_thread_to_task (struct t_task *task, int threadid, int nodeid);
+
+void
+add_identificator_to_communicator(struct t_Ptask *Ptask,
+                                  int communicator_id,
+                                  int taskid);
+
+void
+no_more_identificator_to_communicator(struct t_Ptask *Ptask,
+                                      int communicator_id);
+
+void
+new_window_definition (struct t_Ptask *Ptask, int window_id);
+
+void
+add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taskid);
+
+void
+no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id);
+
+t_micro
+PREEMP_overhead(struct t_task* task);
+
+
 #endif
+

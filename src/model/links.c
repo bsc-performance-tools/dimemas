@@ -706,7 +706,7 @@ void
 free_link(struct t_link *link, struct t_thread *thread)
 {
   struct t_thread *first;
-  struct t_node  *node, *n2;
+  struct t_node  *node;
   struct t_cpu *cpu;
   struct t_both  *both;
   struct t_copyseg *copyseg;

@@ -39,6 +39,7 @@
 
 #include "extern.h"
 #include "list.h"
+#include "modules_map.h"
 #include "mallocame.h"
 #include "subr.h"
 
@@ -116,7 +117,8 @@ declaracion: IDENTIFICADOR STRING OPEN_K componentes CLOSE_K SEPARADOR
     near_line();
     definition_error = TRUE;
     $$ = (YYSTYPE) 0;
-  } else
+  }
+  else
   {
     new_entry = (struct t_entry *) mallocame(sizeof(struct t_entry));
 
@@ -260,7 +262,7 @@ campo:DECIMAL
 
   f = (struct t_field *) mallocame(sizeof(struct t_field));
   f->tipo = 1;
-  f->value.real = *(double *) $$;
+  f->value.real = * (double*) $$;
   freeame((char *) $$, sizeof(double));
   $$ = (YYSTYPE) f;
 }
@@ -305,8 +307,7 @@ campo:DECIMAL
 
 %%
 
-static struct t_entry*
-exist_identifier(char *c, struct t_queue* q)
+static struct t_entry* exist_identifier(char *c, struct t_queue* q)
 {
   struct t_entry *entry;
 
@@ -324,8 +325,7 @@ exist_identifier(char *c, struct t_queue* q)
   return ((struct t_entry *) 0);
 }
 
-static t_boolean
-exist_identifier_or_string(int i, char *c, struct t_queue* q)
+static t_boolean exist_identifier_or_string(int i, char *c, struct t_queue* q)
 {
   struct t_entry *entry;
 

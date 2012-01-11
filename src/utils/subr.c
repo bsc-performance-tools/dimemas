@@ -37,6 +37,7 @@
 
 #include "extern.h"
 #include "subr.h"
+#include "assert.h"
 
 extern char     yy_error_string[];
 extern t_boolean yy_error_filled;
@@ -46,8 +47,7 @@ extern t_boolean dimemas_GUI;
 dimemas_timer current_time;
 #endif
 
-void
-panic(char *fmt, ...)
+void panic(char *fmt, ...)
 {
   va_list args;
 
@@ -64,6 +64,7 @@ panic(char *fmt, ...)
   
   /* JGG: Aquí se debe controlar que las trazas parciales de Paraver, si las
    * hay, se deben destruir */
+  // assert(0);
   exit (-1);
 }
 

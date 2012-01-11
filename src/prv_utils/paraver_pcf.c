@@ -45,134 +45,134 @@
 
 //#define PUT_ALL_VALUES 1
 
-/* JGG: La generaciÛn de los colores asociados a los estados deberÌa ser m·s
- * din·mica... 
- * HABR¡ QUE REVISARLO */
+/* JGG: La generaci√≥n de los colores asociados a los estados deber√≠a ser m√°s
+ * din√°mica... 
+ * HABR√Å QUE REVISARLO */
 #define PCF_HEAD_LINES 14
 static char *pcf_head[PCF_HEAD_LINES]=
 {
-  { "DEFAULT_OPTIONS" },
-  { "" },
-  { "LEVEL               TASK"},
-  { "UNITS               NANOSEC"},
-  { "LOOK_BACK           100"},
-  { "SPEED               1"},
-  { "FLAG_ICONS          ENABLED"},
-  { PCF_COLOR_COUNT_LBL},/* OJO: ESTA CONSTANTE EST¡ EN 'pcf_defines.h' */
-  { PCF_YMAX_LBL},       /* OJO: ESTA CONSTANTE EST¡ EN 'pcf_defines.h' */
-  { "\n"},
-  { "DEFAULT_SEMANTIC" },
-  { "" },
-  { "THREAD_FUNC         State As Is" },
-  { "\n" }
+  "DEFAULT_OPTIONS",
+  "" ,
+  "LEVEL               TASK",
+  "UNITS               NANOSEC",
+  "LOOK_BACK           100",
+  "SPEED               1",
+  "FLAG_ICONS          ENABLED",
+  { PCF_COLOR_COUNT_LBL},/* OJO: ESTA CONSTANTE EST√Å EN 'pcf_defines.h' */
+  { PCF_YMAX_LBL},       /* OJO: ESTA CONSTANTE EST√Å EN 'pcf_defines.h' */
+  "\n",
+  "DEFAULT_SEMANTIC",
+  "",
+  "THREAD_FUNC         State As Is",
+  "\n"
 };
                 
 #define PCF_MIDDLE_LINES 64
 static char *pcf_middle[PCF_MIDDLE_LINES]=
 {
-  { "EVENT_TYPE" },
-  { "10  90  Critical Path Block" },
-  { "VALUES" },
-  { "1  Begin" },
-  { "0  End" },
-  { "\n" },
-  { "EVENT_TYPE" },
-  { "10  89  I/O" },
-  { "VALUES" },
-  { "0      IO METADATA BEGIN" },
-  { "1      IO METADATA END" },
-  { "2      IO BLOCK NONCOLLECTIVE READ BEGIN" },
-  { "3      IO BLOCK NONCOLLECTIVE READ END" },
-  { "4      IO BLOCK NONCOLLECTIVE WRITE BEGIN" },
-  { "5      IO BLOCK NONCOLLECTIVE WRITE END" },
-  { "6      IO BLOCK COLLECTIVE READ BEGIN" },
-  { "7      IO BLOCK COLLECTIVE READ END" },
-  { "8      IO BLOCK COLLECTIVE WRITE BEGIN" },
-  { "9      IO BLOCK COLLECTIVE WRITE END" },
-  { "10     IO NONBLOCK NONCOLLECTIVE READ BEGIN" },
-  { "11     IO NONBLOCK NONCOLLECTIVE END" },
-  { "12     IO NONBLOCK NONCOLLECTIVE WRITE BEGIN" },
-  { "13     IO NONBLOCK COLLECTIVE READ BEGIN" },
-  { "14     IO NONBLOCK COLLECTIVE WRITE BEGIN" },
-  { "15     IO NONBLOCK COLLECTIVE END" },
-  { "\n" },
-  { "EVENT_TYPE" },
-  { "11  88   One Sided Operations" },
-  { "VALUES" },
-  { "0      OS START" },
-  { "1      OS LATENCY" },
-  { "2      OS END" },
-  { "3      OS FENCE START" },
-  { "4      OS FENCE END" },
-  { "5      OS GET LOCK" },
-  { "6      OS WAIT LOCK" },
-  { "7      OS UNLOCK BEGIN" },
-  { "8      OS UNLOCK END" },
-  { "9      OS POST POST" },
-  { "10     OS POST START" },
-  { "11     OS POST START BLOCK" },
-  { "12     OS POST COMPLETE BLOCK" },
-  { "13     OS POST COMPLETE" },
-  { "14     OS POST WAIT" },
-  { "15     OS POST WAIT BLOCK" },
-  { "\n\n" },
-  { "EVENT_TYPE" },
-  { "8  91  GROUP_BLOCK" },
-  { "VALUES" },
-  { "0       END" },
-  { "\n\n" },
-  { "EVENT_TYPE" },
-  { "8  92  GROUP_LAST" },
-  { "VALUES" },
-  { "0       END" },
-  { "\n\n" },
-  { "EVENT_TYPE" },
-  { "8  93  GROUP_FREE" },
-  { "VALUES" },
-  { "0       END" },
-  { "\n\n" },
-  { "EVENT_TYPE" },
-  { "8 40000000  ITERATION_BEGIN" },
-  { "\n\n" }
+  "EVENT_TYPE",
+  "10  90  Critical Path Block",
+  "VALUES",
+  "1  Begin",
+  "0  End",
+  "\n",
+  "EVENT_TYPE",
+  "10  89  I/O",
+  "VALUES",
+  "0      IO METADATA BEGIN",
+  "1      IO METADATA END",
+  "2      IO BLOCK NONCOLLECTIVE READ BEGIN",
+  "3      IO BLOCK NONCOLLECTIVE READ END",
+  "4      IO BLOCK NONCOLLECTIVE WRITE BEGIN",
+  "5      IO BLOCK NONCOLLECTIVE WRITE END",
+  "6      IO BLOCK COLLECTIVE READ BEGIN",
+  "7      IO BLOCK COLLECTIVE READ END",
+  "8      IO BLOCK COLLECTIVE WRITE BEGIN",
+  "9      IO BLOCK COLLECTIVE WRITE END",
+  "10     IO NONBLOCK NONCOLLECTIVE READ BEGIN",
+  "11     IO NONBLOCK NONCOLLECTIVE END",
+  "12     IO NONBLOCK NONCOLLECTIVE WRITE BEGIN",
+  "13     IO NONBLOCK COLLECTIVE READ BEGIN",
+  "14     IO NONBLOCK COLLECTIVE WRITE BEGIN",
+  "15     IO NONBLOCK COLLECTIVE END",
+  "\n",
+  "EVENT_TYPE",
+  "11  88   One Sided Operations",
+  "VALUES",
+  "0      OS START",
+  "1      OS LATENCY",
+  "2      OS END",
+  "3      OS FENCE START",
+  "4      OS FENCE END",
+  "5      OS GET LOCK",
+  "6      OS WAIT LOCK",
+  "7      OS UNLOCK BEGIN",
+  "8      OS UNLOCK END",
+  "9      OS POST POST",
+  "10     OS POST START",
+  "11     OS POST START BLOCK",
+  "12     OS POST COMPLETE BLOCK",
+  "13     OS POST COMPLETE",
+  "14     OS POST WAIT",
+  "15     OS POST WAIT BLOCK",
+  "\n\n",
+  "EVENT_TYPE",
+  "8  91  GROUP_BLOCK",
+  "VALUES",
+  "0       END",
+  "\n\n",
+  "EVENT_TYPE",
+  "8  92  GROUP_LAST",
+  "VALUES",
+  "0       END",
+  "\n\n",
+  "EVENT_TYPE",
+  "8  93  GROUP_FREE",
+  "VALUES",
+  "0       END",
+  "\n\n",
+  "EVENT_TYPE",
+  "8 40000000  ITERATION_BEGIN",
+  "\n\n"
 };
 
 
 
 #define PCF_TAIL_LINES 33
 static char *pcf_tail[PCF_TAIL_LINES]={
-  { "GRADIENT_COLOR" },
-  { "0     {0,255,2}" },
-  { "1     {0,244,13}" },
-  { "2     {0,232,25}" },
-  { "3     {0,220,37}" },
-  { "4     {0,209,48}" },
-  { "5     {0,197,60}" },
-  { "6     {0,185,72}" },
-  { "7     {0,173,84}" },
-  { "8     {0,162,95}" },
-  { "9     {0,150,107}" },
-  { "10    {0,138,119}" },
-  { "11    {0,127,130}" },
-  { "12    {0,115,142}" },
-  { "13    {0,103,154}" },
-  { "14    {0,91,166}" },
-  { "\n" },
-  { "GRADIENT_NAMES" },
-  { "0     Gradient 0" },
-  { "1     Grad. 1/MPI Events" },
-  { "2     Grad. 2/OMP Events" },
-  { "3     Grad. 3/OMP locks" },
-  { "4     Grad. 4/User func" },
-  { "5     Grad. 5/User Events" },
-  { "6     Grad. 6/General Events" },
-  { "7     Gradient 7/Hard. Counters" },
-  { "8     Gradient 8" },
-  { "9     Gradient 9" },
-  { "10    Gradient 10" },
-  { "11    Gradient 11" },
-  { "12    Gradient 12" },
-  { "13    Gradient 13" },
-  { "14    Gradient 14" }
+  "GRADIENT_COLOR",
+  "0     {0,255,2}",
+  "1     {0,244,13}",
+  "2     {0,232,25}",
+  "3     {0,220,37}",
+  "4     {0,209,48}",
+  "5     {0,197,60}",
+  "6     {0,185,72}",
+  "7     {0,173,84}",
+  "8     {0,162,95}",
+  "9     {0,150,107}",
+  "10    {0,138,119}",
+  "11    {0,127,130}",
+  "12    {0,115,142}",
+  "13    {0,103,154}",
+  "14    {0,91,166}",
+  "\n",
+  "GRADIENT_NAMES",
+  "0     Gradient 0",
+  "1     Grad. 1/MPI Events",
+  "2     Grad. 2/OMP Events",
+  "3     Grad. 3/OMP locks",
+  "4     Grad. 4/User func",
+  "5     Grad. 5/User Events",
+  "6     Grad. 6/General Events",
+  "7     Gradient 7/Hard. Counters",
+  "8     Gradient 8",
+  "9     Gradient 9",
+  "10    Gradient 10",
+  "11    Gradient 11",
+  "12    Gradient 12",
+  "13    Gradient 13",
+  "14    Gradient 14"
 };
 
 
@@ -180,10 +180,12 @@ static char *pcf_tail[PCF_TAIL_LINES]={
  ***  MakeParaverPCF
  ******************************************************************************/
 
-int MakeParaverPCF(const char *nom)
+int MakeParaverPCF(const char *nom, const char *cfg_include)
 {
+  /* DEPRECATED. PCF GENERATION IS NO LONGER NEEDED */
+#if 0 
   int                             i;
-  FILE                           *fd;
+  FILE                            *fd, *fd_inc;
   struct t_Ptask                 *ptask;
   struct t_module                *mod;
   char                           *pcf_name;
@@ -212,17 +214,30 @@ int MakeParaverPCF(const char *nom)
   /* Es crea el fitxer de sortida */
   if ((fd = MYFOPEN(pcf_name, "w")) == NULL)
   {
-    fprintf(stderr,"DIMEMAS ERROR: Creating paraver PCF file : %s\n",pcf_name);
+    fprintf(stderr,"DIMEMAS ERROR: Creating paraver PCF file : %s\n", pcf_name);
     return (-1);
   }
 
-  /* JGG: Escritura de la cabecera del PCF, est·tica*/
+  if (cfg_include != (char*) 0) {
+//       printf("pcf file related to superscalar execution to include is called %s \n", cfg_include);
+      /* Es crea el fitxer de sortida */
+      if ((fd_inc = MYFOPEN(cfg_include, "r")) == NULL)
+      {
+         fprintf(stderr,"DIMEMAS ERROR: opening pcf file to include: %s\n",cfg_include);
+         return (-1);
+      }
+  } else {
+      printf("\n\nthere is no pcf file related to superscalar execution to include, THERE WILL BE NO TASK NAMES AVALIBLE IN THE TRACE!!! \n");
+      printf("add them with -pc <pcf_file_to_include.pcf> \n\n");
+  }
+
+  /* JGG: Escritura de la cabecera del PCF, estÔøΩtica*/
   for (i = 0; i<PCF_HEAD_LINES; i++)
   {
     fprintf(fd,"%s\n",pcf_head[i]);
   }
 
-  /* JGG: Parte din·mica referente a los estados */
+  /* JGG: Parte din√°mica referente a los estados */
   fprintf(fd, "STATES\n");
   for ( i = 0; i < PRV_STATE_COUNT; i++)
   {
@@ -273,7 +288,7 @@ int MakeParaverPCF(const char *nom)
   
   fprintf(fd, "\n");
 
-  /* JGG: Escritura de la parte central est·tica */
+  /* JGG: Escritura de la parte central est√°tica */
   for(i = 0; i<PCF_MIDDLE_LINES; i++)
   {
     fprintf(fd,"%s\n",pcf_middle[i]);
@@ -297,30 +312,39 @@ int MakeParaverPCF(const char *nom)
     for (i = 0; i < NUM_BLOCK_GROUPS; i++)
     {
       /* Es posa la capc,alera d'aquest tipus */
-      fprintf(
-        fd,"EVENT_TYPE\n%d\t%d\t%s\nVALUES\n0\tEnd\n",
-        PRV_BLOCK_COLOR(i),
-        PRV_BLOCK_TYPE(i),
-        PRV_BLOCK_LABEL(i)
-      );
+      fprintf(fd,
+              "EVENT_TYPE\n%d\t%d\t%s\nVALUES\n0\tEnd\n",
+              PRV_BLOCK_COLOR(i),
+              PRV_BLOCK_TYPE(i),
+              PRV_BLOCK_LABEL(i));
 
-      /* S'afegeixen com a valors tots els blocs utilitzats d'aquest grup */
+      /* DEBUG */
+      printf ("Printing %d\t%d\t%s\n",
+              PRV_BLOCK_COLOR(i),
+              PRV_BLOCK_TYPE(i),
+              PRV_BLOCK_LABEL(i));
+
+      /* S'afegeixen com a valors tots els blocs utilitzats d'aquest grup 
       for(mod  = (struct t_module*) head_queue (&ptask->Modules);
           mod != (struct t_module*) 0;
           mod  = (struct t_module*) next_queue (&ptask->Modules)
       )
       {
-        /* DEBUG 
-        printf ("Block = %d Event Type = %d PRV Block Type = %d\n",
-                i,
-                Block_Dimemas2Paraver_Type(mod->identificator),
-                PRV_BLOCK_TYPE(i)); */
-                
-        if ((mod->activity_name != NULL) && (mod->block_name    != NULL) &&
+        /*if ((mod->activity_name != NULL) && (mod->block_name != NULL) &&
             (mod->used) &&
-            (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i))
-        )
+            (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i)) */
+
+        /* DEBUG  
+        printf("Current Type = %lld  CurrentName = %s\n",
+               Block_Dimemas2Paraver_Type(mod->identificator),
+               mod->block_name);
+        */
+
+        /*
+        if ((mod->block_name != NULL) && (mod->used) &&
+            (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i)))
         {
+          
           char* local_block_name;
           /* Es un block correctament definit i que ha estat utilitzat */
           /* No es mostra l'activitat per tal que la trac,a .prv quedi 
@@ -329,16 +353,23 @@ int MakeParaverPCF(const char *nom)
                   BLOCK_TRF2PRV_VALUE(mod->identificator),
                   mod->activity_name,
                   mod->block_name);
-          */
+					*/
           
+          /* DEBUG 
+					printf ("Printing Module %lld with name %s\n",
+					        Block_Dimemas2Paraver_Value(mod->identificator),
+                  mod->block_name);
+					        
           fprintf(fd,
                   "%lld\t%s \n",
                   Block_Dimemas2Paraver_Value(mod->identificator),
                   mod->block_name);
+                  
         }
       }
       fprintf(fd,"\n\n");
     }
+    */
 #endif
 
     /* Es recorren tots els possibles tipus d'user event */
@@ -370,19 +401,38 @@ int MakeParaverPCF(const char *nom)
       fprintf(fd,"\n\n");
     }
   }
+
+  /* copy the cfg file that needs to be included */
+   if (cfg_include != (char*) 0) {
+      char ch;
+      while(!feof(fd_inc)) {
+         ch = fgetc(fd_inc);
+         if(ferror(fd_inc)) {
+            printf("Error reading source cfg file to be included \n");
+            exit(1);
+         }
+         if(!feof(fd_inc)) fputc(ch, fd);
+         if(ferror(fd)) {
+            printf("Error writing destination file when including the cfg file\n");
+            exit(1);
+         }
+      }
+      fprintf(fd, "\n\n");
+      fclose(fd_inc);
+   }
   
 
-  /* JGG: Parte final del PCF, tambiÈn est·tica */
+  /* JGG: Parte final del PCF, tambi√©n est√°tica */
   for (i = 0; i < PCF_TAIL_LINES; i++)
   {
     fprintf(fd,"%s\n",pcf_tail[i]);
   }
 
-  /* Es tanca el fitxer i es retorna que ha anat bÈ */
+  /* Es tanca el fitxer i es retorna que ha anat b√© */
   fflush(fd);
   fclose(fd);
   chmod (pcf_name, 0600);
   free(pcf_name);
-
+#endif
   return(0);
 }

@@ -53,6 +53,7 @@ extern "C" {
 #include "events.h"
 #include "list.h"
 #include "mallocame.h"
+#include "listE.h"
 void panic(char *fmt, ...);
 }
 
@@ -107,7 +108,7 @@ int vc_initialize(char const *venusconn) {
 	}
 
         // Initialize Interactive Queue...
-        create_queue (&Interactive_event_queue);
+        create_Equeue (&Interactive_event_queue);
 	free(s);
 
 	return 1;
@@ -287,7 +288,7 @@ EVENT_venus_timer (
   {
     /*
     if (
-      (are_only_daemons == count_queue (&Event_queue)) &&
+      (are_only_daemons == count_Equeue (&Event_queue)) &&
        NEQ_0_TIMER (current_time)
     )
     {
@@ -325,7 +326,7 @@ EVENT_venus_timer (
     thread->next_event_timer = when;
   }
 
-  insert_event (&Interactive_event_queue, event);
+  insert_Eevent (&Interactive_event_queue, event);
 
   if (debug&D_EV)
   {
@@ -381,29 +382,41 @@ int vc_command_rdvz_ready (double dtime, int src, int dest, int tag, int size, v
 	return 1;
 }
 
-int venus_outFIFO_event (struct t_queue *q, struct t_item *e) {
+#ifdef USE_EQUEUE
+int venus_outFIFO_event (Equeue *q, struct t_event *e) {
+#else
+int venus_outFIFO_event (struct t_queue *q, struct t_event *e) {
+#endif
 	static int processed = 0;
 	double tmp_timer, tmp_timer2;
         struct t_event *event;
 	double sim_time;
 
 
-   	e = q->first;
+#ifdef USE_EQUEUE
+   	e = (struct t_event *)top_Eevent (q);
+#else
+   	e = (struct t_event *)top_event (q);
+#endif
 	if (PRINT_VENUS_INFO) {
-		printf("EVENT %6d, in QUEUE %p: %d, Interactive Queue = %d\n", processed, q, q->count, Interactive_event_queue.count );
+#ifdef USE_EQUEUE
+		printf("EVENT %6d, in QUEUE %p: %d, Interactive Queue = %d\n", processed, *q, count_Equeue(q), count_Equeue(&Interactive_event_queue));
+#else
+		printf("EVENT %6d, in QUEUE %p: %d, Interactive Queue = %d\n", processed, *q, count_queue(q), count_Equeue(&Interactive_event_queue));
+#endif
 	}
-	if (e == ITEM_NIL) {
+	if (e == E_NIL) {
 		printf("\t\tNIL event\n");
 	}
 	else {
-		event = (struct t_event *) e->content;
+		event = e;
 		if (PRINT_VENUS_INFO) {
-			TIMER_TO_FLOAT (e->order.list_time, tmp_timer);
+			TIMER_TO_FLOAT (e->event_time, tmp_timer);
 			printf("\t\tTIME: %f us\n", tmp_timer);
-			if (e->next != ITEM_NIL) {
+			/* if (e->next != ITEM_NIL) {
 				TIMER_TO_FLOAT (e->next->order.list_time, tmp_timer2);
 				printf("\t\tTIME OF NEXT EVENT: %f us; DIFF = %f us\n", tmp_timer2, (tmp_timer2-tmp_timer));
-			}
+			} */
 
 			TIMER_TO_FLOAT(event->event_time, tmp_timer2);
 			printf("\t\tTIME IN EVENT: %f us, DIFF = %f us\n", tmp_timer2, (tmp_timer2-tmp_timer));
@@ -412,14 +425,14 @@ int venus_outFIFO_event (struct t_queue *q, struct t_item *e) {
 	} 
 
 	/* Now STOP simulation, interface VENUS; */
-	if (((e != ITEM_NIL) && (event->module == M_COM)) || (top_event(&Interactive_event_queue) != E_NIL)) /* Optimization */
+	if (((e != E_NIL) && (event->module == M_COM)) || (top_Eevent(&Interactive_event_queue) != E_NIL)) /* Optimization */
 	{
 		double tmp_timer;
 		char command[10000];
 		char *token, *saveptr;
 		int endfound = 0;
 
-                if (q->first != ITEM_NIL) {
+                if (e != E_NIL) {
                         /* STOP AT NEXT RELEVANT EVENT: either M_COM that can
                          * start or progress communications OR last event in
                          * the queue. */
@@ -438,14 +451,14 @@ int venus_outFIFO_event (struct t_queue *q, struct t_item *e) {
 
                         TIMER_TO_FLOAT(next_relevant_event, tmp_timer);
 			*/
-                        TIMER_TO_FLOAT(q->first->order.list_time, tmp_timer);
+                        TIMER_TO_FLOAT(e->event_time, tmp_timer);
                         sprintf(command, "STOP %.100lg\n", tmp_timer);
                         if (PRINT_VENUS_INFO) {
                                 printf("Sending %s", command);
                         }
 		        vc_send(command);
                 }
-                else if (Interactive_event_queue.first != ITEM_NIL) {
+                else if (top_Eevent(&Interactive_event_queue) != E_NIL) {
                         TIMER_TO_FLOAT(current_time, tmp_timer);
                         sprintf(command, "STOP %.100lg\n", TIME_LIMIT);
                         if (PRINT_VENUS_INFO) {
@@ -508,19 +521,24 @@ int venus_outFIFO_event (struct t_queue *q, struct t_item *e) {
                                                         }  
                                                 }
 
-						extract_from_queue(&Interactive_event_queue, (char *)event);
-						extract_from_queue(&Interactive_event_queue, (char *)out_resources_event);
+						extract_from_Equeue(&Interactive_event_queue, event);
+						extract_from_Equeue(&Interactive_event_queue, out_resources_event);
 
                                                 TIMER_TO_FLOAT(event->event_time, dimemas_prediction);
 
 						FLOAT_TO_TIMER(time, tmp_timer);
 						ASS_ALL_TIMER(out_resources_event->event_time, tmp_timer);
 						ASS_ALL_TIMER(event->event_time, tmp_timer);
+#ifdef USE_EQUEUE
+						insert_Eevent(&Event_queue, out_resources_event);
+						insert_Eevent(&Event_queue, event);
+#else 
 						insert_event(&Event_queue, out_resources_event);
 						insert_event(&Event_queue, event);
+#endif
 						if (PRINT_VENUS_INFO) {
 							print_event(event);
-							printf("Inserted SEND %.9lf %d %d %d (%p == %p) %s\n", time, from, to, size, event, q->first->content, buffer);
+							printf("Inserted SEND %.9lf %d %d %d (%p == %p) %s\n", time, from, to, size, event, e, buffer);
 						}
                                                 // CHECK RECEIVED 
                                                 if (rc >= 8) { 
@@ -535,7 +553,7 @@ int venus_outFIFO_event (struct t_queue *q, struct t_item *e) {
 						printf("WARNING: Received SEND, but imcomplete info...\n");
 					}
 					if (PRINT_VENUS_SENDS) {
-						printf("Received SEND %.9lf %d %d %d %p %p %s [in flight: %d] [ev in flight queue: %d] [D_time - V_time = %.9lf]\n", time, from, to, size, event, out_resources_event, buffer, venusmsgs_in_flight, Interactive_event_queue.count, (dimemas_prediction - time));
+						printf("Received SEND %.9lf %d %d %d %p %p %s [in flight: %d] [ev in flight queue: %d] [D_time - V_time = %.9lf]\n", time, from, to, size, event, out_resources_event, buffer, venusmsgs_in_flight, count_Equeue(&Interactive_event_queue), (dimemas_prediction - time));
 					}
 					/*venusmsgs_in_flight--; --> In COM_TIMER_OUT for internal_network messages */
 				}

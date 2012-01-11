@@ -35,6 +35,6 @@
 #ifndef PARAVER_PCF
 #define PARAVER_PCF
 
-int MakeParaverPCF(const char *nom);
+int MakeParaverPCF(const char *nom, const char *pcf_include);
 
 #endif

@@ -43,14 +43,14 @@ void malloc_init()
 {
 }
 
-char *mallocame(int s)
+char *mallocame(size_t s)
 {
   char *adreca;
-  
+
   adreca = (char*) malloc(s);
-  if (adreca==NULL)
+  if (adreca == NULL)
   {
-    fprintf(stderr,"Not enough MEMORY!!!!\n");
+    fprintf(stderr,"Out of Memory\n");
     exit(1);
   }
   return(adreca);
@@ -68,7 +68,6 @@ void malloc_end()
 
 #else
 
-char malloc_c_rcsid[]="$Id$";
 
 #include "define.h"
 #include "types.h"
@@ -93,11 +92,9 @@ malloc_init()
    }
 }
 
-char *
-mallocame(int s)
+char * mallocame(int s)
 {
    register char  *add;
-
 
    veces_malloc++;
    s = s+1280;
@@ -122,9 +119,7 @@ mallocame(int s)
    return (add);
 }
 
-
-void
-freeame(char  *a, int s)
+void freeame(char  *a, int s)
 {
    veces_malloc--;
 

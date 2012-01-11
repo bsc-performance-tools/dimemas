@@ -79,45 +79,44 @@
 #define SDDFA_2C_11A	"remote_port_startup"
 #define SDDFA_2C_12A	"local_memory_startup"
 #define SDDFA_2C_13A	"remote_memory_startup"
+
   /* DAMIEN format */
-#define SDDFA_2C_1A_D	"machine_id"
-#define SDDFA_2C_2A_D	"node_id"
-#define SDDFA_2C_3A_D	"simulated_architecture"
-#define SDDFA_2C_4A_D	"number_of_processors"
-#define SDDFA_2C_5A_D	"number_of_input_links"
-#define SDDFA_2C_6A_D	"number_of_output_links"
-#define SDDFA_2C_7A_D	"startup_on_local_communication"
-#define SDDFA_2C_8A_D	"startup_on_remote_communication"
-#define SDDFA_2C_9A_D	"speed_ratio_instrumented_vs_simulated"
-#define SDDFA_2C_10A_D	"memory_bandwidth"
-#define SDDFA_2C_11A_D	"external_net_startup"
-#define SDDFA_2C_12A_D	"local_port_startup"
-#define SDDFA_2C_13A_D	"remote_port_startup"
-#define SDDFA_2C_14A_D	"local_memory_startup"
-#define SDDFA_2C_15A_D	"remote_memory_startup"
+#define SDDFA_2C_1A_D   "machine_id"
+#define SDDFA_2C_2A_D   "node_id"
+#define SDDFA_2C_3A_D   "simulated_architecture"
+#define SDDFA_2C_4A_D   "number_of_processors"
+#define SDDFA_2C_5A_D   "number_of_input_links"
+#define SDDFA_2C_6A_D   "number_of_output_links"
+#define SDDFA_2C_7A_D   "startup_on_local_communication"
+#define SDDFA_2C_8A_D   "startup_on_remote_communication"
+#define SDDFA_2C_9A_D   "speed_ratio_instrumented_vs_simulated"
+#define SDDFA_2C_10A_D  "memory_bandwidth"
+#define SDDFA_2C_11A_D  "external_net_startup"
+#define SDDFA_2C_12A_D  "local_port_startup"
+#define SDDFA_2C_13A_D  "remote_port_startup"
+#define SDDFA_2C_14A_D  "local_memory_startup"
+#define SDDFA_2C_15A_D  "remote_memory_startup"
   
   
 /* Record 3 */
-#define SDDFA_3C_NAME	"mapping information"
-#define SDDFA_3C_1A	"tracefile"
-#define SDDFA_3C_2A	"number_of_tasks"
-#define SDDFA_3C_3A	"mapping_tasks_to_nodes"
-#define SDDFA_3C_4A	"priority"
-
+#define SDDFA_3C_NAME "mapping information"
+#define SDDFA_3C_1A   "tracefile"
+#define SDDFA_3C_2A   "number_of_tasks"
+#define SDDFA_3C_3A   "mapping_tasks_to_nodes"
+#define SDDFA_3C_4A   "priority"
 
 /* Record 4 */
-#define SDDFA_4C_NAME	"configuration files"
-#define SDDFA_4C_1A	"scheduler"
-#define SDDFA_4C_2A	"file_system"
-#define SDDFA_4C_3A	"communication"
-#define SDDFA_4C_4A	"sensitivity"
-
+#define SDDFA_4C_NAME "configuration files"
+#define SDDFA_4C_1A   "scheduler"
+#define SDDFA_4C_2A   "file_system"
+#define SDDFA_4C_3A   "communication"
+#define SDDFA_4C_4A   "sensitivity"
 
 /* Record 5 */
 #define SDDFA_5C_NAME   "modules information"
-#define SDDFA_5C_1A     "identificator"
-#define SDDFA_5C_2A     "execution_ratio"
-
+#define SDDFA_5C_1A     "type"
+#define SDDFA_5C_2A     "value"
+#define SDDFA_5C_3A     "execution_ratio"
 
 /* Record 6 */
 #define SDDFA_6C_NAME   "file system parameters"
@@ -129,20 +128,20 @@
 
 
 /* Record 7 - DAMIEN format */
-#define SDDFA_7C_NAME   "dedicated connection information"
-#define SDDFA_7C_1A_D   "connection_id"
-#define SDDFA_7C_2A_D   "source_machine"
-#define SDDFA_7C_3A_D   "destination_machine"
-#define SDDFA_7C_4A_D   "connection_bandwidth"
-#define SDDFA_7C_5A_D   "tags_list"
-#define SDDFA_7C_6A_D   "first_message_size"
-#define SDDFA_7C_7A_D   "first_size_condition"
-#define SDDFA_7C_8A_D   "operation"
-#define SDDFA_7C_9A_D   "second_message_size"
-#define SDDFA_7C_10A_D  "second_size_condition"
-#define SDDFA_7C_11A_D  "list_communicators"
-#define SDDFA_7C_12A_D	"connection_startup"
-#define SDDFA_7C_13A_D	"flight_time"
+#define SDDFA_7C_NAME  "dedicated connection information"
+#define SDDFA_7C_1A_D  "connection_id"
+#define SDDFA_7C_2A_D  "source_machine"
+#define SDDFA_7C_3A_D  "destination_machine"
+#define SDDFA_7C_4A_D  "connection_bandwidth"
+#define SDDFA_7C_5A_D  "tags_list"
+#define SDDFA_7C_6A_D  "first_message_size"
+#define SDDFA_7C_7A_D  "first_size_condition"
+#define SDDFA_7C_8A_D  "operation"
+#define SDDFA_7C_9A_D  "second_message_size"
+#define SDDFA_7C_10A_D "second_size_condition"
+#define SDDFA_7C_11A_D "list_communicators"
+#define SDDFA_7C_12A_D "connection_startup"
+#define SDDFA_7C_13A_D  "flight_time"
 
 
 

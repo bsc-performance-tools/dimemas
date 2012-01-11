@@ -43,6 +43,9 @@
 #include "fs.h"
 #include "links.h"
 #include "list.h"
+#ifdef USE_EQUEUE
+#include "listE.h"
+#endif
 #include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
@@ -115,9 +118,15 @@ MEMORY_init()
       printf (": MEMORY initial routine called\n");
    }
 
+#ifdef USE_EQUEUE
+   for (node  = (struct t_node*) head_Equeue (&Node_queue);
+        node != N_NIL;
+        node  = (struct t_node*) next_Equeue (&Node_queue))
+#else
    for (node  = (struct t_node*) head_queue (&Node_queue);
         node != N_NIL;
         node  = (struct t_node*) next_queue (&Node_queue))
+#endif
    {
       create_queue (&(node->wait_out_copy_segment));
       create_queue (&(node->wait_in_copy_segment));
@@ -242,7 +251,6 @@ static int
 from_rank_to_task (struct t_window *win, int rank)
 {
     int *task;
-    struct t_task *t;
     int  i;
     
     task = (int *)head_queue(&win->global_ranks);
@@ -687,7 +695,6 @@ there_is_a_post_for_this_start (struct t_thread *thread, struct t_mpi_os *mpi_os
   register struct t_thread *th;
   struct t_action *action;
   struct t_mpi_os *mpi_os_2;
-  int total_in_start;
   int *current_rank;
   int *post_rank;
   int taskid;

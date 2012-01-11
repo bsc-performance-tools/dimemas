@@ -32,6 +32,8 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <assert.h>
+
 /* Includes 'por defecto' */
 #include "define.h"
 #include "types.h"
@@ -172,6 +174,8 @@ PRIO_FIFO_info(int info)
 void
 PRIO_FIFO_init (char *filename, struct t_machine *machine)
 {
+   assert(filename != NULL);
+   assert(machine  != NULL);
 }
 
 void

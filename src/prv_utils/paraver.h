@@ -25,15 +25,15 @@
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+  $URL::                                          $:  File
+  $Rev::                                          $:  Revision of last commit
+  $Author::                                       $:  Author of last commit
+  $Date::                                         $:  Date of last commit
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef __paraver_h
-#define __paraver_h
+#ifndef _paraver_h_
+#define _paraver_h_
 
 /* Record identifier */
 #define PA_STATE  1
@@ -67,10 +67,10 @@
 #define PA_EVENT_STRING "%d:2:%d:%d:%d:%d:%.0f:%d:%d\n",paraver_line_number++
 #define PA_COMM_STRING  "%d:3:%d:%d:%d:%d:%.0f:%.0f:%d:%d:%d:%d:%.0f:%.0f:%d:%d\n",paraver_line_number++
 
-#ifdef FORMAT_VELL_RECORDS_4_PRV
-#define PA_GLOB_STRING  "%d:4:%d:%d:%d:%d:%.0f:%.0f:%.0f:%.0f:%d:%d:%d:%d\n",paraver_line_number++
+#ifdef  FORMAT_VELL_RECORDS_4_PRV
+  #define PA_GLOB_STRING  "%d:4:%d:%d:%d:%d:%.0f:%.0f:%.0f:%.0f:%d:%d:%d:%d\n",paraver_line_number++
 #else
-#define	PA_GLOB_STRING  "%d:4:%d:%d:%d:%d:%.0f:%d:%d:%d:%d:%d\n",paraver_line_number++
+  #define PA_GLOB_STRING  "%d:4:%d:%d:%d:%d:%.0f:%d:%d:%d:%d:%d\n",paraver_line_number++
 #endif /* FORMAT_VELL_RECORDS_4_PRV */
 
 #define PARAVER_SEM_WAIT   98
@@ -188,202 +188,157 @@ struct t_paradis_record
 /**
  * External routines defined in file paraver.c
  **/
-void 
-Paraver_thread_buwa(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time
-);
+
+void PARAVER_Enable_Trace_Generation (void);
+
+void PARAVER_init(void);
+
+void PARAVER_fini(void);
+
+void Paraver_thread_buwa(int           cpu,
+                         int           ptask,
+                         int           task,
+                         int           thread,
+                         dimemas_timer init_time,
+                         dimemas_timer end_time);
 
 /* JGG: Nueva entrada, para mostrar los estados en que un thread esta esperando
  * los links para poder enviar */
-void 
-Paraver_thread_wait_links(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init,
-  dimemas_timer end
-);
+void Paraver_thread_wait_links(int           cpu,
+                               int           ptask,
+                               int           task,
+                               int           thread,
+                               dimemas_timer init,
+                               dimemas_timer end);
 
-void
-Paraver_thread_consw(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time
-);
+void Paraver_thread_consw(int           cpu,
+                          int           ptask,
+                          int           task,
+                          int           thread,
+                          dimemas_timer init_time,
+                          dimemas_timer end_time);
 
 /* JGG (11/03/2005): Cambio de nombre de 'Paraver_thread_busy' a 
  * 'Paraver_thread_running' */
-void
-Paraver_thread_running(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time
-);
+void Paraver_thread_running(int           cpu,
+                            int           ptask,
+                            int           task,
+                            int           thread,
+                            dimemas_timer init_time,
+                            dimemas_timer end_time);
 
 /* JGG: Previously named 'Paraver_thread_overhead' */
-void 
-Paraver_thread_startup(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time, 
-  dimemas_timer end_time
-);
+void Paraver_thread_startup(int           cpu,
+                            int           ptask,
+                            int           task,
+                            int           thread,
+                            dimemas_timer init_time, 
+                            dimemas_timer end_times);
 
 /* JGG: NEW! Latency due (MPI implementation) data copy operation */
-void
-Paraver_thread_data_copy(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer f, 
-  dimemas_timer g
-);
+void Paraver_thread_data_copy(int           cpu,
+                              int           ptask,
+                              int           task,
+                              int           thread,
+                              dimemas_timer f,
+                              dimemas_timer g);
 
 /* JGG (07/02/2006): Round Trip Time on send operations with rendez-vous */
-void
-Paraver_thread_round_trip(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer f, 
-  dimemas_timer g
-);
+void Paraver_thread_round_trip(int           cpu,
+                               int           ptask,
+                               int           task,
+                               int           thread,
+                               dimemas_timer f, 
+                               dimemas_timer g);
 
-void 
-Paraver_thread_dead(
-  int cpu,
-  int ptask,
-  int task,
-  int thread
-);
+void Paraver_thread_dead(int cpu,
+                         int ptask,
+                         int task,
+                         int thread);
 
-void 
-Paraver_thread_idle(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time
-);
+void Paraver_thread_idle(int           cpu,
+                         int           ptask,
+                         int           task,
+                         int           thread,
+                         dimemas_timer init_time,
+                         dimemas_timer end_time);
 
-void
-Paraver_thread_wait(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time,
-  int           type
-);
+void Paraver_thread_wait(int           cpu,
+                         int           ptask,
+                         int           task,
+                         int           thread,
+                         dimemas_timer init_time,
+                         dimemas_timer end_time,
+                         int           type);
 
-extern void
-Paraver_thread_IO(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time
-);
+extern void Paraver_thread_IO(int           cpu,
+                              int           ptask,
+                              int           task,
+                              int           thread,
+                              dimemas_timer init_time,
+                              dimemas_timer end_time);
 
-extern void
-Paraver_thread_block_IO(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time
-);
+extern void Paraver_thread_block_IO(int           cpu,
+                                    int           ptask,
+                                    int           task,
+                                    int           thread,
+                                    dimemas_timer init_time,
+                                    dimemas_timer end_time);
 
-extern void
-Paraver_thread_block_OS(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init_time,
-  dimemas_timer end_time
-);
+extern void Paraver_thread_block_OS(int           cpu,
+                                    int           ptask,
+                                    int           task,
+                                    int           thread,
+                                    dimemas_timer init_time,
+                                    dimemas_timer end_time);
 
-extern void
-Paraver_comm(
-  int           cpu_s,
-  int           ptask_s,
-  int           task_s,
-  int           thread_s,
-  dimemas_timer logical_send,
-  dimemas_timer physical_send,
-  int           cpu_r,
-  int           ptask_r,
-  int           task_r,
-  int           thread_r,
-  dimemas_timer logical_recv,
-  dimemas_timer physical_recv,
-  int           size,
-  int           tag
-);
+extern void Paraver_comm(int           cpu_s,
+                         int           ptask_s,
+                         int           task_s,
+                         int           thread_s,
+                         dimemas_timer logical_send,
+                         dimemas_timer physical_send,
+                         int           cpu_r,
+                         int           ptask_r,
+                         int           task_r,
+                         int           thread_r,
+                         dimemas_timer logical_recv,
+                         dimemas_timer physical_recv,
+                         int           size,
+                         int           tag);
 
-extern void
-Paraver_translate_event(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer temps,
-  long long     tipus,
-  long long     valor
-);
+extern void Paraver_translate_event(int           cpu,
+                                    int           ptask,
+                                    int           task,
+                                    int           thread,
+                                    dimemas_timer temps,
+                                    long long     tipus,
+                                    long long     valor);
 
-extern void 
-Paraver_event(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer temps,
-  long long     tipus,
-  long long     valor
-);
+extern void Paraver_event(int           cpu,
+                          int           ptask,
+                          int           task,
+                          int           thread,
+                          dimemas_timer temps,
+                          long long     tipus,
+                          long long     valor);
 
-extern void
-Paraver_Global_Op (
-  int cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer arrive_to_collective,
-  dimemas_timer sync_time,
-  dimemas_timer with_resources,
-  dimemas_timer conclude_communication,
-  int           commid,
-  int           sendsize,
-  int           recvsize,
-  int           gOP,
-  int           root
-);
+extern void Paraver_Global_Op(int           cpu,
+                              int           ptask,
+                              int           task,
+                              int           thread,
+                              dimemas_timer arrive_to_collective,
+                              dimemas_timer sync_time,
+                              dimemas_timer with_resources,
+                              dimemas_timer conclude_communication,
+                              int           commid,
+                              int           sendsize,
+                              int           recvsize,
+                              int           gOP,
+                              int           root);
 
-extern void 
-paraver_set_priorities(char *c);
+extern void paraver_set_priorities(char *c);
 
-extern void 
-sort_paraver(void);
+extern void sort_paraver(void);
+
 #endif

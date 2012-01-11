@@ -25,24 +25,29 @@
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+  $URL::                                          $:  File
+  $Rev::                                          $:  Revision of last commit
+  $Author::                                       $:  Author of last commit
+  $Date::                                         $:  Date of last commit
 
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */ 
 
 #include "define.h"
+#include "subr.h"
 #include "types.h"
+#include "extern.h"
 
 #include "aleatorias.h"
 #include "communic.h"
 #include "cp.h"
 #include "cpu.h"
 #include "events.h"
-#include "extern.h"
 #include "fs.h"
 #include "list.h"
+#ifdef USE_EQUEUE
+#include "listE.h"
+#endif
+
 #include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
@@ -52,34 +57,85 @@
 #include "sddf.h"
 #include "semaphore.h"
 #include "task.h"
+#include "random.h"
 
 #ifdef VENUS_ENABLED
 #include "venusclient.h"
 #endif
 
-
+#include <time.h>
 #include <errno.h>
+
+#include <execinfo.h>
+#include <signal.h>
+
+// Compute time differences
+double ddiff(struct timespec start, struct timespec end)
+{
+  return ( (double)(end.tv_sec-start.tv_sec) + (double)1e-9*(end.tv_nsec-start.tv_nsec) );
+}
+
+/*
+void print_backtrace (int a) {
+
+  // prevent infinite recursion if print_backtrace() causes another segfault
+  signal(SIGSEGV, SIG_DFL);
+  signal(SIGABRT, SIG_DFL);
+  void *array[100];
+  int size;
+  char **strings;
+  int i;
+
+  size = backtrace (array, 100);
+  strings = backtrace_symbols (array, size);
+
+  printf ("%d\n", a);
+  printf("Stack frames (%d):\n", size);
+
+  for (i = 0; i < size; i++)
+    printf( "%s\n", strings[i]);
+
+  free (strings);
+};
+
+/// Segmentation fault signal handler.
+void
+segfaultHandler(int sigtype)
+{
+    printf("Segmentation fault \n");
+    print_backtrace(sigtype);
+    exit(-1);
+}
+*/
 
 dimemas_timer   current_time;
 dimemas_timer   final_statistical_time;
 
 struct t_simulator sim_char;
 
+unsigned long total_threads    = 0;
+unsigned long finished_threads = 0;
+int           progress         = 0;
+
+
 char *config_file  = "rc.dimemas";
 int   output_level = 0;
 int   debug        = 0;
+int   assert       = 0;
 
 int   port_ids = MIN_PORT_NUMBER;
 int   Ptask_ids = 1;
 
 char  *fichero_fs     = (char*)0;
 char  *fichero_sch    = (char*)0;
+char  scheduling_policy[50];
 char  *fichero_comm   = (char*)0;
 char  *fichero_random = (char*)0;
 
 t_boolean reload_Ptasks = FALSE;
 t_boolean reload_done   = FALSE;
 int       reload_limit  = 10;
+t_boolean reload_while_longest_running = FALSE;
 
 t_boolean dimemas_GUI   = FALSE;
 
@@ -91,6 +147,7 @@ t_boolean Critical_Path_Analysis=FALSE;
 FILE     *salida_datos;
 char     *fichero_salida = (char*) 0;
 char     *paraver_file   = (char*) 0;
+char     *paraver_cfg_include_file   = (char*) 0;
 
 char *file_for_event_to_monitorize = (char *)0;
 FILE *File_for_Event;
@@ -146,10 +203,13 @@ reserve_pointers(int num_reserves)
   
   srandom((unsigned int) time(NULL));
   
-  reserved_pointers = (FILE*) mallocame(num_reserves*sizeof(FILE*));
+  reserved_pointers = (FILE**) mallocame( (size_t) num_reserves*sizeof(FILE*));
   /* reserved_names    = (char*) mallocame(num_reserves*sizeof(char*)); */
+  
   if (reserved_pointers == NULL)
+  {
     panic("Error reserving mandatory file descriptors memory\n");
+  }
 
   for(i = 0; i < num_reserves; i++)
   {
@@ -174,8 +234,7 @@ reserve_pointers(int num_reserves)
   reserved_pointers_count = num_reserves;
 }
 
-void
-free_reserved_pointer(void)
+void free_reserved_pointer(void)
 {
   if (reserved_pointers_count == 0)
     panic("No more pointers to free\n");
@@ -316,9 +375,9 @@ show_version(char *name)
 {
    int             i = 0;
 
-   printf ("Dimemas v%d.%d \n", VERSION, SUBVERSION);
+   printf ("Dimemas v%s \n",     VERSION);
    printf ("Binary file  %s \n", name);
-   printf ("Compiled  %s \n", DATE);
+   printf ("Compiled  %s \n",    DATE);
    printf ("Implemented CPU Scheduling policies:\n");
    while (SCH[i].name)
    {
@@ -337,7 +396,7 @@ show_version(char *name)
 static void
 help_message(char *tname)
 {
-  printf ("Dimemas version %d.%d\n\n", VERSION, SUBVERSION);
+  printf ("Dimemas version %s\n\n", VERSION);
 #ifndef NO_COMPILATION_INFO
   printf ("Compiled on %s \n", DATE);
 #endif
@@ -348,6 +407,7 @@ help_message(char *tname)
   printf ("\t-h\t\tDisplay this help message\n");
   printf ("\t-v\t\tDisplay Dimemas version information\n");
   printf ("\t-d\t\tEnable debug output\n");
+  printf ("\t-xa\t\tForce assertations - Vladimir: check if optimizations caused some errors\n");
   printf ("\t-xs\t\tEnable extra scheduling debug output\n");
   printf ("\t-xe\t\tEnable extra event manager debug output\n");
   printf ("\t-xp\t\tEnable extra Paraver trace generation debug output\n");
@@ -358,7 +418,7 @@ help_message(char *tname)
   printf ("\t-C\t\tPerform critical path analysis\n");
   printf ("\t-A file\t\tGenerate Paragraph+ SDDF tracefile\n");
   printf ("\t-p file\t\tGenerate Paraver tracefile (ASCII)\n");
-  printf ("\t-pa file\tGenerate Paraver ASCII tracefile\n");
+  printf ("\t-pc file\tInclude the Paraver configuration file\n");
   printf ("\t-pb file\tGenerate Paraver binary tracefile\n");
   printf ("\t-y time\t\tSet Paraver tracefile start time\n");
   printf ("\t-z time\t\tSet Paraver tracefile stop time\n");
@@ -420,8 +480,7 @@ cotilleo (char *comando)
 }
 */
 
-static dimemas_timer
-read_timer(char *c)
+static dimemas_timer read_timer(char *c)
 {
   int           h, u;
   int           i;
@@ -488,6 +547,7 @@ static int read_size(char *c)
 int
 main (int argc, char *argv[])
 {
+  
   int             i;
   int             j;
   dimemas_timer   to_parent;
@@ -496,16 +556,29 @@ main (int argc, char *argv[])
   t_boolean Pallas_output = TRUE;
   struct t_machine  *machine;
   FILE              *special_cfg;
-  int               venusconn = 0;
+  unsigned long long event_counter = 0;
+  struct timespec time_start;
 
+//   int               venusconn = "";
+// Vladimir:  this is to eliminate the warning
+// should not break the program??
+  char *            venusconn = "";
+
+  // signal(SIGSEGV, segfaultHandler);
+  #ifdef PAL_LC
+  /**
+   * Call Pallas license-checker
+   **/
+  LC_check();
+  #endif
 
   ASS_TIMER (current_time, 0);
   ASS_TIMER (final_statistical_time, 0);
   ASS_TIMER (time_limit, 0);
 
   #ifndef PACA
-  ASS_TIMER (time_limit, TIME_LIMIT);	/* Simulation restricted to 8 hours */
-  #endif                                /* PACA */
+  ASS_TIMER (time_limit, TIME_LIMIT); /* Simulation restricted to 8 hours */
+  #endif                              /* PACA */
 
   /* Per defecte les comunicacions son asincrones independentment de la mida */
   RD_SYNC_message_size = -1;
@@ -577,6 +650,9 @@ main (int argc, char *argv[])
             case 't':
               debug |= D_TASK;
               break;
+            case 'a':
+              assert = 1;
+              break;  
             default:
               fprintf (stderr, USAGE, argv[0]);
               exit (1);
@@ -655,6 +731,7 @@ main (int argc, char *argv[])
         case 's':
           j++;
           fichero_sch = argv[j];
+          strncpy(scheduling_policy, fichero_sch, strlen(fichero_sch));
           break;
         case 'b':
           binary_files = TRUE;
@@ -678,8 +755,12 @@ main (int argc, char *argv[])
           j++;
           reload_Ptasks = TRUE;
           reload_limit = atoi (argv[j]);
-          if (reload_limit <= 0)
-            reload_limit = 1;
+          if (reload_limit <= 0) { 
+            /* Changed behaviour: 0 is "inifinite" until all have executed at least once */
+            reload_limit = MAX_RELOAD_LIMIT;
+            reload_while_longest_running = TRUE;
+            /* <0 should be an error if it is undefined... but well... */
+          }
           break;
         case 'O':
           Pallas_output = FALSE;
@@ -731,7 +812,8 @@ main (int argc, char *argv[])
 
   if (paraver_file != (char *) 0)
   {
-    Activar_Generacio_Paraver();
+    PARAVER_Enable_Trace_Generation();
+    
     if ((paraver_initial_timer) && (paraver_final_timer))
     {
       if LE_TIMER (stop_paraver, start_paraver)
@@ -775,7 +857,7 @@ main (int argc, char *argv[])
       File_for_Event = stdout;
   }
    
-  if (j>=argc)
+  if (j >= argc)
   {
     fprintf (stderr, USAGE, argv[0]);
     exit (1);
@@ -809,7 +891,11 @@ main (int argc, char *argv[])
 
   /* Modules Initial routines */
   init_simul_char ();
+#ifndef USE_EQUEUE
   create_queue (&Node_queue);
+#else
+  create_Equeue (&Node_queue);
+#endif
   create_queue (&Port_queue);
   create_queue (&Global_op);
   
@@ -835,9 +921,13 @@ main (int argc, char *argv[])
   new_trace_format = is_it_new_format();
 
   if(!new_trace_format)
-	Read_Ptasks();
-  else  
-  	Ptasks_init();
+  {
+    Read_Ptasks();
+  }
+  else
+  {
+    Ptasks_init();
+  }
 
 
   if (Critical_Path_Analysis)
@@ -862,7 +952,6 @@ main (int argc, char *argv[])
 
   PORT_init ();
 
-
   seek_info = FALSE;
 
   if (sintetic_io_applications)
@@ -875,7 +964,8 @@ main (int argc, char *argv[])
   if (venus_enabled) {
     int rc = 1;
     rc = vc_initialize(venusconn); /* VENUS CLIENT */
-    if (!rc) {
+    if (!rc)
+    {
             fprintf(stderr, "Could not connect to Venus, exiting\n");
             return -100;
     }
@@ -884,14 +974,15 @@ main (int argc, char *argv[])
 
 
   EVENT_init ();
-  SCHEDULER_init (fichero_sch);
+  SCHEDULER_init (scheduling_policy);
 
-  /* S'inicialitza l'scheduler de cada maquina */     
-  for(machine  = (struct t_machine *)head_queue(&Machine_queue);
+  /* S'inicialitza l'scheduler de cada maquina */
+  for(machine  = (struct t_machine*)head_queue(&Machine_queue);
       machine != MA_NIL;
-      machine  = (struct t_machine *)next_queue(&Machine_queue))
+      machine  = (struct t_machine*)next_queue(&Machine_queue))
   {
-    (*SCH[machine->scheduler.policy].scheduler_init) (fichero_sch, machine);
+    (*SCH[machine->scheduler.policy].scheduler_init) (fichero_sch,
+                                                      machine);
   }
   
   COMMUNIC_init (fichero_comm);
@@ -902,7 +993,7 @@ main (int argc, char *argv[])
   Give_number_to_CPU();
 
   /* Paraver trace initialization if needed */
-  Paraver_init();
+  PARAVER_init();
 
   reload_events ();
 
@@ -915,12 +1006,49 @@ main (int argc, char *argv[])
 
   ASS_ALL_TIMER (to_parent, current_time);
 
+#ifdef SHOW_PERFORMANCE
+  clock_gettime(CLOCK_MONOTONIC, &time_start);
+#endif
+
+#ifdef USE_EQUEUE
+
+#ifdef VENUS_ENABLED
+  while ((top_Eevent (&Event_queue) != E_NIL) || (venus_enabled && (top_Eevent(&Interactive_event_queue) != E_NIL)))
+#else /* !VENUS_ENABLED */
+  while (top_Eevent (&Event_queue) != E_NIL)
+#endif
+
+#else /* !USE_EQUEUE */
+
 #ifdef VENUS_ENABLED
   while ((top_event (&Event_queue) != E_NIL) || (venus_enabled && (top_event(&Interactive_event_queue) != E_NIL)))
-#else
-while (top_event (&Event_queue) != E_NIL)
+#else /* !VENUS_ENABLED */
+  while (top_event (&Event_queue) != E_NIL)
 #endif
+
+#endif /* USE_EQUEUE */
+
   {
+
+#ifdef SHOW_PERFORMANCE
+    if ((event_counter % 100000UL) == 0)
+    {
+      struct timespec time_now;
+
+      clock_gettime(CLOCK_MONOTONIC, &time_now);
+      double real_time = ddiff(time_start, time_now);
+
+      printf("** Event #%llu   T=%.7f  ( %.2fus)   Elapsed: %.7fs  (%.2fs)  ev/sec=%.0f\n",
+             event_counter,
+             current_time/1000000,
+             current_time,
+             real_time,
+             real_time,
+             (real_time > 0.0) ? ((double)event_counter)/real_time : 0.0);
+    }
+    event_counter++;
+#endif /* SHOW_PERFORMANCE */
+
     /*
     if ((NEQ_0_TIMER (time_limit)) && GT_TIMER (current_time, time_limit))
     {
@@ -939,7 +1067,12 @@ while (top_event (&Event_queue) != E_NIL)
       */
       break;
     }
-    event_manager (outFIFO_event (&Event_queue));
+
+#ifdef USE_EQUEUE
+    event_manager ( (struct t_event*) outFIFO_Eevent (&Event_queue));
+#else
+    event_manager ( (struct t_event*) outFIFO_event (&Event_queue));
+#endif
   }
 
   if (debug)
@@ -985,7 +1118,7 @@ while (top_event (&Event_queue) != E_NIL)
     show_CP_graph();
   }
 
-  Paraver_fini();
+  PARAVER_fini();
 
   strcpy (message_buffer, "");
   for (i = 0; i < argc; i++)

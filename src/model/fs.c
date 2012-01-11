@@ -42,6 +42,9 @@
 #include "extern.h"
 #include "fs.h"
 #include "list.h"
+#ifdef USE_EQUEUE
+#include "listE.h"
+#endif
 #include "mallocame.h"
 #include "paraver.h"
 #include "schedule.h"
@@ -161,7 +164,7 @@ create_scatter(struct t_thread *thread, t_boolean twin)
 static struct t_action *
 create_return_to_fs(int id)
 {
-  struct t_action *action, *ac;
+  struct t_action *ac;
   
   ac = (struct t_action *)mallocame(sizeof(struct t_action));
   ac->next = AC_NIL;
@@ -305,7 +308,6 @@ FS_general(int value, struct t_thread *thread)
    struct t_mpi_io  *mpi_io;
    struct t_action  *action;
    struct t_thread  *copy, *copy2;
-   struct t_communicator *communicator;
    dimemas_timer tmp_timer, new_time;
    struct t_node   *node;
    struct t_cpu *cpu;
@@ -1094,15 +1096,23 @@ FS_init(char *filename, t_boolean hot)
    struct t_node  *node;
    int i;
    int *token;
+   if (hot)
+      panic("Vladimir: I did not know that the cache can be hot\n");
 
    if (debug&D_FS)
    {
       PRINT_TIMER (current_time);
       printf (": FS initial routine called with file %s\n", filename);
    }
+#ifdef EQUEUE
+   for (node = (struct t_node *) head_Equeue (&Node_queue);
+	node != N_NIL;
+	node = (struct t_node *) next_Equeue (&Node_queue))
+#else
    for (node = (struct t_node *) head_queue (&Node_queue);
 	node != N_NIL;
 	node = (struct t_node *) next_queue (&Node_queue))
+#endif
    {
       for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
 	   cpu != C_NIL;
@@ -1136,9 +1146,15 @@ FS_end()
       PRINT_TIMER (current_time);
       printf (": FS end routine called\n");
    }
+#ifdef USE_EQUEUE
+   for (node = (struct t_node *) head_Equeue (&Node_queue);
+	node != N_NIL;
+	node = (struct t_node *) next_Equeue (&Node_queue))
+#else
    for (node = (struct t_node *) head_queue (&Node_queue);
 	node != N_NIL;
 	node = (struct t_node *) next_queue (&Node_queue))
+#endif
    {
       for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
 	   cpu != C_NIL;
@@ -1202,8 +1218,7 @@ FS_paraver()
    return (0);
 }
 
-void
-new_io_operation (int operation_id, char *operation_name)
+void new_io_operation (int operation_id, char *operation_name)
 {
    if ((operation_id>=0) && (operation_id<=MAX_IO_OPERATIONS))
    {

@@ -43,6 +43,7 @@
 #include "define.h"
 #include "types.h"
 #include "extern.h"
+#include "subr.h"
 
 #include "aleatorias.h"
 

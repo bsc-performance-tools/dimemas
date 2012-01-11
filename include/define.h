@@ -64,8 +64,10 @@
   #define alpha
 #endif
 
+/*
 #define VERSION    2
 #define SUBVERSION 3
+*/
 
 #define TRUE  1
 #define FALSE 0
@@ -110,6 +112,15 @@
  */
 #define BASE_PRIO 120
 
+/* MAX RELOAD LIMIT */
+#define MAX_RELOAD_LIMIT 1000
+
+/* SHOW PERFORMANCE BANNERS */
+// #define SHOW_PERFORMANCE
+
+/* USE NEW QUEUE CONTAINERS */
+//#define USE_EQUEUE
+
 /*
  * Possible actions in trace files.
  */
@@ -129,6 +140,8 @@
 #define MPI_OS      13
 #define IRECV       14  /* Immediate recieve (without blocking) */
 #define WAIT        15  /* Block until wait */
+#define WAIT_FOR_SEND   16  /* Added by Vladimir */
+
 
 /*
  * JGG (29/12/2004): Communication types for notifications 
@@ -199,6 +212,14 @@
  */
 #define BLOCK_BEGIN 40
 #define BLOCK_END   41
+
+
+#define USER_EVENT_TYPE_TASKID_START_TASK          7001
+#define USER_EVENT_TYPE_TASKID_END_TASK            7001
+#define USER_EVENT_TYPE_TASKTYPE_START_TASK        7003
+#define USER_EVENT_TYPE_TASKTYPE_END_TASK          7003
+#define PRIORITY_SET_EVENT                         6999
+#define PREEMPTION_SET_EVENT                       6998
 
 /* Two types of links */
 #define OUT_LINK  1
@@ -513,7 +534,7 @@
 
             
 /* Mida dels buffers utilitzats (basicament per llegir fitxers) */
-#define BUFSIZE 50000
+#define BUFSIZE 100000
 
 #define GLOBAL_OPS_COUNT 14
 

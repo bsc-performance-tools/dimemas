@@ -38,6 +38,9 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
+#ifdef USE_EQUEUE
+#include "listE.h"
+#endif
 #include "mallocame.h"
 #include "subr.h"
 #include "task.h"
@@ -146,8 +149,11 @@ Initialize_empty_machine(struct t_queue *machines)
 
 
 
-
+#ifdef USE_EQUEUE
+void Initialize_empty_node(Equeue *nodes, struct t_machine *machine)
+#else
 void Initialize_empty_node(struct t_queue *nodes, struct t_machine *machine)
+#endif
 {
    int               i;
    struct t_node    *node;
@@ -175,85 +181,111 @@ void Initialize_empty_node(struct t_queue *nodes, struct t_machine *machine)
       /* FEC: Ens passen la maquina que correspon als nodes */
       node->machine=machine;
 
+#ifdef USE_EQUEUE
+      insert_Equeue (nodes, (char *) node, (t_priority) (node->nodeid));
+#else
       insert_queue (nodes, (char *) node, (t_priority) (node->nodeid));
+#endif
    }
 }
 
 
 
-int fill_node(int no_number, char * node_name, int no_processors, int no_input,
-	  int no_output, double local_startup, double remote_startup, 
-	  double relative, double local_bandwith, double external_net_startup,
-          double local_port_startup, double remote_port_startup,
-          double local_memory_startup, double remote_memory_startup)
+int fill_node(int    no_number,
+              char  *node_name,
+              int    no_processors,
+              int    no_input,
+              int    no_output,
+              double local_startup,
+              double remote_startup,
+              double relative,
+              double local_bandwith,
+              double external_net_startup,
+              double local_port_startup,
+              double remote_port_startup,
+              double local_memory_startup,
+              double remote_memory_startup)
 {
-   register struct t_node *node;
-   int             j;
-   struct t_cpu   *cpu;
-   struct t_link  *link;
+  register struct t_node *node;
+  int             j;
+  struct t_cpu   *cpu;
+  struct t_link  *link;
 
+#ifdef USE_EQUEUE
+   node = (struct t_node *) query_prio_Equeue (&Node_queue, (t_priority) no_number);
+#else
    node = (struct t_node *) query_prio_queue (&Node_queue, (t_priority) no_number);
-   if (node == N_NIL)
-   {
-      fill_parse_error ("Invalid node identifier %d\n", no_number);
-      return (1);
-   }
-   if (count_queue (&(node->Cpus)) != 0)
-   {
-      fprintf (stderr, "Warning: redefinition of node %d\n", no_number - 1);
-   }
-   for (j = 0; j < no_processors; j++)
-   {
-      cpu = (struct t_cpu *) mallocame (sizeof (struct t_cpu));
-      cpu->cpuid = j + 1;
-      cpu->current_thread = TH_NIL;
-      cpu->current_thread_context = TH_NIL;
-      cpu->current_load = (double) 0;
-      cpu->io = QU_NIL;
-      insert_queue (&(node->Cpus), (char *) cpu, (t_priority) (j + 1));
-   }
-   if ((no_input==0) || (no_output==0))
-   {
-     node->half_duplex_links = TRUE;
-     j = MAX(no_input, no_output);
-     no_input = j;
-     no_output = j;
-   }
-   else
-     node->half_duplex_links = FALSE;
-   for (j = 0; j < no_input; j++)
-   {
-      link = (struct t_link *) mallocame (sizeof (struct t_link));
-      link->linkid = j + 1;
-      link->info.node = node;
-      link->kind = NODE_LINK;
-      link->type = IN_LINK;
-      link->thread = TH_NIL;
-      ASS_ALL_TIMER (link->assigned_on, current_time);
-      inFIFO_queue (&(node->free_in_links), (char *) link);
-   }
-   for (j = 0; j < no_output; j++)
-   {
-      link = (struct t_link *) mallocame (sizeof (struct t_link));
-      link->linkid = j + 1;
-      link->info.node = node;
-      link->kind = NODE_LINK;
-      link->type = OUT_LINK;
-      link->thread = TH_NIL;
-      ASS_ALL_TIMER (link->assigned_on, current_time);
-      inFIFO_queue (&(node->free_out_links), (char *) link);
-   }
-   node->local_startup = local_startup;
-   node->remote_startup = remote_startup;
-   node->relative = relative;
-   node->bandwith = local_bandwith;
-   node->arch = node_name;
-   node->external_net_startup = external_net_startup;
-   node->local_port_startup = local_port_startup;
-   node->remote_port_startup = remote_port_startup;
-   node->local_memory_startup = local_memory_startup;
-   node->remote_memory_startup = remote_memory_startup;
-   return (0);
+#endif
+
+  if (node == N_NIL)
+  {
+    fill_parse_error ("Invalid node identifier %d\n", no_number);
+    return (1);
+  }
+  if (count_queue (&(node->Cpus)) != 0)
+  {
+    fprintf (stderr, "Warning: redefinition of node %d\n", no_number - 1);
+  }
+  for (j = 0; j < no_processors; j++)
+  {
+    cpu = (struct t_cpu *) mallocame (sizeof (struct t_cpu));
+   
+    cpu->cpuid                  = j + 1;
+    cpu->current_thread         = TH_NIL;
+    cpu->current_thread_context = TH_NIL;
+    cpu->current_load           = (double) 0;
+    cpu->io                     = Q_NIL;
+    insert_queue (&(node->Cpus), (char *) cpu, (t_priority) (j + 1));
+  }
+
+  if ((no_input == 0) || (no_output == 0))
+  {
+    node->half_duplex_links = TRUE;
+    j = MAX(no_input, no_output);
+    
+    no_input  = j;
+    no_output = j;
+  }
+  else
+  {
+    node->half_duplex_links = FALSE;
+  }
+  
+  for (j = 0; j < no_input; j++)
+  {
+    link = (struct t_link *) mallocame (sizeof (struct t_link));
+    link->linkid = j + 1;
+    link->info.node = node;
+    link->kind = NODE_LINK;
+    link->type = IN_LINK;
+    link->thread = TH_NIL;
+    ASS_ALL_TIMER (link->assigned_on, current_time);
+    inFIFO_queue (&(node->free_in_links), (char *) link);
+  }
+  
+  for (j = 0; j < no_output; j++)
+  {
+    link = (struct t_link *) mallocame (sizeof (struct t_link));
+    link->linkid = j + 1;
+    link->info.node = node;
+    link->kind = NODE_LINK;
+    link->type = OUT_LINK;
+    link->thread = TH_NIL;
+    ASS_ALL_TIMER (link->assigned_on, current_time);
+    inFIFO_queue (&(node->free_out_links), (char *) link);
+  }
+  
+  node->local_startup = local_startup;
+  node->remote_startup = remote_startup;
+  node->relative = relative;
+  node->bandwith = local_bandwith;
+  node->arch = node_name;
+  node->external_net_startup = external_net_startup;
+  node->local_port_startup = local_port_startup;
+  node->remote_port_startup = remote_port_startup;
+  node->local_memory_startup = local_memory_startup;
+  node->remote_memory_startup = remote_memory_startup;
+  return (0);
 }
 
 
@@ -336,9 +368,15 @@ Give_number_to_CPU ()
   struct t_cpu *cpu;
   int number=1;
 
+#ifdef USE_EQUEUE
+  for (no=(struct t_node *)head_Equeue (&Node_queue);
+       no!=N_NIL;
+       no=(struct t_node *)next_Equeue (&Node_queue))
+#else
   for (no=(struct t_node *)head_queue (&Node_queue);
        no!=N_NIL;
        no=(struct t_node *)next_queue (&Node_queue))
+#endif
   {
     for (cpu=(struct t_cpu *)head_queue (&(no->Cpus));
          cpu!=(struct t_cpu *)0;
@@ -359,8 +397,13 @@ get_node_of_thread(struct t_thread *thread)
    account = current_account (thread);
    if (account == ACC_NIL)
       panic ("Thread without account P%d T%d t%d\n", IDENTIFIERS (thread));
+#ifdef USE_EQUEUE
+   node = (struct t_node *) query_prio_Equeue (&Node_queue, 
+             (t_priority) account->nodeid);
+#else
    node = (struct t_node *) query_prio_queue (&Node_queue, 
              (t_priority) account->nodeid);
+#endif
    if (node==(struct t_node *)0)
       panic ("Unable to locate node %d for P%d T%d t%d\n",
               account->nodeid, IDENTIFIERS (thread));
@@ -379,8 +422,13 @@ get_node_of_task(struct t_task *task)
 struct t_node *
 get_node_by_id(int nodeid)
 {
+#ifdef USE_EQUEUE
+   return ((struct t_node *) query_prio_Equeue (&Node_queue,
+					       (t_priority) nodeid));
+#else
    return ((struct t_node *) query_prio_queue (&Node_queue,
 					       (t_priority) nodeid));
+#endif
 }
 
 void
@@ -388,9 +436,15 @@ check_full_nodes()
 {
    struct t_node  *node;
 
+#ifdef USE_EQUEUE
+   for (node = (struct t_node *) head_Equeue (&Node_queue);
+	node != N_NIL;
+	node = (struct t_node *) next_Equeue (&Node_queue))
+#else
    for (node = (struct t_node *) head_queue (&Node_queue);
 	node != N_NIL;
 	node = (struct t_node *) next_queue (&Node_queue))
+#endif
    {
       if (count_queue (&(node->Cpus)) == 0)
       {

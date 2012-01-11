@@ -25,74 +25,37 @@
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
+  $Rev:: 563                                      $:  Revision of last commit
+  $Author:: jgonzale                              $:  Author of last commit
+  $Date:: 2011-03-22 16:27:21 +0100 (Tue, 22 Mar #$:  Date of last commit
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include "thread_states.h"
-#include "mallocame.h"
+#include <sys/resource.h>
+#include <stdio.h>
+#include <errno.h>
 
-t_boolean
-init_thread_state (struct t_thread* thread, int state)
+#include <stdlib.h>
+/**
+ * Initializes the control structures and variables to guarantee the IO
+ * scalability
+ */
+void IO_init(void)
 {
-  t_thread_state new_state;
-  t_boolean      result;
-  
-  result = TRUE;
-  
-  if (thread->current_state != STATE_NIL)
+  struct rlimit nofile_limits;
+
+  if (getrlimit(RLIMIT_NOFILE, &nofile_limits) == -1)
   {
-    result   = FALSE;
-    errorStr = "Initalizing new thread state with previous state open\n";
+    perror("Error trying to get the OS resources available");
+    exit(EXIT_FAILURE);
   }
-  else
-  {
-    new_state = (t_thread_state) mallocame(sizeof(struct thread_state));
-    
-    new_state->state      = state;
-    new_state->init_time  = current_time;
-    thread->current_state = new_state;
-  }
-  return result;
+
+  /* DEBUG */
+  printf("No. Files. Hard limit %d. Sof Limit %d\n",
+         nofile_limits.rlim_max,
+         nofile_limits.rlim_cur);
+
+  exit(EXIT_SUCCESS);
 }
 
-t_boolean
-end_thread_state (struct t_thread* thread, int state)
-{
-  t_boolean result = TRUE;
-  
-  if (thread->current_state == STATE_NIL)
-  {
-    result   = FALSE;
-    errorStr = "Trying to close an uninitialized state\n";
-  }
-  else if (thread->current_state->state != state)
-  {
-    result   = FALSE;
-    errorStr = "Trying to close different state that initialized one\n";
-  }
-  else
-  {
-    /* JGG (02/05/2005) */
-    SUB_TIMER (current_time, thread->current_state->init_time, last_state_time);
-    
-    freeame(thread->current_state, sizeof(struct thread_state));
-    thread->current_state = STATE_NIL;
-  }
-  return result;
-}
-
-char*
-get_last_state_error(void)
-{
-  return errorStr;
-}
-
-extern dimemas_timer
-get_last_state_time(void)
-{
-  return last_state_time;
-}

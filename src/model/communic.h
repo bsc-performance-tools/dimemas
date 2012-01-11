@@ -57,6 +57,12 @@ COMMUNIC_send(struct t_thread *thread);
 extern void 
 COMMUNIC_recv(struct t_thread *thread);
 
+void
+COMMUNIC_Irecv(struct t_thread *thread);
+
+void
+COMMUNIC_wait(struct t_thread *thread);
+
 extern void 
 COMMUNIC_block_after_busy_wait(struct t_thread *thread);
 
@@ -85,6 +91,9 @@ really_send (struct t_thread *thread);
 
 extern void 
 new_global_op (int identificator, char *name);
+
+int
+get_global_op_id_by_name (char *name);
 
 extern void 
   GLOBAL_operation (

@@ -41,6 +41,9 @@
 #include "events.h"
 #include "fs.h"
 #include "list.h"
+#ifdef  USE_EQUEUE
+#include "listE.h"
+#endif
 #include "mallocame.h"
 #include "memory.h"
 #include "ports.h"
@@ -51,8 +54,12 @@
 #include "venusclient.h"
 #endif
 
+#ifdef USE_EQUEUE
+Equeue  Event_queue;
+#else
 struct t_queue  Event_queue;
-struct t_queue  Interactive_event_queue;
+#endif
+Equeue  Interactive_event_queue;
 
 int             are_only_daemons = 0;
 
@@ -70,7 +77,11 @@ EVENT_timer(
   if (daemon == DAEMON)
   {
     if ( 
+#ifdef USE_EQUEUE
+      (are_only_daemons == count_Equeue (&Event_queue)) && 
+#else
       (are_only_daemons == count_queue (&Event_queue)) && 
+#endif
        NEQ_0_TIMER (current_time)
     )
     {
@@ -96,7 +107,11 @@ EVENT_timer(
     thread->next_event_timer = when;
   }
   
+#ifdef USE_EQUEUE
+  insert_Eevent (&Event_queue, event);
+#else
   insert_event (&Event_queue, event);
+#endif
   
   if (debug&D_EV)
   {
@@ -125,7 +140,11 @@ void
 EVENT_extract_timer(int module, struct t_thread *thread, dimemas_timer *when)
 {
    register struct t_event *event;
+#ifdef USE_EQUEUE
+   Equeue *q = &Event_queue;
+#else
    struct t_queue *q = &Event_queue;
+#endif
 
    if (thread->event!=E_NIL)
    {
@@ -137,13 +156,21 @@ EVENT_extract_timer(int module, struct t_thread *thread, dimemas_timer *when)
                PRINT_TIMER (current_time);
                printf (": Extracted event from module %d\n", module);
            }
+#ifdef USE_EQUEUE
+           extract_from_Equeue (q, (char *) event);
+#else
            extract_from_queue (q, (char *) event);
+#endif
            *when = event->event_time;
            freeame ((char *) event, sizeof (struct t_event));
            return;
        }
    }
+#ifdef USE_EQUEUE
+   for (event = head_Eevent (q); event != E_NIL; event = next_Eevent (q))
+#else
    for (event = head_event (q); event != E_NIL; event = next_event (q))
+#endif
    {
       if ((event->module == module) && (event->thread == thread))
       {
@@ -152,7 +179,11 @@ EVENT_extract_timer(int module, struct t_thread *thread, dimemas_timer *when)
 	    PRINT_TIMER (current_time);
 	    printf (": Extracted event from module %d\n", module);
 	 }
+#ifdef USE_EQUEUE
+	 extract_from_Equeue (q, (char *) event);
+#else
 	 extract_from_queue (q, (char *) event);
+#endif
          *when = event->event_time;
          freeame ((char *) event, sizeof (struct t_event));
 	 return;
@@ -174,7 +205,11 @@ EVENT_init()
     PRINT_TIMER (current_time);
     printf (": EVENT initial routine called\n");
   }
+#ifdef USE_EQUEUE
+  create_Equeue (&Event_queue);
+#else
   create_queue (&Event_queue);
+#endif
 }
 
 void
@@ -192,11 +227,19 @@ events_for_thread (struct t_thread *thread)
 {
   struct t_event *event;
 
+#ifdef USE_EQUEUE
+  for (
+    event  = head_Eevent (&Event_queue);
+    event != E_NIL;
+    event  = next_Eevent (&Event_queue)
+  )
+#else
   for (
     event  = head_event (&Event_queue);
     event != E_NIL;
     event  = next_event (&Event_queue)
   )
+#endif
   {
     if (event->thread == thread)
     {
@@ -211,11 +254,19 @@ reload_events()
 {
   register struct t_node *node;
 
+#ifdef USE_EQUEUE
+  for (
+    node  = (struct t_node *) head_Equeue (&Node_queue);
+    node != N_NIL;
+    node  = (struct t_node *) next_Equeue (&Node_queue)
+  )
+#else
   for (
     node  = (struct t_node *) head_queue (&Node_queue);
     node != N_NIL;
     node  = (struct t_node *) next_queue (&Node_queue)
   )
+#endif
   {
     while ((count_queue (&(node->ready)) != 0) && (num_free_cpu (node) > 0))
     {
@@ -227,8 +278,7 @@ reload_events()
 /*
  * Main event managament routine
  */
-void
-event_manager (struct t_event *event)
+void event_manager (struct t_event *event)
 {
   if GT_TIMER (current_time, event->event_time)
   {
@@ -271,6 +321,7 @@ event_manager (struct t_event *event)
     are_only_daemons--;
   }
 
+//   printf("to check which type of event it is\n");
   switch (event->module)
   {
     case M_SCH:
@@ -295,6 +346,7 @@ event_manager (struct t_event *event)
       panic ("Invalid event type on queue (%d)\n", event->module);
       break;
   }
+  
   if (reload_done)
   {
     reload_events();

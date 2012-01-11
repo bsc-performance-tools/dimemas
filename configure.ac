@@ -30,8 +30,10 @@ fi
 AC_MSG_RESULT($enable_cxxflags_setting)
 
 
-AC_PROG_CC(icc xlc cc gcc)
-AC_PROG_CXX(icpc xlC CC g++)
+#AC_PROG_CC(icc xlc cc gcc)
+#AC_PROG_CXX(icpc xlC CC g++)
+AC_PROG_CC(icc xlc gcc)
+AC_PROG_CXX(icpc xlC g++)
 AC_PROG_CPP
 
 AM_PROG_LIBTOOL
@@ -338,6 +340,21 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h limits.h malloc.h strings.h sys/time.h unistd.h)
 
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+dnl Checks for library functions.
+AC_FUNC_MMAP
+AC_FUNC_SETVBUF_REVERSED
+AC_FUNC_STRFTIME
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(gethostname gettimeofday strdup strerror strstr strtoul uname)
+
 AC_CHECK_LIB(z, [gzopen,gzputs],[
     AC_DEFINE(HAVE_LIBZ,[1],[libz present on the system])
       if test "x${Z_DIR}" != "x"; then
@@ -406,6 +423,7 @@ AC_CONFIG_FILES([
   DimemasGUI/Makefile
   include/Makefile
   src/Makefile
+  src/io/Makefile
   src/input/Makefile
   src/model/Makefile
   src/prv_utils/Makefile

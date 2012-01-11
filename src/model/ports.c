@@ -32,6 +32,8 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <assert.h>
+
 #include "define.h"
 #include "types.h"
 
@@ -42,6 +44,9 @@
 #include "fs.h"
 #include "links.h"
 #include "list.h"
+#ifdef USE_EQUEUE
+#include "listE.h"
+#endif
 #include "mallocame.h"
 #include "paraver.h"
 #include "ports.h"
@@ -162,9 +167,15 @@ PORT_init()
     printf (": PORT initial routine called\n");
   }
   
+#ifdef USE_EQUEUE
+  for (node  = (struct t_node*) head_Equeue (&Node_queue);
+       node != N_NIL;
+       node  = (struct t_node*) next_Equeue (&Node_queue))
+#else
   for (node  = (struct t_node*) head_queue (&Node_queue);
        node != N_NIL;
        node  = (struct t_node*) next_queue (&Node_queue))
+#endif
   {
     create_queue (&(node->wait_outlink_port));
     create_queue (&(node->wait_inlink_port));
@@ -249,14 +260,22 @@ PORT_create(int portid, struct t_thread *thread)
       printf (": PORT create called for portid %d\n", portid);
    }
 
-   port = locate_port (portid);
-   if (port != PO_NIL)
-   {
-      if (debug&D_PORT)
+   if (!assert)
+      port = PO_NIL;
+   else {
+//  Vladimir: this locate_port is an EXPENSIVE ASSERT - I ELIMINATED IT
+//  -> ASSUME THAT IT WILL NEVER FIND THE OVERLAP OF PORT_IDs      
+      port = locate_port (portid);      
+      if (port != PO_NIL)
       {
-	 PRINT_TIMER (current_time);
-	 printf (": PORT create duplication of portid %d created by Ptask %d\n",
-		 portid, port->thread->task->Ptask->Ptaskid);
+         assert(0);
+         if (debug&D_PORT)
+         {
+            PRINT_TIMER (current_time);
+            printf (": PORT create duplication of portid %d created by Ptask %d\n",
+                        portid, port->thread->task->Ptask->Ptaskid);
+         }
+         return (FALSE);
       }
       return (FALSE);
    }

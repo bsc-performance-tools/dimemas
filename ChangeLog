@@ -7,7 +7,34 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
-2011/0//14 - jgonzale
+2012/01/11 - jgonzale
+	CHANGES:	First commit with the merge of the Vladimir+German+Official
+				versions. Now, the TRF trace is deprecated, and all improvements
+				should be written on the DIM trace. In further commits, all
+				code that manages the SDDF trace will be erased progresively
+				adopting the DIM (Paraver style trace) codification of 
+				equivalent semantics.
+
+				There have been modifications by Vladimir in the original DIM
+				trace, basically adding offsets for all threads of all tasks,
+				sorting each task per thread and adding the thread field on
+				the P2P communication primitives. This has to be documented.
+
+				The current version supports the codification of CPU ratios
+				using user events present on DIM trace. Paraver and Dimemas
+				will use same event encoding, and Dimemas blocks are discontinued.
+
+				Now it lacks support of generating PCF file, but it can be
+				copied using the '-pc' parameter.
+
+				Most part of the File IO simulation is not currently supported.
+				It should be analyzed and ported.
+
+	FEATURES:	It has been added the skeleton to implement the new scalable
+				IO, as part of the HOPSA project. Every IO made by Dimemas
+				should use the new interface to be implemented.
+
+2011/07/14 - jgonzale
 	CHANGES:	MAJOR modifications in building system. Now, each big module
 				of core code is compiled as a facility library. That was
 				modified in previous update, but not added up to this one

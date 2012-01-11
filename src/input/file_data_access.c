@@ -36,11 +36,16 @@
 #include <stdio.h>
 #include "types.h"
 #include "list.h"
+#include "task.h"
 #include <sys/stat.h>
+#include <assert.h>
 
 /* JGG: to use 'USE_RENDEZ_VOUS' macro */
 #include "define.h"
 #include "extern.h"
+
+//Vladimir - for limiting number of thread streams - not to run out of handles
+#define MAX_ALLOWED_THREAD_STREAMS   100
 
 // Definition and configuartion parameters of data access api 
 
@@ -51,7 +56,7 @@
 
 // Configure standard buffer size for header, definition and accition register reading
 #ifndef DATA_ACCESS_STANDARD_BUFFER_SIZE
-#define DATA_ACCESS_STANDARD_BUFFER_SIZE 40000
+#define DATA_ACCESS_STANDARD_BUFFER_SIZE 4000000
 #endif
 
 // Configure standard filed length 
@@ -119,25 +124,25 @@ FILE *op_log_stream = NULL;
 // for eficient data extraction from trace file
 struct app_struct
 {
-  int ptask_id;
-  int task_num;
-  int *thread_num;
-  int offset_type;
-  long int offset_value;
-  int comm_num;
-  long int **tasks_offsets;
-  char *file_name;
-  long int **tasks_stream;
-  FILE **streams;
-  int num_streams;
-  int num_free_streams;
-  long int *free_streams;
-  int header_length;
-  int offset_length;
-  int def_size;
-  FILE *def_stream;
+  int             ptask_id;
+  int             task_num;
+  int            *thread_num;
+  int             offset_type;
+  t_off_fitxer    offset_value;
+  int             comm_num;
+  t_off_fitxer  **tasks_offsets;
+  char           *file_name;
+  long int      **tasks_stream;
+  FILE          **streams;
+  int             num_streams;
+  int             num_free_streams;
+  long int       *free_streams;
+  int             header_length;
+  int             offset_length;
+  int             def_size;
+  FILE           *def_stream;
   struct t_queue *comms;
-  int def_flag;
+  int             def_flag;
 };
 
 /* Main struct, applications container eneables multi-application storage 
@@ -145,18 +150,28 @@ struct app_struct
 struct data_access_layer_struc
 {
   struct app_struct **apps;
-  int num_apps;
-  char *error_string;
-  int init_flag;
+  int                 num_apps;
+  char               *error_string;
+  int                 init_flag;
 } main_struct;
 
+
+// functions used in this file
+static int DAP_int_field_read (char *buffer,
+                               int buffer_size,
+                               char *field,
+                               int field_size,
+                               int offset,
+                               int *rec);
+
+static int DAP_read_definitions (struct app_struct *app);
+
 /*
- *	T_QUEUE COMPLEMENTAL FUNCTIONS
+ *  T_QUEUE COMPLEMENTAL FUNCTIONS
  */
 
 // Adds all elements from queue from to queue to
-void
-DAP_add_to_queue (struct t_queue *from, struct t_queue *to)
+void DAP_add_to_queue (struct t_queue *from, struct t_queue *to)
 {
   char *item = NULL;
 
@@ -169,19 +184,17 @@ DAP_add_to_queue (struct t_queue *from, struct t_queue *to)
 }
 
 /*
- *	T_COMMUNICATOR STRUCT FUNCTIONS
+ *  T_COMMUNICATOR STRUCT FUNCTIONS
  */
 
 // Sets communicator id
-void
-DAP_set_comm_id (struct t_communicator *comm, int id)
+void DAP_set_comm_id (struct t_communicator *comm, int id)
 {
   comm->communicator_id = id;
 }
 
 // Returns comm id
-int
-DAP_get_comm_id (struct t_communicator *comm)
+int DAP_get_comm_id (struct t_communicator *comm)
 {
   return comm->communicator_id;
 }
@@ -194,8 +207,7 @@ DAP_get_comm_granks (struct t_communicator *comm)
 }
 
 // Prints the communicator to standard output
-void
-DAP_print_communicator (struct t_communicator *comm)
+void DAP_print_communicator (struct t_communicator *comm)
 {
   char *item = NULL;
   int *task = NULL;
@@ -215,13 +227,14 @@ DAP_print_communicator (struct t_communicator *comm)
 }
 
 /*
- *	PTASK_STRUCTURE FUNCTIONS
+ *  PTASK_STRUCTURE FUNCTIONS
  */
 
 // Initalizes ptask_structure
-void
-DAP_init_ptask (struct ptask_structure *ptask,
-		int ptask_id, int task_num, int *th_num)
+void DAP_init_ptask (struct ptask_structure *ptask,
+                     int                     ptask_id,
+                     int                     task_num,
+                     int                    *th_num)
 {
   ptask->ptask_id = ptask_id;
   ptask->task_count = task_num;
@@ -229,22 +242,20 @@ DAP_init_ptask (struct ptask_structure *ptask,
 }
 
 // Returns number of tasks
-int
-DAP_get_ptask_task_num (struct ptask_structure *ptask)
+int DAP_get_ptask_task_num (struct ptask_structure *ptask)
 {
   return ptask->task_count;
 }
 
 // Returns therad number of task
-int
-DAP_get_thread_ptask_num (struct ptask_structure *ptask, int task)
+int DAP_get_thread_ptask_num (struct ptask_structure *ptask, int task)
 {
   return ptask->threads_per_task[task];
 }
 
 /*
- *	T_ACTION FUNCTIONS
- *	
+ * T_ACTION FUNCTIONS
+ *
  */
 
 
@@ -290,26 +301,32 @@ DAP_create_next_action (struct t_action *act)
 
 // Sets action atributes for message recive action
 void
-DAP_set_action_msg_rcv (struct t_action *act, int actid, int task,
-			int msgsize, int tag, int commid, int rcvt)
+DAP_set_action_msg_rcv (struct t_action *act,
+                        int task,
+                        int thread,
+                        int msgsize,
+                        int tag,
+                        int commid,
+                        int rcvt)
 {
-  /* act->action = actid; */
   act->desc.recv.ori         = task+1; /* JGG: Id correction */
+  act->desc.recv.ori_thread  = ( (thread == -1) ? thread : thread+1); /* JGG: Id correction */
+  act->desc.recv.mess_size   = msgsize;
   act->desc.recv.mess_tag    = tag;
   act->desc.recv.communic_id = commid;
 
   /* JGG set correct action id */
   switch (rcvt)
   {
-  case RECVTYPE_RECV:
-    act->action = RECV;
-    break;
-  case RECVTYPE_IRECV:
-    act->action = IRECV;
-    break;
-  case RECVTYPE_WAIT:
-    act->action = WAIT;
-    break;
+    case RECVTYPE_RECV:
+      act->action = RECV;
+      break;
+    case RECVTYPE_IRECV:
+      act->action = IRECV;
+      break;
+    case RECVTYPE_WAIT:
+      act->action = WAIT;
+      break;
   }
 }
 
@@ -317,8 +334,6 @@ DAP_set_action_msg_rcv (struct t_action *act, int actid, int task,
 void
 DAP_set_action (struct t_action *act,
                 int              id,
-                int              task_id,
-                int              thread_id,
                 double           burst)
 {
   act->action = id;
@@ -330,6 +345,7 @@ void
 DAP_set_action_msg(struct t_action *act,
                    int              id,
                    int              dest,
+                   int              dest_thread,
                    int              msgs,
                    int              tag,
                    int              commid,
@@ -337,7 +353,8 @@ DAP_set_action_msg(struct t_action *act,
 {
   act->action                = id;
   act->desc.send.mess_size   = msgs;
-  act->desc.send.dest        = dest+1; /* JGG: Id correction */
+  act->desc.send.dest        = dest+1;        /* JGG: Id correction */
+  act->desc.send.dest_thread = ( (dest_thread == -1) ? dest_thread : dest_thread+1); /* JGG: Id correction */
   act->desc.send.mess_tag    = tag;
   act->desc.send.communic_id = commid;
 
@@ -356,28 +373,30 @@ DAP_set_action_msg(struct t_action *act,
 }
 
 // Saving information of global opertion to t_action structure
-void
-DAP_set_glob_action (struct t_action *act, int actid, int globopid,
-		     int commid, int rtask, int rthread, long int bsent,
-		     long int brecv)
+void DAP_set_glob_action (struct t_action *act,
+                          int actid,
+                          int globopid,
+                          int commid,
+                          int rtask,
+                          int rthread,
+                          long int bsent,
+                          long int brecv)
 {
   act->action                     = actid;
   act->desc.global_op.glop_id     = globopid;
   act->desc.global_op.comm_id     = commid;
-  act->desc.global_op.root_rank   = rtask;
-  act->desc.global_op.root_thid   = rthread;
+  act->desc.global_op.root_rank   = rtask;   // Field used as boolean
+  act->desc.global_op.root_thid   = rthread; // Useless field
   act->desc.global_op.bytes_send  = bsent;
   act->desc.global_op.bytes_recvd = brecv;
-
 }
 
 /*
- *	ERROR MESSAGE FUNCTION
+ *  ERROR MESSAGE FUNCTION
  */
 
 // Saves error message
-void
-DAP_report_error (char *message)
+void DAP_report_error (char *message)
 {
   char *rcp = NULL;
 
@@ -418,8 +437,10 @@ get_internal_err_msg ()
 int
 DAP_sum_array (int *array, int size, int start, int end)
 {
+  assert(size >= end);
   int i = 0;
   int suma = 0;
+  
 
   for (i = start; i < end; i++)
   {
@@ -469,7 +490,6 @@ read_double (char *str, int length)
   int fin = 0;
   int cipher = 0;
   int bvalue = 0;
-  int bdec = 1;
   double lvalue = 0;
   double ldec = 0.1;
 
@@ -625,6 +645,22 @@ DAP_delete_arrays (long int **array, int array_size)
   return i;
 }
 
+int
+DAP_delete_arrays_offsets (t_off_fitxer **array, int array_size)
+{
+  int i = 0;
+
+  if (array != NULL)
+  {
+    for (i = 0; i < array_size; i++)
+    {
+      if (array[i] != NULL)
+   free (array[i]);
+    }
+  }
+  return i;
+}
+
 // Creates and reserves memory for arrays of contiener.
 // Returns 0 if ok else returns array index that failed to be created
 /*
@@ -634,8 +670,7 @@ DAP_delete_arrays (long int **array, int array_size)
 	conteiner_size: is a size o conteiner or number of arrays it has.
 	array_size: is a array of sizes of each array the conteiner has.
 */
-int
-DAP_create_arrays (long int **conteiner, int conteiner_size, int *array_size)
+int DAP_create_arrays (long int **conteiner, int conteiner_size, int *array_size)
 {
   int i = 0, j = 0;
 
@@ -649,6 +684,25 @@ DAP_create_arrays (long int **conteiner, int conteiner_size, int *array_size)
       return i;
       DAP_report_error
 	("create_array in data_access_layer_api, failed to crate arrays.");
+    }
+  }
+  return i;
+}
+
+int DAP_create_arrays_offsets (t_off_fitxer **conteiner, int conteiner_size, int *array_size)
+{
+  int i = 0, j = 0;
+
+  for (i = 0; i < conteiner_size; i++)
+  {
+    conteiner[i] = (t_off_fitxer *) malloc (array_size[i] * sizeof (t_off_fitxer));
+    for (j = 0; j < array_size[i]; j++)
+      conteiner[i][j] = 0;
+    if (conteiner[i] == NULL)
+    {
+      return i;
+      DAP_report_error
+   ("create_array in data_access_layer_api, failed to crate arrays.");
     }
   }
   return i;
@@ -680,6 +734,21 @@ DAP_create_array_of_arrays (int *array_size, int conteiner_size)
   return conteiner;
 }
 
+t_off_fitxer **
+DAP_create_array_of_arrays_offsets (int *array_size, int conteiner_size)
+{
+  t_off_fitxer **conteiner = NULL;
+  int n_arrays = 0;
+  conteiner = (t_off_fitxer **) malloc (conteiner_size * sizeof (t_off_fitxer *));
+  if (conteiner != NULL)
+  {
+    n_arrays = DAP_create_arrays_offsets (conteiner, conteiner_size, array_size);
+    if (n_arrays != conteiner_size)
+      DAP_delete_arrays_offsets (conteiner, n_arrays);
+  }
+  return conteiner;
+}
+
 // Checks if char type item is contained in array
 int
 DAP_seek_char_item (char *array, int size, char item)
@@ -700,8 +769,7 @@ DAP_seek_char_item (char *array, int size, char item)
 }
 
 // Checks if int type item is contained in array
-int
-DAP_seek_int_item (int *array, int size, int item)
+int DAP_seek_int_item (int *array, int size, int item)
 {
   int res = -1;
   int i = 0;
@@ -740,10 +808,24 @@ check_endoffile (FILE * stream)
 	array_index: is a array id number
 */
 long int *
-get_array_conteiner (long int **conteiner, int conteiner_size,
-		     int array_index)
+get_array_conteiner (long int **conteiner,
+                     int conteiner_size,
+                     int array_index)
 {
   long int *item = NULL;
+
+  if (array_index < conteiner_size && conteiner_size >= 0)
+  {
+    item = conteiner[array_index];
+  }
+  return item;
+}
+
+t_off_fitxer* get_array_conteiner_offsets (t_off_fitxer **conteiner,
+                                           int            conteiner_size,
+                                           int            array_index)
+{
+  t_off_fitxer *item = NULL;
 
   if (array_index < conteiner_size && conteiner_size >= 0)
   {
@@ -773,6 +855,18 @@ get_array_item (long int *array, int array_size, int item_index)
   return item;
 }
 
+t_off_fitxer
+get_array_item_offsets (t_off_fitxer *array, int array_size, int item_index)
+{
+  t_off_fitxer item = -1;
+
+  if (item_index < array_size && array_size >= 0)
+  {
+    item = array[item_index];
+  }
+  return item;
+}
+
 // Sets item of the array
 /*
 	where:
@@ -785,6 +879,26 @@ get_array_item (long int *array, int array_size, int item_index)
 int
 set_array_item (long int *array, int array_size, int item_index,
 		long int item_value)
+{
+  int res = 0;
+
+  if (item_index < array_size && array_size >= 0)
+  {
+
+    array[item_index] = item_value;
+  }
+  else
+  {
+    res = -1;
+    DAP_report_error
+      ("set_array_item in data_access_layer_api, no such record.");
+  }
+  return res;
+}
+
+int
+set_array_item_offsets (t_off_fitxer *array, int array_size, int item_index,
+      t_off_fitxer item_value)
 {
   int res = 0;
 
@@ -829,6 +943,22 @@ set_conteiner_item (long int **conteiner, int conteiner_size, int array_id,
   return result;
 }
 
+int
+set_conteiner_item_offsets (t_off_fitxer **conteiner, int conteiner_size, int array_id,
+          int array_size, int item_id, t_off_fitxer item_value)
+{
+  int result = -1;
+  t_off_fitxer *array = NULL;
+
+  array = get_array_conteiner_offsets (conteiner, conteiner_size, array_id);
+  if (array != NULL)
+  {
+
+    result = set_array_item_offsets (array, array_size, item_id, item_value);
+  }
+  return result;
+}
+
 // Gets the item of a conteiner
 /*
 	where:
@@ -842,16 +972,34 @@ set_conteiner_item (long int **conteiner, int conteiner_size, int array_id,
 	returns: the item value.
 */
 long int
-get_item_conteiner (long int **conteiner, int conteiner_size, int array_id,
-		    int array_size, int item_id)
+get_item_conteiner (long int **conteiner,
+                    int        conteiner_size,
+                    int        array_id,
+                    int        array_size,
+                    int        item_id)
 {
-  long int res = -1;		// Offset result value, if less then 0 indicates error
+  long int res = -1;      // Offset result value, if less then 0 indicates error
   long int *array = NULL;
 
   array = get_array_conteiner (conteiner, conteiner_size, array_id);
   if (array != NULL)
   {
     res = get_array_item (array, array_size, item_id);
+  }
+  return res;
+}
+
+t_off_fitxer
+get_item_conteiner_offsets (t_off_fitxer **conteiner, int conteiner_size, int array_id,
+          int array_size, int item_id)
+{
+  t_off_fitxer res = -1;    // Offset result value, if less then 0 indicates error
+  t_off_fitxer *array = NULL;
+
+  array = get_array_conteiner_offsets (conteiner, conteiner_size, array_id);
+  if (array != NULL)
+  {
+    res = get_array_item_offsets (array, array_size, item_id);
   }
   return res;
 }
@@ -885,7 +1033,7 @@ void
 DAP_print_streams (struct app_struct *app)
 {
   printf ("Internal streams in use:%d\n",
-	  app->num_streams - app->num_free_streams);
+          app->num_streams - app->num_free_streams);
 }
 
 // Returns comm number
@@ -906,29 +1054,28 @@ DAP_get_comms (struct app_struct *app)
 void
 DAP_print_comms (struct app_struct *app)
 {
-  char *item = NULL;
-  struct t_communicator *comm = NULL;
-  struct t_queue *comms = DAP_get_comms (app);
+  char                  *item  = NULL;
+  struct t_communicator *comm  = NULL;
+  struct t_queue        *comms = DAP_get_comms (app);
 
-  item = head_queue (comms);
+  item = head_queue(comms);
+
   while (item != NULL)
   {
-    comm = (struct t_queue *) item;
+    comm = (struct t_communicator*) item;
     DAP_print_communicator (comm);
     item = next_queue (comms);
   }
 }
 
 // Prints comm number
-void
-DAP_print_comm_num (struct app_struct *app)
+void DAP_print_comm_num (struct app_struct *app)
 {
   printf ("Total communicators number is %d\n", DAP_get_comm_num (app));
 }
 
 // Returns application id
-int
-DAP_get_ptask_id (struct app_struct *app)
+int DAP_get_ptask_id (struct app_struct *app)
 {
   return app->ptask_id;
 }
@@ -941,8 +1088,7 @@ DAP_print_app_id (struct app_struct *app)
 }
 
 // Adds communcator definition to application
-void
-DAP_add_comm (struct app_struct *app, struct t_communicator *com)
+void DAP_add_comm (struct app_struct *app, struct t_communicator *com)
 {
   /* JGG: INITIALIZE QUEUES */
 
@@ -950,12 +1096,11 @@ DAP_add_comm (struct app_struct *app, struct t_communicator *com)
   create_queue (&com->machines_threads);
   create_queue (&com->m_threads_with_links);
 
-  insert_queue (app->comms, (char *) com, 0);
+  insert_queue (app->comms, (char*) com, 0);
 }
 
 // Returns certan stream identified by id
-FILE *
-DAP_get_stream (struct app_struct *app, long int id)
+FILE* DAP_get_stream (struct app_struct *app, long int id)
 {
   if (id <= app->num_streams && id >= 0)
   {
@@ -967,50 +1112,44 @@ DAP_get_stream (struct app_struct *app, long int id)
 }
 
 // Get default stream, stream used for action reading
-FILE *
-DAP_get_default_stream (struct app_struct * app)
+FILE* DAP_get_default_stream (struct app_struct * app)
 {
   return app->def_stream;
 }
 
 // Get offset value from application
-int
+t_off_fitxer
 DAP_get_off_v_app (struct app_struct *app)
 {
   return app->offset_value;
 }
 
 // Prints application offset value to standard output
-void
-DAP_print_off_v (struct app_struct *app)
+void DAP_print_off_v (struct app_struct *app)
 {
   printf ("Offset value: %d\n", DAP_get_off_v_app (app));
 }
 
 // Get offset type from application
-int
-DAP_get_off_t_app (struct app_struct *app)
+int DAP_get_off_t_app (struct app_struct *app)
 {
   return app->offset_type;
 }
 
 // Get number of tasks
-int
-DAP_get_task_num (struct app_struct *app)
+int DAP_get_task_num (struct app_struct *app)
 {
   return app->task_num;
 }
 
 // Prints number of tasks of application to standard output 
-void
-DAP_print_task_num (struct app_struct *app)
+void DAP_print_task_num (struct app_struct *app)
 {
   printf ("Total tasks number of application: %d\n", DAP_get_task_num (app));
 }
 
 // Returns list of threads number for each task
-int *
-DAP_get_threads_num (struct app_struct *app)
+int* DAP_get_threads_num (struct app_struct *app)
 {
   int *res = NULL;
   int i = 0;
@@ -1120,7 +1259,7 @@ DAP_get_o_size (struct app_struct *app)
 void
 DAP_print_o_size (struct app_struct *app)
 {
-  printf ("Offset size in chars is %d\n", DAP_get_o_size (app));
+  printf ("Offset size in chars is %ld\n", DAP_get_o_size (app));
 }
 
 // Gets offset type
@@ -1145,7 +1284,7 @@ DAP_initialize_app (struct app_struct *app,
                     int *thread_n,
                     int comm_n,
                     int offset_t,
-                    long int offset_v,
+                    t_off_fitxer offset_v,
                     char *file_name,
                     int stream_n,
                     int h_length)
@@ -1158,18 +1297,25 @@ DAP_initialize_app (struct app_struct *app,
   stream_n = DAP_sum_array (thread_n, task_n, 0, task_n);	// Total number of threads
 
   // End of local variables
-  app->ptask_id = ptask_id;	// Set ptask_id
-  app->task_num = task_n;	// Set task_num
-  app->thread_num = thread_n;	// Set thread_num
-  app->comm_num = comm_n;	// Set comm_num
-  app->offset_type = offset_t;	// Set offset_type
-  app->offset_value = offset_v;	// Set offset_value
+  app->ptask_id = ptask_id;                           // Set ptask_id
+  app->task_num = task_n;	                           // Set task_num
+  app->thread_num = thread_n;                         // Set thread_num
+  app->comm_num = comm_n;                             // Set comm_num
+  app->offset_type = offset_t;                        // Set offset_type
+  app->offset_value = offset_v;                       // Set offset_value
   app->file_name = (char *) malloc (DAP_FILE_NAME_SIZE * sizeof (char));
-  strcpy (app->file_name, file_name);	// Set file name
-  app->header_length = h_length;	// Set length of header in chars
+  strcpy (app->file_name, file_name);                 // Set file name
+  app->header_length = h_length;                      // Set length of header in chars
   app->offset_length = 0;
-  app->tasks_offsets = DAP_create_array_of_arrays (thread_n, task_n);
-  app->num_free_streams = stream_n;
+  app->tasks_offsets = DAP_create_array_of_arrays_offsets (thread_n, task_n);
+
+  //Vladimir - number of streams could be more that offered handles for FILEs
+  //so I put the num_free_streams < MAX_ALLOWED_THREAD_STREAMS
+  //still has to be  num_free_streams <= stream_n
+  if (stream_n > MAX_ALLOWED_THREAD_STREAMS)
+     app->num_free_streams = MAX_ALLOWED_THREAD_STREAMS;
+  else app->num_free_streams = stream_n;
+  
   //app->num_streams=stream_n; CHANGED BECAUSE IT LIMITS UP TO 16 STREAMS
   app->num_streams = stream_n;
   app->def_stream = fopen (file_name, &read_mode);
@@ -1183,20 +1329,23 @@ DAP_initialize_app (struct app_struct *app,
       ("DAP_initialize_app in data_access_layer_api, offsets lists failed to be created or default stream failed.");
     return -1;
   }
+
   app->tasks_stream = DAP_create_array_of_arrays (thread_n, task_n);
   if (app->tasks_offsets == NULL)
   {
-    DAP_delete_arrays (app->tasks_offsets, task_n);
+    DAP_delete_arrays_offsets (app->tasks_offsets, task_n);
     fclose (app->def_stream);
     free (app->comms);
     DAP_report_error
       ("DAP_initialize_app in data_access_layer_api, stream lists failed to be created.");
     return -1;
   }
+
+  /*too many FILEs - solved with num_free_streams < MAX_ALLOWED_THREAD_STREAMS  */
   app->streams = (FILE **) malloc (stream_n * sizeof (FILE *));
   if (app->streams == NULL)
   {
-    DAP_delete_arrays (app->tasks_offsets, task_n);
+    DAP_delete_arrays_offsets (app->tasks_offsets, task_n);
     DAP_delete_arrays (app->tasks_stream, task_n);
     fclose (app->def_stream);
     free (app->comms);
@@ -1210,7 +1359,7 @@ DAP_initialize_app (struct app_struct *app,
 
   if (app->free_streams == NULL)
   {
-    DAP_delete_arrays (app->tasks_offsets, task_n);
+    DAP_delete_arrays_offsets (app->tasks_offsets, task_n);
     DAP_delete_arrays (app->tasks_stream, task_n);
     fclose (app->def_stream);
     free (app->streams);
@@ -1234,7 +1383,7 @@ DAP_end_app (struct app_struct *app)
   t_boolean res = 0;
 
   // Frees offset list
-  DAP_delete_arrays (app->tasks_offsets, app->task_num);
+  DAP_delete_arrays_offsets (app->tasks_offsets, app->task_num);
   // Free state stream lists
   DAP_delete_arrays (app->tasks_stream, app->task_num);
 
@@ -1277,13 +1426,13 @@ DAP_set_thread_stream (struct app_struct *app, int task_id, int thread_id,
 // Sets thread offset value
 int
 DAP_set_offset_thread (struct app_struct *app, int task_id, int thread_id,
-		       long int offset)
+		       t_off_fitxer offset)
 {
   // Local variables
   int result = -1;		// Result variable, if less then 0 indicates error
 
   result =
-    set_conteiner_item (app->tasks_offsets, app->task_num, task_id,
+    set_conteiner_item_offsets (app->tasks_offsets, app->task_num, task_id,
 			app->thread_num[task_id], thread_id, offset);
   return result;
 }
@@ -1301,13 +1450,12 @@ DAP_get_stream_thread (struct app_struct *app, int task_id, int thread_id)
 }
 
 // Gets thread offset value
-long int
+t_off_fitxer
 DAP_get_offset_thread (struct app_struct *app, int task_id, int thread_id)
 {
-  long int offset = -1;
-
+  t_off_fitxer offset = -1;
   offset =
-    get_item_conteiner (app->tasks_offsets, app->task_num, task_id,
+    get_item_conteiner_offsets (app->tasks_offsets, app->task_num, task_id,
 			app->thread_num[task_id], thread_id);
   return offset;
 }
@@ -1323,8 +1471,8 @@ DAP_print_offsets (struct app_struct *app)
   {
     for (j = 1; j < DAP_get_threads_num_task (app, i - 1) + 1; j++)
     {
-      printf ("Task %d and thread  %d has offset %d\n", i, j,
-	      DAP_get_offset_thread (app, i - 1, j - 1));
+      printf ("Task %d and thread  %d has offset %jd\n", i, j,
+	      (intmax_t)DAP_get_offset_thread (app, i - 1, j - 1));
     }
   }
 }
@@ -1381,19 +1529,24 @@ DAP_close_thread (struct app_struct *app, int task_id, int thread_id)
 }
 
 
-// Returns stream prepared for acction reading
-FILE *
-DAP_get_action_stream (struct app_struct * app, int task_id, int thread_id)
+// Returns stream prepared for action reading
+FILE* DAP_get_action_stream (struct app_struct *app,
+                             int                task_id,
+                             int                thread_id)
 {
   int res = 0;
   FILE *stream = NULL;
   long int assig_stream = DATA_ACCESS_no_stream_assig;
-  long int offset = 0;
+  t_off_fitxer offset = 0;
   char open_mode = 'r';
   int num_streams = 0;
 
   // Get stream logical id for thread if there is stream assigned for thread
-  assig_stream = DAP_get_stream_thread (app, task_id, thread_id);
+  assig_stream = get_item_conteiner(app->tasks_stream,
+                                    app->task_num,
+                                    task_id,
+                                    app->thread_num[task_id],
+                                    thread_id);
 
   if (assig_stream == DATA_ACCESS_no_stream_assig)
   {
@@ -1405,12 +1558,13 @@ DAP_get_action_stream (struct app_struct * app, int task_id, int thread_id)
 
     if (num_streams == -1)
     {
+       
       // No free stream, usage of default stream forced
       stream = DAP_get_default_stream (app);
       // Get thread offset
       offset = DAP_get_offset_thread (app, task_id, thread_id);
       // Set default stream for reading
-      res = fseek (stream, offset, SEEK_SET);
+      res = MYFSEEK (stream, offset, SEEK_SET);
       if (res == -1)
 	return NULL;
 
@@ -1424,34 +1578,41 @@ DAP_get_action_stream (struct app_struct * app, int task_id, int thread_id)
       stream = app->streams[assig_stream - 1];
       if (stream != NULL)
       {
-	// Update number of free streams which is one less
-	app->num_free_streams = num_streams;
-	// Set index of stream reserved for thread
-	res = DAP_set_thread_stream (app, task_id, thread_id, assig_stream);
-	if (res == -1)
-	  return NULL;
-	// Sets stream for reading
-	offset = DAP_get_offset_thread (app, task_id, thread_id);
-	res = fseek (stream, offset, SEEK_SET);
-	if (res == -1)
-	  return NULL;
+        // Update number of free streams which is one less
+        app->num_free_streams = num_streams;
+        // Set index of stream reserved for thread
+        res = DAP_set_thread_stream (app, task_id, thread_id, assig_stream);
+        if (res == -1)
+        {
+      	  return NULL;
+        }
+        // Sets stream for reading
+        offset = DAP_get_offset_thread (app, task_id, thread_id);
+        res = MYFSEEK (stream, offset, SEEK_SET);
+        if (res == -1)
+        {
+      	  return NULL;
+        }
       }
       else
       {
-	// No free system resorses, usage of default stream forced
-	stream = DAP_get_default_stream (app);
-	// Recover extracted stream
-	app->num_free_streams =
-	  DAP_add_to_array (app->free_streams, app->num_streams,
-			    assig_stream, app->num_free_streams);
-	// Get thread offset
-	offset = DAP_get_offset_thread (app, task_id, thread_id);
-	// Set default stream for reading
-	res = fseek (stream, offset, SEEK_SET);
-	if (res == -1)
-	  return NULL;
+        // No free system resorses, usage of default stream forced
+        stream = DAP_get_default_stream (app);
+        // Recover extracted stream
+        app->num_free_streams =
+          DAP_add_to_array (app->free_streams,
+                            app->num_streams,
+                            assig_stream,
+                            app->num_free_streams);
+        // Get thread offset
+        offset = DAP_get_offset_thread (app, task_id, thread_id);
+        // Set default stream for reading
+        res = MYFSEEK (stream, offset, SEEK_SET);
+        if (res == -1)
+        {
+          return NULL;
+        }
       }
-
     }
   }
   else
@@ -1537,8 +1698,12 @@ create_data_access_layer ()
   int res = 0;
   int i = 0;
 
-  main_struct.apps == NULL;
-  main_struct.error_string == NULL;
+//   Vladimir: these two lines make little sense
+//   main_struct.apps = NULL;
+//   main_struct.error_string = NULL;  
+  main_struct.apps = NULL;
+  main_struct.error_string = NULL;
+  
   main_struct.apps =
     (struct app_struct **) malloc (DATA_ACCESS_MAX_NUM_APP *
 				   sizeof (struct app_struct *));
@@ -2048,7 +2213,6 @@ DAP_verify_bracket_sintx (char *buffer, int buffer_size, int offset)
   int delim_size = 1;		// Size of uper delimiter array
   int field_size = DATA_ACCESS_STANDARD_FIELD_SIZE;
   int deli_offset = 0;		// Offset of delimiting char
-  int i = 0, char_r = 0;
 
   // Check if offset element is '(' char
   if (buffer[offset] != '(')
@@ -2136,9 +2300,12 @@ offset: indicates strating position for reding inside register buffer
 offset_rec: variable that stores the long int field, has the name offset_rec which is old name but correct name should be simply field_value.
 
 */
-int long
-DAP_long_int_field_read (char *buffer, int buffer_size, char *field,
-			 int field_size, int offset, long int *offset_rec)
+int long DAP_long_int_field_read (char     *buffer,
+                                  int       buffer_size,
+                                  char     *field,
+                                  int       field_size,
+                                  int       offset,
+                                  long int *offset_rec)
 {
   int res = -1;
   int c_read = 0;
@@ -2151,7 +2318,29 @@ DAP_long_int_field_read (char *buffer, int buffer_size, char *field,
   }
   else
   {
-    off_r = atol (field);	// Pages 310, 108, 61 (chars verifications) in GNU manual
+    off_r = atol (field);  // Pages 310, 108, 61 (chars verifications) in GNU manual
+    *offset_rec = off_r;
+    res = c_read + offset;
+  }
+  return res;
+}
+
+int long
+DAP_t_off_fitxer_field_read (char *buffer, int buffer_size, char *field,
+			 int field_size, int offset, t_off_fitxer *offset_rec)
+{
+  int res = -1;
+  int c_read = 0;
+  t_off_fitxer off_r = 0;
+
+  c_read = DAP_read_field (buffer, buffer_size, field, field_size, offset);
+  if (c_read < 0)
+  {
+    res = -1;
+  }
+  else
+  {
+    off_r = strtoll (field, NULL, 10);  // Pages 310, 108, 61 (chars verifications) in GNU manual
     *offset_rec = off_r;
     res = c_read + offset;
   }
@@ -2253,26 +2442,26 @@ DAP_h_r_tr_name (char *buffer, int buffer_size, char *field, int field_size,
 // Reading of offset fields from header in buffer
 int
 DAP_h_r_offset (char *buffer, int buffer_size, char *field, int field_size,
-		int offset, int *offset_type, long int *offset_value)
+		int offset, int *offset_type, t_off_fitxer *offset_value)
 {
   int res = -1;
   int c_read = 0;
-  int off_t = 0;
-  long int off_v = 0;
+  int offset_t = 0;
+  t_off_fitxer off_v = 0;
 
   // Read type of offset
   c_read =
     DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
-			&off_t);
+			&offset_t);
   if (c_read != -1)
   {
     res = c_read;
-    *offset_type = off_t;
-    if (off_t == OFFSET_PRESENT)
+    *offset_type = offset_t;
+    if (offset_t == OFFSET_PRESENT)
     {
       // Read offset register position
       c_read =
-	DAP_long_int_field_read (buffer, buffer_size, field, field_size,
+	DAP_t_off_fitxer_field_read (buffer, buffer_size, field, field_size,
 				 c_read, &off_v);
       res = c_read;
       *offset_value = off_v;
@@ -2338,7 +2527,7 @@ DAP_h_verify_num_th (char *buffer, int buffer_size, int offset, int task_num)
 // Read number of threads for each task
 int
 DAP_h_r_num_threads (char *buffer, int buffer_size, char *field,
-		     int field_size, int offset, int task_num, int *th_num)
+		     int field_size, int offset, int ptask_id, int task_num, int *th_num)
 {
   int res = 0;
   int i = 0;
@@ -2361,6 +2550,50 @@ DAP_h_r_num_threads (char *buffer, int buffer_size, char *field,
       th_num[i] = value;
       offset = char_r;
     }
+
+/*  Vladimir: this is hardcoded
+    Dimemas expects only one thread per task
+    but I read the trace file and see how many threads there is
+    and then I put these number of threads in the system
+*/
+
+
+// add newly found threads to the queues
+
+/* find the Ptask that is now processed */
+   struct t_Ptask *Ptask;
+   for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+      Ptask != P_NIL;
+      Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+   {
+      if (Ptask->Ptaskid == ptask_id)
+         break;
+   }
+   assert(Ptask != P_NIL);
+   
+   /* Load initial actions to each thread */
+   struct t_task *task;
+   /* for each task of that Ptask, add as many threads as specified in the trace header */   
+   for ( task  = (struct t_task *) head_queue (&(Ptask->tasks));
+         task != T_NIL;
+         task  = (struct t_task *) next_queue (&(Ptask->tasks)))
+   {
+      if (count_queue(&(task->threads)) == 0) {
+         // this is initialization of the applications
+         // load all threads to the coresponding tasks
+         int nodeid = task->nodeid;
+         set_tasks_number_of_threads(task, th_num[task->taskid-1]);
+         int actual_thid = 0;
+         for (actual_thid = 0; actual_thid < th_num[task->taskid-1]; actual_thid++)
+         {
+            add_thread_to_task (task, actual_thid+1, nodeid);
+         }
+      } else {
+         // this is the restart of the application
+         // so the application is already set and ready to run -> all threads are loaded
+      }
+   }
+    
     res = offset;
   }
   else
@@ -2407,7 +2640,7 @@ DAP_h_check_and_save (struct app_struct *app, char *buffer, int buffer_size,
   int c_read = 0;
   int offset = 0;
   int offset_type = 0;
-  long int offset_value = 0;
+  t_off_fitxer offset_value = 0;
   int task_num = 0;
   int *th_num;
   int comm_num = 0;
@@ -2448,7 +2681,7 @@ DAP_h_check_and_save (struct app_struct *app, char *buffer, int buffer_size,
   }
   c_read =
     DAP_h_r_num_threads (buffer, buffer_size, field, field_size, offset,
-			 task_num, th_num);
+			 ptask_id, task_num, th_num);
   if (c_read < 0)
   {
     return -1;
@@ -2476,8 +2709,7 @@ DAP_h_check_and_save (struct app_struct *app, char *buffer, int buffer_size,
 }
 
 // Main header reading procedure
-int
-DAP_read_header (struct app_struct *app, int ptask_id, char *file_name)
+int DAP_read_header (struct app_struct *app, int ptask_id, char *file_name)
 {
   int res = 0;
   FILE *stream = NULL;
@@ -2529,6 +2761,7 @@ int
 DAP_ch_offset_register (char *buffer, int buffer_size)
 {
   int res = 0;
+  assert(buffer_size >= 0);
 
   // Check offset rec id
   if (buffer[0] != DATA_ACCESS_OFFDEF || buffer[1] != ':')
@@ -2542,34 +2775,71 @@ DAP_ch_offset_register (char *buffer, int buffer_size)
 
 // Reading of thread offset from a register
 int
-DAP_read_offset_thread_rec (struct app_struct *app, FILE * stream,
-			    char *buffer, int buffer_size, char *field,
-			    int field_size, int task_id, int offset,
-			    int read_r)
+DAP_read_offset_thread_rec (struct app_struct *app,
+                            char              *buffer,
+                            int                buffer_size,
+                            char              *field,
+                            int                field_size,
+                            int                task_id,
+                            int                offset,
+                            int                read_r)
 {
   int res = 0;
   int num_threads = 0;
   int i = 0;
   int char_r = 0;
   int set_res = 0;
-  long int value = 0;
+  long int value_task_id = 0;
+  t_off_fitxer value_offset = 0;
 
-  num_threads = DAP_get_threads_num_task (app, task_id);
-
-  for (i = 0; i < num_threads; i++)
   {
+// assure that the first number is task_id
     char_r =
       DAP_long_int_field_read (buffer, buffer_size, field, field_size,
-			       offset, &value);
+                offset, &value_task_id);
     if (char_r <= 0 || char_r > read_r)
     {
 
       DAP_report_error
-	("DAP_read_offset_thread_recs in data_access_layer_api, sintax error");
+   ("DAP_read_offset_thread_recs in data_access_layer_api, sintax error");
       return -1;
     }
+    if (set_res == -1)
+    {
+      return -1;
+    }
+    // check that it is task_id
+    if (task_id != value_task_id)
+    {
+
+      DAP_report_error
+   ("DAP_read_offset_thread_recs in data_access_layer_api, sintax error task_id != read_task_id_in_offset_format");
+      return -1;
+    }
+    
+    offset = char_r;
+  }
+  
+  num_threads = DAP_get_threads_num_task (app, task_id);
+  for (i = 0; i < num_threads; i++)
+  {
+    char_r =
+      DAP_t_off_fitxer_field_read (buffer,
+                                   buffer_size,
+                                   field,
+                                   field_size,
+                                   offset,
+                                   &value_offset);
+    
+    if (char_r <= 0 || char_r > read_r)
+    {
+      DAP_report_error
+        ("DAP_read_offset_thread_recs in data_access_layer_api, sintax error");
+      return -1;
+    }
+    
     // Set value of offsets
-    set_res = DAP_set_offset_thread (app, task_id, i, value);
+    set_res = DAP_set_offset_thread (app, task_id, i, value_offset);
     if (set_res == -1)
     {
       return -1;
@@ -2580,79 +2850,160 @@ DAP_read_offset_thread_rec (struct app_struct *app, FILE * stream,
   return res;
 }
 
+
 // Reading of threads offset task by task
+// ***** KEY! Vladimir: new format of offsets for multiple threads per task
+// s:task_no:off_th1:off_th2:...:off_thn *****
 int
-DAP_read_offset_recs (struct app_struct *app, FILE * stream, char *buffer,
-		      int buffer_size, char *field, int field_size)
+DAP_read_offset_recs (struct app_struct *app, FILE * stream, char *field, int field_size)
 {
-  int res = 0;
-  int read_r = 0;
+  int res           = 0;
+  int read_r        = 0;
   int i = 0, ch_o_r = 0;
-  int min_c_read = 2;
-  int num_task = 0;
-  int char_r = 0;
-  int offset = 0;
-  int value = 0;
-  int set_res = 0;
-  char *secbuffer = NULL;
+  int min_c_read    = 2;
+  int num_task      = 0;
+  int char_r        = 0;
+  int offset        = 0;
+  char *secbuffer   = NULL;
 
-  secbuffer =
-    DAP_read_register_autoincr (stream, DATA_ACCESS_MAX_BUFFER_SIZE, &read_r);
-
-  if (secbuffer == NULL)
-  {
-    // Not enought memory
-    return -1;
-  }
-  if (read_r < min_c_read)
-  {
-    DAP_report_error
-      ("DAP_read_offset_recs in data_access_layer_api, sintax error");
-    return -1;
-  }
-  ch_o_r = DAP_ch_offset_register (secbuffer, read_r);
-  if (ch_o_r == -1)
-    return -1;
   num_task = DAP_get_task_num (app);
-
-  offset = 2;			// Set inital offset reading
   for (i = 0; i < num_task; i++)
-  {
-    char_r = DAP_read_offset_thread_rec (app, stream, secbuffer, read_r,
-					 field, field_size, i, offset,
-					 read_r);
+  {  
+      secbuffer =
+         DAP_read_register_autoincr (stream,
+                                     DATA_ACCESS_MAX_BUFFER_SIZE,
+                                     &read_r);
+         
+      /* this is dirty:
+         somewhere deep in DAP_read_register_autoincr a buffer is allocated
+         and secbuffer points to it
+         I have to free it after I stop using secbuffer */
+      char *secbuffer_to_release;
+      secbuffer_to_release = secbuffer;
 
-    if (char_r <= 0 || read_r < char_r)
-    {
-      DAP_report_error
-	("DAP_read_offset_recs in data_access_layer_api, sintax error");
-      return -1;
-    }
-    offset = char_r;
+      if (secbuffer == NULL)
+      {
+         // Not enough memory
+         return -1;
+      }
+
+      if (read_r < min_c_read)
+      {
+         DAP_report_error("DAP_read_offset_recs in data_access_layer_api, sintax error");
+         return -1;
+      }
+      ch_o_r = DAP_ch_offset_register (secbuffer, read_r);
+      
+      if (ch_o_r == -1)
+      {
+         return -1;
+      }
+
+      offset = 2;        // Set inital offset reading
+
+      char_r = DAP_read_offset_thread_rec (app,
+                                           secbuffer,
+                                           read_r,
+                                           field,
+                                           field_size,
+                                           i,
+                                           offset,
+                                           read_r);
+      /* everything that needed to be read from secbuffer is already read
+         so now I will free it */
+      free(secbuffer_to_release);
+      
+      if (char_r <= 0 || read_r < char_r)
+      {
+         DAP_report_error ("DAP_read_offset_recs in data_access_layer_api, sintax error");
+         return -1;
+      }
+      offset = char_r;
+
+      if (char_r != read_r)
+      {
+         DAP_report_error
+            ("DAP_read_offset_recs in data_access_layer_api, sintax error");
+         return -1;
+      }
+      res = char_r;
   }
-  if (char_r != read_r)
-  {
-    DAP_report_error
-      ("DAP_read_offset_recs in data_access_layer_api, sintax error");
-    return -1;
-  }
-  res = char_r;
   return res;
 }
 
+
+// // Reading of threads offset task by task
+// int
+// DAP_read_offset_recs (struct app_struct *app, FILE * stream, char *buffer,
+// 		      int buffer_size, char *field, int field_size)
+// {
+//   int res = 0;
+//   int read_r = 0;
+//   int i = 0, ch_o_r = 0;
+//   int min_c_read = 2;
+//   int num_task = 0;
+//   int char_r = 0;
+//   int offset = 0;
+//   int value = 0;
+//   int set_res = 0;
+//   char *secbuffer = NULL;
+// 
+//   secbuffer =
+//     DAP_read_register_autoincr (stream, DATA_ACCESS_MAX_BUFFER_SIZE, &read_r);
+// 
+//   if (secbuffer == NULL)
+//   {
+//     // Not enought memory
+//     return -1;
+//   }
+//   if (read_r < min_c_read)
+//   {
+//     DAP_report_error
+//       ("DAP_read_offset_recs in data_access_layer_api, sintax error");
+//     return -1;
+//   }
+//   ch_o_r = DAP_ch_offset_register (secbuffer, read_r);
+//   if (ch_o_r == -1)
+//     return -1;
+//   num_task = DAP_get_task_num (app);
+// 
+//   offset = 2;			// Set inital offset reading
+//   for (i = 0; i < num_task; i++)
+//   {
+//     char_r = DAP_read_offset_thread_rec (app, stream, secbuffer, read_r,
+// 					 field, field_size, i, offset,
+// 					 read_r);
+// 
+//     if (char_r <= 0 || read_r < char_r)
+//     {
+//       DAP_report_error
+// 	("DAP_read_offset_recs in data_access_layer_api, sintax error");
+//       return -1;
+//     }
+//     offset = char_r;
+//   }
+//   if (char_r != read_r)
+//   {
+//     DAP_report_error
+//       ("DAP_read_offset_recs in data_access_layer_api, sintax error");
+//     return -1;
+//   }
+//   res = char_r;
+//   return res;
+// }
+
 // Reading of offset register from the end of a trace file
 int
-DAP_read_from_end_offset (struct app_struct *app, FILE * stream, char *buffer,
-			  int buffer_size, char *field, int field_size)
+DAP_read_from_end_offset (struct app_struct *app, FILE * stream, char *field, int field_size)
 {
   int res = 0;
   int pos_res = 0;
   int read_res = 0;
 
   // Set to read from the end
-  int offset = DAP_get_off_v_app (app);
+  t_off_fitxer offset = DAP_get_off_v_app (app);
 
-  pos_res = fseek (stream, offset, SEEK_SET);
+  pos_res = MYFSEEK (stream, offset, SEEK_SET);
   if (pos_res < 0)
   {
     DAP_report_error
@@ -2660,7 +3011,7 @@ DAP_read_from_end_offset (struct app_struct *app, FILE * stream, char *buffer,
     return -1;
   }
   read_res =
-    DAP_read_offset_recs (app, stream, buffer, buffer_size, field,
+    DAP_read_offset_recs (app, stream, field,
 			  field_size);
   if (read_res < 0)
   {
@@ -2682,8 +3033,8 @@ DAP_exame_register_seek_off (char *buffer, int buffer_size, char *field,
   int task = 0;
   int thread = 0;
   int offset = 0;
-  long int off_v = 0;
-  long int f_pos = 0;
+  t_off_fitxer off_v = 0;
+  t_off_fitxer f_pos = 0;
 
   // Read id of register
   fchar =
@@ -2712,7 +3063,7 @@ DAP_exame_register_seek_off (char *buffer, int buffer_size, char *field,
     if (off_v == 0)
     {
       // Set offset
-      f_pos = ftell (stream);
+      f_pos = MYFTELL (stream);
       f_pos = f_pos - rchar;
       res = DAP_set_offset_thread (app, task, thread, f_pos);
     }
@@ -2768,24 +3119,18 @@ DAP_get_comparation_info (char *buffer, int buffer_size, char *field,
 // Compares two action registers
 int
 DAP_exam_seek (FILE * stream, struct app_struct *app, char *buffer,
-	       int buffer_size, char *field, int field_size, long int *offset,
-	       long int cut_point, int task, int thread, long int low_limit,
-	       long int high_limit)
+	       int buffer_size, char *field, int field_size, t_off_fitxer *offset,
+	       t_off_fitxer cut_point, int task, int thread, t_off_fitxer low_limit)
 {
   int res = 0;
   int LOWER = -1;
   int BIGGER = 1;
-  int EQUAL = 0;
   int ERROR_CASE = -2;
-  int NO_FOUND = -3;
   int first_task = 0;
   int first_thread = 0;
-  int sec_task = 0;
-  int sec_thread = 0;
-  long int offset_first = 0;
-  long int offset_sec = 0;
+  t_off_fitxer offset_first = 0;
 
-  res = fseek (stream, cut_point, SEEK_SET);
+  res = MYFSEEK (stream, cut_point, SEEK_SET);
   if (res < 0)
     return ERROR_CASE;
   // Read or move from cut point to first register
@@ -2793,7 +3138,7 @@ DAP_exam_seek (FILE * stream, struct app_struct *app, char *buffer,
   if (res < 0)
     return ERROR_CASE;
   // Read first register
-  offset_first = ftell (stream);
+  offset_first = MYFTELL (stream);
   res = DAP_read_register (stream, buffer, buffer_size);
   if (res < 0)
   {
@@ -2801,7 +3146,7 @@ DAP_exam_seek (FILE * stream, struct app_struct *app, char *buffer,
     // Read of first examing register failed, there is no register or we are out from area.
     // This is case where there is only one register left to exam.
     // Reposition for reading.
-    res = fseek (stream, low_limit, SEEK_SET);
+    res = MYFSEEK (stream, low_limit, SEEK_SET);
     // Read first register
     res = DAP_read_register (stream, buffer, buffer_size);
     if (res < 0)
@@ -2838,20 +3183,18 @@ DAP_exam_seek (FILE * stream, struct app_struct *app, char *buffer,
 int
 DAP_dicotomic_seek (FILE * stream, struct app_struct *app, long int file_size,
 		    char *buffer, int buffer_size, char *field,
-		    int field_size, long int *offset, int task, int thread)
+		    int field_size, int task, int thread)
 {
   long int low_limit = DAP_get_h_size (app) + DAP_get_def_size (app) - 2;
   long int high_limit = file_size;
   int res = 0;
   long int cut_point = (high_limit + low_limit) / 2;
   int found = 0;
-  long int exam_point = 0;
+  t_off_fitxer exam_point = 0;
   int aval = 0;
   int LOWER = -1;
   int BIGGER = 1;
-  int EQUAL = 0;
   int ERROR_CASE = -2;
-  int NO_FOUND = -3;
 
   DAP_set_offset_thread (app, task, thread, file_size);
   while (low_limit < cut_point && cut_point < high_limit && found == 0)
@@ -2861,8 +3204,7 @@ DAP_dicotomic_seek (FILE * stream, struct app_struct *app, long int file_size,
 
     aval =
       DAP_exam_seek (stream, app, buffer, buffer_size, field, field_size,
-		     &exam_point, cut_point, task, thread, low_limit,
-		     high_limit);
+		     &exam_point, cut_point, task, thread, low_limit);
 
     if (aval == LOWER)
     {
@@ -2898,7 +3240,6 @@ DAP_advaced_offset_seek (FILE * stream, struct app_struct *app,
   int j = 0;
   int end = 0;
   int dic_res = 0;
-  long int offset = 0;
 
   res = DAP_read_definitions (app);
   if (res < 0)
@@ -2913,7 +3254,7 @@ DAP_advaced_offset_seek (FILE * stream, struct app_struct *app,
     {
       dic_res =
 	DAP_dicotomic_seek (stream, app, file_size, buffer, buffer_size,
-			    field, field_size, &offset, i, j);
+			    field, field_size, i, j);
       if (dic_res < 0)
       {
 	end = 1;
@@ -2981,8 +3322,7 @@ DAP_seek_offsets (char *buffer, int buffer_size, char *field, int field_size,
 }
 
 // Main offset register reading procedure
-int
-read_offsets (struct app_struct *app)
+int read_offsets (struct app_struct *app)
 {
   int res = 0;
   int offset_t = 0;
@@ -2996,7 +3336,6 @@ read_offsets (struct app_struct *app)
   int field_size = DATA_ACCESS_STANDARD_FIELD_SIZE;
   char *buffer = (char *) malloc (buffer_size * sizeof (char));
   char *field = (char *) malloc (field_size * sizeof (char));
-  int read_r = 0;
   int end_off_r = 0;
 
   // Check the offset type
@@ -3031,8 +3370,7 @@ read_offsets (struct app_struct *app)
   {
     // Offset is last line in trace file, GNU manual 137
     end_off_r =
-      DAP_read_from_end_offset (app, stream, buffer, buffer_size, field,
-				field_size);
+      DAP_read_from_end_offset (app, stream, field, field_size);
     if (end_off_r == -1)
     {
       res = -1;
@@ -3046,13 +3384,11 @@ read_offsets (struct app_struct *app)
 }
 
 /*
- *	READ OBJECT DEFINITIONS ROUTINE
+ *  READ OBJECT DEFINITIONS ROUTINE
  */
 
 // Read communicator tasks
-int
-read_tasks_comm (struct app_struct *app,
-                 char *buffer,
+int read_tasks_comm (char *buffer,
                  int buffer_size,
                  char *field,
                  int field_size,
@@ -3134,7 +3470,7 @@ read_comm_regs (struct app_struct *app,
   //printf("Number of task involved in commuicator id: %d is %d\n", commid, taskc);
   offset = char_r;
   char_r =
-    read_tasks_comm (app, buffer, buffer_size, field, field_size, offset,
+    read_tasks_comm (buffer, buffer_size, field, field_size, offset,
 		     taskc, comm);
   if (char_r < 0)
     return -1;
@@ -3183,7 +3519,7 @@ DAP_read_def_reg (struct app_struct *app, char *buffer, int buffer_size,
   int char_r = 1;
   int offset = 0;
   int char_rr = 0;
-  long int size = 0;
+  t_off_fitxer size = 0;
 
   // Check to see if we are at the end of a file
   char_rr = DAP_read_register (stream, buffer, buffer_size);
@@ -3220,7 +3556,7 @@ DAP_read_def_reg (struct app_struct *app, char *buffer, int buffer_size,
   if (char_rr != char_r)
     return -1;
   // Update definition block size
-  size = ftell (stream);
+  size = MYFTELL (stream);
   DAP_set_def_size (app, size - DAP_get_h_size (app));
   return res;
 }
@@ -3249,17 +3585,17 @@ DAP_set_def_reading (struct app_struct *app, char *buffer, int buffer_size,
 {
   int res = 0;
   int char_r = 0;
-  int off_t = 0;
+  int offset_t = 0;
 
   // Jump the first register "header register"
-  char_r = fseek (stream, DAP_get_h_size (app), SEEK_SET);
+  char_r = MYFSEEK (stream, DAP_get_h_size (app), SEEK_SET);
   if (char_r < 0)
     return -1;
 
-  off_t = DAP_get_off_t_app (app);
+  offset_t = DAP_get_off_t_app (app);
 
   /* DEFINITIONS ALWAYS START AT SECOND LINE! 
-     if(off_t == OFFSET_NOT_PRESENT) { */
+     if(offset_t == OFFSET_NOT_PRESENT) { */
   // Definitions are staring from second register 
   // "offset register is at the end of file or there is non offset register"
   char_r =
@@ -3322,35 +3658,55 @@ DAP_read_definitions (struct app_struct *app)
  */
 
 // Message reciving action register read
-int
-DAP_message_rcv_read (char *buffer, int buffer_size, char *field,
-		      int field_size, int task_id, int th_id,
-		      struct t_action *act, int offset, int actid,
-		      int rchar_r)
+int DAP_message_rcv_read (char *buffer,
+                          int buffer_size,
+                          char *field,
+                          int field_size,
+                          struct t_action *act,
+                          int offset,
+                          int actid,
+                          int rchar_r)
 {
   int res = 0;
-
   // Read
   // 1. rcv_task
-  // 2. msg_zie
-  // 3. tag
-  // 4. commid
-  // 5 rcv type
+  // 2. rcv_thread
+  // 3. msg_zie
+  // 4. tag
+  // 5. commid
+  // 6. rcv type
   int task = 0;
+  int thread = 0;
   int msgsize = 0;
   int tag = 0;
   int commid = 0;
   int rcvt = 0;
   int fchar_r = 0;
+  
+  assert(actid == RECV);
 
   fchar_r =
-    DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
-			&task);
+    DAP_int_field_read (buffer,
+                        buffer_size,
+                        field,
+                        field_size,
+                        offset,
+                        &task);
   if (fchar_r == -1)
   {
     return -1;
   }
   offset = fchar_r;
+  
+  fchar_r =
+    DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
+         &thread);
+  if (fchar_r == -1)
+  {
+    return -1;
+  }
+  offset = fchar_r;
+  
   fchar_r =
     DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
 			&msgsize);
@@ -3359,6 +3715,7 @@ DAP_message_rcv_read (char *buffer, int buffer_size, char *field,
     return -1;
   }
   offset = fchar_r;
+  
   fchar_r =
     DAP_int_field_read (buffer, buffer_size, field, field_size, offset, &tag);
   if (fchar_r == -1)
@@ -3366,6 +3723,7 @@ DAP_message_rcv_read (char *buffer, int buffer_size, char *field,
     return -1;
   }
   offset = fchar_r;
+  
   fchar_r =
     DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
 			&commid);
@@ -3374,6 +3732,7 @@ DAP_message_rcv_read (char *buffer, int buffer_size, char *field,
     return -1;
   }
   offset = fchar_r;
+  
   fchar_r =
     DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
 			&rcvt);
@@ -3382,10 +3741,17 @@ DAP_message_rcv_read (char *buffer, int buffer_size, char *field,
     return -1;
   }
   offset = fchar_r;
+  
   if (fchar_r == rchar_r)
   {
     res = fchar_r;
-    DAP_set_action_msg_rcv (act, actid, task, msgsize, tag, commid, rcvt);
+    if (debug&D_COMM)
+    {
+      PRINT_TIMER (current_time);        
+      printf("read RECV ACTION  source %d source_thread %d    SIZE %d  tag %d   commid %d  type %d\n",
+              task, thread, msgsize, tag, commid, rcvt);
+    }            
+    DAP_set_action_msg_rcv (act, task, thread, msgsize, tag, commid, rcvt);
   }
   else
   {
@@ -3400,19 +3766,21 @@ DAP_message_rcv_read (char *buffer, int buffer_size, char *field,
 // Message passing action register reading
 int
 DAP_message_pass_read (char *buffer, int buffer_size, char *field,
-		       int field_size, int task_id, int th_id,
-		       struct t_action *act, int offset, int actid,
+		       int field_size, 
+             struct t_action *act, int offset, int actid,
 		       int rchar_r)
 {
   int res = 0;
 
   // Read 
   // 1. dest_task_id
-  // 2. msg_size
-  // 3. tag
-  // 4. comm_id
-  // 5. syncronism
+  // 2. dest_thread_id
+  // 3. msg_size
+  // 4. tag
+  // 5. comm_id
+  // 6. syncronism
   int dest = 0;
+  int dest_thread = 0;  
   int msgs = 0;
   int tag = 0;
   int commid = 0;
@@ -3423,6 +3791,15 @@ DAP_message_pass_read (char *buffer, int buffer_size, char *field,
   fchar_r =
     DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
 			&dest);
+  if (fchar_r == -1)
+  {
+    return -1;
+  }
+  offset = fchar_r;  
+  // Dest_thread reading
+  fchar_r =
+    DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
+         &dest_thread);
   if (fchar_r == -1)
   {
     return -1;
@@ -3466,7 +3843,13 @@ DAP_message_pass_read (char *buffer, int buffer_size, char *field,
   if (fchar_r == rchar_r)
   {
     // Save results
-    DAP_set_action_msg (act, actid, dest, msgs, tag, commid, sync);
+    DAP_set_action_msg (act, actid, dest, dest_thread, msgs, tag, commid, sync);
+    if (debug&D_COMM)
+    {
+      PRINT_TIMER (current_time);    
+      printf("read SEND ACTION  dest %d dest_thread %d    SIZE %d\n",
+              dest, dest_thread, msgs);
+    }
     res = fchar_r;
   }
   else
@@ -3480,7 +3863,7 @@ DAP_message_pass_read (char *buffer, int buffer_size, char *field,
 // Reading action of CPU burst register 
 int
 DAP_cpu_burst_read (char *buffer, int buffer_size, char *field,
-		    int field_size, int task_id, int th_id,
+		    int field_size,
 		    struct t_action *act, int offset, int actid, int rchar_r)
 {
   int fchar_r = 0;
@@ -3499,7 +3882,7 @@ DAP_cpu_burst_read (char *buffer, int buffer_size, char *field,
   if (fchar_r == rchar_r)
   {
     res = fchar_r;
-    DAP_set_action (act, actid, task_id, th_id, burst);
+    DAP_set_action (act, actid, burst);
   }
   else
   {
@@ -3527,7 +3910,7 @@ DAP_cpu_burst_read (char *buffer, int buffer_size, char *field,
 // returns: total size of register in chars
 int
 DAP_even_read (char *buffer, int buffer_size, char *field, int field_size,
-	       int task_id, int th_id, struct t_action *act, int offset,
+	       struct t_action *act, int offset,
 	       int actid, int rchar_r)
 {
   int res = 0;
@@ -3615,10 +3998,14 @@ DAP_even_read (char *buffer, int buffer_size, char *field, int field_size,
 // rchar_r: size of register in chars
 //
 // returns: total size of register in chars/
-int
-DAP_globop_read (char *buffer, int buffer_size, char *field, int field_size,
-		 int task_id, int th_id, struct t_action *act, int offset,
-		 int actid, int rchar_r)
+int DAP_globop_read (char            *buffer,
+                     int              buffer_size,
+                     char            *field,
+                     int              field_size,
+                     struct t_action *act,
+                     int              offset,
+                     int              actid,
+                     int              rchar_r)
 {
   int res = 0;
   int fchar_r = 0;
@@ -3630,8 +4017,7 @@ DAP_globop_read (char *buffer, int buffer_size, char *field, int field_size,
   long int brecv = 0;
 
   fchar_r =
-    DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
-			&gop_id);
+    DAP_int_field_read (buffer, buffer_size, field, field_size, offset, &gop_id);
 
   if (fchar_r == -1)
   {
@@ -3639,45 +4025,60 @@ DAP_globop_read (char *buffer, int buffer_size, char *field, int field_size,
   }
   offset = fchar_r;
 
-  fchar_r =
-    DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
-			&comm_id);
+  fchar_r = DAP_int_field_read(buffer,
+                               buffer_size,
+                               field,
+                               field_size,
+                               offset,
+                               &comm_id);
   if (fchar_r == -1)
   {
     return -1;
   }
   offset = fchar_r;
 
-  fchar_r =
-    DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
-			&r_task_id);
+  fchar_r = DAP_int_field_read(buffer,
+                               buffer_size,
+                               field,
+                               field_size,
+                               offset,
+                               &r_task_id);
   if (fchar_r == -1)
   {
     return -1;
   }
   offset = fchar_r;
 
-  fchar_r =
-    DAP_int_field_read (buffer, buffer_size, field, field_size, offset,
-			&r_thread_id);
+  fchar_r = DAP_int_field_read(buffer,
+                               buffer_size,
+                               field,
+                               field_size,
+                               offset,
+                               &r_thread_id);
   if (fchar_r == -1)
   {
     return -1;
   }
   offset = fchar_r;
 
-  fchar_r =
-    DAP_long_int_field_read (buffer, buffer_size, field, field_size, offset,
-			     &bsent);
+  fchar_r = DAP_long_int_field_read(buffer,
+                                    buffer_size,
+                                    field,
+                                    field_size,
+                                    offset,
+                                    &bsent);
   if (fchar_r == -1)
   {
     return -1;
   }
   offset = fchar_r;
 
-  fchar_r =
-    DAP_long_int_field_read (buffer, buffer_size, field, field_size, offset,
-			     &brecv);
+  fchar_r = DAP_long_int_field_read(buffer,
+                                    buffer_size,
+                                    field,
+                                    field_size,
+                                    offset,
+                                    &brecv);
   if (fchar_r == -1)
   {
     return -1;
@@ -3687,8 +4088,14 @@ DAP_globop_read (char *buffer, int buffer_size, char *field, int field_size,
   if (fchar_r == rchar_r)
   {
     res = fchar_r;
-    DAP_set_glob_action (act, actid, gop_id, comm_id, r_task_id,
-			 r_thread_id, bsent, brecv);
+    DAP_set_glob_action (act,
+                         actid,
+                         gop_id,
+                         comm_id,
+                         r_task_id,
+                         r_thread_id,
+                         bsent,
+                         brecv);
   }
   else
   {
@@ -3696,8 +4103,6 @@ DAP_globop_read (char *buffer, int buffer_size, char *field, int field_size,
     DAP_report_error
       ("Action read register in data access api, sintax error.");
   }
-
-
 
   return res;
 }
@@ -3719,25 +4124,28 @@ DAP_globop_read (char *buffer, int buffer_size, char *field, int field_size,
 // returns: 0 if operation ended succesfuly
 int
 DAP_read_actions_fields (char *buffer,
-			 int buffer_size,
-			 char *field,
-			 int field_size,
-			 int task_id,
-			 int th_id, struct t_action *act, int offset,
-			 int actid, int rchar_r)
+                         int buffer_size,
+                         char *field,
+                         int field_size,
+                         int task_id,
+                         int th_id,
+                         struct t_action *act, int offset,
+                         int actid,
+                         int rchar_r)
 {
   int res = 0;
   int fchar_r = 0;
   int task = 0;
   int thread = 0;
-  double burst = 0;
-  long int f_pos = 0;
 
   // ALL actions have task, thread fields
   // Read task
   fchar_r = DAP_int_field_read (buffer,
-				buffer_size, field, field_size, offset,
-				&task);
+                                buffer_size,
+                                field,
+                                field_size,
+                                offset,
+                                &task);
   if (fchar_r == -1)
   {
     return -1;
@@ -3745,9 +4153,12 @@ DAP_read_actions_fields (char *buffer,
   offset = fchar_r;
 
   // Read thread
-  fchar_r = DAP_int_field_read (buffer,
-				buffer_size, field, field_size, offset,
-				&thread);
+  fchar_r = DAP_int_field_read(buffer,
+                               buffer_size,
+                               field,
+                               field_size,
+                               offset,
+                               &thread);
   if (fchar_r == -1)
   {
     return -1;
@@ -3761,64 +4172,103 @@ DAP_read_actions_fields (char *buffer,
   if (task == task_id && thread == th_id)
   {
 
+//     printf("read the action for task %d thread %d and action id %d\n",
+//             task, thread, actid);
+
     if (actid == RECORD_CPU_BURST)
     {
       // CPU BURST action
       // Read burst duration
-      fchar_r =
-	DAP_cpu_burst_read (buffer, buffer_size, field, field_size,
-			    task_id, th_id, act, offset, WORK, rchar_r);
+      fchar_r = DAP_cpu_burst_read(buffer,
+                                   buffer_size,
+                                   field,
+                                   field_size,
+                                   act,
+                                   offset,
+                                   WORK,
+                                   rchar_r);
       if (fchar_r == -1)
       {
-	return -1;
+        return -1;
       }
       res = 0;
     }
+    
     if (actid == RECORD_MSG_SEND)
     {
       // MESSAGE SENT action
       // Read 
       // 1. dest_task_id
-      // 2. msg_size
-      // 3. tag
-      // 4. comm_id
-      // 5. syncronism
-      fchar_r =
-	DAP_message_pass_read (buffer, buffer_size, field, field_size,
-			       task_id, th_id, act, offset, SEND, rchar_r);
+      // 2. dest_thread_id
+      // 3. msg_size
+      // 4. tag
+      // 5. comm_id
+      // 6. syncronism
+      fchar_r = DAP_message_pass_read(buffer,
+                                      buffer_size,
+                                      field,
+                                      field_size,
+                                      act,
+                                      offset,
+                                      SEND,
+                                      rchar_r);
       if (fchar_r == -1)
-	return -1;
+      {
+        return -1;
+      }
       res = 0;
     }
+    
     if (actid == RECORD_MSG_RECV)
     {
       // MESSAGE RECIVE action
-      fchar_r =
-	DAP_message_rcv_read (buffer, buffer_size, field, field_size,
-			      task_id, th_id, act, offset, RECV, rchar_r);
+      fchar_r = DAP_message_rcv_read(buffer,
+                                     buffer_size,
+                                     field,
+                                     field_size,
+                                     act,
+                                     offset,
+                                     RECV,
+                                     rchar_r);
       if (fchar_r == -1)
-	return -1;
+      {
+        return -1;
+      }
       res = 0;
     }
+    
     if (actid == RECORD_EVENT)
     {
       // EVENT action 
-      fchar_r =
-	DAP_even_read (buffer, buffer_size, field, field_size, task_id,
-		       th_id, act, offset, EVEN, rchar_r);
+      fchar_r = DAP_even_read(buffer,
+                              buffer_size,
+                              field,
+                              field_size,
+                              act,
+                              offset,
+                              EVEN,
+                              rchar_r);
       if (fchar_r == -1)
-	return -1;
+      {
+        return -1;
+      }
       res = 0;
-
     }
     if (actid == RECORD_GLOBAL_OP)
     {
       // GLOBAL OPERATION
-      fchar_r =
-	DAP_globop_read (buffer, buffer_size, field, field_size, task_id,
-			 th_id, act, offset, GLOBAL_OP, rchar_r);
+      fchar_r = DAP_globop_read(buffer,
+                                buffer_size,
+                                field,
+                                field_size,
+                                act,
+                                offset,
+                                GLOBAL_OP,
+                                rchar_r);
       if (fchar_r == -1)
-	return -1;
+      {
+        return -1;
+      }
       res = 0;
     }
   }
@@ -3833,19 +4283,19 @@ DAP_read_actions_fields (char *buffer,
 }
 
 // Reading of action register
-int
-DAP_read_action_reg (struct app_struct *app,
-		     int task_id, int thread_id, struct t_action *act,
-		     FILE * stream)
+int DAP_read_action_reg(struct app_struct *app,
+                        int task_id,
+                        int thread_id,
+                        struct t_action *act,
+                        FILE * stream)
 {
   int res = 0;
   int char_r = 0;
   int fchar_r = 0;
-  int jump_res = 0;
   int buffer_size = DATA_ACCESS_STANDARD_BUFFER_SIZE;
   int id = 0;
   int field_size = DATA_ACCESS_STANDARD_FIELD_SIZE;
-  long int f_pos = 0;
+  t_off_fitxer f_pos = 0;
   char *buffer = (char *) malloc (buffer_size * sizeof (char));
   char *field = (char *) malloc (field_size * sizeof (char));
 
@@ -3856,7 +4306,7 @@ DAP_read_action_reg (struct app_struct *app,
     return -1;
   }
 
-  char_r = DAP_read_register (stream, buffer, buffer_size);
+  char_r = DAP_read_register(stream, buffer, buffer_size);
 
   if (char_r < 0)
   {
@@ -3877,36 +4327,42 @@ DAP_read_action_reg (struct app_struct *app,
 
   // Check if id is vaild action register
   if (DAP_seek_int_item (DATA_ACCESS_SUPPORTED_ACTIONS,
-			 DATA_ACCESS_SUPPORTED_ACT_NUM, id) == 0)
+                         DATA_ACCESS_SUPPORTED_ACT_NUM, id) == 0)
   {
     // Register id is valid acction register
     res = 0;
     // Read action register fields
     res = DAP_read_actions_fields (buffer,
-				   buffer_size,
-				   field, field_size, task_id, thread_id, act,
-				   fchar_r, id, char_r);
+                                   buffer_size,
+                                   field,
+                                   field_size,
+                                   task_id,
+                                   thread_id,
+                                   act,
+                                   fchar_r,
+                                   id,
+                                   char_r);
     // Save offset of task
 
     if (res == 0)
     {
       // Register read sucessfuly
-      f_pos = ftell (stream);
+      f_pos = MYFTELL (stream);
       res = DAP_set_offset_thread (app, task_id, thread_id, f_pos);
     }
     else
     {
       if (res == -2)
       {
-	// No more registers left to read
-	res = DAP_close_thread (app, task_id, thread_id);
-	res = -2;
+        // No more registers left to read
+        res = DAP_close_thread (app, task_id, thread_id);
+        res = -2;
       }
       else
       {
-	// Action register is not valid for thread or register is corrupted
-	res = DAP_close_thread (app, task_id, thread_id);
-	res = -1;
+        // Action register is not valid for thread or register is corrupted
+        res = DAP_close_thread (app, task_id, thread_id);
+        res = -1;
       }
     }
   }
@@ -3924,15 +4380,17 @@ DAP_read_action_reg (struct app_struct *app,
       res = -1;
     }
   }
+  
   free (buffer);
   free (field);
   return res;
 }
 
 // Main action read procedure
-int
-DAP_read_action (struct app_struct *app,
-		 int task_id, int thread_id, struct t_action *act)
+int DAP_read_action(struct app_struct *app,
+                    int task_id,
+                    int thread_id,
+                    struct t_action *act)
 {
   int res = 0;
   FILE *stream = NULL;
@@ -3948,8 +4406,8 @@ DAP_read_action (struct app_struct *app,
     char ErrorMessage[DATA_ACCESS_STANDARD_BUFFER_SIZE];
 
     sprintf (ErrorMessage,
-	     "Unable to find correct stream for T%02d (t%02d)",
-	     task_id + 1, thread_id + 1);
+             "Unable to find correct stream for T%02d (t%02d)",
+             task_id + 1, thread_id + 1);
     DAP_report_error (ErrorMessage);
     res = -2;
   }
@@ -3960,8 +4418,7 @@ DAP_read_action (struct app_struct *app,
  *  API ROUTINES                                                             *
  ****************************************************************************/
 
-char *
-DATA_ACCESS_get_error ()
+char * DATA_ACCESS_get_error ()
 {
   return get_internal_err_msg ();
 }
@@ -3971,8 +4428,7 @@ DATA_ACCESS_get_error ()
 // main structure
 
 // Get applictation from conteiner
-struct app_struct *
-DAP_get_app (int ptask_id)
+struct app_struct* DAP_get_app (int ptask_id)
 {
   struct app_struct *app = NULL;
   int num_apps = 0;
@@ -3997,8 +4453,9 @@ DAP_get_app (int ptask_id)
 // Initalizing routines of application, does file reading including
 // header, offsets and objects defintions. 
 int
-DAP_initialize_app_proc (struct app_struct *app, int ptask_id,
-			 char *trace_file)
+DAP_initialize_app_proc (struct app_struct *app,
+                         int                ptask_id,
+                         char              *trace_file)
 {
   int res = 0;
   int res_h_read = 0;
@@ -4006,20 +4463,29 @@ DAP_initialize_app_proc (struct app_struct *app, int ptask_id,
   int res_d_read = 0;
 
   res_h_read = DAP_read_header (app, ptask_id, trace_file);
+  
   if (res_h_read == -1)
+  {
     return -1;
+  }
+
   res_o_read = read_offsets (app);
   if (res_o_read == -1)
+  {
     return -1;
+  }
+
   res_d_read = DAP_read_definitions (app);
   if (res_d_read == -1)
+  {
     return -1;
+  }
+  
   return res;
 }
 
 // Adding of appplication in applications conteiner
-int
-DAP_add_app (int ptask_id, char *trace_file_location)
+int DAP_add_app (int ptask_id, char *trace_file_location)
 {
   int res = 0;
   int num_a = 0;
@@ -4034,17 +4500,18 @@ DAP_add_app (int ptask_id, char *trace_file_location)
 
     if (main_struct.apps[num_a] == NULL)
     {
-      DAP_report_error
-	("DATA_ACCESS_get_error in data_access_layer_api, not enought memory");
+      DAP_report_error("DATA_ACCESS_get_error in data_access_layer_api, not enought memory");
       return -1;
     }
 
-    res_i_proc =
-      DAP_initialize_app_proc (main_struct.apps[num_a], ptask_id,
-			       trace_file_location);
+    res_i_proc = DAP_initialize_app_proc (main_struct.apps[num_a],
+                                          ptask_id,
+                                          trace_file_location);
 
     if (res_i_proc == -1)
+    {
       return -1;
+    }
 
     // Strart reading procedures: header, offsets, definitiuons etc.
     main_struct.num_apps++;
@@ -4052,8 +4519,7 @@ DAP_add_app (int ptask_id, char *trace_file_location)
   else
   {
     // Error, max num of applictions reached.
-    DAP_report_error
-      ("DATA_ACCESS_get_error in data_access_layer_api, max number of applications reached.");
+    DAP_report_error("DATA_ACCESS_get_error in data_access_layer_api, max number of applications reached.");
     return -1;
   }
 
@@ -4061,11 +4527,10 @@ DAP_add_app (int ptask_id, char *trace_file_location)
 }
 
 // Replacing of appplication in applications conteiner
-int
-DAP_replace_app (int ptask_id, char *trace_file_location, int index)
+int DAP_replace_app (int ptask_id, char *trace_file_location, int index)
 {
-  int res = 0;
-  int num_a = 0;
+  int res        = 0;
+  int num_a      = 0;
   int res_i_proc = 0;
 
   num_a = index;
@@ -4077,24 +4542,24 @@ DAP_replace_app (int ptask_id, char *trace_file_location, int index)
 
     if (main_struct.apps[num_a] == NULL)
     {
-      DAP_report_error
-	("DATA_ACCESS_get_error in data_access_layer_api, not enought memory");
+      DAP_report_error ("DATA_ACCESS_get_error in data_access_layer_api, not enought memory");
       return -1;
     }
 
-    res_i_proc =
-      DAP_initialize_app_proc (main_struct.apps[num_a], ptask_id,
-			       trace_file_location);
-
+    res_i_proc = DAP_initialize_app_proc (main_struct.apps[num_a],
+                                          ptask_id,
+                                          trace_file_location);
+    
     if (res_i_proc == -1)
+    {
       return -1;
+    }
 
   }
   else
   {
     // Error, index num of appliction too high.
-    DAP_report_error
-      ("DATA_ACCESS_get_error in data_access_layer_api, index number of applications too high.");
+    DAP_report_error("DATA_ACCESS_get_error in data_access_layer_api, index number of applications too high.");
     return -1;
   }
 
@@ -4103,49 +4568,61 @@ DAP_replace_app (int ptask_id, char *trace_file_location, int index)
 
 // API SPECIFIC ROUTINES
 // INIT OF APPLICATION
-t_boolean
-DATA_ACCESS_init (int ptask_id, char *trace_file_location)
+t_boolean DATA_ACCESS_init (int ptask_id, char *trace_file_location)
 {
-
   // Init main structure if necessary
   if (main_struct.init_flag != 1)
+  {
     if (create_data_access_layer () < 0)
+    {
       return FALSE;
+    }
+  }
 
   if (DAP_add_app (ptask_id, trace_file_location) == -1)
+  {
     return FALSE;
+  }
 
   return TRUE;
 }
 
 // API SPECIFIC ROUTINES
 // INIT OF APPLICATION
-t_boolean
-DATA_ACCESS_init_index (int ptask_id, char *trace_file_location, int index)
+t_boolean DATA_ACCESS_init_index (int   ptask_id,
+                                  char *trace_file_location,
+                                  int   index)
 {
 
   // Init main structure if necessary
   if (main_struct.init_flag != 1)
+  {
     if (create_data_access_layer () < 0)
+    {
       return FALSE;
+    }
+  }
 
   if (DAP_replace_app (ptask_id, trace_file_location, index) == -1)
+  {
     return FALSE;
+  }
 
   return TRUE;
 }
 
 // RETURNS APLLICATION INFOFRMATION
-t_boolean
-DATA_ACCESS_get_ptask_structure (int ptask_id,
-				 struct ptask_structure ** ptask_info)
+t_boolean DATA_ACCESS_get_ptask_structure (int                      ptask_id,
+                                           struct ptask_structure **ptask_info)
 {
   t_boolean res = 1;
   struct app_struct *app = NULL;
   struct ptask_structure *ptask =
     (struct ptask_structure *) malloc (sizeof (struct ptask_structure));
+
   if (ptask == NULL)
     return 0;
+  
   app = DAP_get_app (ptask_id);
   if (app != NULL)
   {
@@ -4162,8 +4639,8 @@ DATA_ACCESS_get_ptask_structure (int ptask_id,
 }
 
 // RETURNS COMMUNICATORS
-t_boolean
-DATA_ACCESS_get_communicators (int ptask_id, struct t_queue ** communicators)
+t_boolean DATA_ACCESS_get_communicators (int              ptask_id,
+                                         struct t_queue **communicators)
 {
   t_boolean res = 1;
   struct app_struct *app = NULL;
@@ -4187,15 +4664,14 @@ DATA_ACCESS_get_communicators (int ptask_id, struct t_queue ** communicators)
 }
 
 // RETURNS ACCTION
-t_boolean
-DATA_ACCESS_get_next_action (int ptask_id,
-			     int task_id, int thread_id,
-			     struct t_action ** action)
+t_boolean DATA_ACCESS_get_next_action (int               ptask_id,
+                                       int               task_id,
+                                       int               thread_id,
+                                       struct t_action **action)
 {
-  t_boolean res = TRUE;
-  int res_act = 0;
+  t_boolean res          = TRUE;
   struct app_struct *app = NULL;
-  struct t_action *act = DAP_create_action ();
+  struct t_action *act   = DAP_create_action ();
 
   // Write to log if set as option
   if (DATA_ACCESS_OP_BACKDOOR == 1)
@@ -4246,15 +4722,16 @@ DATA_ACCESS_get_next_action (int ptask_id,
 }
 
 // ENDS API
-void
-DATA_ACCESS_end ()
+void DATA_ACCESS_end ()
 {
   int i = 0;
 
   for (i = 0; i < main_struct.num_apps; i++)
   {
     if (main_struct.apps[i] != NULL)
+    {
       DAP_end_app (main_struct.apps[i]);
+    }
   }
 
   free (main_struct.apps);
@@ -4265,19 +4742,20 @@ DATA_ACCESS_end ()
 
 // ENDS API for ptask_id
 // returns the index in the "apps" structure
-int 
-DATA_ACCESS_ptask_id_end (int ptask_id)
+int DATA_ACCESS_ptask_id_end (int ptask_id)
 {
   int i = 0;
 
   for (i = 0; i < main_struct.num_apps; i++)
   {
-    if (main_struct.apps[i] != NULL) {
-       if (main_struct.apps[i]->ptask_id == ptask_id) {
-          /*printf("RELOAD: %d == %d ; i = %d\n", main_struct.apps[i]->ptask_id, ptask_id, i);*/
-          DAP_end_app (main_struct.apps[i]);
-          return i;
-       }
+    if (main_struct.apps[i] != NULL)
+    {
+      if (main_struct.apps[i]->ptask_id == ptask_id)
+      {
+        /*printf("RELOAD: %d == %d ; i = %d\n", main_struct.apps[i]->ptask_id, ptask_id, i);*/
+        DAP_end_app (main_struct.apps[i]);
+        return i;
+      }
     }
   }
 
@@ -4289,12 +4767,10 @@ DATA_ACCESS_ptask_id_end (int ptask_id)
 
 // Prints all basic data relevant to appliction identified by ptask_id
 // At this point DATA_ACCESS_Init should be invoiced previosly in order to have data to print.
-int
-DATA_ACCESS_test_routine (int ptask_id)
+int DATA_ACCESS_test_routine (int ptask_id)
 {
   int res = 0;
   struct app_struct *app = NULL;
-  struct t_queue *comms = NULL;
 
   app = DAP_get_app (ptask_id);
   if (app != NULL)

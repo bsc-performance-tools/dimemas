@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 #define PRINT_VENUS_INFO     0
-#define PRINT_VENUS_SENDS    1
+#define PRINT_VENUS_SENDS    0
 #define VENUS_STATS          1
 
 /* extern int channel_socket; */
@@ -57,7 +57,11 @@ int vc_recv(char *s, int maxlen);
 
 int print_event (struct t_event *event);
 struct t_event* EVENT_venus_timer(dimemas_timer when, int daemon, int module, struct t_thread *thread, int info);
-int venus_outFIFO_event (struct t_queue *q, struct t_item *e);
+#ifdef USE_EQUEUE
+int venus_outFIFO_event (Equeue *q, struct t_event *e);
+#else
+int venus_outFIFO_event (struct t_queue *q, struct t_event *e);
+#endif 
 
 int vc_command_send(double dtime, int src, int dest, int size, void *event, void *out_resources_event);
 int vc_command_rdvz_send (double dtime, int src, int dest, int tag, int size);

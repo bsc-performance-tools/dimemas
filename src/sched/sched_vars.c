@@ -32,6 +32,7 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <assert.h>
 #include "define.h"
 #include "types.h"
 #include "sched_vars.h"
@@ -42,9 +43,21 @@
 #include "SCH_svr4.h"
 #include "SCH_fifo.h"
 #include "SCH_rr.h"
+#include "SCH_ss_mpi_cp.h"
+
+void empty_modify_priority (struct t_thread *thread)
+{
+   assert(thread != NULL);
+}
+
+void empty_modify_preemption (struct t_thread *thread)
+{
+   assert(thread != NULL);   
+}
 
 struct t_scheduler_actions SCH[] =
 {
+  {
   "FIFO",                         /* Politica FIFO */
   FIFO_thread_to_ready,
   FIFO_get_execution_time,
@@ -55,6 +68,10 @@ struct t_scheduler_actions SCH[] =
   FIFO_init,
   FIFO_copy_parameters,
   FIFO_free_parameters,
+  empty_modify_priority,
+  empty_modify_preemption
+  },
+  {
   "RR",                           /* Politica Round Robin */
   RR_thread_to_ready,
   RR_get_execution_time,
@@ -65,6 +82,10 @@ struct t_scheduler_actions SCH[] =
   RR_init,
   RR_copy_parameters,
   RR_free_parameters,
+  empty_modify_priority,
+  empty_modify_preemption
+  },
+  {
   "FIXED_PRIORITY_FIFO",          /* Politica FIFO con prioridades fijas */
   PRIO_FIFO_thread_to_ready,
   PRIO_FIFO_get_execution_time,
@@ -75,6 +96,10 @@ struct t_scheduler_actions SCH[] =
   PRIO_FIFO_init,
   PRIO_FIFO_copy_parameters,
   PRIO_FIFO_free_parameters,
+  empty_modify_priority,
+  empty_modify_preemption
+  },
+  {
   "UNIX_SVR4",                    /* Politica tipo System V */
   svr4_thread_to_ready,
   svr4_get_execution_time,
@@ -85,6 +110,10 @@ struct t_scheduler_actions SCH[] =
   svr4_init,
   svr4_copy_parameters,
   svr4_free_parameters,
+  empty_modify_priority,
+  empty_modify_preemption
+  },
+  {
   "BOOST",                        /* Politica Boost */
   SCH_boost_thread_to_ready,
   SCH_boost_get_execution_time,
@@ -95,13 +124,51 @@ struct t_scheduler_actions SCH[] =
   SCH_boost_init,
   SCH_boost_copy_parameters,
   SCH_boost_free_parameters,
+  empty_modify_priority,
+  empty_modify_preemption
+  },
+  {
+  "SS_MPI_CP",                        /* Politica for SS, favorizing MPI and critical path, preemption only MPI */
+  SS_MPI_CP_thread_to_ready,
+  SS_MPI_CP_get_execution_time,
+  SS_MPI_CP_next_thread_to_run,
+  SS_MPI_CP_init_scheduler_parameters,
+  SS_MPI_CP_clear_parameters,
+  SS_MPI_CP_info,
+  SS_MPI_CP_init,
+  SS_MPI_CP_copy_parameters,
+  SS_MPI_CP_free_parameters,
+  SS_MPI_CP_modify_priority,
+  SS_MPI_CP_modify_preemption
+  },
+  {
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
   0
+  }
 };
 
 struct t_communic_actions COMMUNIC[] =
 {
-  "FIFO",
-  "RR",
-  "BOOST",
+ {
+  "FIFO"
+ },
+ {
+  "RR"
+ },
+ {
+  "BOOST"
+ },
+ {
   0
+ }
 };

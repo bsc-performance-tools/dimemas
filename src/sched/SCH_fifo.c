@@ -32,6 +32,8 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <assert.h>
+
 /* Includes 'por defecto' */
 #include "define.h"
 #include "types.h"
@@ -97,6 +99,7 @@ FIFO_init_scheduler_parameters(struct t_thread *thread)
 void
 FIFO_clear_parameters(struct t_thread *thread)
 {
+   assert(thread != NULL);
 }
 
 int
@@ -161,9 +164,12 @@ FIFO_init(char *filename, struct t_machine  *machine)
 void
 FIFO_copy_parameters(struct t_thread *th_o, struct t_thread *th_d)
 {
+   assert(th_o != NULL);
+   assert(th_d != NULL);
 }
 
 void
 FIFO_free_parameters (struct t_thread *thread)
 {
+   assert(thread != NULL);   
 }

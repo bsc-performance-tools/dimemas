@@ -50,6 +50,10 @@ extern void really_copy_segment(struct t_thread *thread,
 extern void RMA_general (int value, struct t_thread *thread);
 extern void ONE_SIDED_operation (struct t_thread *thread);
 
+
+extern void os_completed (struct t_thread *thread);
+extern void really_RMA (register struct t_thread *thread);
+
 /* Different window modes */
 #define WINDOW_MODE_NONE  0
 #define WINDOW_MODE_FENCE 1

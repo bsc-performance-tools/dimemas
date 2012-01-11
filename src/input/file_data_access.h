@@ -44,37 +44,34 @@ struct ptask_structure
 };
 
 // PTASK STRUCTURE FUNCTIONS
-int 
-DAP_get_ptask_task_num(struct ptask_structure* ptask);
+int DAP_get_ptask_task_num(struct ptask_structure* ptask);
 
-int
-DAP_get_thread_ptask_num(struct ptask_structure* ptask, int task);
+int DAP_get_thread_ptask_num(struct ptask_structure* ptask, int task);
 
 // API MAIN FUNCTIONS
-extern t_boolean
-DATA_ACCESS_init(int ptask_id, char* trace_file_location);
+extern t_boolean DATA_ACCESS_init(int ptask_id, char* trace_file_location);
 
-extern t_boolean
-DATA_ACCESS_get_ptask_structure(int                      ptask_id,
-                                struct ptask_structure** ptask_info);
+extern t_boolean DATA_ACCESS_get_ptask_structure(int                      ptask_id,
+                                                 struct ptask_structure** ptask_info);
 
-extern t_boolean
-DATA_ACCESS_get_communicators(int ptask_id, struct t_queue** communicators);
+extern t_boolean DATA_ACCESS_get_communicators(int ptask_id, struct t_queue** communicators);
 
-extern t_boolean
-DATA_ACCESS_get_next_action(int               ptask_id, 
-                            int               task_id, 
-                            int               thread_id, 
-                            struct t_action** action);
+extern t_boolean DATA_ACCESS_get_next_action(int               ptask_id,
+                                             int               task_id,
+                                             int               thread_id,
+                                             struct t_action** action);
 
-int
-DATA_ACCESS_test_routine(int ptask_id);
+int DATA_ACCESS_test_routine(int ptask_id);
 
-extern char*
-DATA_ACCESS_get_error();
+extern char* DATA_ACCESS_get_error();
 
-extern void
-DATA_ACCESS_end();
+extern void DATA_ACCESS_end();
+
+int DATA_ACCESS_ptask_id_end (int ptask_id);
+
+t_boolean DATA_ACCESS_init_index (int ptask_id,
+                                  char *trace_file_location,
+                                  int index);
 
 #define OFFSET_NOT_PRESENT 0
 #define OFFSET_PRESENT     1

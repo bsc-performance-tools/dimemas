@@ -43,6 +43,9 @@
 #include "extern.h"
 #include "fs.h"
 #include "list.h"
+#ifdef USE_EQUEUE
+#include "listE.h"
+#endif
 #include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
@@ -56,7 +59,11 @@
 
 struct t_queue  Machine_queue;
 struct t_queue  Dedicated_Connections_queue;
+#ifdef USE_EQUEUE
+Equeue  Node_queue;
+#else
 struct t_queue  Node_queue;
+#endif
 int last_node_id_used=0;
 struct t_queue  Ptask_queue;
 
@@ -96,7 +103,6 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
   struct t_cpu     *cpu;
   dimemas_timer     tmp_timer,new_time;
   struct t_machine *machine;
-  struct t_action  *action;
 
   machine = node->machine;
 
@@ -260,7 +266,6 @@ SCHEDULER_get_execution_time (struct t_thread *thread)
   struct t_account *account;
   dimemas_timer     tmp_timer;
   struct t_action  *action;
-  struct t_cpu       *cpu;
   struct t_node    *node;
   struct t_machine *machine;
    
@@ -389,7 +394,7 @@ void TractaEvent( struct t_thread *thread, struct t_action *action)
       thread->idle_block = TRUE;
     }
   }
-  else if (action->desc.even.type==BLOCK_END)
+  else if (action->desc.even.type == BLOCK_END)
   {
     if (action->desc.even.value==IO_READ_BLOCK)
     {
@@ -579,40 +584,58 @@ SCHEDULER_general (int value, struct t_thread *thread)
       }
 
 next_op:
+//       printf("before more_actions(thread)\n");
       if (more_actions (thread))
       {
         action = thread->action;
+
         switch (action->action)
         {
           case SEND:
+          {
             COMMUNIC_send (thread);
             break;
+          }
           case RECV:
+          {
             COMMUNIC_recv (thread);
             break;
+          }
           case IRECV:
+          {
             COMMUNIC_Irecv (thread);
             break;
+          }
           case WAIT:
+          {
             COMMUNIC_wait (thread);
             break;
+          }
+          case WAIT_FOR_SEND:
+          {
+            panic("wait for send, I did not expect that");
+            break;
+          }
           case WORK:
+          {
             thread->loose_cpu = TRUE;
             SCHEDULER_thread_to_ready (thread);
             break;
+          }
           case EVEN:
           {
             if (debug&D_SCH)
             {
               PRINT_TIMER (current_time);
-              printf (": SCHEDULER general P%02d T%02d (t%02d) User Event %d (%d)\n",
+              printf (": SCHEDULER general P%02d T%02d (t%02d) User Event %lld (%lld)\n",
                       IDENTIFIERS (thread),
-              action->desc.even.type, action->desc.even.value);
+                      action->desc.even.type,
+                      action->desc.even.value);
             }
 
             if (monitorize_event)
             {
-              if (event_to_monitorize==action->desc.even.type)
+              if (event_to_monitorize == action->desc.even.type)
               {
                 SUB_TIMER (current_time,
                            thread->last_time_event_number,
@@ -625,7 +648,22 @@ next_op:
                 ASS_ALL_TIMER (thread->last_time_event_number, current_time);
               }
             }
+
+            /* JGG (2012/01/10): New module management */
+            if (action->desc.even.value == 0)
+            {
+              module_exit(thread,
+                          action->desc.even.type);
+            }
+            else
+            {
+              module_entrance(thread,
+                              action->desc.even.type,
+                              action->desc.even.value);
+            }
+
             
+            /*
             if (action->desc.even.type == BLOCK_BEGIN)
             {
               module_entrance (thread->task->Ptask,
@@ -644,8 +682,9 @@ next_op:
                                          action->desc.even.value);
               }
             }
+            */
 
-            /* Depenent de l'event que sigui potser cal un tractament especial */
+            /* Depenent de l'event que sigui potser cal un tractament especial
             TractaEvent(thread, action);
 
             if (action->desc.even.type == BLOCK_END)
@@ -674,10 +713,50 @@ next_op:
                              current_time,
                              BLOCK_BEGIN,
                              0);
-              */
             }
-            if ((action->desc.even.type != BLOCK_BEGIN) && 
-                (action->desc.even.type != BLOCK_END))
+            */
+
+            if (action->desc.even.type == PRIORITY_SET_EVENT)
+            {
+               if (action->desc.even.value == 0)
+              {
+                  /* this is the ultimate priority that a task can have
+                     highest priority + preempting tasks with smaller priorities */
+                  (*SCH[machine->scheduler.policy].modify_priority) (thread, (t_priority) (0));
+                  /* this is a task that can preempt*/
+                  (*SCH[machine->scheduler.policy].modify_preemption) (thread, (t_priority) 1);
+                  
+               } else {
+                  /* this is a regular priority of a task */
+                  t_priority new_priority = 1 / (t_priority) action->desc.even.value;
+                  (*SCH[machine->scheduler.policy].modify_priority) (thread, (t_priority) (new_priority));
+               }
+            }
+
+            if (action->desc.even.type == PREEMPTION_SET_EVENT)
+            {
+               printf("warning - this was BEFORE used as an user event for PREEMPTION_SET_EVENT - BUT NOT ANY MORE???\n");
+//               (*SCH[machine->scheduler.policy].modify_preemption) (thread, (t_priority) action->desc.even.value);
+            }
+
+            /* remember the sstaskid of this thread */
+            if (action->desc.even.type == USER_EVENT_TYPE_TASKID_START_TASK)
+            {
+               if (action->desc.even.type != 0)
+                  thread->sstask_id = action->desc.even.value;
+            }
+
+            /* remember the sstask_type of this thread */
+            if (action->desc.even.type == USER_EVENT_TYPE_TASKTYPE_START_TASK)
+            {
+               if (action->desc.even.type != 0)
+                  thread->sstask_type = action->desc.even.value;
+            }            
+            
+            if ((action->desc.even.type!=BLOCK_BEGIN) && 
+                (action->desc.even.type!=BLOCK_END)   &&
+                (action->desc.even.type!=PRIORITY_SET_EVENT)   &&
+                (action->desc.even.type!=PREEMPTION_SET_EVENT))
             {
               cpu = get_cpu_of_thread(thread);
               
@@ -873,6 +952,7 @@ SCHEDULER_init(char *filename)
         panic ("Invalid format in file %s. Invalid policy name %s\n",
                filename,
                buf);
+
       
       /* FEC pendent: Quan es canvii el format del fitxer de scheduling caldra 
        * canviar aixo. De moment s'aplica el mateix a totes les maquines. */
@@ -923,9 +1003,15 @@ SCHEDULER_init(char *filename)
   }
 
   /* Prepare the the first Scheduler Events */
+#ifdef USE_EQUEUE
+  for (node  = (struct t_node *) head_Equeue (&Node_queue);
+       node != N_NIL;
+       node  = (struct t_node *) next_Equeue (&Node_queue))
+#else
   for (node  = (struct t_node *) head_queue (&Node_queue);
        node != N_NIL;
        node  = (struct t_node *) next_queue (&Node_queue))
+#endif
   {
     j = MIN (count_queue (&(node->ready)), count_queue (&(node->Cpus)));
     if (j > 0)
@@ -950,9 +1036,15 @@ SCHEDULER_end()
     printf (": SCHEDULER end routine called\n");
   }
 
+#ifdef USE_EQUEUE
+  for (node  = (struct t_node *) head_Equeue (&Node_queue);
+       node != N_NIL;
+       node  = (struct t_node *) next_Equeue (&Node_queue))
+#else
   for (node  = (struct t_node *) head_queue (&Node_queue);
        node != N_NIL;
        node  = (struct t_node *) next_queue (&Node_queue))
+#endif
   {
     if (count_queue (&(node->ready)) != 0)
     {
@@ -1143,6 +1235,7 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
     {
       printf ("doing busy wait\n");
     }
+    printf("SCHEDULER_preemption doing busy wait\n");
     EVENT_extract_timer (M_SCH, thread_current, &when);
     Paraver_thread_buwa(cpu->unique_number,
                         IDENTIFIERS (thread_current),
@@ -1179,6 +1272,42 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
           action->desc.compute.cpu_time = ti;
           thread_current->action = action;
         }
+
+        printf("I DONT EXPECT IT TO COME HERE - VLADIMIR\n");
+// Vladimir: this is a fix for Superscalar for generation of paraver files
+// when the thread is preempted - LOOK THE NORMAL CASE
+//         if (thread_current->sstask_id > 0) {
+//         /* add user events to mark that this task is finished (PREEMPTED) - TASK_ID*/
+//           Paraver_event(cpu->unique_number,
+//                               IDENTIFIERS (thread_current),
+//                               current_time,
+//                               USER_EVENT_TYPE_TASKID_START_TASK, 0);
+//         /* and that it will start again when it gets cpu (PREEMPTED) - TASK_ID*/
+//           action = (struct t_action *) mallocame (sizeof (struct t_action));
+//           action->next = thread_current->action;
+//           action->action = EVEN;
+//           action->desc.even.type  = USER_EVENT_TYPE_TASKID_START_TASK;
+//           action->desc.even.value = thread_current->sstask_id;
+//           thread_current->action  = action;
+//         }
+// 
+//         if (thread_current->sstask_type > 0) {
+//         /* add user events to mark that this task is finished (PREEMPTED) - TASK_TYPE*/
+//           printf("marking preemptiong of P%d T%d t%d  in tasktype %lu\n", IDENTIFIERS(thread_current), thread_current->sstask_type);
+//           Paraver_event(cpu->unique_number,
+//                               IDENTIFIERS (thread_current),
+//                               current_time,
+//                               USER_EVENT_TYPE_TASKTYPE_START_TASK, 0);           
+//         /* and that it will start again when it gets cpu (PREEMPTED) - TASK_TYPE*/
+//           action = (struct t_action *) mallocame (sizeof (struct t_action));
+//           action->next = thread_current->action;
+//           action->action = EVEN;
+//           action->desc.even.type  = USER_EVENT_TYPE_TASKTYPE_START_TASK;
+//           action->desc.even.value = thread_current->sstask_type;
+//           thread_current->action  = action;
+//         }
+
+
         thread->event = EVENT_timer (thread_current->min_time_to_be_preempted,
                                      NOT_DAEMON,
                                      M_SCH,
@@ -1234,6 +1363,50 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
                             thread_current->last_paraver,
                             current_time);
 
+// Vladimir: this is a fix to print good prv file with task names and sequence numbers
+   if (thread_current->sstask_id > 0) {
+   /* add user events to mark that this task is finished (PREEMPTED) - TASK_ID*/
+      Paraver_event(cpu->unique_number,
+                        IDENTIFIERS (thread_current),
+                        current_time,
+                        USER_EVENT_TYPE_TASKID_START_TASK, 0);
+   /* and that it will start again when it gets cpu (PREEMPTED) - TASK_ID*/
+      action = (struct t_action *) mallocame (sizeof (struct t_action));
+      action->next = thread_current->action;
+      action->action = EVEN;
+      action->desc.even.type  = USER_EVENT_TYPE_TASKID_START_TASK;
+      action->desc.even.value = thread_current->sstask_id;
+      thread_current->action  = action;
+   }
+   
+   if (thread_current->sstask_type > 0) {
+   /* add user events to mark that this task is finished (PREEMPTED) - TASK_TYPE*/
+      Paraver_event(cpu->unique_number,
+                        IDENTIFIERS (thread_current),
+                        current_time,
+                        USER_EVENT_TYPE_TASKTYPE_START_TASK, 0);
+   /* and that it will start again when it gets cpu (PREEMPTED) - TASK_TYPE*/
+      action = (struct t_action *) mallocame (sizeof (struct t_action));
+      action->next = thread_current->action;
+      action->action = EVEN;
+      action->desc.even.type  = USER_EVENT_TYPE_TASKTYPE_START_TASK;
+      action->desc.even.value = thread_current->sstask_type;
+      thread_current->action  = action;
+   }
+
+// Add one empty burst so It could work fine
+   if ((thread_current->sstask_id > 0) ||
+       (thread_current->sstask_type > 0)) {   
+      action         = (struct t_action *) mallocame (sizeof (struct t_action));
+      action->next   = thread_current->action;
+      action->action = WORK;
+
+      action->desc.compute.cpu_time  = 0.0;
+      thread_current->action         = action;
+      thread_current->put_into_ready = current_time;
+   }
+//Vladimir: DONE fix
+
     thread_current->last_paraver = current_time;
   }
 
@@ -1248,8 +1421,7 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
   return (thread_current);
 }
 
-int
-SCHEDULER_get_policy (char *s)
+int SCHEDULER_get_policy (char *s)
 {
   int i = 0;
 
@@ -1262,6 +1434,7 @@ SCHEDULER_get_policy (char *s)
         PRINT_TIMER (current_time);
         printf (": Scheduling policy selected %s\n", s);
       }
+      printf("chosen specific scheduling policy:      %s\n", SCH[i].name);
       return (i);
     }
     i++;
@@ -1270,15 +1443,13 @@ SCHEDULER_get_policy (char *s)
   return (-1);
 }
 
-t_boolean
-more_actions (struct t_thread *thread)
+t_boolean more_actions (struct t_thread *thread)
 {
   struct t_action *action;
   struct t_account *account;
   struct t_Ptask *Ptask;
   struct t_cpu   *cpu;
   struct t_node  *node;
-
 
   if ((load_interactive) && (thread->action == AC_NIL))
   {
@@ -1301,9 +1472,9 @@ more_actions (struct t_thread *thread)
   }
   */
 
-  action = thread->action;
+  action  = thread->action;
   account = current_account (thread);
-  Ptask = thread->task->Ptask;
+  Ptask   = thread->task->Ptask;
   
   if (action == AC_NIL)
   {
@@ -1326,6 +1497,19 @@ more_actions (struct t_thread *thread)
       SDDF_stop (node->nodeid, thread->task->taskid, current_time);
       Paraver_thread_dead (0, IDENTIFIERS (thread));
     }
+
+//     PRINT_TIMER (current_time);
+//     printf (": finished thread P%02d T%02d (t%02d)\n",
+//               IDENTIFIERS (thread));
+    finished_threads++;              
+    if (((finished_threads * 100) / total_threads) == (unsigned) progress + 10) {
+       progress = ((finished_threads * 100) / total_threads);
+       printf("..%d%%..   ", progress);
+       if (progress == 100)
+          printf("\n");
+       fflush(stdout);
+    }
+    
     return (FALSE);
   }
 

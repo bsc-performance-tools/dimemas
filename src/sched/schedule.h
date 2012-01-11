@@ -55,17 +55,13 @@ SCHEDULER_general(int value, struct t_thread *thread);
 extern void
 SCHEDULER_thread_to_busy_wait(struct t_thread *thread);
   
-extern void
-SCHEDULER_init(char *filename);
+extern void SCHEDULER_init(char *filename);
 
-extern void
-SCHEDULER_end(void);
+extern void SCHEDULER_end(void);
 
-extern void
-SCHEDULER_reload(struct t_Ptask *Ptask);
+extern void SCHEDULER_reload(struct t_Ptask *Ptask);
   
-extern void
-SCHEDULER_copy_parameters(struct t_thread *th_o, struct t_thread *th_d);
+extern void SCHEDULER_copy_parameters(struct t_thread *th_o, struct t_thread *th_d);
   
 extern void
 SCHEDULER_free_parameters(struct t_thread *thread);

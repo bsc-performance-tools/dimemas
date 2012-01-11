@@ -36,6 +36,9 @@
 
 #include <math.h>
 #include <string.h>
+#include <assert.h>
+
+#include <EventEncoding.h>
 
 #if defined(OS_MACOSX) || defined(OS_CYGWIN)
 #include "macosx_limits.h"
@@ -178,11 +181,12 @@ TASK_end()
       Ptask != P_NIL;
       Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
-    if (Ptask->file != NULL)
-    {
-      fclose (Ptask->file);
-      Ptask->file = NULL;
-    }
+	//mmap: Ptask->file will be closed as soon as I put it into mmap
+	//     if (Ptask->file != NULL)
+	//     {
+	//       fclose (Ptask->file);
+	//       Ptask->file = NULL;
+	//     }
     
     for (communicator  = (struct t_communicator *)head_queue(&Ptask->Communicator);
          communicator != (struct t_communicator *)0;
@@ -234,8 +238,11 @@ TASK_end()
           action = thread->action;
           mess = &(action->desc.recv);
           
-          printf (" Sender: T%02d Tag: %02d CommId: %02d Size: %d\n",
+          printf (" Sender: T%02d  t%02d, Destination T%02d  t%02d  Tag: %02d CommId: %02d Size: %d\n",
                   mess->ori,
+                  mess->ori_thread,
+                  thread->task->taskid,
+                  thread->threadid,
                   mess->mess_tag,
                   mess->communic_id,
                   mess->mess_size);
@@ -270,7 +277,9 @@ TASK_end()
           printf ("\t* Thread %02d ->",
                   thread->threadid);
           action = thread->action;
-          mess_source = &(action->desc.recv);
+          // Vladimir: it has to be action->desc.send
+          mess_source = &(action->desc.send);
+          // mess_source = &(action->desc.recv);
           
           printf (" Dest-: T%02d Tag: %02d CommId: %02d Size: %d\n",
                   mess_source->dest,
@@ -293,8 +302,11 @@ TASK_end()
         {
           action = thread->action;
           mess_source = &(action->desc.send);
-          printf ("\t-> Sender: T%02d Tag: %02d CommId: %d Size: %d\n",
-                  thread->task->taskid, 
+          printf ("\t-> Sender: T%02d t%02d  destT%02d  destt%02d  Tag: %02d CommId: %d Size: %d\n",
+                  thread->task->taskid,
+                  thread->threadid,
+                  mess_source->dest,
+                  mess_source->dest_thread,
                   mess_source->mess_tag,
                   mess_source->communic_id,
                   mess_source->mess_size);
@@ -308,7 +320,7 @@ void
 new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
 {
   register struct t_communicator *comm;
-  
+//   printf("called once\n");
   comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
       (t_priority)communicator_id);
   if (comm!=(struct t_communicator *)0)
@@ -478,9 +490,9 @@ void
 no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id)
 {
   register struct t_window *win;
-  int *mtaskid;
-  int  i;
-  int *trips;
+//   int *mtaskid;
+//   int  i;
+//   int *trips;
 
   win = (struct t_window *)query_prio_queue (&Ptask->Window,
       (t_priority)window_id);
@@ -524,7 +536,10 @@ create_Ptask (char *tracefile, char *configfile)
   Ptask->tracefile  = tracefile;
   Ptask->configfile = configfile;
   Ptask->n_rerun = 0;
-  Ptask->file = (FILE *) NULL;
+//mmap: changing to mmap
+//   Ptask->file = (FILE *) NULL;
+  Ptask->mmapped_file = (char *) NULL;
+  Ptask->mmap_position = 0;
   Ptask->synthetic_application = FALSE;
   create_queue (&(Ptask->tasks));
   create_queue (&(Ptask->global_operation));
@@ -532,7 +547,8 @@ create_Ptask (char *tracefile, char *configfile)
   create_queue (&(Ptask->Window));
   create_queue (&(Ptask->MPI_IO_fh_to_commid));
   create_queue (&(Ptask->MPI_IO_request_thread));
-  create_queue (&(Ptask->Modules));
+  // create_queue (&(Ptask->Modules));
+  create_modules_map(&(Ptask->Modules));
   create_queue (&(Ptask->Filesd));
   create_queue (&(Ptask->UserEventsInfo));
   return (Ptask);
@@ -541,8 +557,7 @@ create_Ptask (char *tracefile, char *configfile)
 /*
  * Set to 0 an account entry
  */
-void
-clear_account (struct t_account *account)
+void clear_account (struct t_account *account)
 {
   /* FEC: Hi havia problemes perque no tots els camps havien estat inicialitzats
    * Per tant, el primer que faig es posar-ho tot a zero. */
@@ -729,14 +744,25 @@ void max_account (struct t_account *to, struct t_account *from)
   MAX_TIMER (to->block_due_buses, from->block_due_buses, to->block_due_buses);
 }
 
+/*  set the number of threads and allocate the array for storing all threads_array
+    for future fast serching by indexing with threadid
+*/
+void
+set_tasks_number_of_threads (struct t_task *task, int number_of_threads)
+{
+
+   /*Vladimir: for optimizations when a task has many threads*/
+   task->num_of_threads = number_of_threads;
+   task->threads_array = (struct t_thread **) mallocame (sizeof (struct t_thread*) * number_of_threads);
+   total_threads += number_of_threads;
+}
+
 /*
  * Create a task and all threads in tasks
  */
 void
-new_thread_in_Ptask (struct t_Ptask *Ptask, int taskid, int nodeid, 
-                     int number_of_threads, int priority, int where)
+new_task_in_Ptask (struct t_Ptask *Ptask, int taskid, int nodeid)
 {
-  struct t_thread *thread;
   struct t_task  *task;
   int             num_tasks;
   int             i;
@@ -771,9 +797,16 @@ new_thread_in_Ptask (struct t_Ptask *Ptask, int taskid, int nodeid,
   {
     task = (struct t_task *) mallocame (sizeof (struct t_task));
     task->taskid = taskid;
+    task->nodeid = nodeid;
     task->Ptask = Ptask;
     task->io_thread = FALSE;
     create_queue (&(task->threads));
+
+   /*Vladimir: for optimizations when a task has many threads
+     here set to 0, set to correct values in set_tasks_number_of_threads */
+    task->num_of_threads = 0;
+    task->threads_array = NULL;
+    
     create_queue (&(task->mess_recv));
     create_queue (&(task->recv));
     create_queue (&(task->send));
@@ -783,14 +816,40 @@ new_thread_in_Ptask (struct t_Ptask *Ptask, int taskid, int nodeid,
     inFIFO_queue (&(Ptask->tasks), (char *) task);
   }
 
-  /* Insert new thread in task */
-  for (i = 0; i < number_of_threads; i++)
+/*   threads inside tasks will be added later
+     when I read from the trace 
+     how many threads there is in every task      */
+     
+}
+
+
+/*
+ * Create a thread and put in on the queue in the task
+   Vladimir: this is used for hardcoding
+   Dimemas expects 1 thread per task
+   and I let it start thinking that it is going to be that way
+   but when I read trf file I can see how many threads there is
+   and then I augment this number
+ */
+void add_thread_to_task (struct t_task *task, int threadid, int nodeid)
+{
+  struct t_thread *thread;
+
+  if (get_node_by_id (nodeid) == N_NIL)
   {
+    panic("Incorrect node identifier %d in  T%d\n",
+          nodeid - 1,
+//           Ptask->tracefile,
+//           Ptask->Ptaskid,
+          task->taskid);
+  }
+
+  /* Insert new thread in task */
     thread = (struct t_thread*) mallocame (sizeof (struct t_thread));
     create_queue (&(thread->account));
     create_queue (&(thread->modules));
     create_queue (&(thread->Activity));
-    thread->threadid = i + 1;
+    thread->threadid = threadid; //i + 1;
     thread->task = task;
     thread->put_into_ready = current_time;
     thread->action = AC_NIL;
@@ -819,21 +878,37 @@ new_thread_in_Ptask (struct t_Ptask *Ptask, int taskid, int nodeid,
     thread->copy_segment_link_source = L_NIL;
     thread->copy_segment_link_dest = L_NIL;
     thread->copy_segment_size = 0;
-    thread->original_seek = where;
-    thread->seek_position = where;
-    thread->base_priority = priority;
+    thread->original_seek = 0;
+    thread->seek_position = 0;
+    thread->base_priority = 0;
+
+    thread->sstask_id   = 0;
+    thread->sstask_type = 0;    
+           
+    thread->portid = port_ids++;
+    PORT_create (thread->portid, thread);
+  
+    thread->portid = port_ids++;
+    PORT_create (thread->portid, thread);
+  
+    thread->portid = port_ids++;
+    PORT_create (thread->portid, thread);
+
+    /* making these queues separate for every thread
+       only DEPENDENCIES go to this queues
+       REAL MPI TRANSFERS go the the queues of the task    */
+    create_queue (&(thread->mess_recv));
+    create_queue (&(thread->recv));
+    create_queue (&(thread->send));
+    /* FEC: Cal crear les dues noves cues pels Irecv*/
+    create_queue (&(thread->recv_without_send));
+    create_queue (&(thread->send_without_recv));
     
-    thread->portid = port_ids++;
-    PORT_create (thread->portid, thread);
-  
-    thread->portid = port_ids++;
-    PORT_create (thread->portid, thread);
-  
-    thread->portid = port_ids++;
-    PORT_create (thread->portid, thread);
-  
     new_account (&(thread->account), nodeid);
     inFIFO_queue (&(task->threads), (char *) thread);
+    /* and store it in the array of all threads in that task */
+    assert(task->num_of_threads >= thread->threadid);
+    task->threads_array[thread->threadid-1] = (struct t_thread*) thread;
     
     thread->last_cp_node = (struct t_cp_node *)0;
     thread->global_op_done = FALSE;
@@ -841,12 +916,28 @@ new_thread_in_Ptask (struct t_Ptask *Ptask, int taskid, int nodeid,
     ASS_ALL_TIMER (thread->last_time_event_number,0);
   
     thread->marked_for_deletion = 0;
-    thread->file_shared         = FALSE;
-  }
+//     thread->file_shared         = FALSE;
+  
 }
 
 struct t_thread*
-locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
+locate_thread_of_task (struct t_task *task, int thid)
+{
+  register struct t_thread *thread;
+
+  assert(task->num_of_threads > thid-1);
+  assert(thid-1 >= 0);
+
+  thread = task->threads_array[thid-1];
+
+  assert (thread != TH_NIL);
+  assert (thread->threadid == thid);
+  return (thread);
+}
+
+
+
+struct t_thread* locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
 {
   register struct t_task  *task;
   register struct t_thread *thread;
@@ -869,14 +960,18 @@ locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
       Ptask->Ptaskid);
   }
 
-  /* Locate thread onto that task */
-  for(thread  = (struct t_thread *) head_queue (&(task->threads));
-      thread != TH_NIL;
-      thread  = (struct t_thread *) next_queue (&(task->threads)))
-  {
-    if (thread->threadid == thid)
-      break;
-  }
+//   /* Locate thread onto that task */
+//   for(thread  = (struct t_thread *) head_queue (&(task->threads));
+//       thread != TH_NIL;
+//       thread  = (struct t_thread *) next_queue (&(task->threads)))
+//   {
+//     if (thread->threadid == thid)
+//       break;
+//   }
+
+// this is optimized by indexing threads in tasks
+  thread = locate_thread_of_task (task, thid);
+  
 
   if (thread == TH_NIL)
     panic("Incorrect thread identifier %d in trace file %s for P%d T%d\n",
@@ -885,14 +980,13 @@ locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
           Ptask->Ptaskid,
           taskid);
 
-  return (thread);  
+  return (thread);
 }
 
 /*
  * Append an action to action list of specific thread
  */
-void
-new_action_to_thread (
+void new_action_to_thread (
   struct t_Ptask *Ptask,
   int taskid,
   int thid, 
@@ -932,7 +1026,11 @@ new_action_to_thread (
 struct t_account*
 current_account(struct t_thread *thread)
 {
-  return ((struct t_account *) tail_queue (&(thread->account)));
+  struct t_account *temp;
+//  printf("current_account step 0, thread_account.first == %p\n", thread->account.first);
+  temp = ((struct t_account *) tail_queue (&(thread->account)));
+  return temp;
+//((struct t_account *) tail_queue (&(thread->account)));
 }
 
 /*
@@ -950,6 +1048,7 @@ locate_task (struct t_Ptask *Ptask, int taskid)
     if (task->taskid == taskid)
       return (task);
   }
+  printf("locate task returns no pointer ???? \n");
   return (T_NIL);
 }
 
@@ -990,6 +1089,9 @@ duplicate_thread_fs (struct t_thread *thread)
   copy_thread->physical_recv = thread->physical_recv;
   copy_thread->last_cp_node = thread->last_cp_node;
 
+  copy_thread->sstask_id                = thread->sstask_id;
+  copy_thread->sstask_type              = thread->sstask_type;
+  
   return (copy_thread);
 }
 
@@ -1038,6 +1140,9 @@ duplicate_thread (struct t_thread *thread)
   copy_thread->physical_recv            = thread->physical_recv;
   copy_thread->last_cp_node             = thread->last_cp_node;
 
+  copy_thread->sstask_id                = thread->sstask_id;
+  copy_thread->sstask_type              = thread->sstask_type;
+
   (*SCH[machine->scheduler.policy].init_scheduler_parameters) (copy_thread);
   SCHEDULER_copy_parameters (thread, copy_thread);
 
@@ -1045,7 +1150,6 @@ duplicate_thread (struct t_thread *thread)
   action = (struct t_action *) mallocame (sizeof (struct t_action));
   memcpy (action, ac,sizeof(struct t_action));
   action->next = AC_NIL;
-
   copy_thread->action = action;
 
   /* Intent de crear un nou accounting pel thread nou, que al destruir-se
@@ -1056,21 +1160,225 @@ duplicate_thread (struct t_thread *thread)
   return (copy_thread);
 }
 
+// this is used for making MPI_Isend 
+struct t_thread*
+promote_to_original (struct t_thread *copy_thread, struct t_thread *thread)
+{
+
+   struct t_node    *node;
+   struct t_machine *machine;
+
+   node = get_node_of_thread (thread);
+   machine = node->machine;
+ 
+   copy_thread->original_thread          = TRUE;
+   thread->original_thread               = FALSE;
+
+   copy_thread->twin_thread              = NULL;
+   thread->twin_thread              = copy_thread;
+
+   copy_thread->doing_context_switch     = thread->doing_context_switch;
+   copy_thread->min_time_to_be_preempted = thread->min_time_to_be_preempted;
+   copy_thread->doing_busy_wait          = thread->doing_busy_wait;
+   copy_thread->threadid                 = thread->threadid;
+   copy_thread->task                     = thread->task;
+   copy_thread->put_into_ready           = thread->put_into_ready;
+   copy_thread->last_action              = thread->last_action;
+   copy_thread->account                  = thread->account;
+   copy_thread->local_link               = thread->local_link;
+   copy_thread->partner_link             = thread->partner_link;
+   copy_thread->local_hd_link            = thread->local_hd_link;
+   copy_thread->partner_hd_link          = thread->partner_hd_link;
+   copy_thread->last_paraver             = thread->last_paraver;
+   copy_thread->base_priority            = thread->base_priority;
+   copy_thread->sch_parameters           = thread->sch_parameters;
+   copy_thread->seek_position            = thread->seek_position;
+  
+//I think this should not be changed
+/*  copy_thread->logical_send             = thread->logical_send;
+  copy_thread->logical_recv             = thread->logical_recv;
+  copy_thread->physical_send            = thread->physical_send;
+  copy_thread->physical_recv            = thread->physical_recv*/;
+  copy_thread->last_cp_node             = thread->last_cp_node;
+
+//   (*SCH[machine->scheduler.policy].init_scheduler_parameters) (copy_thread);
+  SCHEDULER_copy_parameters (thread, copy_thread);
+
+  copy_thread->action = thread->action;
+
+/* Intent de crear un nou accounting pel thread nou, que al destruir-se
+ * s'afegira al thread original. */
+  return (copy_thread);
+}
+
+
+struct t_thread*
+promote_to_original2 (struct t_thread *copy_thread, struct t_thread *thread)
+{
+//   struct t_thread *copy_thread;
+  printf("\n copy_thread->action == %p and the next action is %p \n\n", copy_thread->action, copy_thread->action->next);
+
+
+  struct t_thread *temp_thread;
+  printf("step 1\n");
+  temp_thread = thread;
+   printf("step 2\n");
+  *thread = *copy_thread;
+   printf("step 3\n");
+  *copy_thread = *temp_thread;
+   printf("step 4\n");
+
+  struct t_action *action, *ac;
+  struct t_node    *node;
+  struct t_machine *machine;
+ 
+  node = get_node_of_thread (thread);
+  machine = node->machine;
+
+
+  printf("\n copy_thread->action == %p and the next action is %p \n\n", thread->action, thread->action->next);
+
+ /* I'm not sure what to do with this
+
+  copy_thread->original_thread          = TRUE;
+  thread->original_thread               = FALSE;
+
+  copy_thread->twin_thread              = NULL;
+  thread->twin_thread              = copy_thread;
+*/
+
+/*
+  copy_thread->doing_context_switch     = thread->doing_context_switch;
+  copy_thread->min_time_to_be_preempted = thread->min_time_to_be_preempted;
+  copy_thread->doing_busy_wait          = thread->doing_busy_wait;
+  copy_thread->threadid                 = thread->threadid;
+  copy_thread->task                     = thread->task;
+  copy_thread->put_into_ready           = thread->put_into_ready;
+  copy_thread->last_action              = thread->last_action;
+  copy_thread->account               = thread->account;
+  copy_thread->local_link               = thread->local_link;
+  copy_thread->partner_link             = thread->partner_link;
+  copy_thread->local_hd_link            = thread->local_hd_link;
+  copy_thread->partner_hd_link          = thread->partner_hd_link;
+  copy_thread->last_paraver             = thread->last_paraver;
+  copy_thread->base_priority            = thread->base_priority;
+  copy_thread->sch_parameters           = thread->sch_parameters;
+  copy_thread->seek_position            = thread->seek_position;
+
+*/
+
+/* I do not know will I need this
+
+  copy_thread->local_link               = thread->local_link;
+  copy_thread->partner_link             = thread->partner_link;
+  copy_thread->local_hd_link            = thread->local_hd_link;
+  copy_thread->partner_hd_link          = thread->partner_hd_link;
+*/
+
+  thread->logical_send                    = copy_thread->logical_send;
+  thread->logical_recv                    = copy_thread->logical_recv;
+  thread->physical_send                   = copy_thread->physical_send;
+  thread->physical_recv                   = copy_thread->physical_recv;
+
+
+  ac = copy_thread->action;
+  action = (struct t_action *) mallocame (sizeof (struct t_action));
+  memcpy (action, ac,sizeof(struct t_action));
+  action->next = thread->action;
+  thread->action = action;
+
+  register struct t_account *account;
+  account = current_account (thread);
+
+  account = current_account (thread);
+  printf ("Thread without account in promote to original P%d T%d t%d\n", IDENTIFIERS (thread));
+#ifdef USE_EQUEUE
+  node = (struct t_node *) query_prio_Equeue (&Node_queue,
+            (t_priority) account->nodeid);
+#else
+  node = (struct t_node *) query_prio_queue (&Node_queue,
+            (t_priority) account->nodeid);
+#endif
+  printf ("Unable to locate node in promote_to_original %d for P%d T%d t%d\n",
+             account->nodeid, IDENTIFIERS (thread));
+
+  printf("END PROMOTE_TO_ORIGINAL2 \n");
+
+  /* Intent de crear un nou accounting pel thread nou, que al destruir-se
+  * s'afegira al thread original. */
+  return (thread);
+}
+
+
 void
 delete_duplicate_thread (struct t_thread *thread)
 {
+  struct t_thread *twin_thread;
+  twin_thread = thread->twin_thread;
   struct t_account *acc_th_copia, *acc_th_original;
   
   SCHEDULER_free_parameters (thread);
 
   /* Intent d'afegir les dades d'accounting al thread original. */
   acc_th_copia = current_account (thread);
+
+/*  printf("delete duplicate step 11 original thread %p is original %d  twin thread == %p is original %d  account original %p, account twin %p\n",
+              thread, thread->original_thread, twin_thread, twin_thread->original_thread, &thread->account, &twin_thread->account);
+
+  printf("WHAT HAPPENS HERE delete dupl account thread and twin 21\n");
+  COMMUNIC_debug_the_senders_list(thread);
+  COMMUNIC_debug_the_senders_list(twin_thread);
+  printf("WHAT HAPPENS HERE delete dupl account thread and twin 22\n");
+*/
+ 
+//  if (&(thread->account) != &(thread->twin_thread->account))
+//  {
+
   acc_th_original = current_account (thread->twin_thread);
   add_account(acc_th_original,acc_th_copia);
+
+/*
+  printf("WHAT HAPPENS HERE delete dupl account thread and twin 41\n");
+  COMMUNIC_debug_the_senders_list(twin_thread);
+  printf("WHAT HAPPENS HERE delete dupl account thread and twin 42\n");
+  printf("delete duplicate thread step 13\n");
+  printf("WHAT HAPPENS HERE delete dupl account only twin 511\n");
+  COMMUNIC_debug_the_senders_list(twin_thread);
+  printf("WHAT HAPPENS HERE delete dupl account only twin 512\n");
+  printf("........twin_thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
+           thread->twin_thread, thread->twin_thread->original_thread,
+           thread->twin_thread->twin_thread, thread->twin_thread->account.first);
+  printf("........thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
+           thread, thread->original_thread, thread->twin_thread, thread->account.first);
+*/
+
   extract_from_queue(&(thread->account), (char*) acc_th_copia);
+
+/*
+  printf("........twin_thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
+           thread->twin_thread, thread->twin_thread->original_thread, 
+           thread->twin_thread->twin_thread, thread->twin_thread->account.first);
+  printf(".... ...thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
+           thread, thread->original_thread, thread->twin_thread, thread->account.first);
+  printf("WHAT HAPPENS HERE delete dupl account only twin 521\n");
+  COMMUNIC_debug_the_senders_list(twin_thread);
+  printf("WHAT HAPPENS HERE delete dupl account only twin 522\n");
+  printf("delete duplicate thread step 3\n");
+*/
+  
   free(acc_th_copia);
- 
+  
+//  }
+
   freeame ((char*) thread->action, sizeof (struct t_action));
+
+/*
+  printf("delete duplicate thread step 5\n");
+  printf("WHAT HAPPENS HERE delete dupl account ONLY twin 81\n");
+  COMMUNIC_debug_the_senders_list(twin_thread);
+  printf("WHAT HAPPENS HERE delete dupl account thread ONLY twin 82\n");
+*/
+
   freeame ((char*) thread, sizeof (struct t_thread));
 }
 
@@ -1089,6 +1397,17 @@ more_actions_on_task (struct t_task  *task)
     if (events_for_thread (thread))
       return (TRUE);
   }
+
+//    this task is finished
+//    so check if the array of threads is freed, and if not, do it now
+//    this here LEAKS -> BUT SO DO OTHER THINGS
+//    EVERYTHING LEAKS -> WHO IS FREEING ALL THE THREADS????
+//    TODO: I'm not freeing this array now -> because there might be a restart
+//    if (task->num_of_threads != 0) {
+//      freeame(/*(struct t_thread**)*/(char *) task->threads_array, sizeof(struct t_thread*) * task->num_of_threads);
+//      task->num_of_threads = 0;
+//   }
+  
   return (FALSE);
 }
 
@@ -1163,12 +1482,13 @@ sddf_seek_next_action_to_thread (struct t_thread *thread)
   FILE            *file;
   struct t_action *action, *action2;
   int              thid, tid;
-  long             where;
+//   long             where;
   struct t_node   *node;
 
   node = get_node_of_thread(thread);
-  file = thread->task->Ptask->file;
-  file = thread->file;
+//mmap: kill these two lines
+//   file = thread->task->Ptask->file;
+//   file = thread->file;
   
   if (PREEMP_enabled && !PREEMP_initialized)
   {
@@ -1181,10 +1501,11 @@ sddf_seek_next_action_to_thread (struct t_thread *thread)
     }
   }
 
-  if (file == thread->task->Ptask->file)
-  {
-    MYFSEEK(file, thread->seek_position, SEEK_SET);
-  }
+//mmap: kill this
+//   if (file == thread->task->Ptask->file)
+//   {
+//     MYFSEEK(file, thread->seek_position, SEEK_SET);
+//   }
 
   while (1)
   {
@@ -1194,8 +1515,12 @@ sddf_seek_next_action_to_thread (struct t_thread *thread)
     }
     else
     {
-      action = get_next_action_from_file_sddf (file, &tid, &thid, node,
+//mmap: I will pass thread instead of file and than see in get_next_action_from_file_sddf what to do
+//       action = get_next_action_from_file_sddf (file, &tid, &thid, node,
+//                                                thread->task->Ptask);
+      action = get_next_action_from_file_sddf (thread, &tid, &thid, node,
                                                thread->task->Ptask);
+//       printf("next action is %d", action->action);
     }
     
     if (action == AC_NIL)
@@ -1269,10 +1594,11 @@ sddf_seek_next_action_to_thread (struct t_thread *thread)
     }
   }
 
-  if (file==thread->task->Ptask->file)
-  {
-    thread->seek_position = MYFTELL(file);
-  }
+//mmap: I have to setup pointers properly in get_next_action_from_file_sddf
+//   if (file==thread->task->Ptask->file)
+//   {
+//     thread->seek_position = MYFTELL(file);
+//   }
    
   /* Ensure last action is not a MPI IO action */
   action = thread->action;
@@ -1294,6 +1620,7 @@ sddf_seek_next_action_to_thread (struct t_thread *thread)
 }
 
 static int
+//mmap: this I do not change because it is binary reading
 locate_first_cpu_burst_binary (FILE *file, int taskid)
 {
   struct t_disk_action da;
@@ -1305,51 +1632,68 @@ locate_first_cpu_burst_binary (FILE *file, int taskid)
   {
     k = MYFTELL (file);
     i = fread (&da, sizeof (struct t_disk_action), 1, file);
-    if (i != 1)
+    if (i != 1) {
         panic ("Can't locate actions for task %d\n", taskid);
+    }
+
     if (taskid == da.taskid)
-        break;
+    {
+     break;
+    }
+
     if (taskid < da.taskid)
-        panic ("Trace file not properly sorted\n");
+    {
+    panic ("Trace file not properly sorted\n");
+    }
   }
   return (k);
 }
 
-void 
-module_name(struct t_Ptask *Ptask,
-            int             block_id,
-            char           *block_name,
-            char           *activity_name,
-            int             src_file,
-            int             src_line
-)
+/*
+void module_name(struct t_Ptask *Ptask,
+                 long long       module_type,
+                 long long       module_value,
+                 char           *mod_name,
+                 char           *activity_name,
+                 int             src_file,
+                 int             src_line)
 {
   register struct t_module *mod;
-    
-  mod = 
-    (struct t_module*) query_prio_queue (&Ptask->Modules, (t_priority) block_id);
+
+  /*
+  mod =
+    (struct t_module*) find_module (&Ptask->Modules, (t_priority) block_id);
+
+  mod = find_module(Ptask->Modules, module_type, module_value);
   
   if (mod == M_NIL)
   {
       
     mod = (struct t_module*) malloc (sizeof(struct t_module));
-    mod->identificator = block_id;
+    mod->type  = module_type;
+    mod->value = module_value;
     mod->ratio = 1.0;
 
-
+		/*
     mod->block_name    = block_name;
     mod->activity_name = activity_name;
+		
     
-    /*
-    mod->block_name    = (char*) malloc(strlen(block_name)+1);
+    mod->module_name    = (char*) malloc(strlen(module_name)+1);
     strcpy(mod->block_name, block_name);
     
     mod->activity_name = (char*) malloc(strlen(activity_name)+1);
-    strcpy(mod->activity_name, activity_name); */
+    strcpy(mod->activity_name, activity_name);
     
     mod->src_file      = src_file;
     mod->src_line      = src_line;
-    mod->used          = 0; /* De moment no ha estat utilitzat */
+    mod->used          = 0; /* De moment no ha estat utilitzat 
+
+    /* DEBUG 
+    printf("New module (%ld:%ld) Name = %s\n",
+           mod->type,
+           mod->value,
+           mod->block_name);
     
     insert_queue (&Ptask->Modules, (char*) mod, (t_priority) block_id);
   }
@@ -1366,20 +1710,21 @@ module_name(struct t_Ptask *Ptask,
       /*
       mod->block_name    = (char*) malloc (strlen(block_name)+1);
       strcpy(mod->block_name, block_name);
-      */
+      
 
       free(mod->activity_name);
       mod->activity_name = strdup(activity_name);
       /*
       mod->activity_name = (char*) malloc (strlen(activity_name)+1);
       strcpy(mod->activity_name, activity_name);
-      */
+      
       
       mod->src_file      = src_file;
       mod->src_line      = src_line;
     }
   }
 }
+*/
 
 void 
 file_name (struct t_Ptask *Ptask, int file_id, char *location)
@@ -1403,14 +1748,22 @@ file_name (struct t_Ptask *Ptask, int file_id, char *location)
 }
 
 static t_off_fitxer
+//mmap: here I pass mmap_string instead of file
+// locate_first_cpu_burst (
+//   FILE           *file,
+//   int             taskid,
+//   int             th_id,
+//   struct t_Ptask *Ptask)
 locate_first_cpu_burst (
-  FILE           *file,
-  int             taskid, 
+  char           *mmap_string,
+  int             taskid,
+  int             th_id,
   struct t_Ptask *Ptask)
+//     t_boolean      *found_seek_info)
 {
   char            buf[BUFSIZE];
-  int             i;
-  t_off_fitxer    k;
+//   int             i;
+//   t_off_fitxer    k;
   int             a, b;
   int comm_id, root_rank, j;
   char *c;
@@ -1419,35 +1772,37 @@ locate_first_cpu_burst (
   char *bn, *an;
   int burst_category_id;
   double burst_category_mean, burst_category_std_dev;
+  t_off_fitxer actual_seek_offset = 0;
 
-  /*
-  k = MYFTELL(file);
-  fprintf(stderr,
-          "Es comença la cerca a la posicio %llu (Task = %02d)\n",
-          k,
-          taskid);
-  */
-
-  if (feof(file))
-  {
-    if (i == -1)
-      panic ("No actions on tracefile. Is it empty?");
-  }
   
-  while (1)
-  {
-    i = fscanf (file, "%[^\n]\n", buf);
+  actual_seek_offset = 0;
+  char *new_p;
+  new_p = mmap_string;
+  int pos = 0;
+  
+//   printf("to be put in the header of the .prv file \n____________________________________________\n\n(");
+  while (1) {    
+    int i = sscanf (new_p, "\n%[^\n]\n", buf);
+    if (i==-1) {
+      printf("%d:0)\n----------------------------------------------------------------------------------------\n", th_id - 1);
+      return 0;
+    }
     
-    if (i == -1)
-      panic ("Can't locate actions for task %d\n", taskid);
-
-    /* DEBUG 
-    fprintf(stderr,"REC: %s\n",buf); */
-
+    Ptask->is_there_seek_info = 0; // assume there is no seek info and see if there actually is
+    
     i = sscanf (buf, "\"CPU burst\" { %d, %d,", &a, &b);
-      
-    if ((i == 2) && (taskid == a + 1))
+
+//if it is CPU burst and we are in the same task but we have found a new thread - THE ONE WE WERE LOOKING FOR!!!
+    if ((i == 2) && ((taskid == a + 1) && (th_id == b + 1))) {
+//       printf("we have found another thread and string is %s\n ", buf);
       break;
+    }
+
+//we have found an event from the next task - so we can conclude how many threads there is in the actual task
+    if ((i == 2) && ((taskid == a))) {
+      printf("%d:0,", th_id - 1);
+      return 0;
+    }   
 
     if ((i==2) && (taskid < a))
     {
@@ -1456,7 +1811,7 @@ locate_first_cpu_burst (
        taskid, a, buf
       );
     }
-    
+
     { /* Burst category definition */
     i = sscanf ( buf,
                  "\"burst category definition\" { %d, %le, %le };;\n",
@@ -1506,10 +1861,13 @@ locate_first_cpu_burst (
                &src_file, &src_line);
     
     if (i == 5)
-    {
-      bn = strdup(block_name);
-      an = strdup(activity_name);
+    { /* DEPRECATED
+      bn = (char *)mallocame (strlen(block_name)+1);
+      strcpy (bn, block_name);
+      an = (char *)mallocame (strlen(activity_name)+1);
+      strcpy (an, activity_name);
       module_name(Ptask, block_id, bn, an, src_file, src_line);
+      */
     }
     }
 
@@ -1599,35 +1957,114 @@ locate_first_cpu_burst (
       new_io_operation(block_id, block_name);
     }
     }
-  }
-   
-  k = MYFTELL(file);
-  k = k - (t_off_fitxer)(strlen (buf)+1);
-  MYFSEEK (file, k, SEEK_SET);
-  return (k);
+    
+    
+    
+//     { /* seek info - Vladimir */
+//     i = sscanf (buf,
+//                 "\"seek info\" { %d, %d",
+//                 &read_task,
+//                 &read_threads_no);
+// 
+//     if (i == 2)
+//     {
+//       
+//       strcpy(BIGPOINTER2, buf);
+//       char *slider;
+//       slider = buf;
+//       char temp_string[BUFSIZE];
+//       sprintf(temp_string, "\"seek info\" { %d, %d",
+//                 read_task,
+//                 read_threads_no);
+// /*      printf("\"seek info\" { %d, %d\n",
+//                 read_task,
+//                 read_threads_no);	*/	
+// //       printf("ceo buf je %s\n", slider);
+//       unsigned long partial_offset = ((unsigned long long)strstr(slider, temp_string) + (unsigned long long)strlen(temp_string)) - (unsigned long long)slider;
+//       slider = slider + partial_offset;
+// //       printf("pomeren slider je sad %s\n", slider);
+// 
+//       struct t_task *task;
+//       struct t_thread *thread;
+//       t_off_fitxer partial_seek_offset;
+// //       printf("start and actual_seek_offset is %lu\n", actual_seek_offset);
+// //  THIS SHOULD BE MADE ASSUMING THAT THE SEEK INFO IS COMPLETE SO IT CAN READ No_TASKS LINES WHILE IT IS IN THE LOOP
+// //    AND TO CHECK IF THE SEEK INFO WAS COMPLETE
+//       *found_seek_info = TRUE;
+//       for (task  = (struct t_task *) head_queue (&(Ptask->tasks));
+// 	  task != T_NIL;
+// 	  task  = (struct t_task *) next_queue (&(Ptask->tasks)))
+//       {
+// 	if (task->taskid != read_task + 1)
+// 	    continue;
+// 	printf("taskid is %d\n", task->taskid);	
+// // 	int j;
+// // 	for (j=0; j<read_threads_no - 1; j++)
+// 	for (thread  = (struct t_thread *) head_queue (&(task->threads));
+// 	    thread != TH_NIL;
+// 	    thread  = (struct t_thread *) next_queue (&(task->threads)))
+// 	{
+//           thread->mmap_position = actual_seek_offset;
+// 	  printf("task %d thread %d   has the offset %lu\n", task->taskid, thread->threadid, thread->mmap_position);
+// 	  sscanf(slider, ", %lu", &partial_seek_offset);
+// 	  actual_seek_offset += partial_seek_offset;
+// 	  sprintf(temp_string, ", %d", partial_seek_offset);
+// 	  partial_offset = ((unsigned long long)strstr(slider, temp_string) + (unsigned long long)strlen(temp_string)) - (unsigned long long)slider;
+// 	  slider = slider + partial_offset;
+// // 	  printf("pomeren slider je sad %s\n", slider);
+// 	  
+// 	  read_threads_no--;
+// // 	  printf("threads_left is %d\n", read_threads_no);
+// 	  if (read_threads_no == 0)
+// 	    break;
+// 	  add_thread_to_task (task, thread->threadid + 1, task->nodeid);
+//   // 	  sscanf (bigpointer, "%llu %[^\n]\n", &thread->seek_position, d);
+//   // 	  strcpy (bigpointer, d);
+// 	}
+//       }      
+//       
+// //       new_communicator_definition(Ptask, comm_id);
+// //       c = strtok (BIGPOINTER2, ",}");
+// //       for (i=0;i<root_rank; i++)
+// //       {
+// //         j = atoi(c);
+// //         add_identificator_to_communicator(Ptask, comm_id, j);
+// //         c = strtok (NULL, ",}");
+// //       }
+// //       no_more_identificator_to_communicator(Ptask, comm_id);
+//     }
+//     }
+    
+        
+//move to the next line of the string
+    pos += ((ptrdiff_t)strstr(new_p, buf) + (ptrdiff_t)strlen(buf)) - (ptrdiff_t)new_p;
+    new_p = mmap_string + pos;    
+  }    
+
+//   printf("the first cpu burst is  ----------    %s\n", buf);	
+  return pos;
 }
 
 static t_off_fitxer
-fast_locate_first_cpu_burst (FILE *file,
+fast_locate_first_cpu_burst (char *p,
                              int taskid,
-                             struct t_Ptask *Ptask)
+                             int th_id,
+                             struct t_Ptask *Ptask,
+                   			 t_off_fitxer max_size)
 {
   char         buf[BUFSIZE];
-  int          i;
   int          a, b;
-  t_off_fitxer p_ini, p_inf, p_actual, p_sup;
+  t_off_fitxer p_ini, p_inf, p_actual, p_sup, slow_offset;
 
 /* Aixo es la maxima distancia que hi pot haver entre la cota inferior i la 
  superior per tal de comenc,ar a buscar record a record. No pot ser molt gran 
  perque no hi guanyariem res. Pero ha de ser prou gran per tal que hi hagui com 
  a minim un cpuburst perque sino la cerca no acabaria mai. */
-
-#define DISTANCIA_CERCA_PAS_A_PAS (t_off_fitxer)(2*BUFSIZE)
+  
+#define DISTANCIA_CERCA_PAS_A_PAS (t_off_fitxer)(BUFSIZE)
 
 #define SITUA_INICI_SEGUENT_POSICIO(pos) \
   MYFSEEK (file,pos,SEEK_SET); 
-
-
 /* 
 #define DEBUGA_CERCA_PRIMER_CPUBURST 1 */
 
@@ -1636,118 +2073,97 @@ fast_locate_first_cpu_burst (FILE *file,
   fprintf(stderr,"\tBuscant cpu burst de la task %d\n",taskid);
 #endif  
 
-  p_ini    = MYFTELL(file); /* Es guarda la posicio inicial */
-  p_inf    = p_ini; /* Aquesta sera la cota inferior */
-  p_actual = p_ini;
+  p_ini    = 0; /* Es guarda la posicio inicial */
+  p_inf    = 0; /* Aquesta sera la cota inferior */
+  p_actual = 0;
 
-  MYFSEEK (file, 0, SEEK_END);
-  p_sup = MYFTELL(file); /* S'obtre l'ultima posicio possible */
+  char *new_p;
+  new_p = p;
+  p_sup = max_size; /* S'obtre l'ultima posicio possible */
 
-  /* Ens tornem a posar al comenc,amnent */
-  MYFSEEK (file, p_ini, SEEK_SET);
+  /* this is from where to start searching */
+  new_p = p + p_ini;
 
-#ifdef DEBUGA_CERCA_PRIMER_CPUBURST
-  fprintf(stderr,"\t\tp_ini %llu, p_sup %llu\n",p_ini, p_sup);
+#if DEBUGA_CERCA_PRIMER_CPUBURST  
+  printf("\t\tp_ini %lu, p_sup %lu, taskid %d, threadid %d  max_size %lu\n",p_ini, p_sup, taskid, th_id, max_size);
 #endif
 
   while (1)
   {
-    /* 
-    fprintf(stderr,"Abans de llegir, la posicio es %llu\n",FTELL(file));
-    */
-    i = fscanf (file, "%[^\n]\n", buf);
+    int i = sscanf (new_p, "\n%[^\n]\n", buf);
+
     if (i == -1)
-      panic ("Can't locate actions for task %d\n", taskid);
-    if (i==0)
     {
-      SITUA_INICI_SEGUENT_POSICIO(MYFTELL(file)+1);
-      p_actual++;
-      continue;
+      printf("Can't locate actions for task %d thread %d in fast_locate_first_cpu_burst\n", taskid,th_id);
+      return -1;
     }
-    /*
-    fprintf(stderr,"Despres de llegir, la posicio es %llu\n",FTELL(file));
-    */
+    
     i = sscanf (buf, "\"CPU burst\" { %d, %d,", &a, &b);
+    if (i != 2)
+    {
+       i = sscanf (buf, "\"NX recv\" { %d, %d,", &a, &b);
+    }
+
+    if (i != 2)
+    {
+      i = sscanf (buf, "\"NX send\" { %d, %d,", &a, &b);
+    }
+
+    if (i != 2)
+    {
+      i = sscanf (buf, "\"user event\" { %d, %d,", &a, &b);
+    }
+
     if (i == 2) 
     {
-      if (taskid <= a + 1)
+      if ((taskid < a + 1) || ((taskid == a+1) && (th_id <= b + 1)))   //(taskid <= a + 1)
       {
-        /* Hem trobat un cpu burst <= que la task buscada. Aixo es una cota 
-           superior de la posicio buscada. */
         p_sup = p_actual;
-
         if ((p_sup - p_inf) <= DISTANCIA_CERCA_PAS_A_PAS)
         { 
-          /* La distancia es prou petita per buscar pas a pas */
           break;
         }
         else
         {
-          /* Cal provar amb una posicio anterior */
-          p_actual = p_inf + (p_sup - p_inf)/2;
-          SITUA_INICI_SEGUENT_POSICIO(p_actual);
-#ifdef DEBUGA_CERCA_PRIMER_CPUBURST
-          fprintf(stderr,"\t\t\tRecord: %s\n",buf);
-          fprintf(stderr,
-                    "\t\tInf: %llu, SUP: %llu Current: %llu\n",
-                    p_inf,
-                    p_sup,
-                    p_actual);
-#endif
+          p_actual = p_inf + (p_sup - p_inf)/16;
+          new_p = p + p_actual;
         }
       }
       else /* taskid > a+1 */
       {
-        /* Aixo es una cota inferior */
         p_inf = p_actual;
-
         if ((p_sup - p_inf) <= DISTANCIA_CERCA_PAS_A_PAS)
         { 
-          /* La distancia es prou petita per buscar pas a pas */
           break;
         }
         else
         {
-          /* Cal provar amb una posicio posterior */
-          p_actual = p_inf + (p_sup - p_inf)/2;
-          SITUA_INICI_SEGUENT_POSICIO(p_actual);
-#ifdef DEBUGA_CERCA_PRIMER_CPUBURST
-          fprintf(stderr,"\t\t\tRecord: %s\n",buf);
-          fprintf(stderr,
-                  "\t\tINF: %llu, Sup: %llu Current: %llu\n",
-                  p_inf,
-                  p_sup,
-                  p_actual);
-#endif
+          p_actual = p_inf + (p_sup - p_inf)/16;
+          new_p = p + p_actual;
         }
       }
     }
     else
     {
-      if (feof(file))
-        break;
-
-      /* Avancem pas a pas fins a trobar un cpu_burst */
+    	//maybe in the middle of the line --- jump over the whole line and inspect the next one that is COMPLETE
+      p_actual += ((ptrdiff_t)strstr(new_p, buf) + (ptrdiff_t)strlen(buf)) - (ptrdiff_t)new_p;
+      new_p = p + p_actual;
+      continue;
     }
-
   }
    
-#ifdef DEBUGA_CERCA_PRIMER_CPUBURST
-  /*
-  fprintf(stderr,"\t\tp_inf %llu, p_sup %llu\n",p_inf, p_sup);
-  fprintf(stderr,"\t\t\tUltim Record: %s\n",buf);
-  */
-  fprintf(stderr, "\n\t\tLast record: %s\n", buf);
-  fprintf(stderr, "\t\tSTEP BY STEP SEARCH ON [%llu - %llu]\n\n", p_inf, p_sup);
-#endif
-  /* Ens situem a la cota inferior i busquem d'un en un */
-  MYFSEEK (file, p_inf, SEEK_SET);
-  return(locate_first_cpu_burst (file, taskid, Ptask));
+  slow_offset = locate_first_cpu_burst (p + p_inf, taskid, th_id, Ptask);
+  if (slow_offset == 0)
+    return 0;
+  else return (p_inf + slow_offset);
+//   return p_inf + locate_first_cpu_burst (p + p_inf, taskid, th_id, Ptask); //, &dummy_seek_info);
 }
 
 static t_boolean
 is_there_lseek_info (FILE *fp, struct t_Ptask *Ptask)
 {
+  assert(fp != NULL);
+  assert(Ptask != NULL);
   #ifdef READ_TRACE_SEEKS
   t_boolean exist_info = FALSE;
   char *bigpointer;
@@ -1802,58 +2218,112 @@ is_there_lseek_info (FILE *fp, struct t_Ptask *Ptask)
   #endif
 }
 
-void
-sddf_load_initial_work_to_threads (struct t_Ptask *Ptask)
+void sddf_load_initial_work_to_threads (struct t_Ptask *Ptask)
 {
   struct t_task   *task;
-  struct t_thread *thread;
-  char            *local_io_buf;
-  int              i;
-  t_off_fitxer     j;
+  struct t_thread *thread, *thread_check;
   char             buf[BUFSIZE];
-  t_boolean        have_lseek_info = FALSE;
+  int              trf_file;
+  unsigned long    current_pos;
+  
+  trf_file = open (Ptask->tracefile, O_RDONLY);
+  
+  if (trf_file == -1) {
+    panic ("Cant't open trace file %s\n", Ptask->tracefile);
+  }    
+  
+  if (fstat (trf_file, &(Ptask->sb)) == -1) {
+     panic ("fstat\n");
+     return;
+  }
 
+  if (!S_ISREG (Ptask->sb.st_mode)) {
+    panic ("%s is not a file\n", Ptask->tracefile);
+    return;
+  }
 
-  if (Ptask->file == NULL)
+//Ptask->mmapped_file always points to the start of the ORIGINALY mmapped string - so we can munmap it at the endif
+//Ptask->mmap_position points to the beginning of the last thread that we look for - so we do not start from the beginning every time
+  Ptask->mmapped_file = mmap(0,
+                             Ptask->sb.st_size,
+                             PROT_READ,
+                             MAP_SHARED,
+                             trf_file,
+                             0);
+  Ptask->mmap_position = 0;
+  if (Ptask->mmapped_file == MAP_FAILED) {
+    panic ("mmap\n");
+    return;
+  }
+
+  if (close (trf_file) == -1) {
+    panic ("close in mmap\n");
+    return;
+  }
+
+  /* Local io_buf for each file */
+//mmap: i removed this three lines
+//   char            *local_io_buf;
+//   local_io_buf = mallocame (BUFSIZE);
+//   setvbuf (Ptask->file, local_io_buf, _IOFBF, BUFSIZE);
+//   have_lseek_info = is_there_lseek_info (Ptask->file, Ptask);
+
+//mmap: this part has to skip the descriptive part of the header of trf_file
+//   if ((!binary_files))
+//   {
+//     while (fgets (buf, BUFSIZE, Ptask->file) != NULL)
+//     {
+//       i = strlen (buf);
+//       if ((i > 3) && (buf[0] == '\"') && 
+// 	  (buf[i - 2] == ';') && (buf[i - 3] == ';'))
+//       {
+// 	break;
+//       }
+//       j = MYFTELL (Ptask->file);
+//     }
+//     MYFSEEK (Ptask->file, j, SEEK_SET);
+//   }
+
+//mmap: this is my change for the part that skips descriptive part of the trf_file
+  if ((!binary_files))
   {
-    Ptask->file = MYFOPEN (Ptask->tracefile, "r");
+    current_pos=0;
+    char *new_p = Ptask->mmapped_file;
 
-    if (Ptask->file == NULL)
-    {
-      panic ("Cant't open trace file %s\n", Ptask->tracefile);
-    }
+    while (1) {    
     
-    /* Local io_buf for each file */
-    local_io_buf = mallocame (BUFSIZE);
-    setvbuf (Ptask->file, local_io_buf, _IOFBF, BUFSIZE);
-    have_lseek_info = is_there_lseek_info (Ptask->file, Ptask);
-
-    if ((!binary_files))
-    {
-      while (fgets (buf, BUFSIZE, Ptask->file) != NULL)
-      {
-        i = strlen (buf);
-        if ((i > 3) && (buf[0] == '\"') && 
-            (buf[i - 2] == ';') && (buf[i - 3] == ';'))
-        {
-          break;
-        }
-        j = MYFTELL (Ptask->file);
+      int i = sscanf (new_p, "\n%[^\n]\n", buf);
+      
+      if (i==-1) {
+         printf("!!!!this is error, looked for the useful part of the header and came till the end of the file\n");
+         break;
       }
-      MYFSEEK (Ptask->file, j, SEEK_SET);
+      
+// found the end of the descriptive part when there is 4 consecutive \n
+      if (strstr(new_p, buf) - new_p == 4) {
+         printf("skipped the beginning of the header and now to read the useful data\n\n");
+         printf("this is to be put in the header of the .prv file \n----------------------------------------------------------------------------------------\n      (");
+         break;
+      }
+      
+//iterate - take another line of trf_file      
+      current_pos += ((ptrdiff_t)strstr(new_p, buf) + (ptrdiff_t)strlen(buf)) - (ptrdiff_t)new_p;
+      new_p = Ptask->mmapped_file + current_pos;
     }
   }
+  Ptask->mmap_position = current_pos;
 
   /* To analyze all the block definition */
   /* FEC: Ara aixo s'ha de fer sempre per poder llegir les definicions:
   if (have_lseek_info==TRUE) */
-  locate_first_cpu_burst (Ptask->file, 1, Ptask);
-
-  /* Cal agafar la posicio on comenc,a la primera task per tal que els 
-   * fast_locate_first_cpu_burst funcionin. */
-  j = MYFTELL (Ptask->file);
+//   printf("looking for the first cpu busrt for the first thread\n");
+  Ptask->mmap_position += locate_first_cpu_burst (Ptask->mmapped_file + Ptask->mmap_position, 1, 1, Ptask); 
+//   printf("found and found_seek_info is  %s\n",(found_seek_info)?"true":"false");
   
-
+  
+//this is a trick so if the first event is found the offset has to be higher than 0  
+  Ptask->mmap_position-=3;
+//put for every thread the mmap pointer to the first CPU burst event of that thread
   for ( 
     task  = (struct t_task *) head_queue (&(Ptask->tasks));
     task != T_NIL;
@@ -1866,44 +2336,51 @@ sddf_load_initial_work_to_threads (struct t_Ptask *Ptask)
     {
       if (debug)
       {
-        /* printf("   * Locating first record for Task %02d\n", task->taskid); */
         fprintf(stdout,
                 "   * Locating first record for Task %02d\n",
                 task->taskid);
       }
-      thread->file = MYFOPEN (Ptask->tracefile, "r");
-
-      if (thread->file == (FILE *)0)
-      {
-        thread->file        = Ptask->file;
-        thread->file_shared = TRUE;
-        fprintf (stderr,
-                 "Warning!: T%02d t%02d is sharing trace pointer\n",
-                 task->taskid,
-                 thread->threadid);
+//thread->mmapped_file is pointing to the beginning of the line where the first CPU burst of that thread is
+      thread->mmapped_file = Ptask->mmapped_file + Ptask->mmap_position;
+      thread->mmap_position = 0;
+      
+//I know that only thread no 1 in every task is long, the others are always short
+//       printf("looking for the start of thread no %d\n", thread->threadid);
+      if (thread->threadid == 2)
+        current_pos = fast_locate_first_cpu_burst (thread->mmapped_file,
+						   task->taskid,
+     						   thread->threadid,
+						   Ptask,
+						   Ptask->sb.st_size - Ptask->mmap_position);
+      else
+         current_pos = locate_first_cpu_burst (thread->mmapped_file,
+						   task->taskid,
+     						   thread->threadid,
+						   Ptask); 
+      thread->mmapped_file += current_pos;
+      Ptask->mmap_position += current_pos;
+      
+      if (current_pos != 0) {
+//we have found the thread that we supposed there is - validate it - leave it on the list of all threads in the task
+//now try to see if there are more threads in this task - supose there is and than check it
+         add_thread_to_task (task, thread->threadid + 1, task->nodeid);
+      } else {
+//we supposed that there will be more threads in this task - but this is not true - remove this anticipated thread
+	  thread_check =  (struct t_thread *)outLIFO_queue(&(task->threads));
+	  if (thread != thread_check)
+	      panic("\nABORT --- (thread != thread_check)\n\n");
+	  break;
       }
-
-      if (have_lseek_info==FALSE)
-      {
-        MYFSEEK (thread->file, j, SEEK_SET);
-        
-        if (binary_files)
-          thread->seek_position = locate_first_cpu_burst_binary(thread->file,
-                                                                task->taskid);
-        else
-          thread->seek_position = fast_locate_first_cpu_burst (thread->file,
-                                                               task->taskid,
-                                                               Ptask);
-        j = thread->seek_position;
-      }
-      else 
-        MYFSEEK (thread->file, thread->seek_position, SEEK_SET);
     }
   }
 
+  printf("some write traces seek\n");
+
   #ifdef WRITE_TRACE_SEEKS
+  t_boolean        have_lseek_info = FALSE;
   if ((have_lseek_info==FALSE) && (binary_files==FALSE))
   {
+    FILE *tmp_file;
     tmp_file = MYFOPEN (Ptask->tracefile, "a");
     /* tmp_file=stderr; */
     if (tmp_file!=(FILE *)0)
@@ -1925,6 +2402,7 @@ sddf_load_initial_work_to_threads (struct t_Ptask *Ptask)
     }
   }
   #endif
+
 
   for ( task  = (struct t_task*) head_queue (&(Ptask->tasks));
         task != T_NIL;
@@ -1948,6 +2426,7 @@ sddf_load_initial_work_to_threads (struct t_Ptask *Ptask)
       }
     }
   }
+  printf("FIHISHED loading initial work to threads\n");
 }
 
 t_micro
@@ -2000,7 +2479,8 @@ create_sintetic_applications (int num)
     Ptask->synthetic_application = TRUE;
     for (j = 1; j <= greatest_cpuid; j++)
     {
-      new_thread_in_Ptask (Ptask, j, j, 1, 0, 0);
+      new_task_in_Ptask (Ptask, j, j);
+      
     }
     First_action_to_sintetic_application (Ptask);
     inFIFO_queue (&Ptask_queue, (char *) Ptask);
@@ -2077,40 +2557,62 @@ get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid)
   return (node);
 }
 
-void
-module_new (struct t_Ptask *Ptask, int identificator, double ratio)
+void module_new(struct t_Ptask *Ptask,
+                long long       module_type,
+                long long       module_value,
+                double          ratio)
 {
   struct t_module *mod;
 
-  if (debug&D_TASK) 
-    printf ("New module: %d with ratio %f\n",identificator, ratio); 
+  if (module_value == 0)
+  {
+    fprintf(stderr,
+            "Unable to add new module [%ld] with value 0\n",
+            module_type);
+    return;
+  }
+  
+  if (debug&D_TASK)
+  {
+    printf ("New module: [%ld:%ld] with ratio %f\n",
+            module_type,
+            module_value,
+            ratio);
+  }
 
-  mod = (struct t_module *) query_prio_queue (&Ptask->Modules, (t_priority)identificator);
-  if (mod==M_NIL)
+  // mod = (struct t_module *) query_prio_queue (&Ptask->Modules, (t_priority)identificator);
+
+  mod = find_module (&Ptask->Modules, module_type, module_value);
+  
+  if (mod == M_NIL)
   {
     mod = (struct t_module *)mallocame (sizeof(struct t_module));
-    mod->identificator = identificator;
+    mod->type          = module_type;
+    mod->value         = module_value;
     mod->ratio         = ratio;
-    mod->block_name    = (char *)0;
+    mod->module_name   = (char *)0;
     mod->activity_name = (char *)0;
     mod->src_file      = -1;
     mod->src_line      = -1;
     mod->used          =  0; /* De moment no ha estat utilitzat */
-    insert_queue (&Ptask->Modules, (char *)mod, (t_priority) identificator);
+    
+    insert_module (&Ptask->Modules, module_type, module_value,  mod);
   }
   else
   {
-    fprintf (stderr, "Module %d already exists. Old ratio %f, new one %f\n",
-              identificator, mod->ratio, ratio);
+    fprintf (stderr, "Module [%ld:%ld] already exists. Old ratio %f, new one %f\n",
+              module_type, module_value, mod->ratio, ratio);
+    
     mod->ratio = ratio;
   }
 }
 
-void
-module_entrance (struct t_Ptask *Ptask, int tid, int thid, int identificator)
+void module_entrance(struct t_thread *thread,
+                     long long        module_type,
+                     long long        module_value)
 {
-  register struct t_thread *thread;
   register struct t_module *mod;
+  register struct t_Ptask  *Ptask = thread->task->Ptask;
 
   /*
   if (debug&D_TASK)
@@ -2121,40 +2623,44 @@ module_entrance (struct t_Ptask *Ptask, int tid, int thid, int identificator)
   }
   */
 
-  thread = locate_thread (Ptask, tid, thid);
-  mod = (struct t_module*) query_prio_queue(&Ptask->Modules, (t_priority) identificator);
+  // thread = locate_thread (Ptask, tid, thid);
+
+  /*
+  mod = (struct t_module*) query_prio_queue(&Ptask->Modules, 
+                                            (t_priority)identificator);
+  */
+
+  /* Check if its an idle block */
+  if (module_type == IDLE_EVENT_TYPE)
+  {
+    
+    thread->idle_block = TRUE;
+  }
+
+  mod = find_module(&Ptask->Modules, module_type, module_value);
   
-  if (mod == M_NIL)
+  if (mod != M_NIL)
   {
-    mod = (struct t_module *) mallocame (sizeof(struct t_module));
-    mod->identificator = identificator;
-    mod->ratio = 1.0;
-    mod->block_name = (char *)0;
-    mod->activity_name = (char *)0;
-    mod->src_file = -1;
-    mod->src_line = -1;
-    insert_queue (&Ptask->Modules, (char *)mod, (t_priority) identificator);
+    mod->used = 1; /* Ara ja ha estat utilitzat! */
+    inLIFO_queue (&(thread->modules), (char *)mod);
+    
+    if (debug&D_TASK)
+    {
+      PRINT_TIMER (current_time);
+      printf (": Going into module [%ld:%ld] (%s) for P%d T%d th%d\n",
+              mod->type,
+              mod->value,
+              mod->module_name,
+              IDENTIFIERS(thread));
+    }
   }
 
-  mod->used = 1; /* Ara ja ha estat utilitzat! */
-  inLIFO_queue (&(thread->modules), (char *)mod);
-
-  if (debug&D_TASK)
-  {
-    PRINT_TIMER (current_time);
-    printf (": Going into module: %d (%s) for P%d T%d th%d\n",
-            identificator,
-            mod->block_name,
-            Ptask->Ptaskid,
-            tid,
-            thid);
-  }
 }
 
-int
-module_exit (struct t_Ptask *Ptask, int tid, int thid, int identificator)
+int module_exit (struct t_thread* thread,
+                 long long        module_type)
 {
-  register struct t_thread *thread;
+  register struct t_Ptask  *Ptask = thread->task->Ptask;
   register struct t_module *mod;
   register struct t_thread *awaked;
   register struct t_action *action;
@@ -2163,7 +2669,7 @@ module_exit (struct t_Ptask *Ptask, int tid, int thid, int identificator)
   float fo;
   struct t_machine *machine;
   
-  thread = locate_thread (Ptask, tid, thid);
+  // thread = locate_thread (Ptask, tid, thid);
   
 #ifdef BLOCK_SPECIAL
   if (((identificator ==  3) || (identificator == 6) || (identificator == 7) ||
@@ -2205,10 +2711,17 @@ module_exit (struct t_Ptask *Ptask, int tid, int thid, int identificator)
     thread->global_op_done = FALSE;
 #endif
 
+    if (module_type == IDLE_EVENT_TYPE)
+    {
+      thread->idle_block = FALSE;
+    }
+    
     mod = (struct t_module *) outFIFO_queue(&(thread->modules));
 
+    /* JGG (2012/01/10): now that makes no sense 
     if (mod == M_NIL)
     {
+      
       /*
        * FEC: Converteixo aquest panic en un Warning perque si la trac,a s'ha 
        * obtingut a partir de tallar una trac,a paraver, es possible que comenci 
@@ -2216,48 +2729,75 @@ module_exit (struct t_Ptask *Ptask, int tid, int thid, int identificator)
        * begin.
       panic("Exiting module %d, but no information recorderd P%d T%d th%d\n",
             identificator,IDENTIFIERS(thread));
-      */
+     
       fprintf(stderr,
-              "WARNING: Exiting module %d, but no information recorderd P%d T%d th%d\n",
-              identificator,IDENTIFIERS(thread));
+              "WARNING: Exiting module [%ld], but no information recorderd P%d T%d th%d\n",
+              module_type,
+              IDENTIFIERS(thread));
+     
     }
-    else if (mod->identificator != identificator)
+    
+    else */
+
+    if (mod != M_NIL)
     {
-      panic("Exiting module %d, but this is not the current one (%d) for P%d T%d th%d\n",
-            identificator, mod->identificator, IDENTIFIERS(thread));
+      if (mod->type != module_type)
+      {
+        inFIFO_queue (&(thread->modules), mod);
+      }
+      /*
+      if (mod->type != module_type)
+      {
+        panic("Exiting module [%ld], but this is not the current one [%ld:%ld] for P%d T%d th%d\n",
+              module_type,
+              mod->type,
+              mod->value,
+              IDENTIFIERS(thread));
+      }
+      else
+      {
+      */
+      if (debug&D_TASK)
+      {
+        PRINT_TIMER (current_time);
+        printf (": Going out module: [%ld] (Unknown) for P%02d T%02d th%02d\n",
+                module_type,
+                IDENTIFIERS(thread));
+      }
+      //}
     }
+    
 #ifdef BLOCK_SPECIAL
   }
 #endif
 
+  /*
   if (debug&D_TASK)
   {
     if (mod != M_NIL)
     {
       PRINT_TIMER (current_time);
-      printf (": Going out module: %d (%s) for P%d T%d th%d\n",
-              identificator,
-              mod->block_name,
-              Ptask->Ptaskid,
-              tid,
-              thid);
+      printf (": Going out module: [%ld:%ld] (%s) for P%02d T%02d Th%02d\n",
+              mod->type,
+              mod->value,
+              mod->module_name,
+              IDENTIFIERS(thread));
     }
     else
     {
+      
       PRINT_TIMER (current_time);
-      printf (": Going out module: %d (Unknown) for P%d T%d th%d\n",
-              identificator,
-              Ptask->Ptaskid,
-              tid,
-              thid);
+      printf (": Going out module: [%ld] (Unknown) for P%02d T%02d th%02d\n",
+              module_type,
+              IDENTIFIERS(thread));
     }
   }
+  */
   
   return(0);
 }
 
-void
-recompute_work_upon_modules(struct t_thread *thread, struct t_action *action)
+void recompute_work_upon_modules(struct t_thread *thread, struct t_action *action)
 {
   register struct t_module *mod;
    

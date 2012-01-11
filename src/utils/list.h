@@ -52,33 +52,29 @@ typedef double  t_micro;
  */
 struct t_item
 {
-   struct t_item  *next;	/* Next item in queue */
-   struct t_item  *prev;	/* Previous item in queue */
-   union
-   {
-      t_priority      priority;	/* priority on sorted priority queues */
-      double          list_time;/* time for next event in event queue */
-   }               order;
-   char           *content;	/* Real content of item */
+  struct t_item  *next;  /* Next item in queue */
+  struct t_item  *prev;  /* Previous item in queue */
+  union
+  {
+    t_priority    priority;  /* priority on sorted priority queues */
+    double        list_time; /* time for next event in event queue */
+  } order;
+
+  char           *content;    /* Real content of item */
 };
 
 struct t_queue
 {
-   struct t_item  *first;	/* First item in queue */
-   struct t_item  *last;	/* Last item in queue */
-   struct t_item  *curr;	/* Current item in sequential search */
-   t_count         count;	/* Number of items */
+   struct t_item  *first; /* First item in queue */
+   struct t_item  *last;  /* Last item in queue */
+   struct t_item  *curr;  /* Current item in sequential search */
+   t_count         count; /* Number of items */
 };
 
 struct t_list
 {
-   struct t_list  *next;
+  struct t_list  *next;
 };
-
-#define QU_NIL  (struct t_queue *)0
-#define Q_NIL   (struct t_item *)0
-#define LI_NIL   (struct t_list *)0
-#define A_NIL   (char *)0
 
 #endif
 
@@ -111,6 +107,9 @@ extern void  insert_queue( struct t_queue *queue,
                            char           *content,
                            t_priority      prio);
 
+void
+insert_queue_from_back(struct t_queue *queue, char *content, t_priority prio);
+
 extern void insert_first_queue( struct t_queue *queue,
                                 char           *content, 
                                 t_priority      prio);
@@ -118,6 +117,8 @@ extern void insert_first_queue( struct t_queue *queue,
 extern char *query_prio_queue(struct t_queue *queue, t_priority prio);
 
 extern void extract_from_queue(struct t_queue *queue, char * content);
+
+extern struct t_thread *find_thread_in_queue(struct t_queue *queue, struct t_thread *thread);
 
 extern void create_event(struct t_queue *q);
 

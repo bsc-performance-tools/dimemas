@@ -36,16 +36,17 @@
 #include "types.h"
 #include "ts.h"
 #include "sddf_records.h"
+#include "extern.h"
 
 #include "check.h"
 #include "cpu.h"
-#include "extern.h"
 #include "fs.h"
 #include "list.h"
 #include "mallocame.h"
 #include "random.h"
 #include "subr.h"
 #include "task.h"
+#include "communic.h"
 #include "yacc.h"
 
 static int one_more_record;
@@ -70,7 +71,7 @@ extern struct t_Ptask *Ptask_current;
 extern char    *current_file;
 extern int      max_task_id;
 
-char           *s[] = {"integer", "double", "char", "array"};
+char           *types[] = {"integer", "double", "char", "array"};
 
 #ifndef LIBLEXYACC
 void  update_loading(double a)
@@ -91,36 +92,64 @@ new_file_name (int f, char *l)
 }
 #endif
 
-static void
-Invalid_attribute (int i, int j, char *c, char *d, char *e)
+static void Invalid_attribute (int   field_number,
+                               int   record_type,
+                               char *record_name,
+                               char *actual_field_name,
+                               char *expected_field_name)
 {
   fill_parse_error ("Invalid name for field number %d in record #%d: %s\n", 
-                    i, j, c);
+                    field_number,
+                    record_type,
+                    record_name);
 
-  fill_parse_error ("It is %s and should be %s\n", d, e);
+  fill_parse_error ("It is '%s' and should be '%s'\n",
+                    actual_field_name,
+                    expected_field_name);
 }
 
-static void
-Invalid_type (int i, char *h, int j, char *c, int d, int e, int g, int l)
+static void Invalid_type (int   field_number,
+                          char *field_name,
+                          int   record_type,
+                          char *record_name,
+                          int   actual_field_type,
+                          int   expected_field_type,
+                          int   actual_dimensions,
+                          int   expected_dimensions)
 {
   fill_parse_error ("Invalid type for field number %d (%s) in record #%d: %s\n",
-                    i, h, j, c);
+                    field_number,
+                    field_name,
+                    record_type,
+                    record_name);
 
-  fill_parse_error ("It is %s with %d dimension and should be %s with %d dimension\n",
-                    s[d], g, s[e], l);
+  fill_parse_error ("It is '%s' with %d dimension(s) and should be '%s' with %d dimension(s)\n",
+                    types[actual_field_type], 
+                    actual_dimensions,
+                    types[expected_field_type],
+                    expected_dimensions);
 }
 
-void
-near_line()
+void near_line()
 {
-   if (dimemas_GUI)
-      if (yy_near_line_filled)
-	 return;
-   if (dimemas_GUI)
-      sprintf (yy_near_line, "Near line %d in file %s\n", line_no, current_file);
-   else
-      fprintf (stderr, "Near line %d in file %s\n", line_no, current_file);
-   definition_error = TRUE;
+  if (dimemas_GUI)
+  {
+    if (yy_near_line_filled)
+    {
+      return;
+    }
+  }
+
+  if (dimemas_GUI)
+  {
+    sprintf (yy_near_line, "Near line %d in file %s\n", line_no, current_file);
+  }
+  else
+  {
+    fprintf (stderr, "Near line %d in file %s\n", line_no, current_file);
+  }
+
+  definition_error = TRUE;
 }
 
 void
@@ -2503,7 +2532,9 @@ check_record_404 (char *c, struct t_queue *q)
    }
 }
 
-
+/*****************************************************************************
+ * CONFIGURATION FILE RECORDS
+ ****************************************************************************/
 
 
 void
@@ -3162,10 +3193,7 @@ check_record_2c_DAMIEN_format(char *c, struct t_queue *q)
    }
 }
 
-
-
-void
-check_record_2c(char *c, struct t_queue *q)
+void check_record_2c(char *c, struct t_queue *q)
 {
    if (strcmp (c, SDDFA_2C_NAME) != 0)
    {
@@ -3190,8 +3218,7 @@ check_record_2c(char *c, struct t_queue *q)
 
 
 
-void
-check_record_3c(char *c, struct t_queue *q)
+void check_record_3c(char *c, struct t_queue *q)
 {
    struct t_element *el;
 
@@ -3263,8 +3290,7 @@ check_record_3c(char *c, struct t_queue *q)
 
 }
 
-void
-check_record_4c (char *c, struct t_queue *q)
+void check_record_4c (char *c, struct t_queue *q)
 {
    struct t_element *el;
 
@@ -3333,48 +3359,97 @@ check_record_4c (char *c, struct t_queue *q)
 
 }
 
-void
-check_record_5c(char *c, struct t_queue *q)
+void check_record_5c(char           *record_name,
+                     struct t_queue *record_attributes)
 {
-   struct t_element *el;
+  struct t_element *el;
 
-   if (strcmp (c, SDDFA_5C_NAME) != 0)
-   {
-      fill_parse_error ("Incorrect name for register #5\n");
-      fill_parse_error ("It is %s and must be %s\n", c, SDDFA_5C_NAME);
-      near_line ();
-      return;
-   }
-   if (count_queue (q) != 2)
-   {
-      fill_parse_error ("Incorrect number of elements in register #5: %s\n", c);
-      fill_parse_error ("There are %d and must be 2\n", count_queue (q));
-      near_line ();
-   }
+  if (strcmp (record_name, SDDFA_5C_NAME) != 0)
+  {
+    fill_parse_error ("Incorrect name for register #5\n");
+    fill_parse_error ("It is %s and must be %s\n",
+                      record_name,
+                      SDDFA_5C_NAME);
+    near_line ();
+    return;
+  }
 
-   el = (struct t_element *) head_queue (q);
-   if (strcmp (el->i3->i1, SDDFA_5C_1A) != 0)
-   {
-      Invalid_attribute (1, 1, c, el->i3->i1, SDDFA_5C_1A);
-      near_line ();
-   }
-   if ((el->type != TYPE_INTEGER) || (el->i3->dimension != 0))
-   {
-      Invalid_type (1, el->i3->i1, 1, c, el->type, 0, el->i3->dimension, 0);
-      near_line ();
-   }
+  if (count_queue (record_attributes) != 3)
+  {
+    fill_parse_error ("Incorrect number of elements in register #5: %s\n",
+                      record_name);
+    fill_parse_error ("There are %d and must be 3\n",
+                      count_queue (record_attributes));
+    near_line ();
+  }
 
-   el = (struct t_element *) next_queue (q);
-   if (strcmp (el->i3->i1, SDDFA_5C_2A) != 0)
-   {
-      Invalid_attribute (2, 1, c, el->i3->i1, SDDFA_5C_2A);
-      near_line ();
-   }
-   if ((el->type != TYPE_DOUBLE) || (el->i3->dimension != 0))
-   {
-      Invalid_type (2, el->i3->i1, 1, c, el->type, 1, el->i3->dimension, 0);
-      near_line ();
-   }
+  /* Type */
+  el = (struct t_element*) head_queue (record_attributes);
+  if (strcmp (el->i3->i1, SDDFA_5C_1A) != 0)
+  {
+    Invalid_attribute (1, 5, record_name, el->i3->i1, SDDFA_5C_1A);
+    // Invalid_attribute (1, 1, c, el->i3->i1, SDDFA_5C_1A);
+    near_line();
+  }
+  
+  if ((el->type != TYPE_INTEGER) || (el->i3->dimension != 0))
+  {
+    Invalid_type(1,
+                 el->i3->i1,
+                 5,
+                 record_name,
+                 el->type,
+                 0,
+                 el->i3->dimension,
+                 0);
+    // Invalid_type (1, el->i3->i1, 1, c, el->type, 0, el->i3->dimension, 0);
+    near_line ();
+  }
+
+  /* Value */
+  el = (struct t_element *) next_queue (record_attributes);
+  if (strcmp (el->i3->i1, SDDFA_5C_2A) != 0)
+  {
+    Invalid_attribute (2, 5, record_name, el->i3->i1, SDDFA_5C_2A);
+    // Invalid_attribute (1, 1, c, el->i3->i1, SDDFA_5C_1A);
+    near_line ();
+  }
+  
+  if ((el->type != TYPE_INTEGER) || (el->i3->dimension != 0))
+  {
+    Invalid_type(2,
+                 el->i3->i1,
+                 5,
+                 record_name,
+                 el->type,
+                 0,
+                 el->i3->dimension,
+                 0);
+    // Invalid_type (1, el->i3->i1, 1, c, el->type, 0, el->i3->dimension, 0)
+    near_line ();
+  }
+
+  /* Ratio */
+  el = (struct t_element *) next_queue (record_attributes);
+  if (strcmp (el->i3->i1, SDDFA_5C_3A) != 0)
+  {
+    Invalid_attribute(3, 5, record_name, el->i3->i1, SDDFA_5C_3A); 
+    // Invalid_attribute (2, 1, c, el->i3->i1, SDDFA_5C_2A);
+    near_line ();
+  }
+
+  if ((el->type != TYPE_DOUBLE) || (el->i3->dimension != 0))
+  {
+    Invalid_type (3,
+                  el->i3->i1,
+                  5,
+                  record_name,
+                  el->type,
+                  1,
+                  el->i3->dimension,
+                  0);
+    near_line ();
+  }
 }
 
 
@@ -3457,8 +3532,6 @@ check_record_6c (char *c, struct t_queue *q)
       near_line ();
    }
 }
-
-
 
 void check_record_7c(char *c, struct t_queue *q)
 {
@@ -3858,23 +3931,25 @@ check_fields_with_structure(struct t_queue *q, struct t_entry *en)
         }
         break;
       case 40:
-        action->action = EVEN;
-        action->desc.even.type = BLOCK_BEGIN;
+        /* DEPRECATED */
+        action->action          = EVEN;
+        action->desc.even.type  = BLOCK_BEGIN;
         action->desc.even.value = i[2];
-        module_entrance (Ptask_current, i[0] + 1, i[1] + 1, i[2]);
+        // module_entrance (Ptask_current, i[0] + 1, i[1] + 1, i[2]);
         break;
       case 41:
+        /* DEPRECATED */
         action->action = EVEN;
         action->desc.even.type = BLOCK_END;
         action->desc.even.value = i[2];
-        module_exit (Ptask_current, i[0] + 1, i[1] + 1, i[2]);
+        // module_exit (Ptask_current, i[0] + 1, i[1] + 1, i[2]);
         break;
-      case 42:
+      case 42: /* DEPRECATED */
         bn = mallocame (strlen(s[1])+1);
         strcpy(bn, s[1]);
         an = mallocame (strlen(s[2])+1);
         strcpy(an, s[2]);
-        module_name (Ptask_current,i[0],bn,an,i[3],i[4]);
+        // module_name (Ptask_current,i[0],bn,an,i[3],i[4]);
         break;
       case 43:
         fn = mallocame (strlen(s[1])+1);
@@ -4149,11 +4224,9 @@ check_fields_with_structure(struct t_queue *q, struct t_entry *en)
 
 
 
-
-
-#define tipos_incompatibles(a,b) \
+#define BAD_TYPES(a,b) \
 {fill_parse_error ("Incompatible types between definition and usage\n");\
- fill_parse_error ("It is %s and must be %s\n", s[a], s[b]); \
+ fill_parse_error ("It is %s and must be %s\n", types[a], types[b]); \
  near_line ();\
  return;\
 }
@@ -4167,8 +4240,11 @@ void new_record_0c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 
   f  = (struct t_field *) head_queue (q);
   el = (struct t_element *) head_queue (en->types);
+  
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
 
   sim_char.general_net.name = (char *) mallocame (strlen (f->value.string) + 1);
   strcpy (sim_char.general_net.name, f->value.string);
@@ -4177,7 +4253,9 @@ void new_record_0c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   el = (struct t_element *) next_queue (en->types);
 
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
 
   if (f->value.dec <= 0)
   {
@@ -4191,7 +4269,9 @@ void new_record_0c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   el = (struct t_element *) next_queue (en->types);
 
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
 
   if (f->value.dec < 0)
   {
@@ -4206,7 +4286,9 @@ void new_record_0c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   el = (struct t_element *) next_queue (en->types);
  
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
 
   if ((f->value.dec < 1) || (f->value.dec > 4))
   {
@@ -4220,7 +4302,7 @@ void new_record_0c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   el = (struct t_element *) next_queue (en->types);
 
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   
   if (f->value.real < 0)
   {
@@ -4234,7 +4316,9 @@ void new_record_0c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   el = (struct t_element *) next_queue (en->types);
   
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
 
   if (f->value.real < 0)
   {
@@ -4249,7 +4333,9 @@ void new_record_0c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   el = (struct t_element *) next_queue (en->types);
 
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
 
   if ((f->value.dec < 1) || (f->value.dec > 3))
   {
@@ -4282,70 +4368,90 @@ new_record_1c_old_format(struct t_queue *q, struct t_entry *en)
   machine=(struct t_machine *)head_queue(&Machine_queue);
   if (machine==MA_NIL) panic("No hi ha cap maquina!\n");
   
-	f = (struct t_field *) head_queue (q);
-	el = (struct t_element *) head_queue (en->types);
-	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
-	machine->instrumented_arch = (char *) mallocame (strlen (f->value.string) + 1);
-	strcpy (machine->instrumented_arch, f->value.string);
-
-	f = (struct t_field *) next_queue (q);
-	el = (struct t_element *) next_queue (en->types);
-	if (f->tipo != el->type)
-	   tipos_incompatibles (f->tipo, el->type);
-	if (f->value.dec <= 0)
+  f = (struct t_field *) head_queue (q);
+  el = (struct t_element *) head_queue (en->types);
+  
+  if (f->tipo != el->type)
   {
-	  near_line ();
-	  fill_parse_error ("Invalid number of nodes on virutal machine: %d \n",
-		                  f->value.dec);
-	  return;
-	}
-	machine->number_nodes = f->value.dec;
+    BAD_TYPES(f->tipo, el->type);
+  }
 
-	f = (struct t_field *) next_queue (q);
-	el = (struct t_element *) next_queue (en->types);
-	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
-	if (f->value.real < 0)
-	{
-	  near_line ();
-	  fill_parse_error ("Invalid network communication bandwidth: %le\n",
-			      f->value.real);
-	  return;
-	}
-	machine->communication.remote_bandwith = f->value.real;
+  machine->instrumented_arch = (char *) mallocame (strlen (f->value.string) + 1);
+  strcpy (machine->instrumented_arch, f->value.string);
+
+  f = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+  
+  if (f->value.dec <= 0)
+  {
+    near_line ();
+    fill_parse_error ("Invalid number of nodes on virutal machine: %d \n",
+                      f->value.dec);
+    return;
+  }
+
+  machine->number_nodes = f->value.dec;
+
+  f = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+  
+  if (f->value.real < 0)
+  {
+    near_line ();
+    fill_parse_error ("Invalid network communication bandwidth: %le\n",
+                      f->value.real);
+    return;
+  }
+
+  machine->communication.remote_bandwith = f->value.real;
     
-	f = (struct t_field *) next_queue (q);
-	el = (struct t_element *) next_queue (en->types);
-	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
-	if (f->value.dec < 0)
-	{
-	  near_line ();
-	  fill_parse_error ("Invalid number of buses on network: %d \n",
-			      f->value.dec);
-	  return;
-	}
+  f = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+  
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+  
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    fill_parse_error ("Invalid number of buses on network: %d \n",
+                      f->value.dec);
+    return;
+  }
+
   machine->communication.num_messages_on_network = f->value.dec;
        
-	f = (struct t_field *) next_queue (q);
-	el = (struct t_element *) next_queue (en->types);
-	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
-	if ((f->value.dec < 1) || (f->value.dec >3))
-	{
-	  near_line ();
-	  fill_parse_error ("Invalid model for global communication: %d \n",
-			      f->value.dec);
-	  return;
-	}
+  f = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+    
+  if ((f->value.dec < 1) || (f->value.dec >3))
+  {
+    near_line ();
+    fill_parse_error ("Invalid model for global communication: %d \n",
+                      f->value.dec);
+    return;
+  }
   machine->communication.global_operation = f->value.dec;
 
-	Initialize_empty_node (&Node_queue, machine);
+  Initialize_empty_node (&Node_queue, machine);
 }
-
-
-
 
 void new_record_1c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 {
@@ -4356,17 +4462,18 @@ void new_record_1c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   char *str_aux;
 
   
-	f = (struct t_field *) head_queue (q);
-	el = (struct t_element *) head_queue (en->types);
-	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
+  f = (struct t_field *) head_queue (q);
+  el = (struct t_element *) head_queue (en->types);
+  
+  if (f->tipo != el->type)
+    BAD_TYPES(f->tipo, el->type);
   str_aux = (char *) mallocame (strlen (f->value.string) + 1);
 	strcpy (str_aux, f->value.string);
 
 	f = (struct t_field *) next_queue (q);
 	el = (struct t_element *) next_queue (en->types);
 	if (f->tipo != el->type)
-	   tipos_incompatibles (f->tipo, el->type);
+	   BAD_TYPES(f->tipo, el->type);
 	if (f->value.dec < 0)
   {
 	  near_line ();
@@ -4388,14 +4495,14 @@ void new_record_1c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 	f = (struct t_field *) next_queue (q);
 	el = (struct t_element *) next_queue (en->types);
 	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
+	  BAD_TYPES(f->tipo, el->type);
 	machine->instrumented_arch = (char *) mallocame (strlen (f->value.string) + 1);
 	strcpy (machine->instrumented_arch, f->value.string);
 
 	f = (struct t_field *) next_queue (q);
 	el = (struct t_element *) next_queue (en->types);
 	if (f->tipo != el->type)
-	   tipos_incompatibles (f->tipo, el->type);
+	   BAD_TYPES(f->tipo, el->type);
 	if (f->value.dec <= 0)
   {
 	  near_line ();
@@ -4408,7 +4515,7 @@ void new_record_1c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 	f = (struct t_field *) next_queue (q);
 	el = (struct t_element *) next_queue (en->types);
 	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
+	  BAD_TYPES(f->tipo, el->type);
 	if (f->value.real < 0)
 	{
 	  near_line ();
@@ -4421,7 +4528,7 @@ void new_record_1c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 	f = (struct t_field *) next_queue (q);
 	el = (struct t_element *) next_queue (en->types);
 	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
+	  BAD_TYPES(f->tipo, el->type);
 	if (f->value.dec < 0)
 	{
 	  near_line ();
@@ -4434,7 +4541,7 @@ void new_record_1c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 	f = (struct t_field *) next_queue (q);
 	el = (struct t_element *) next_queue (en->types);
 	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
+	  BAD_TYPES(f->tipo, el->type);
 	if ((f->value.dec < 1) || (f->value.dec >3))
 	{
 	  near_line ();
@@ -4482,20 +4589,20 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
 	f = (struct t_field *) head_queue (q);
   el = (struct t_element *) head_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   no_number = f->value.dec + 1;
 
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   node_name = (char *) mallocame (strlen (f->value.string) + 1);
   strcpy (node_name, f->value.string);
 
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec <= 0)
   {
     near_line ();
@@ -4508,7 +4615,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -4521,7 +4628,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -4542,7 +4649,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -4555,7 +4662,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -4568,7 +4675,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real <= 0)
   {
     near_line ();
@@ -4581,7 +4688,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -4596,7 +4703,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4614,7 +4721,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4632,7 +4739,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4650,7 +4757,7 @@ void new_record_2c_old_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4699,7 +4806,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 	f = (struct t_field *) head_queue (q);
   el = (struct t_element *) head_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   ma_number = f->value.dec + 1;
   
   /* FEC: Com que utilitza el format nou, s'ha d'obtenir la maquina amb
@@ -4712,20 +4819,20 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 	f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   no_number = f->value.dec + 1;
 
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   node_name = (char *) mallocame (strlen (f->value.string) + 1);
   strcpy (node_name, f->value.string);
 
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec <= 0)
   {
     near_line ();
@@ -4738,7 +4845,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -4751,7 +4858,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -4772,7 +4879,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -4785,7 +4892,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -4798,7 +4905,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real <= 0)
   {
     near_line ();
@@ -4811,7 +4918,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -4825,7 +4932,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -4841,7 +4948,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4859,7 +4966,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4877,7 +4984,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4895,7 +5002,7 @@ void new_record_2c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   if (el!=(struct t_element *)0)
   {
     if (f->tipo != el->type)
-      tipos_incompatibles (f->tipo, el->type);
+      BAD_TYPES(f->tipo, el->type);
     if (f->value.real < 0)
     {
       near_line ();
@@ -4931,7 +5038,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) head_queue (q);
 	el = (struct t_element *) head_queue (en->types);
 	if (f->tipo != el->type)
-	  tipos_incompatibles (f->tipo, el->type);
+	  BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
 	  near_line ();
@@ -4948,7 +5055,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -4961,7 +5068,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -4974,7 +5081,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -5008,7 +5115,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -5021,7 +5128,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (strlen(f->value.string)!=1) error=1;
   else if (f->value.string[0]=='<') d_con->first_size_condition = 0;
   else if (f->value.string[0]=='=') d_con->first_size_condition = 1;
@@ -5038,7 +5145,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (strlen(f->value.string)!=1) error=1;
   else if (f->value.string[0]=='&') d_con->operation = 0;
   else if (f->value.string[0]=='|') d_con->operation = 1;
@@ -5054,7 +5161,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.dec < 0)
   {
     near_line ();
@@ -5067,7 +5174,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (strlen(f->value.string)!=1) error=1;
   else if (f->value.string[0]=='<') d_con->second_size_condition = 0;
   else if (f->value.string[0]=='=') d_con->second_size_condition = 1;
@@ -5105,7 +5212,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -5119,7 +5226,7 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
   f = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
   if (f->tipo != el->type)
-    tipos_incompatibles (f->tipo, el->type);
+    BAD_TYPES(f->tipo, el->type);
   if (f->value.real < 0)
   {
     near_line ();
@@ -5146,15 +5253,15 @@ void new_record_7c_DAMIEN_format(struct t_queue *q, struct t_entry *en)
 
 
 
-void
-check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
+void check_fields_for_configuration(struct t_queue *q,
+                                    struct t_entry *en)
 {
   struct t_element *el;
   struct t_field   *f, *f2, *f3, *f4;
   char             *node_name;
   int               no_processors;
 
-  int    module;
+  int    module_type, module_value;
   double ratio;
   double disk_latency, disk_bandwidth, block_size, hit_ratio;
   int    concurrent_requests;
@@ -5202,9 +5309,13 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       }
 
       if ((count_queue (q)==9) || (count_queue (q)==13))
+      {
         new_record_2c_old_format(q,en);
+      }
       else if ((count_queue (q)==11) || (count_queue (q)==15))
+      {
         new_record_2c_DAMIEN_format(q,en);
+      }
       break;
 
     case 3:
@@ -5219,7 +5330,9 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) head_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+      {
+        BAD_TYPES (f->tipo, el->type);
+      }
 
       node_name = (char *) mallocame (strlen (f->value.string) + 1);
       strcpy (node_name, f->value.string);
@@ -5228,7 +5341,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) next_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       if (f->value.dec <= 0)
       {
@@ -5274,16 +5387,15 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
 
 #ifndef LIBLEXYACC
 
-        if (el==(struct t_element *)0)
-         new_thread_in_Ptask (Ptask, j + 1, f2->value.dec + 1, 1, 0, 0);
+        if (el == (struct t_element *) 0)
+        {
+          new_task_in_Ptask (Ptask, j + 1, f2->value.dec + 1);
+        }
         else
         {
-          new_thread_in_Ptask (Ptask,
-                               j + 1,
-                               f2->value.dec + 1,
-                               1,
-                               f4->value.dec,
-                               0);
+          new_task_in_Ptask (Ptask,
+                             j + 1,
+                             f2->value.dec + 1);
 
           f4 = (struct t_field *) next_queue (f3->value.arr.q);
         }
@@ -5310,7 +5422,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) head_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       fichero_sch = (char *) mallocame (strlen (f->value.string) + 1);
       strcpy (fichero_sch, f->value.string);
@@ -5319,7 +5431,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) head_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       fichero_fs = (char *) mallocame (strlen (f->value.string) + 1);
       strcpy (fichero_fs, f->value.string);
@@ -5328,7 +5440,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) head_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       fichero_comm = (char *) mallocame (strlen (f->value.string) + 1);
       strcpy (fichero_comm, f->value.string);
@@ -5337,7 +5449,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) head_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       fichero_random = (char *) mallocame (strlen (f->value.string) + 1);
       strcpy (fichero_random, f->value.string);
@@ -5350,7 +5462,9 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
 #endif /* LIBLEXYACC */
 
       break;
-    case 5:
+      
+    case 5: /* MODULE DEFINITION */
+        
       if (count_queue (q) != count_queue (en->types))
       {
         near_line ();
@@ -5362,37 +5476,60 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) head_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+      {
+        BAD_TYPES(f->tipo, el->type);
+      }
 
       if (f->value.dec < 0)
       {
         near_line ();
-        fill_parse_error ("Invalid module number: %d \n", f->value.dec);
+        fill_parse_error ("Invalid module type: %d \n", f->value.dec);
         return;
       }
 
-      module = f->value.dec;
+      module_type = f->value.dec;
 
-      f  = (struct t_field *) next_queue (q);
+      f  = (struct t_field *)   next_queue (q);
       el = (struct t_element *) next_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+      {
+        BAD_TYPES(f->tipo, el->type);
+      }
+
+      if (f->value.dec < 0)
+      {
+        near_line ();
+        fill_parse_error ("Invalid module value: %d \n", f->value.dec);
+        return;
+      }
+
+      module_value = f->value.dec;
+
+      f  = (struct t_field *)   next_queue (q);
+      el = (struct t_element *) next_queue (en->types);
+
+      if (f->tipo != el->type)
+      {
+        BAD_TYPES(f->tipo, el->type);
+      }
       
       if (f->value.real < 0)
       {
         near_line ();
-        fill_parse_error ("Invalid ratio for module %d: %le\n", 
-                          f->value.real,
-                          module);
+        fill_parse_error ("Invalid ratio for module (%d:%d): %le\n",
+                          module_type,
+                          module_value,
+                          f->value.real);
         return;
       }
 
       ratio = f->value.real;
+
 #ifdef LIBLEXYACC
-      module_new ((struct t_Ptask *)0, module, ratio);
+      module_new ((struct t_Ptask *)0, module_type, module_value, ratio);
 #else
-      module_new (Ptask_current, module, ratio);
+      module_new (Ptask_current, module_type, module_value, ratio);
 #endif
       break;
 
@@ -5409,7 +5546,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) head_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       if (f->value.real < 0)
       {
@@ -5424,7 +5561,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) next_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       if (f->value.real < 0)
       {
@@ -5439,7 +5576,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) next_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       if (f->value.real <= 0)
       {
@@ -5454,7 +5591,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) next_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       if (f->value.dec < 0)
       {
@@ -5470,7 +5607,7 @@ check_fields_for_configuration(struct t_queue *q, struct t_entry *en)
       el = (struct t_element *) next_queue (en->types);
 
       if (f->tipo != el->type)
-        tipos_incompatibles (f->tipo, el->type);
+        BAD_TYPES(f->tipo, el->type);
 
       if ((f->value.real < 0.0) || (f->value.real > 1.0 ))
       {

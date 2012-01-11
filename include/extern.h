@@ -60,13 +60,27 @@
 #define EXTERN extern
 #endif  /* CHECK */
 
+typedef int Equeue;
+
 extern struct t_queue Ptask_queue;
+#ifdef USE_EQUEUE
+extern Equeue Event_queue;
+#else
 extern struct t_queue Event_queue;
-extern struct t_queue Interactive_event_queue;
+#endif
+extern Equeue Interactive_event_queue;
 extern struct t_queue Port_queue;
+#ifdef USE_EQUEUE
+extern Equeue Node_queue;
+#else
 extern struct t_queue Node_queue;
+#endif
 extern struct t_queue Network_queue;
 extern struct t_queue Global_op;
+
+extern unsigned long total_threads;
+extern unsigned long finished_threads;
+extern int           progress;
 
 /* FEC */
 extern struct t_queue Machine_queue;
@@ -82,6 +96,7 @@ extern dimemas_timer final_statistical_time;
 extern struct t_simulator sim_char;
 
 extern int      debug;
+extern int      assert;
 extern int      output_level;
 
 extern int      SCH_prio;
@@ -99,7 +114,9 @@ extern t_boolean short_out_info; /* defined on 'main.c' */
 extern char     message_buffer[];
 
 extern char    *paraver_file;
+extern char    *paraver_cfg_include_file;
 extern t_boolean paraver_binary;
+extern t_boolean paraver_cfg_include;
 extern dimemas_timer start_paraver;
 extern dimemas_timer stop_paraver;
 extern t_boolean paraver_initial_timer;
@@ -158,8 +175,7 @@ extern t_micro   PREEMP_time;
 extern t_boolean synthetic_bursts;
 
 /* File pointer reserving facility */
-extern void
-free_reserved_pointer(void);
+extern void free_reserved_pointer(void);
 
 /*
  * Prototypes

@@ -25,10 +25,10 @@
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+  $URL::                                          $:  File
+  $Rev::                                          $:  Revision of last commit
+  $Author::                                       $:  Author of last commit
+  $Date::                                         $:  Date of last commit
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
@@ -42,6 +42,7 @@
 #include "paraver.h"
 #include "subr.h"
 #include "paraver_pcf.h"
+#include "task.h"
 
 /* Incloc el fitxer on es defineix la taula i les macros
    de conversio de formats. */
@@ -51,28 +52,26 @@
 #include <ParaverBinaryTrace.h>
 #include "Macros.h"
 
-
-
 int             PARAVER_cpu;
 t_boolean       paraver_binary;
+t_boolean       paraver_cfg_include = FALSE;
 static int      paraver_line_number = 1;
 
-static t_boolean generar_paraver=FALSE;
-static BinHandle **bin_handles=NULL;
-
-
+static t_boolean generar_paraver = FALSE;
+static BinHandle **bin_handles   = NULL;
 
 #define VERIFICA_GENERACIO_PARAVER {if (!generar_paraver) return;}
 
-
-void
-Activar_Generacio_Paraver()
+void PARAVER_Enable_Trace_Generation()
 {
   generar_paraver = TRUE;
 }
 
-void
-Paraver_init()
+/**
+ * Initialization of Paraver trace generation structures
+ *
+ */ 
+void PARAVER_init()
 {
   struct t_Ptask *ptask;
   struct t_task  *task;
@@ -103,11 +102,9 @@ Paraver_init()
       panic("Not enough memory!\n");
     }
     
-    for(
-      task  = (struct t_task*) head_queue (&(ptask->tasks));
-      task != T_NIL;
-      task  = (struct t_task*) next_queue (&(ptask->tasks))
-    )
+    for(task  = (struct t_task*) head_queue (&(ptask->tasks));
+        task != T_NIL;
+        task  = (struct t_task*) next_queue (&(ptask->tasks)))
     {
       ASSERT(task->taskid>=1);
       bin_handles[ptask->Ptaskid-1][task->taskid-1] = 
@@ -116,8 +113,11 @@ Paraver_init()
   }
 }
 
-void
-Paraver_fini()
+/**
+ * Finalization of Paraver trace generation structures
+ *
+ */ 
+void PARAVER_fini()
 {
   int               ii;
   struct t_Ptask   *ptask;
@@ -137,18 +137,16 @@ Paraver_fini()
   /* Cal muntar unes estructures temporals per poder generar la capçalera
    * de la traça paraver. */
   ph.nappls = count_queue(&Ptask_queue);
-  ph.appls  = (Application *)malloc(ph.nappls*sizeof(Application));
+  ph.appls  = (Application*) malloc(ph.nappls*sizeof(Application));
   
   if (ph.appls == NULL)
   {
     panic("Not enough memory!\n");
   }     
 
-  for(
-    ptask  = (struct t_Ptask *) head_queue (&(Ptask_queue));
-    ptask != P_NIL;
-    ptask  = (struct t_Ptask *) next_queue (&(Ptask_queue))
-  )
+  for(ptask  = (struct t_Ptask *) head_queue (&(Ptask_queue));
+      ptask != P_NIL;
+      ptask  = (struct t_Ptask *) next_queue (&(Ptask_queue)))
   {
     ASSERT(ptask->Ptaskid >= 1);
     ph.appls[ptask->Ptaskid-1].ntasks   = count_queue(&(ptask->tasks));
@@ -163,18 +161,34 @@ Paraver_fini()
     /* Tots tenen un sol thread */
     for( ii = 0; ii < ph.appls[ptask->Ptaskid-1].ntasks; ii++)
     {
-      ph.appls[ptask->Ptaskid-1].nthreads[ii] = 1;
+//       ph.appls[ptask->Ptaskid-1].nthreads[ii] = 1???;
+         struct t_task *task;
+//          printf("locating task no %d\n", ii+1);
+         task = locate_task (ptask, ii+1);
+         ph.appls[ptask->Ptaskid-1].nthreads[ii] = task->num_of_threads;
     }
   }
   
+#ifdef USE_EQUEUE
+  rh.nnodes = count_Equeue(&Node_queue);
+#else
   rh.nnodes = count_queue(&Node_queue);
+#endif
   rh.ncpus  = (int*) malloc(rh.nnodes*sizeof(int));
   
+#ifdef USE_EQUEUE
+  for(
+    node  = (struct t_node*) head_Equeue (&Node_queue);
+    node != N_NIL;
+    node  = (struct t_node *) next_Equeue (&Node_queue)
+  )
+#else
   for(
     node  = (struct t_node*) head_queue (&Node_queue);
     node != N_NIL;
     node  = (struct t_node *) next_queue (&Node_queue)
   )
+#endif
   {
     ASSERT(node->nodeid>=1);
     rh.ncpus[node->nodeid-1]=count_queue(&(node->Cpus));
@@ -201,19 +215,15 @@ Paraver_fini()
   TIMER_TO_DOUBLE (tmp_timer, tmp1);
 
   /* Cal passar els comunicadors amb una altra estructura temporal */
-  for (
-    ptask  = (struct t_Ptask*) head_queue (&Ptask_queue);
-    ptask != P_NIL;
-    ptask  = (struct t_Ptask*) next_queue (&Ptask_queue)
-  )
+  for(ptask  = (struct t_Ptask*) head_queue (&Ptask_queue);
+      ptask != P_NIL;
+      ptask  = (struct t_Ptask*) next_queue (&Ptask_queue))
   {    
     if (count_queue(&ptask->Communicator) != 0)
     {
-      for (
-        communicator = (struct t_communicator*)head_queue(&ptask->Communicator);
-        communicator!= COM_NIL;
-        communicator = (struct t_communicator*)next_queue(&ptask->Communicator)
-      )
+      for(communicator = (struct t_communicator*)head_queue(&ptask->Communicator);
+          communicator!= COM_NIL;
+          communicator = (struct t_communicator*)next_queue(&ptask->Communicator))
       {
         num_tasks_comm = count_queue(&communicator->global_ranks);
         
@@ -233,20 +243,17 @@ Paraver_fini()
           mida_tasks_comm = num_tasks_comm;
         }
 
-        for (
-          ii = 0, global_ranks = (int*)head_queue(&communicator->global_ranks);
-          global_ranks != (int*)0;
-          ii++, global_ranks = (int *)next_queue(&communicator->global_ranks)
-        )
+        for(ii = 0, global_ranks = (int*)head_queue(&communicator->global_ranks);
+            global_ranks != (int*)0;
+            ii++, global_ranks = (int *)next_queue(&communicator->global_ranks))
         {
           tasks_comm[ii] = *global_ranks;
         }
-        ParaverTrace_AddCommunicator(
-          ptask->Ptaskid,
-          communicator->communicator_id,
-          num_tasks_comm,
-          tasks_comm
-        );
+        
+        ParaverTrace_AddCommunicator(ptask->Ptaskid,
+                                     communicator->communicator_id,
+                                     num_tasks_comm,
+                                     tasks_comm);
       }
     }
   }
@@ -271,7 +278,7 @@ Paraver_fini()
   
   
   /* Es genera el fitxer .pcf corresponent */
-  MakeParaverPCF(paraver_file);
+  MakeParaverPCF(paraver_file, paraver_cfg_include_file);
 
   free(ph.appls);
   free(bin_handles);
@@ -360,25 +367,20 @@ Paraver_thread_buwa(
     }
     
     /* JGG: Ahora se usa BLOCKED (9) en vez de IO (12), hay que revisarlo */
-    ParaverTrace_BinaryState(
-      bin_handles[ptask-1][task-1],
-      cpu, ptask, task, thread,
-      (long long) ini_time,
-      (long long) end_time,
-      PRV_BLOCKED_ST
-    );
+    ParaverTrace_BinaryState(bin_handles[ptask-1][task-1],
+                             cpu, ptask, task, thread,
+                             (long long) ini_time,
+                             (long long) end_time,
+                             PRV_BLOCKED_ST);
   }
 }
 
-void 
-Paraver_thread_wait_links(
-  int           cpu,
-  int           ptask,
-  int           task,
-  int           thread,
-  dimemas_timer init,
-  dimemas_timer end
-)
+void Paraver_thread_wait_links(int           cpu,
+                               int           ptask,
+                               int           task,
+                               int           thread,
+                               dimemas_timer init,
+                               dimemas_timer end)
 {
   double ini_time, end_time;
 
@@ -1855,9 +1857,6 @@ Paraver_Global_Op (
   );
 }
 
-
-
-
 static char *priorities_set = (char *) 0;
 
 void
@@ -1874,134 +1873,151 @@ paraver_set_priorities(char *c)
 struct t_paradis_record pr;
 static char     buf[BUFSIZE]; /*Abans era 2560 */
 
-static void
-to_bin (char *s, char *d)
+static void to_bin (char *source, char *destination)
 {
-   FILE           *sour,
-                  *dest;
-   int             i,
-                   j;
-   int             linenum = 1;
-   int             cpu,
-                   Ptask,
-                   task,
-                   thread;
-   int             cpu_s,
-                   Ptask_s,
-                   task_s,
-                   thread_s;
-   int             cpu_r,
-                   Ptask_r,
-                   task_r,
-                   thread_r;
+  FILE *source_file, *dest_file;
+  int   matches, record_type;
+  int   linenum = 1;
+  int   cpu,   Ptask,   task,   thread;
+  int   cpu_s, Ptask_s, task_s, thread_s;
+  int   cpu_r, Ptask_r, task_r, thread_r;
 
-   sour = MYFOPEN (s, "r");
-   if (sour == (FILE *) 0)
-   {
-      printf ("Can't open source file %s\n", s);
-      perror ((char *) 0);
-      exit (FILES_ACCES);
-   }
-   dest = MYFOPEN (d, "w");
-   if (dest == (FILE *) 0)
-   {
-      printf ("Can't open destination file %s\n", d);
-      perror ((char *) 0);
-      exit (FILES_ACCES);
-   }
+  source_file = MYFOPEN (source, "r");
+  if (source_file == (FILE *) 0)
+  {
+    printf ("Can't open source file %s\n", source);
+    perror ((char *) 0);
+    exit (FILES_ACCES);
+  }
+  
+  dest_file = MYFOPEN (destination, "w");
+  if (dest_file == (FILE *) 0)
+  {
+    printf ("Can't open destination file %s\n", destination);
+    perror ((char *) 0);
+    exit (FILES_ACCES);
+  }
 
-   i = fscanf (sour, "%[^\n]\n", buf);
-   *buf = '%';
-   fprintf (dest, "%s\n", buf);
-   while (feof (sour) == FALSE)
-   {
-      linenum++;
-      i = fscanf (sour, "%d:", &j);
-      pr.record_type = (char) j;
-      if (i == -1)
-	 break;
-      switch (j)
+  matches = fscanf (source_file, "%[^\n]\n", buf);
+  *buf = '%';
+  fprintf (dest_file, "%s\n", buf);
+  
+  while (feof (source_file) == FALSE)
+  {
+    linenum++;
+    matches = fscanf (source_file, "%d:", &record_type);
+    pr.record_type = (char) record_type;
+
+    if (matches == -1)
+    {
+      break;
+    }
+    
+    switch (record_type)
+    {
+      case PARADIS_WORK:
       {
-	 case PARADIS_WORK:
-	    i = fscanf (sour, "%d:%d:%d:%d:%le:%le:%d\n",
-			&cpu,
-			&Ptask,
-			&task,
-			&thread,
-			&pr.d.work.begin,
-			&pr.d.work.end,
-			&pr.d.work.action);
-	    if (i != 7)
-	    {
-	       printf ("Invalid record for work on line %d, file %s\n",
-		       linenum, s);
-	       exit (RECORD_FORMAT);
-	    }
-	    pr.d.work.cpu = (p_ids) cpu;
-	    pr.d.work.Ptask = (p_ids) Ptask;
-	    pr.d.work.task = (p_ids) task;
-	    pr.d.work.thread = (p_ids) thread;
-	    break;
-	 case PARADIS_EVENT:
-	    i = fscanf (sour, "%d:%d:%d:%d:%le:%d:%d\n",
-			&cpu,
-			&Ptask,
-			&task,
-			&thread,
-			&pr.d.event.time,
-			&pr.d.event.event,
-			&pr.d.event.value);
-	    if (i != 7)
-	    {
-	       printf ("Invalid record for event on line %d, file %s\n",
-		       linenum, s);
-	       exit (RECORD_FORMAT);
-	    }
-	    pr.d.event.cpu = (p_ids) cpu;
-	    pr.d.event.Ptask = (p_ids) Ptask;
-	    pr.d.event.task = (p_ids) task;
-	    pr.d.event.thread = (p_ids) thread;
-	    break;
-	 case PARADIS_COMM:
-	    i = fscanf (sour, "%d:%d:%d:%d:%le:%le:%d:%d:%d:%d:%le:%le:%d:%d\n",
-			&cpu_s,
-			&Ptask_s,
-			&task_s,
-			&thread_s,
-			&pr.d.comm.log_s,
-			&pr.d.comm.phys_s,
-			&cpu_r,
-			&Ptask_r,
-			&task_r,
-			&thread_r,
-			&pr.d.comm.log_r,
-			&pr.d.comm.phys_r,
-			&pr.d.comm.size,
-			&pr.d.comm.tag);
-	    if (i != 14)
-	    {
-	       printf ("Invalid record for communication on line %d, file %s\n",
-		       linenum, s);
-	       exit (RECORD_FORMAT);
-	    }
-	    pr.d.comm.cpu_s = (p_ids) cpu_s;
-	    pr.d.comm.Ptask_s = (p_ids) Ptask_s;
-	    pr.d.comm.task_s = (p_ids) task_s;
-	    pr.d.comm.thread_s = (p_ids) thread_s;
-	    pr.d.comm.cpu_r = (p_ids) cpu_r;
-	    pr.d.comm.Ptask_r = (p_ids) Ptask_r;
-	    pr.d.comm.task_r = (p_ids) task_r;
-	    pr.d.comm.thread_r = (p_ids) thread_r;
-	    break;
-	 default:
-	    printf ("Invalid record in line %d, file %s: record type %d\n",
-		    linenum, s, pr.record_type);
-	    exit (3);
+        matches = fscanf(source_file,
+                         "%d:%d:%d:%d:%le:%le:%d\n",
+                         &cpu,
+                         &Ptask,
+                         &task,
+                         &thread,
+                         &pr.d.work.begin,
+                         &pr.d.work.end,
+                         &pr.d.work.action);
+        
+        if (matches != 7)
+        {
+           printf ("Invalid record for work on line %d, file %s\n",
+                   linenum,
+                   source);
+           exit (RECORD_FORMAT);
+        }
+        
+        pr.d.work.cpu    = (p_ids) cpu;
+        pr.d.work.Ptask  = (p_ids) Ptask;
+        pr.d.work.task   = (p_ids) task;
+        pr.d.work.thread = (p_ids) thread;
       }
-      fwrite (&pr, sizeof (struct t_paradis_record), 1, dest);
-   }
-   fclose (sour);
-   fclose (dest);
+      break;
+
+      case PARADIS_EVENT:
+      {
+        matches = fscanf (source_file,
+                          "%d:%d:%d:%d:%le:%d:%d\n",
+                          &cpu,
+                          &Ptask,
+                          &task,
+                          &thread,
+                          &pr.d.event.time,
+                          &pr.d.event.event,
+                          &pr.d.event.value);
+        if (matches != 7)
+        {
+          printf ("Invalid record for event on line %d, file %s\n",
+                  linenum,
+                  source);
+          exit (RECORD_FORMAT);
+        }
+        pr.d.event.cpu    = (p_ids) cpu;
+        pr.d.event.Ptask  = (p_ids) Ptask;
+        pr.d.event.task   = (p_ids) task;
+        pr.d.event.thread = (p_ids) thread;
+      }
+      break;
+
+      case PARADIS_COMM:
+      {
+        matches = fscanf (source_file,
+                          "%d:%d:%d:%d:%le:%le:%d:%d:%d:%d:%le:%le:%d:%d\n",
+                          &cpu_s,
+                          &Ptask_s,
+                          &task_s,
+                          &thread_s,
+                          &pr.d.comm.log_s,
+                          &pr.d.comm.phys_s,
+                          &cpu_r,
+                          &Ptask_r,
+                          &task_r,
+                          &thread_r,
+                          &pr.d.comm.log_r,
+                          &pr.d.comm.phys_r,
+                          &pr.d.comm.size,
+                          &pr.d.comm.tag);
+
+        if (matches != 14)
+        {
+          printf ("Invalid record for communication on line %d, file %s\n",
+                  linenum,
+                  source);
+          exit (RECORD_FORMAT);
+        }
+        
+        pr.d.comm.cpu_s    = (p_ids) cpu_s;
+        pr.d.comm.Ptask_s  = (p_ids) Ptask_s;
+        pr.d.comm.task_s   = (p_ids) task_s;
+        pr.d.comm.thread_s = (p_ids) thread_s;
+        pr.d.comm.cpu_r    = (p_ids) cpu_r;
+        pr.d.comm.Ptask_r  = (p_ids) Ptask_r;
+        pr.d.comm.task_r   = (p_ids) task_r;
+        pr.d.comm.thread_r = (p_ids) thread_r;
+      }
+      break;
+
+      default:
+      {
+        printf ("Invalid record in line %d, file %s: record type %d\n",
+                linenum,
+                source,
+                pr.record_type);
+        exit (3);
+      }
+    }
+    fwrite (&pr, sizeof (struct t_paradis_record), 1, dest_file);
+  }
+  fclose (source_file);
+  fclose (dest_file);
 }
 
 

@@ -5,6 +5,7 @@ common_filesdir = @common_filesdir@
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(common_filesdir) \
+	-I$(top_srcdir)/src/io \
 	-I$(top_srcdir)/src/input \
 	-I$(top_srcdir)/src/model \
 	-I$(top_srcdir)/src/prv_utils \
@@ -24,4 +25,14 @@ libDimemasUtils_la_SOURCES = \
 	random.c \
 	random.h \
 	subr.c \
-	subr.h 
+	subr.h \
+	listE.h \
+	listE.cc \
+	modules_map.h \
+	modules_map.cc 
+
+#if USE_EQUEUE
+#libDimemasUtils_la_SOURCES += \
+#	listE.h \
+#	listE.cc
+#endif

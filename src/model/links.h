@@ -52,6 +52,9 @@ extern t_boolean get_links_memory_copy(struct t_thread *thread,
 extern void free_link(struct t_link *link,
     struct t_thread *thread);
 
+extern void free_machine_link(struct t_link *link, struct t_thread *thread);
+
+
 
 EXTERN          t_boolean
 get_links_port (T (struct t_thread *) T (struct t_node *)

@@ -46,7 +46,10 @@
 #include "schedule.h"
 #include "subr.h"
 #include "task.h"
+#include "communic.h"
+#include "fs.h"
 #include "yacc.h"
+#include "paraver.h"
 
 #if defined(OS_MACOSX) || defined(OS_CYGWIN)
 #include "macosx_limits.h"
@@ -61,6 +64,8 @@ static struct t_queue  Register_queue;
 struct t_Ptask        *Ptask_current;
 char                  *current_file;
 extern t_boolean       NEW_MODIFICATIONS;
+int                    stop_restarts;
+extern t_boolean       reload_while_longest_running;
 
 int             greatest_cpuid = 0;
 
@@ -68,8 +73,7 @@ dimemas_timer execution_end_time=0; /* Temps final de l'execucio */
 
 
 /* For reading old trace format */
-struct t_action*
-get_next_action_from_file_binary(
+struct t_action* get_next_action_from_file_binary(
   FILE           *file,
   int            *tid,
   int            *th_id,
@@ -85,8 +89,8 @@ get_next_action_from_file_binary(
   if (fread (&da, sizeof (struct t_disk_action), 1, file) != 1)
     return (AC_NIL);
 
-  *tid = da.taskid;
-  *th_id = da.threadid;
+  *tid    = da.taskid;
+  *th_id  = da.threadid;
   *action = da.action;
 
   if (action->action == WORK)
@@ -96,8 +100,10 @@ get_next_action_from_file_binary(
     if (randomness.processor_ratio.distribution!=NO_DISTRIBUTION)
       relative += random_dist(&randomness.processor_ratio);
     */
-    if (relative<=0)
+    if (relative <= 0)
+    {
       (action->desc).compute.cpu_time = 0.0;
+    }
     else
     {
       (action->desc).compute.cpu_time =
@@ -121,14 +127,11 @@ static char BIGPOINTER[BUFSIZE];
 static char BIGPOINTER2[BUFSIZE];
 
 /* For reading old trace format */
-struct t_action*
-get_next_action_from_file_sddf(
-  FILE           *file,
-  int            *tid,
-  int            *th_id,
-  struct t_node  *node,
-  struct t_Ptask *Ptask
-)
+struct t_action* get_next_action_from_file_sddf(struct t_thread    *thread,
+                                                int                *tid,
+                                                int                *th_id,
+                                                struct t_node      *node,
+                                                struct t_Ptask     *Ptask)
 {
   char   buf[BUFSIZE], new[BUFSIZE];
   struct t_action *tmp_action, *aux_action;
@@ -137,28 +140,34 @@ get_next_action_from_file_sddf(
   t_micro         cpu_time;
   int    dest, size, tag, communic_id;
   int    ori;
+  int    ori_threadid, dest_threadid;
   int    rendez_vous;
   
   long long ev_ty, ev_va;
   
   int    fd, is, om, re;
-  char  *bn, *an;
+  char  *module_name, *activity_name;
   int    block_id, burst_category_id, src_file, src_line;
   int    commid, Oop, fh, request;
-  char   block_name[256], activity_name[256];
+  char   block_name[256], act_name[256];
   double relative, burst_category_mean, burst_category_std_dev;
   int    glop_id, comm_id, root_rank, root_thid;
   int    bytes_send, bytes_recvd, recv_type;
   char  *c;
   int    win_id, target_rank, mode, post_size, post_rank;
-
+  unsigned long long len;
+  char *new_p;  
+  
   tmp_action = (struct t_action *) mallocame (sizeof (struct t_action));
   tmp_action->next = AC_NIL;
 
 next_one:
 
-  i = fscanf (file, "%[^\n]\n", BIGPOINTER);
-  
+  new_p = thread->mmapped_file + thread->mmap_position;
+  i = sscanf (new_p , "\n%[^\n]\n", BIGPOINTER);
+  len = ((ptrdiff_t)strstr(new_p, BIGPOINTER) + (ptrdiff_t)strlen(BIGPOINTER)) - (ptrdiff_t)new_p;
+  thread->mmap_position = thread->mmap_position + len;   
+
   if (strstr(BIGPOINTER, "/* SEEK")!= (char *)0)
   {
     return (AC_NIL);
@@ -244,24 +253,28 @@ next_one:
     */
     (tmp_action->desc).compute.cpu_time = (t_micro) cpu_time;
 
+
     tmp_action->action = WORK;
     *tid = taskid + 1;
     *th_id = thid + 1;
-
+//     printf("it is WORK  tid %d thid %d time is %e\n", *tid, *th_id, cpu_time);
+    
+    
     if (synthetic_bursts)
       return aux_action;
     else
       return tmp_action;
   }
   }
-  { /* NX send (7 parameters) */
+  { /* NX send (8 parameters) */
   i = sscanf (BIGPOINTER,
-              "\"NX send\" { %d, %d, %d, %d, %d, %d, %d };;\n",
-              &taskid, &thid, &dest, &size, &tag, &communic_id, &rendez_vous );
-  if (i == 7)
+              "\"NX send\" { %d, %d, %d, %d, %d, %d, %d, %d };;\n",
+              &taskid, &thid, &dest, &dest_threadid, &size, &tag, &communic_id, &rendez_vous );
+  if (i == 8)
   {
     /* Send trace */
     (tmp_action->desc).send.dest        = dest + 1;
+    (tmp_action->desc).send.dest_thread = dest_threadid + 1;    
     (tmp_action->desc).send.mess_size   = size;
     (tmp_action->desc).send.mess_tag    = tag;
     (tmp_action->desc).send.communic_id = communic_id;
@@ -286,7 +299,70 @@ next_one:
     {
       (tmp_action->desc).send.immediate = FALSE;
     }
-    tmp_action->action = SEND;
+    
+//Vladimir added for processing MPI_Waits for MPI_Isends
+    if (rendez_vous == 6)
+    {
+      (tmp_action->action) = WAIT_FOR_SEND;
+    }
+    else
+    {
+      (tmp_action->action) = SEND;
+    }
+//end of added by Vladimir
+//    tmp_action->action = SEND;
+
+    *tid               = taskid + 1;
+    *th_id             = thid + 1;
+    return (tmp_action);
+  }
+  }  
+  { /* NX send (7 parameters) */
+  i = sscanf (BIGPOINTER,
+              "\"NX send\" { %d, %d, %d, %d, %d, %d, %d };;\n",
+              &taskid, &thid, &dest, &size, &tag, &communic_id, &rendez_vous );
+  if (i == 7)
+  {
+    /* Send trace */
+    (tmp_action->desc).send.dest        = dest + 1;
+    (tmp_action->desc).send.dest_thread = -1;    
+    (tmp_action->desc).send.mess_size   = size;
+    (tmp_action->desc).send.mess_tag    = tag;
+    (tmp_action->desc).send.communic_id = communic_id;
+     /* OJOJOJOJOJO */
+    (tmp_action->desc).send.immediate   = 1;
+    /* El bit mes baix del rendez_vous indica si el send es sincron o no. */
+    (tmp_action->desc).send.rendez_vous = 
+      USE_RENDEZ_VOUS((rendez_vous & ((int)1)),size);
+    /*
+    fprintf(
+      stderr,
+      "Un SEND 7 amb rendez_vous=%d\n",
+      (tmp_action->desc).send.rendez_vous
+    );
+    */
+    /* El segon bit mes baix del rendez_vous indica si es un immediate send o no */
+    if (rendez_vous & ((int)2))
+    {
+      (tmp_action->desc).send.immediate = TRUE;
+    }
+    else
+    {
+      (tmp_action->desc).send.immediate = FALSE;
+    }
+    
+//Vladimir added for processing MPI_Waits for MPI_Isends
+    if (rendez_vous == 6)
+    {
+      (tmp_action->action) = WAIT_FOR_SEND;
+    }
+    else
+    {
+      (tmp_action->action) = SEND;
+    }
+//end of added by Vladimir
+//    tmp_action->action = SEND;
+
     *tid               = taskid + 1;
     *th_id             = thid + 1;
     return (tmp_action);
@@ -340,6 +416,37 @@ next_one:
     return (tmp_action);
   }
   }
+  { /* NX recv (8 parameters) */
+  /* FEC: Ara hi pot haver un camp que indica el tipus de recv */
+  i = sscanf( BIGPOINTER,
+              "\"NX recv\" { %d, %d, %d, %d, %d, %d, %d, %d};;\n",
+              &taskid, &thid, &ori, &ori_threadid, &size, &tag, &communic_id, &recv_type );
+  
+  if (i == 8)
+  {
+    /* Send trace */
+    (tmp_action->desc).recv.ori = ori + 1;
+    (tmp_action->desc).recv.ori_thread = ori_threadid + 1;
+    (tmp_action->desc).recv.mess_size = size;
+    (tmp_action->desc).recv.mess_tag = tag;
+    (tmp_action->desc).recv.communic_id = communic_id;
+    if (recv_type==1)
+    {
+      tmp_action->action = IRECV;
+    }
+    else if (recv_type==2)
+    {
+      tmp_action->action = WAIT;
+    }
+    else
+    {
+      tmp_action->action = RECV;
+    }
+    *tid   = taskid + 1;
+    *th_id = thid + 1;
+    return (tmp_action);
+  }
+  }  
   { /* NX recv (7 parameters) */
   /* FEC: Ara hi pot haver un camp que indica el tipus de recv */
   i = sscanf( BIGPOINTER,
@@ -350,6 +457,7 @@ next_one:
   {
     /* Send trace */
     (tmp_action->desc).recv.ori = ori + 1;
+    (tmp_action->desc).recv.ori_thread = -1;
     (tmp_action->desc).recv.mess_size = size;
     (tmp_action->desc).recv.mess_tag = tag;
     (tmp_action->desc).recv.communic_id = communic_id;
@@ -451,6 +559,7 @@ next_one:
     return (tmp_action);
   }
   }
+  
   { /* global OP */
   i = sscanf ( BIGPOINTER,
                "\"global OP\" { %d, %d, %d, %d, %d, %d, %d, %d};;\n",
@@ -471,6 +580,7 @@ next_one:
     return (tmp_action);
   }
   }
+  
   { /* block definition */
   i = sscanf( BIGPOINTER,
               "\"block definition\" { %d, \"%[^\"]\", \"%[^\"]\", %d, %d};;\n",
@@ -480,16 +590,20 @@ next_one:
   fprintf(stdout, "Trying block definition\n");
   */
   if (i == 5)
-  {
+  { /* DEPRECATED
     bn = (char *)mallocame (strlen(block_name)+1);
     strcpy (bn, block_name);
     an = (char *)mallocame (strlen(activity_name)+1);
     strcpy (an, activity_name);
     module_name(Ptask, block_id, bn, an, src_file, src_line);
+    */
+    /* JGG (2012/01/12) New version */
+    
     goto next_one;
   }
   }
   { /* user event type definition */
+    /* DEPRECATED */
   i = sscanf( BIGPOINTER, 
               "\"user event type definition\" { %d, \"%[^\"]\", %d};;\n",
               &block_id,   /* user event type */
@@ -497,13 +611,14 @@ next_one:
               &src_line);  /* user event type flag color */
   if (i == 3)
   {
-    bn = (char *)mallocame (strlen(block_name)+1);
-    strcpy (bn, block_name);
-    user_event_type_name(Ptask, block_id, bn, src_line);
+    // bn = (char *)mallocame (strlen(block_name)+1);
+    // strcpy (bn, block_name);
+    // user_event_type_name(Ptask, block_id, bn, src_line);
     goto next_one;
   }
   }
   { /* user event value definition */
+    /* DEPRECATED */
   i = sscanf( BIGPOINTER, 
               "\"user event value definition\" { %d, %d, \"%[^\"]\"};;\n",
               &block_id,    /* user event type */
@@ -512,34 +627,36 @@ next_one:
 
   if (i == 3)
   {
-    bn = (char *)mallocame (strlen(block_name)+1);
-    strcpy (bn, block_name);
-    user_event_value_name(Ptask, block_id, src_line, bn);
+    // bn = (char *)mallocame (strlen(block_name)+1);
+    // strcpy (bn, block_name);
+    // user_event_value_name(Ptask, block_id, src_line, bn);
     goto next_one;
   }
   }
   { /* file definition */
+    /* DEPRECATED */
   i = sscanf ( BIGPOINTER,
                "\"file definition\" { %d, \"%[^\"]\"};;\n",
                &block_id, block_name );
   if (i == 2)
   {
-    bn = (char *)mallocame (strlen(block_name)+1);
-    strcpy (bn, block_name);
-    file_name(Ptask, block_id, bn);
+    // bn = (char *)mallocame (strlen(block_name)+1);
+    // strcpy (bn, block_name);
+    // file_name(Ptask, block_id, bn);
     goto next_one;
   }
   }  
   { /* global OP definition */
+    /* DEPRECATED */
   i = sscanf ( BIGPOINTER,
                "\"global OP definition\" { %d, \"%[^\"]\"};;\n",
                &block_id, block_name );
 
   if (i == 2)
   {
-    bn = (char *)mallocame (strlen(block_name)+1);
-    strcpy (bn, block_name);
-    new_global_op(block_id, bn);
+    // bn = (char *)mallocame (strlen(block_name)+1);
+    // strcpy (bn, block_name);
+    // new_global_op(block_id, bn);
     goto next_one;
   }
   }
@@ -580,12 +697,13 @@ next_one:
   }
   }
   { /* IO OP definition */
+    /* DEPRECATED */
   i = sscanf ( BIGPOINTER,
                "\"IO OP definition\" { %d, \"%[^\"]\"};;\n",
                &block_id, block_name );
   if (i == 2)
   {
-    new_io_operation (block_id, bn);
+    // new_io_operation (block_id, bn);
     goto next_one;
   }
   }
@@ -876,7 +994,6 @@ next_one:
     (tmp_action->desc).fs_op.which_fsop = UNLINK;
     strncpy ((tmp_action->desc).fs_op.fs_o.fs_unlink.filename, new, FILEMAX);
     (tmp_action->desc).fs_op.fs_o.fs_unlink.filename[FILEMAX] = (char) 0;
-    
     *tid   = taskid + 1;
     *th_id = thid + 1;
     return (tmp_action);
@@ -938,13 +1055,13 @@ it_is_ascii_file ()
  * @return TRUE value if current tracefile is compressed with GZIP
  */
 
-static int const gz_magic[2] = {0x1f, 0x8b}; /* Needed to detect GZIP files */
+static char const gz_magic[2] = {0x1f, 0x8b}; /* Needed to detect GZIP files */
 
 static t_boolean
 it_is_gzip_file()
 {
   t_boolean result = FALSE;
-  int       magic[2];
+  char      magic[2];
   
   scanf ("%c%c", &magic[0], &magic[1]);
   
@@ -971,7 +1088,12 @@ is_it_new_format()
 
   if((tracefile = fopen(((struct t_Ptask *) head_queue (&Ptask_queue))->tracefile, "r")) == NULL)
   {
-    panic ("Tracefile %s can't be opened\n", ((struct t_Ptask *) head_queue (&Ptask_queue))->tracefile);
+#ifdef ENABLE_LARGE_TRACES
+      panic ("\n\nTracefile %s can't be opened\n\n\n", ((struct t_Ptask *) head_queue (&Ptask_queue))->tracefile);
+#else
+      panic ("\n\nTracefile %s can't be opened - if the file is larger than 2GBs   =>   configure Dimemas with --enable-large-traces\n\n\n", ((struct t_Ptask *) head_queue (&Ptask_queue))->tracefile);
+#endif     
+
   }
 
   while(strlen(fgets(buffer, 32, tracefile)) == 1);
@@ -989,6 +1111,9 @@ is_it_new_format()
   fclose(tracefile);
   return new_format;
 }
+
+
+
 
 static void
 read_trace_file_for_Ptask (struct t_Ptask *Ptask, char *TraceFile)
@@ -1055,7 +1180,6 @@ Ptask_reload (
   
   struct t_task   *task;
   struct t_thread *thread;
-  struct t_action *new_action;
   
   int main_app_findex = -1;
   
@@ -1100,6 +1224,10 @@ Ptask_reload (
     }
 }
 
+int stop_restarts = 0;
+static int count_finished_apps = 0;
+static int orig_apps_count = 0;
+
 void
 reload_new_Ptask (struct t_Ptask *Ptask)
 {
@@ -1109,6 +1237,25 @@ reload_new_Ptask (struct t_Ptask *Ptask)
   struct t_task   *task;
   struct t_thread *thread;
   struct t_cpu    *cpu;
+  int count_finished_apps = 1;
+
+  if (orig_apps_count == 0) {
+     orig_apps_count = count_queue (&(Ptask_queue));
+     PRINT_TIMER(current_time);
+     printf(" DIMEMAS: # apps: %d\n", orig_apps_count);
+  }
+   
+  if (reload_while_longest_running && !stop_restarts) {
+     if (Ptask->n_rerun == 0) {
+       count_finished_apps++;
+       PRINT_TIMER(current_time);
+       printf(" DIMEMAS: # app %d finished; count_finished_apps=%d\n", Ptask->Ptaskid, count_finished_apps);
+     }
+     if (count_finished_apps >= orig_apps_count) {
+       printf("DIMEMAS: count_finished_apps=%d, orig_apps_count=%d - STOPPING RESTARTS\n", count_finished_apps, count_finished_apps);
+       stop_restarts = 1;
+     }
+  }
 
   for (P  = (struct t_Ptask *) head_queue (&Ptask_queue);
        P != P_NIL;
@@ -1128,7 +1275,7 @@ reload_new_Ptask (struct t_Ptask *Ptask)
     i++;
   }
   
-  if (i == count_queue (&(Ptask_queue)) - sin)
+  if ((i == count_queue (&(Ptask_queue)) - sin) || stop_restarts)
   {
     if (EQ_0_TIMER(final_statistical_time))
       ASS_ALL_TIMER (final_statistical_time, current_time);
@@ -1261,8 +1408,7 @@ print_statistics(
   fprintf (salida_datos,"\n");
 }
 
-static void
-show_individual_statistics (struct t_Ptask *Ptask)
+static void show_individual_statistics (struct t_Ptask *Ptask)
 {
 
   struct t_task  *task;
@@ -1499,8 +1645,7 @@ void calculate_execution_end_time()
   } \
 }
 
-static void
-show_individual_statistics_pallas (struct t_Ptask *Ptask)
+static void show_individual_statistics_pallas (struct t_Ptask *Ptask)
 {
   struct t_task  *task;
   struct t_thread *thread;
@@ -1568,18 +1713,20 @@ show_individual_statistics_pallas (struct t_Ptask *Ptask)
   /* We have (n_rerun + 1) iterations */
   acc_Ptask_rerun = (struct t_account **)malloc(sizeof(struct t_account *) * (Ptask->n_rerun + 1));
   for(i = 0; i <= Ptask->n_rerun; i++)
-        acc_Ptask_rerun[i] = new_accounter();
+  {
+    acc_Ptask_rerun[i] = new_accounter();
+  }
 
   /* Calcul Estadistiques per iteracio i totals */
   int n_rerun;
-  for (task  = (struct t_task *) head_queue (&(Ptask->tasks));
+  for(task  = (struct t_task *) head_queue (&(Ptask->tasks));
       task != T_NIL;
       task  = (struct t_task *) next_queue (&(Ptask->tasks)))
   {
     thread = (struct t_thread *) head_queue (&(task->threads));
  
     n_rerun = 0;
-    for (account  = (struct t_account*)head_queue (&(thread->account));
+    for(account  = (struct t_account*)head_queue (&(thread->account));
         account != ACC_NIL;
         account  = (struct t_account*)next_queue(&(thread->account)))
     {
@@ -1608,9 +1755,8 @@ show_individual_statistics_pallas (struct t_Ptask *Ptask)
       fprintf (salida_datos,"CPU Time Iteration %d:\t\t", n_rerun);
       FPRINT_TIMER (salida_datos, acc_Ptask_rerun[n_rerun]->cpu_time);
       fprintf (salida_datos,"\n\n");
-     }
+    }
   }
-
 
   /* Estadistiques totals */
   fprintf(salida_datos, "\n**** Total Statistics ****\n\n");
@@ -1635,9 +1781,14 @@ show_individual_statistics_pallas (struct t_Ptask *Ptask)
     thread = (struct t_thread *) head_queue (&(task->threads));
     account = current_account (thread);
     node = get_node_of_thread (thread);
-    fprintf (salida_datos, "%3d\t",task->taskid);
+    fprintf (salida_datos, "%3d\t", task->taskid);
+
+    /* Computation time */
     FPRINT_TIMER (salida_datos, account->cpu_time);
+
     TIMER_TO_FLOAT(account->cpu_time, x);
+
+    /* Communications time */
     TIMER_TO_FLOAT(account->latency_time, y);
     TIMER_TO_FLOAT(account->time_waiting_for_message,z);
     y = y+z;
@@ -1646,6 +1797,7 @@ show_individual_statistics_pallas (struct t_Ptask *Ptask)
     TIMER_TO_FLOAT(account->group_operations_time, z);
     y = y+z;
     FLOAT_TO_TIMER(y, comm_time);
+    
     fprintf (salida_datos, "\t%03.2f\t", (float)x*100/(x+y));
     FPRINT_TIMER (salida_datos, comm_time);
     fprintf (salida_datos,"\n");
@@ -1744,8 +1896,7 @@ show_individual_statistics_pallas (struct t_Ptask *Ptask)
 
 }
 
-void
-show_statistics (int pallas_output)
+void show_statistics (int pallas_output)
 {
  struct t_Ptask *Ptask;
  t_micro         total_time;
@@ -1788,7 +1939,7 @@ load_configuration_file (char *filename)
   Registers = &Register_queue;
   create_queue (Registers);
   
-  if (yyparse ())
+  if (yyparse())
   {
     panic ("Error parsing configuration file %s\n", filename);
   }
@@ -1819,8 +1970,7 @@ Read_Ptasks()
   }
 }
 
-void
-add_global_ops(void)
+void add_global_ops(void)
 {
   int i;
   
@@ -1840,7 +1990,6 @@ Ptasks_init()
   
   struct t_task   *task;
   struct t_thread *thread;
-  struct t_action *new_action;
   
   /* Add predefined global ops identificators */
   add_global_ops();
@@ -1889,6 +2038,20 @@ Ptasks_init()
         get_next_action(thread);
       }
     }
+    
+/*  THIS IS A VERY UGLY FIX:
+ *  The problem is that for putting multiple threads per task
+ *  I need to go through file_data_access module (deep nesting of functions)
+ *  and there I must iterate through Ptask_queue again
+ *  so here I make sure that PTask queue is what it should be   */    
+    struct t_Ptask *Ptask_fix;
+    for  (Ptask_fix  = (struct t_Ptask *) head_queue (&Ptask_queue);
+          Ptask_fix != P_NIL;
+          Ptask_fix  = (struct t_Ptask *) next_queue (&Ptask_queue))
+    {    
+       if (Ptask_fix == Ptask)
+          break;
+    }
   }
 }
 
@@ -1916,8 +2079,7 @@ void MAIN_TEST_print_communicator(struct t_communicator* comm)
   printf("\n");
 }
 
-void
-get_next_action(struct t_thread *thread)
+void get_next_action(struct t_thread *thread)
 {
   int Ptask_id, task_id, thread_id;
   struct t_action *new_action, *new_action_aux;
@@ -1936,7 +2098,7 @@ get_next_action(struct t_thread *thread)
   
   if (new_action == AC_NIL)
   {
-    /* DEBUG 
+    /* DEBUG
     fprintf(stdout,"NULL ACTION\n"); */
     thread->action = AC_NIL;
     return;
@@ -1945,12 +2107,27 @@ get_next_action(struct t_thread *thread)
   if (new_action->action == WORK)
   {
     new_action->desc.compute.cpu_time *= 1e6;
+
+    //Vladimir added to multiply with the relative cpu speed
+
+    struct t_node *node;
+    node = get_node_of_thread(thread);
+    if (node->relative <= 0)
+    {
+      new_action->desc.compute.cpu_time = 0;
+    }
+    else
+    {
+      new_action->desc.compute.cpu_time /= node->relative;
+    }
+    
     
     if (PREEMP_enabled)
     {
       new_action->desc.compute.cpu_time += PREEMP_overhead(thread->task);
     }
-    
+
+    /* DEBUG
     struct t_module* mod;
     t_priority identificator = 0;
 
@@ -1966,9 +2143,11 @@ get_next_action(struct t_thread *thread)
       mod->activity_name = (char*)0;
       mod->src_file      = -1;
       mod->src_line      = -1;
+      
       insert_queue (&Ptask_current->Modules, (char *)mod, (t_priority) identificator);
     }
-    inLIFO_queue (&(thread->modules), (char *)mod);
+    // inLIFO_queue (&(thread->modules), (char *)mod);
+    */
 
     recompute_work_upon_modules(thread, new_action);
   }
@@ -1983,7 +2162,9 @@ get_next_action(struct t_thread *thread)
   }
   
   while (new_action->next != AC_NIL)
+  {
     new_action = new_action->next;
+  }
   
   if ((new_action->action == MPI_IO))
   {
@@ -2006,9 +2187,9 @@ get_next_action(struct t_thread *thread)
 
 
 /* Function to mask if we read old or new traces */
-void 
-get_next_action_wrapper(struct t_thread *th)
+void get_next_action_wrapper(struct t_thread *th)
 {
+  // printf("start get_next_action_wrapper\n");
   if(new_trace_format)
   {
     get_next_action(th);
@@ -2018,3 +2199,4 @@ get_next_action_wrapper(struct t_thread *th)
     sddf_seek_next_action_to_thread (th);
   }
 }
+

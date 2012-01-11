@@ -31,6 +31,7 @@
   $Date::                 $:  Date of last commit
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+#include <assert.h>
 
 /* Includes 'por defecto' */
 #include "define.h"
@@ -290,6 +291,8 @@ svr4_info(int info, struct t_thread *thread_s, struct t_thread *thread_r)
   tsproc_t *sch_par;
   struct t_node *node;
   struct t_cpu *cpu;
+  
+  assert(thread_s != NULL);
 
   if (info==SCH_INFO_RECV_MISS)
   {
