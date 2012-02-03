@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Dimemas" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="compile">
+				<Option output="bin/Release/Dimemas" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option host_application="-p TEST_NEW_IO.prv /home/jgonzale/Tests/DIMEMAS_HOPSA_TESTS/REGULAR/BT.4/MN.64.1ppn.DIM.NEW.cfg" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+				<MakeCommands>
+					<Build command="$make -f $makefile" />
+					<CompileFile command="$make -f $makefile $file" />
+					<Clean command="$make -f $makefile clean" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="$make -q -f $makefile" />
+					<SilentBuild command="$make -s -f $makefile" />
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="DimemasGUI/Main.java" />
+		<Unit filename="DimemasGUI/data/BlockData.java" />
+		<Unit filename="DimemasGUI/data/ConfigurationData.java" />
+		<Unit filename="DimemasGUI/data/Data.java" />
+		<Unit filename="DimemasGUI/data/DedicatedConnectionData.java" />
+		<Unit filename="DimemasGUI/data/EnvironmentData.java" />
+		<Unit filename="DimemasGUI/data/FileSystemData.java" />
+		<Unit filename="DimemasGUI/data/MachineDataBase.java" />
+		<Unit filename="DimemasGUI/data/MappingData.java" />
+		<Unit filename="DimemasGUI/data/NetworkDataBase.java" />
+		<Unit filename="DimemasGUI/data/Node.java" />
+		<Unit filename="DimemasGUI/data/NodeData.java" />
+		<Unit filename="DimemasGUI/data/SimulatorCallData.java" />
+		<Unit filename="DimemasGUI/data/WideAreaNetworkData.java" />
+		<Unit filename="DimemasGUI/gui/AboutWindow.java" />
+		<Unit filename="DimemasGUI/gui/BlockFactorsWindow.java" />
+		<Unit filename="DimemasGUI/gui/CollectiveOpWindow.java" />
+		<Unit filename="DimemasGUI/gui/CommunicationWindow.java" />
+		<Unit filename="DimemasGUI/gui/ConfigurationFilesWindow.java" />
+		<Unit filename="DimemasGUI/gui/ConfigurationOptionsWindow.java" />
+		<Unit filename="DimemasGUI/gui/DedicatedConnectionWindow.java" />
+		<Unit filename="DimemasGUI/gui/EnvironmentWindow.java" />
+		<Unit filename="DimemasGUI/gui/FileSystemWindow.java" />
+		<Unit filename="DimemasGUI/gui/FlightTimeWindow.java" />
+		<Unit filename="DimemasGUI/gui/GUIWindow.java" />
+		<Unit filename="DimemasGUI/gui/InitialMachineWindow.java" />
+		<Unit filename="DimemasGUI/gui/MachineDBAddWindow.java" />
+		<Unit filename="DimemasGUI/gui/MachineDBWindow.java" />
+		<Unit filename="DimemasGUI/gui/MappingWindow.java" />
+		<Unit filename="DimemasGUI/gui/NetworkDBAddWindow.java" />
+		<Unit filename="DimemasGUI/gui/NetworkDBWindow.java" />
+		<Unit filename="DimemasGUI/gui/NodeWindow.java" />
+		<Unit filename="DimemasGUI/gui/OptionsMenu.java" />
+		<Unit filename="DimemasGUI/gui/ResultsWindow.java" />
+		<Unit filename="DimemasGUI/gui/SimulatorCallWindow.java" />
+		<Unit filename="DimemasGUI/gui/WideAreaNetworkWindow.java" />
+		<Unit filename="DimemasGUI/tools/Tools.java" />
+		<Unit filename="include/Macros.h" />
+		<Unit filename="include/data_types.h" />
+		<Unit filename="include/define.h" />
+		<Unit filename="include/dimemas_defs.h" />
+		<Unit filename="include/extern.h" />
+		<Unit filename="include/macosx_limits.h" />
+		<Unit filename="include/pcf_defines.h" />
+		<Unit filename="include/types.h" />
+		<Unit filename="src/Dimemas_updateCFGs.cpp" />
+		<Unit filename="src/input/check.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/input/check.h" />
+		<Unit filename="src/input/comm_configuration.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/input/comm_configuration.h" />
+		<Unit filename="src/input/configuration.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/input/configuration.h" />
+		<Unit filename="src/input/file_data_access.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/input/file_data_access.h" />
+		<Unit filename="src/input/lex.l" />
+		<Unit filename="src/input/read.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/input/read.h" />
+		<Unit filename="src/input/sddf_records.h" />
+		<Unit filename="src/input/ts.h" />
+		<Unit filename="src/input/yacc.y" />
+		<Unit filename="src/io/dimemas_io.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/io/dimemas_io.h" />
+		<Unit filename="src/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/main.h" />
+		<Unit filename="src/model/communic.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/communic.h" />
+		<Unit filename="src/model/cpu.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/cpu.h" />
+		<Unit filename="src/model/fs.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/fs.h" />
+		<Unit filename="src/model/links.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/links.h" />
+		<Unit filename="src/model/machine.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/machine.h" />
+		<Unit filename="src/model/memory.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/memory.h" />
+		<Unit filename="src/model/node.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/node.h" />
+		<Unit filename="src/model/ports.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/ports.h" />
+		<Unit filename="src/model/semaphore.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/semaphore.h" />
+		<Unit filename="src/model/simulator.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/simulator.h" />
+		<Unit filename="src/model/task.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/task.h" />
+		<Unit filename="src/model/thread_states.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/model/thread_states.h" />
+		<Unit filename="src/prv_utils/external_sort.cc" />
+		<Unit filename="src/prv_utils/external_sort.h" />
+		<Unit filename="src/prv_utils/paraver.cc" />
+		<Unit filename="src/prv_utils/paraver.h" />
+		<Unit filename="src/prv_utils/paraver_pcf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/prv_utils/paraver_pcf.h" />
+		<Unit filename="src/prv_utils/paraver_records.cc" />
+		<Unit filename="src/prv_utils/paraver_records.h" />
+		<Unit filename="src/sched/SCH_boost.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/SCH_boost.h" />
+		<Unit filename="src/sched/SCH_fifo.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/SCH_fifo.h" />
+		<Unit filename="src/sched/SCH_prio_fifo.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/SCH_prio_fifo.h" />
+		<Unit filename="src/sched/SCH_rr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/SCH_rr.h" />
+		<Unit filename="src/sched/SCH_ss_mpi_cp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/SCH_ss_mpi_cp.h" />
+		<Unit filename="src/sched/SCH_svr4.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/SCH_svr4.h" />
+		<Unit filename="src/sched/events.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/events.h" />
+		<Unit filename="src/sched/sched_vars.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/sched_vars.h" />
+		<Unit filename="src/sched/schedule.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/sched/schedule.h" />
+		<Unit filename="src/utils/aleatorias.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/utils/aleatorias.h" />
+		<Unit filename="src/utils/cp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/utils/cp.h" />
+		<Unit filename="src/utils/list.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/utils/list.h" />
+		<Unit filename="src/utils/listE.cc" />
+		<Unit filename="src/utils/listE.h" />
+		<Unit filename="src/utils/mallocame.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/utils/mallocame.h" />
+		<Unit filename="src/utils/modules_map.cc" />
+		<Unit filename="src/utils/modules_map.h" />
+		<Unit filename="src/utils/random.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/utils/random.h" />
+		<Unit filename="src/utils/subr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/utils/subr.h" />
+		<Unit filename="src/venusclient/ClientSocket.cc" />
+		<Unit filename="src/venusclient/ClientSocket.h" />
+		<Unit filename="src/venusclient/ServerSocket.cc" />
+		<Unit filename="src/venusclient/ServerSocket.h" />
+		<Unit filename="src/venusclient/Socket.cc" />
+		<Unit filename="src/venusclient/Socket.h" />
+		<Unit filename="src/venusclient/SocketException.h" />
+		<Unit filename="src/venusclient/venusclient.cc" />
+		<Unit filename="src/venusclient/venusclient.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<lib_finder disable_auto="1" />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
