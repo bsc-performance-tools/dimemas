@@ -60,6 +60,10 @@ Date - user
 				  'rt' library)
 				- Multi-machine environment and multi-application environment
 				(no traces available)
+				- New modules management version on DimemasGUI not updated
+	
+	FEATURES: 	Added a simple binary called 'DimemasUpdateCFG' to CFGs with old 
+				modules definition to new version.
 
 2012/01/11 - jgonzale
 	CHANGES:	First commit with the merge of the Vladimir+German+Official
