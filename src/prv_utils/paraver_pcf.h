@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -32,9 +32,11 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef PARAVER_PCF
-#define PARAVER_PCF
+#ifndef _PARAVER_PCF_H_
+#define _PARAVER_PCF_H_
 
-int MakeParaverPCF(const char *nom, const char *pcf_include);
+#include <types.h>
+
+extern t_boolean MakeParaverPCF(const char *nom, const char *pcf_include);
 
 #endif

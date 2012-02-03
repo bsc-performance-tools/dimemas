@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -51,39 +51,14 @@
 
 struct t_randomness randomness;
 
-static char dist[BUFSIZE]; /* Abans era: 256 */
-double p1, p2;
-
-static void
-distribution_name (char *d , float p1, float p2,  struct t_rand_type *rt)
-{
-  if (strcmp(d, "NONE")==0)
-  {
-    rt->distribution = NO_DISTRIBUTION;
-    return;
-  }
-  if (strcmp(d, "NORMAL")==0)
-  {
-    rt->distribution = NORMAL_DISTRIBUTION;
-    rt->parameters.normal.mean = p1;
-    rt->parameters.normal.stdev = p2;
-    return;
-  }
-  if (strcmp(d, "UNIFORM")==0)
-  {
-    rt->distribution = UNIFORM_DISTRIBUTION;
-    rt->parameters.uniform.left = p1;
-    rt->parameters.uniform.right = p2;
-    return;
-  }
-  panic ("Incorrect distribution name %s in random file\n", d);
-}
-
-void
-RANDOM_init (char *fichero_random)
+void RANDOM_Init ()
 {
   FILE *fi;
   int j;
+
+  /* srandomine (time (0), time (0) + time (0)); */
+  srandomine (16994, 18996);
+  srandomine (time (0), time (0) + time (0));
 
   /* Initialize randomness to have proper default values */
   randomness.processor_ratio.distribution            = NO_DISTRIBUTION;
@@ -93,88 +68,57 @@ RANDOM_init (char *fichero_random)
   randomness.memory_latency.distribution             = NO_DISTRIBUTION;
   randomness.external_network_bandwidth.distribution = NO_DISTRIBUTION;
   randomness.external_network_latency.distribution   = NO_DISTRIBUTION;
-  
-  if ((fichero_random == (char *) 0) || (strcmp(fichero_random,"") == 0))
-  {
-    if (debug)
-    {
-      printf ("* Random initial routine called. Using default values\n");
-    }
-  }
 
-  if ((fichero_random != (char *) 0) && (strcmp(fichero_random,"")!=0))
-  {
-    if (debug)
-    {
-       PRINT_TIMER (current_time);
-       printf (": RANDOM initial routine called with file %s\n",fichero_random);
-    }
+  CONFIGURATION_Load_Random_Configuration();
 
-    fi = MYFOPEN(fichero_random, "r");
-    if (fi==(FILE *)0)
-      panic ("Can't open random configuration file %s\n", fichero_random);
-  
-    j = fscanf (fi, "Processor: %s %le %le\n", dist, &p1, &p2);
-    if (j!=3)
-      panic ("Invalid format in random configuration file %s (processor)\n", 
-             fichero_random);
-    distribution_name(dist, p1, p2, &randomness.processor_ratio);
-
-    j = fscanf (fi, "Network bandwidth: %s %le %le\n", dist, &p1, &p2);
-    if (j!=3)
-      panic ("Invalid format in random configuration file %s (network bandwidth)\n", 
-             fichero_random);
-    distribution_name(dist, p1, p2, &randomness.network_bandwidth);
-
-    j = fscanf (fi, "Network latency: %s %le %le\n", dist, &p1, &p2);
-    if (j!=3)
-      panic ("Invalid format in random configuration file %s (network latency)\n", 
-             fichero_random);
-    distribution_name(dist, p1, p2, &randomness.network_latency);
-
-    j = fscanf (fi, "Memory bandwidth: %s %le %le\n", dist, &p1, &p2);
-    if (j!=3)
-      panic ("Invalid format in random configuration file %s (memory bandwidth)\n", 
-             fichero_random);
-    distribution_name(dist, p1, p2, &randomness.memory_bandwidth);
-
-    j = fscanf (fi, "Memory latency: %s %le %le\n", dist, &p1, &p2);
-    if (j!=3)
-      panic ("Invalid format in random configuration file %s (memory latency)\n", 
-             fichero_random);
-    distribution_name(dist, p1, p2, &randomness.memory_latency);
-
-    j = fscanf (fi, "External Network bandwidth: %s %le %le\n", dist, &p1, &p2);
-    if (j!=3)
-      panic ("Invalid format in random configuration file %s (external network bandwidth)\n",
-             fichero_random);
-    distribution_name(dist, p1, p2, &randomness.external_network_bandwidth);
-
-    j = fscanf (fi, "External Network latency: %s %le %le\n", dist, &p1, &p2);
-    if (j!=3)
-      panic ("Invalid format in random configuration file %s (external network latency)\n",
-             fichero_random);
-    distribution_name(dist, p1, p2, &randomness.external_network_latency);
-  }
   return;
 }
 
-double 
-random_dist(struct t_rand_type *rt)
+t_boolean RANDOM_Init_Distribution (char               *dist_name,
+                                    float               param1,
+                                    float               param2,
+                                    struct t_rand_type *rt)
 {
-  double t;
+  if (strcmp(dist_name, "NONE") == 0)
+  {
+    rt->distribution = NO_DISTRIBUTION;
+    return TRUE;
+  }
+
+  if (strcmp(dist_name, "NORMAL") == 0)
+  {
+    rt->distribution            = NORMAL_DISTRIBUTION;
+    rt->parameters.normal.mean  = param1;
+    rt->parameters.normal.stdev = param2;
+    return TRUE;
+  }
+
+  if (strcmp(dist_name, "UNIFORM") == 0)
+  {
+    rt->distribution             = UNIFORM_DISTRIBUTION;
+    rt->parameters.uniform.left  = param1;
+    rt->parameters.uniform.right = param2;
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+double RANDOM_GenerateRandom(struct t_rand_type *rt)
+{
+  double result;
   switch (rt->distribution)
   {
     case NORMAL_DISTRIBUTION:
-      t =  ((double)rnorm((float)rt->parameters.normal.mean,
-                             (float)-MAXINT,
-                             (float)MAXINT,
-                             (float)rt->parameters.normal.stdev));
-      return (t);
+      result =  ((double)rnorm((float) rt->parameters.normal.mean,
+                               (float) -MAXINT,
+                               (float)  MAXINT,
+                               (float) rt->parameters.normal.stdev));
+      return result;
     case UNIFORM_DISTRIBUTION:
       return ((double)unform((float)rt->parameters.uniform.left,
                              (float)rt->parameters.uniform.right));
     default:
-      return ((double)0);
+      return (double) 0;
   }
 }

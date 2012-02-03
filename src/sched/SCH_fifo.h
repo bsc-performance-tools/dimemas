@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -39,7 +39,7 @@
  * External routines defined in file SCH_fifo.c
  **/
 extern void FIFO_thread_to_ready(struct t_thread *thread);
-extern t_micro FIFO_get_execution_time(struct t_thread *thread);
+extern t_nano FIFO_get_execution_time(struct t_thread *thread);
 extern struct t_thread *FIFO_next_thread_to_run(struct t_node *node);
 extern void FIFO_init_scheduler_parameters(struct t_thread *thread);
 extern void FIFO_clear_parameters(struct t_thread *thread);

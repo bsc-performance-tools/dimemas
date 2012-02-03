@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -33,10 +33,13 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef __sched_vars_h
-
 #define __sched_vars_h
+
 #define COMMUNIC_FIFO  0
 #define COMMUNIC_RR    1
 #define COMMUNIC_BOOST 2
+
+extern struct t_scheduler_actions SCH[];
+extern struct t_communic_actions  COMMUNIC[];
 
 #endif

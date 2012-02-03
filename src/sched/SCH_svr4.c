@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -119,6 +119,9 @@ static svr4_t sch_svr4_params[MAX_MACHINES];
 
 #define SCH_SVR4_PARAMS sch_svr4_params[machine->id-1]
 
+#include "simulator.h"
+#include "machine.h"
+#include "node.h"
 
 void
 svr4_thread_to_ready(struct t_thread *thread)
@@ -129,8 +132,8 @@ svr4_thread_to_ready(struct t_thread *thread)
   int               priority;
   struct t_cpu     *cpu, *cpu_to_preempt;
   struct t_machine *machine;
-  
-  
+
+
   sch_par = (tsproc_t *)thread->sch_parameters;
   node    = get_node_of_thread (thread);
   cpu     = get_cpu_of_thread(thread);
@@ -143,8 +146,8 @@ svr4_thread_to_ready(struct t_thread *thread)
     if (sch_par->ts_umdpri!=config_ts_dptbl[sch_par->ts_umdpri].ts_tqexp)
     {
       sch_par->ts_umdpri=config_ts_dptbl[sch_par->ts_umdpri].ts_tqexp;
-      
-      Paraver_event (
+
+      PARAVER_Event (
         cpu->unique_number,
         IDENTIFIERS (thread),
         current_time,
@@ -154,14 +157,14 @@ svr4_thread_to_ready(struct t_thread *thread)
     }
     sch_par->full_quantum=FALSE;
   }
-  
+
   if (machine->scheduler.priority_preemptive)
   {
     if (select_free_cpu (node, thread) == C_NIL)
     {
       priority       = sch_par->ts_umdpri;
       cpu_to_preempt = C_NIL;
-      
+
       for (
         cpu  = (struct t_cpu *)head_queue (&(node->Cpus));
         cpu != C_NIL;
@@ -176,17 +179,17 @@ svr4_thread_to_ready(struct t_thread *thread)
           cpu_to_preempt = cpu;
         }
       }
-      
+
       if (cpu_to_preempt != C_NIL)
       {
         thread = SCHEDULER_preemption (thread, cpu_to_preempt);
       }
-      
+
       if (thread == TH_NIL)
       {
         return;
       }
-      
+
       sch_par = (tsproc_t *) thread->sch_parameters;
     }
   }
@@ -204,11 +207,11 @@ svr4_thread_to_ready(struct t_thread *thread)
   }
 }
 
-t_micro
+t_nano
 svr4_get_execution_time(struct t_thread *thread)
 {
   struct t_action *action;
-  t_micro         ex_time;
+  t_nano         ex_time;
   tsproc_t *sch_par;
   struct t_node *node = get_node_of_thread (thread);
   struct t_machine *machine;
@@ -216,9 +219,9 @@ svr4_get_execution_time(struct t_thread *thread)
   machine = node->machine;
 
   sch_par = (tsproc_t *)thread->sch_parameters;
-     
+
   action = thread->action;
-  
+
   if ((sch_par->last_quantum<
        config_ts_dptbl[sch_par->ts_umdpri].ts_quantum*
        SCH_SVR4_PARAMS.quantum_factor/100.0)
@@ -235,7 +238,7 @@ svr4_get_execution_time(struct t_thread *thread)
 		   config_ts_dptbl[sch_par->ts_umdpri].ts_quantum*SCH_SVR4_PARAMS.quantum_factor/100.0);
     sch_par->last_quantum = ex_time;
   }
-    
+
   if (sch_par->last_quantum == config_ts_dptbl[sch_par->ts_umdpri].ts_quantum*SCH_SVR4_PARAMS.quantum_factor/100.0)
     sch_par->full_quantum = TRUE;
 
@@ -243,7 +246,7 @@ svr4_get_execution_time(struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    freeame ((char *) action, sizeof (struct t_action));
+    MALLOC_free_memory ((char *) action, sizeof (struct t_action));
   }
   return (ex_time);
 }
@@ -261,16 +264,16 @@ svr4_init_scheduler_parameters(struct t_thread *thread)
   struct t_node *node = get_node_of_thread (thread);
   struct t_cpu *cpu;
 
-  sch_par = (tsproc_t *) mallocame (sizeof(tsproc_t));
+  sch_par = (tsproc_t *) MALLOC_get_memory (sizeof(tsproc_t));
   sch_par->ts_umdpri = BEST_PRIO;
   sch_par->ts_timeleft = 0;
   sch_par->ts_dispwait = 0;
   sch_par->full_quantum = FALSE;
   sch_par->last_quantum = 0;
   thread->sch_parameters = (char *)sch_par;
-  
+
   cpu = get_cpu_of_thread(thread);
-  Paraver_event (cpu->unique_number, IDENTIFIERS (thread),
+  PARAVER_Event (cpu->unique_number, IDENTIFIERS (thread),
                  current_time, 120, sch_par->ts_umdpri);
 }
 
@@ -291,7 +294,7 @@ svr4_info(int info, struct t_thread *thread_s, struct t_thread *thread_r)
   tsproc_t *sch_par;
   struct t_node *node;
   struct t_cpu *cpu;
-  
+
   assert(thread_s != NULL);
 
   if (info==SCH_INFO_RECV_MISS)
@@ -302,7 +305,7 @@ svr4_info(int info, struct t_thread *thread_s, struct t_thread *thread_r)
     {
       sch_par->ts_umdpri = config_ts_dptbl[sch_par->ts_umdpri].ts_slpret;
       cpu = get_cpu_of_thread(thread_r);
-      Paraver_event (cpu->unique_number, IDENTIFIERS (thread_r),
+      PARAVER_Event (cpu->unique_number, IDENTIFIERS (thread_r),
 		     current_time, 120, sch_par->ts_umdpri);
    }
   }
@@ -323,12 +326,12 @@ svr4_init(char *filename, struct t_machine *machine)
 
   if (filename==(char *)0)
     return;
-  
+
   if (strcmp(filename,"")==0)
     return;
-  
 
-  fp = MYFOPEN (filename,"r");
+
+  fp = IO_fopen (filename,"r");
   if (fp==(FILE *)0)
   {
     if (filename!=(char *)0)
@@ -341,23 +344,23 @@ svr4_init(char *filename, struct t_machine *machine)
   if (j!=1)
     panic ("Invalid format in file %s.\nInvalid policy name %s\n",
 	   filename, buf);
-  
+
   fgets (str, 256, fp);
-  j = sscanf (str, "Context switch cost (seconds): %le", 
+  j = sscanf (str, "Context switch cost (seconds): %le",
 	      &SCH_SVR4_PARAMS.context_switch);
   if ((j!=1) || (SCH_SVR4_PARAMS.context_switch<0))
     panic ("Invalid format in file %s.\nInvalid context switch cost %f\n",
 	   filename, SCH_SVR4_PARAMS.context_switch);
-  machine->scheduler.context_switch = SCH_SVR4_PARAMS.context_switch*1e6;
-  
+  machine->scheduler.context_switch = SCH_SVR4_PARAMS.context_switch*1e9;
+
   fgets (str, 256, fp);
   j = sscanf (str, "Busy wait (seconds):  %le",
 	      &SCH_SVR4_PARAMS.busy_wait);
   if ((j!=1) || (SCH_SVR4_PARAMS.busy_wait<0))
     panic ("Invalid format in file %s.\nInvalid busy wait %f\n",
 	   filename, SCH_SVR4_PARAMS.busy_wait);
-  machine->scheduler.busywait_before_block = SCH_SVR4_PARAMS.busy_wait*1e6;
-  
+  machine->scheduler.busywait_before_block = SCH_SVR4_PARAMS.busy_wait*1e9;
+
   fgets (str, 256, fp);
   j = sscanf (str, "Priority Preemptive (YES/NO): %s", buf);
   if ((j!=1) || ((strcmp (buf,"YES")!=0) && (strcmp(buf,"NO")!=0)))
@@ -367,7 +370,7 @@ svr4_init(char *filename, struct t_machine *machine)
     SCH_SVR4_PARAMS.priority_preemptive = TRUE;
   else
     SCH_SVR4_PARAMS.priority_preemptive = FALSE;
-  machine->scheduler.priority_preemptive = 
+  machine->scheduler.priority_preemptive =
     SCH_SVR4_PARAMS.priority_preemptive;
   fgets (str, 256, fp);
   j = sscanf (str, "Minimum time preemption (seconds): %le",
@@ -384,23 +387,23 @@ svr4_init(char *filename, struct t_machine *machine)
     panic ("Invalid format in file %s.\nInvalid quantum factor %f\n",
 	   filename, j, SCH_SVR4_PARAMS.quantum_factor);
   }
-  fclose (fp);
-  
+  IO_fclose (fp);
+
   if (debug)
   {
     PRINT_TIMER (current_time);
     printf (": SVR4 scheduler parameters\n");
     printf ("\t  Context switch cost %f\n",
 	    SCH_SVR4_PARAMS.context_switch);
-    printf ("\t  Busy wait %f\n", 
+    printf ("\t  Busy wait %f\n",
 	    SCH_SVR4_PARAMS.busy_wait);
     printf ("\t  Priority preemptive %s\n",
 	    SCH_SVR4_PARAMS.priority_preemptive?"YES":"NO");
-    printf ("\t  Minimum time preemttion %f\n", 
+    printf ("\t  Minimum time preemttion %f\n",
 	    SCH_SVR4_PARAMS.minimum_time_preemption);
-    printf ("\t  Qauntum factor %f\n", 
+    printf ("\t  Qauntum factor %f\n",
 	    SCH_SVR4_PARAMS.quantum_factor);
-    
+
   }
 }
 
@@ -423,5 +426,5 @@ svr4_free_parameters (struct t_thread *thread)
   tsproc_t *sch_par;
 
   sch_par = (tsproc_t *)thread->sch_parameters;
-  freeame ((char *)sch_par, sizeof(tsproc_t));
+  MALLOC_free_memory ((char *)sch_par, sizeof(tsproc_t));
 }

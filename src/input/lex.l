@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -119,7 +119,7 @@ real				{decimal}\.({decimal})?
 
 %%
 
-YYSTYPE 
+YYSTYPE
 deci(v)
 char *v;
 {
@@ -136,7 +136,7 @@ char *v;
   return ((YYSTYPE)j*negative);
 }
 
-YYSTYPE 
+YYSTYPE
 rela()
 {
   char *v;
@@ -144,7 +144,7 @@ rela()
   double k,l;
   double *r;
 
-  r = (double *)mallocame (sizeof (double));
+  r = (double *)MALLOC_get_memory (sizeof (double));
   v = (char *)yytext;
   j = 0;
   for (i=0;i<yyleng && v[i]!='.'; j=j*10+v[i++]-'0');
@@ -169,27 +169,26 @@ insert_string()
   char *new;
 
   i=yyleng-1;
-  new = (char *)mallocame (i);
+  new = (char *)MALLOC_get_memory (i);
   strncpy (new, &yytext[1],i);
   new[i-1] = (char)0;
 
   for (new_str = first_str; new_str!=(struct Str *)0; new_str=new_str->next_str)
     if (strcmp(new_str->str, new)==0)
   {
-      freeame (new,i);
+      MALLOC_free_memory (new,i);
       return ((YYSTYPE)(new_str->str));
   }
 
-  new_str = (struct Str *)mallocame(sizeof(struct Str));
-  new_str->str = (char *)mallocame (strlen(new)+1);
-  strcpy (new_str->str, new);
+  new_str      = (struct Str*) MALLOC_get_memory(sizeof(struct Str));
+  new_str->str = strdup(new);
   new_str->next_str = first_str;
   first_str = new_str;
-  freeame (new,i);
+  MALLOC_free_memory (new,i);
   return ((YYSTYPE)(new_str->str));
 }
 
-YYSTYPE 
+YYSTYPE
 NUMtype ()
 {
   if (yytext[0]=='i') return ((YYSTYPE)0);

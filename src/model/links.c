@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -35,12 +35,14 @@
 #include "define.h"
 #include "types.h"
 
+#include "machine.h"
+#include "node.h"
+
 #include "sched_vars.h"
 #include "communic.h"
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
 #include "ports.h"
@@ -111,40 +113,34 @@ void link_busy_prioritat(struct t_thread *thread, struct t_node *node,
    cpu = get_cpu_of_thread(thread);
    switch (machine->communication.policy)
    {
-      case COMMUNIC_FIFO:
-      case COMMUNIC_RR:
-      case COMMUNIC_BOOST:
-           if (in_out==OUT_LINK)
-           {
-               if (prioritari)
-                 inLIFO_queue (&(node->th_for_out), (char *) thread);
-               else
-                 inFIFO_queue (&(node->th_for_out), (char *) thread);
-#ifdef PARAVER_ALL
-               Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time,
-                              69, count_queue (&node->th_for_out));
-#endif
-           }
-           else
-           {
-               if (prioritari)
-                 inLIFO_queue (&(node->th_for_in), (char *) thread);
-               else
-                 inFIFO_queue (&(node->th_for_in), (char *) thread);
-#ifdef PARAVER_ALL
-               Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time,
-                              68, count_queue (&node->th_for_in));
-#endif
-           }
-           break;
-      default:
-           panic ("Communication policy not implemented\n");
-   }
+    case COMMUNIC_FIFO:
+    case COMMUNIC_RR:
+    case COMMUNIC_BOOST:
 
-  /* FEC: Afegeixo aixo per poder contar el temps que un thread passa
-          bloquejat esperant un link */
+      if (in_out == OUT_LINK)
+      {
+        if (prioritari)
+          inLIFO_queue (&(node->th_for_out), (char *) thread);
+        else
+          inFIFO_queue (&(node->th_for_out), (char *) thread);
+
+      }
+      else
+      {
+        if (prioritari)
+          inLIFO_queue (&(node->th_for_in), (char *) thread);
+        else
+          inFIFO_queue (&(node->th_for_in), (char *) thread);
+
+      }
+      break;
+
+    default:
+      panic ("Communication policy not implemented\n");
+  }
+
+  /* Link wait accounting */
   START_LINK_WAIT_TIME(thread);
-  /*******************************************************************/
 }
 
 
@@ -187,10 +183,10 @@ t_boolean roba_out_link(struct t_thread *thread, struct t_node *node,
        d'entrada al node, el node ha de ser HALF Duplex per força. */
     if (node->half_duplex_links == FALSE) return(FALSE);
   }
-  
-  
+
+
   /* El primer que cal és trobar un link que compleixi les
-     condicions necessaries per ser robat. */    
+     condicions necessaries per ser robat. */
   /* Es recorren els links de sortida ocupats */
   for (link=(struct t_link *)head_queue(&(node->busy_out_links));
        link!=(struct t_link *)0;
@@ -216,16 +212,16 @@ t_boolean roba_out_link(struct t_thread *thread, struct t_node *node,
     }
     /* S'ha d'haver trobat per força */
     ASSERT(candidat_encuat==candidat);
-    
+
     /* Si nomes era un test cal retornar sense tocar res */
     if (test_only) return(TRUE);
-    
+
     /* Es treu el thread de la cua d'espera d'in_link */
     extract_from_queue(&(candidat->partner_node->th_for_in), (char *) candidat_encuat);
-    
+
     /* S'assigna el link robat al thread que el volia */
     if (in_out == OUT_LINK)
-    {    
+    {
       link->thread=thread;
       thread->local_link=link;
       thread->local_hd_link=candidat->local_hd_link; /* Pot ser L_NIL */
@@ -234,7 +230,7 @@ t_boolean roba_out_link(struct t_thread *thread, struct t_node *node,
     {
       link->thread=TH_NIL; /* Perque ha estat robat com a hd d'un d'entrada */
       thread->partner_hd_link=link;
-      thread->partner_link=candidat->local_hd_link; /* Ha de ser d'entrada i existir */    
+      thread->partner_link=candidat->local_hd_link; /* Ha de ser d'entrada i existir */
     }
 
     /* Se li pren el link de sortida (i el seu possible partner) */
@@ -251,10 +247,10 @@ t_boolean roba_out_link(struct t_thread *thread, struct t_node *node,
               IDENTIFIERS (candidat), IDENTIFIERS (thread),
               node->nodeid);
     }
-   
+
     /* Cal trencar el bucle perquè ja s'ha pogut robar un link */
     trobat = TRUE;
-    break;    
+    break;
   }
 
   return(trobat);
@@ -288,8 +284,8 @@ t_boolean get_links(struct t_thread *thread, struct t_node *node,
    thread->partner_node=node_partner;
 
    /* Com que s'utilitza el robatori de links de sortida, sempre s'agafen
-      primer els links de sortida encara que un dels nodes sigui half duplex. */   
-   
+      primer els links de sortida encara que un dels nodes sigui half duplex. */
+
    /* S'obté primer el LINK de SORTIDA */
    /************************************/
    link = thread->local_link;
@@ -309,7 +305,7 @@ t_boolean get_links(struct t_thread *thread, struct t_node *node,
          printf (": GET LINKS\tP%d T%d (t%d) Unable to get OUT link for node %d %d\n",
              IDENTIFIERS (thread), node->nodeid, node_partner->nodeid);
        }
-       return (FALSE);       
+       return (FALSE);
      }
    }
    else
@@ -319,11 +315,8 @@ t_boolean get_links(struct t_thread *thread, struct t_node *node,
       {
         /* Ens apropiem el link que estava lliure */
         link->thread=thread;
-#ifdef PARAVER_ALL
-        Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time, 
-                       66, count_queue (&node->free_out_links));
-#endif
-        if (node->half_duplex_links) 
+
+        if (node->half_duplex_links)
         {
           /* If the output has been obtained, it MUST be an input free */
           thread->local_hd_link = (struct t_link *) outFIFO_queue (&(node->free_in_links));
@@ -405,11 +398,8 @@ t_boolean get_links(struct t_thread *thread, struct t_node *node,
      if (thread->partner_link == L_NIL)
      {
         link->thread=TH_NIL;
-#ifdef PARAVER_ALL
-        Paraver_event (cpu_partner->unique_number, 1, node_partner->nodeid, 1 , current_time, 
-                       67, count_queue (&node_partner->free_in_links));
-#endif
-        if (node_partner->half_duplex_links) 
+
+        if (node_partner->half_duplex_links)
         {
           /* If the output has been obtained, it MUST be an input free */
           thread->partner_hd_link = (struct t_link *) outFIFO_queue (&(node_partner->free_out_links));
@@ -425,21 +415,21 @@ t_boolean get_links(struct t_thread *thread, struct t_node *node,
      }
    }
 
-     
 
-   /* Es mostra que s'han obtingut els links */     
+
+   /* Es mostra que s'han obtingut els links */
    if (debug&D_LINKS)
    {
      PRINT_TIMER (current_time);
      printf (": GET LINKS\tP%d T%d (t%d) Links reserved between node %d and node %d\n",
-         IDENTIFIERS (thread), 
+         IDENTIFIERS (thread),
          node->nodeid, node_partner->nodeid);
    }
 
    /* Ja no cal guardar el node desti de la comunicacio perque si ja te els dos
       links no poden ser robats. */
    thread->partner_node=N_NIL;
-   
+
    return (TRUE);
 }
 
@@ -460,13 +450,13 @@ get_links(
 
   cpu         = get_cpu_of_thread(thread);
   cpu_partner = (struct t_cpu *) head_queue (&node_partner->Cpus);
-  
+
   if (node == node_partner)
   {
     return (TRUE);
   }
 
-  
+
   if ((node->half_duplex_links) || (node_partner->half_duplex_links))
   {
     if (node->nodeid>node_partner->nodeid)
@@ -474,16 +464,16 @@ get_links(
       goto first_dest;
     }
   }
-   
+
 second_src_link:
-  
+
   link = thread->local_link;
-  
+
   if (link == L_NIL)
   {
     link = (struct t_link *) outFIFO_queue (&(node->free_out_links));
   }
-  
+
   if (link == L_NIL)
   {
     link_busy (thread, node, OUT_LINK);
@@ -503,23 +493,12 @@ second_src_link:
   {
     if (thread->local_link==L_NIL)
     {
-
-#ifdef PARAVER_ALL
-      Paraver_event (cpu->unique_number,
-                     1,
-                     node->nodeid,
-                     1,
-                     current_time,
-                     66,
-                     count_queue (&node->free_out_links));
-#endif
-      
-      if (node->half_duplex_links) 
+      if (node->half_duplex_links)
       {
         /* If the output has been obtained, it MUST be an input free */
-        thread->local_hd_link = 
+        thread->local_hd_link =
           (struct t_link *) outFIFO_queue (&(node->free_in_links));
-            
+
         if (thread->local_hd_link==L_NIL)
         {
           panic (
@@ -543,17 +522,17 @@ second_src_link:
 
 first_dest:
     link = thread->partner_link;
-   
+
     if (link == L_NIL)
     {
-      link = 
+      link =
         (struct t_link *) outFIFO_queue (&(node_partner->free_in_links));
     }
-    
+
     if (link == L_NIL)
     {
       link_busy (thread, node_partner, IN_LINK);
-      
+
       if (debug&D_LINKS)
       {
         PRINT_TIMER (current_time);
@@ -570,24 +549,12 @@ first_dest:
     {
       if (thread->partner_link == L_NIL)
       {
-
-#ifdef PARAVER_ALL
-        Paraver_event (
-          cpu_partner->unique_number,
-          1,
-          node_partner->nodeid,
-          1,
-          current_time,
-          67,
-          count_queue (&node_partner->free_in_links)
-        );
-#endif
-        if (node_partner->half_duplex_links) 
+        if (node_partner->half_duplex_links)
         {
           /* If the output has been obtained, it MUST be an input free */
-          thread->partner_hd_link = 
+          thread->partner_hd_link =
             (struct t_link *) outFIFO_queue (&(node_partner->free_out_links));
-          
+
           if (thread->partner_hd_link == L_NIL)
           {
             panic (
@@ -595,7 +562,7 @@ first_dest:
               IDENTIFIERS(thread)
             );
           }
-          
+
           inFIFO_queue (
             &(node_partner->busy_out_links),
             (char *)thread->partner_hd_link
@@ -606,7 +573,7 @@ first_dest:
       }
     }
     thread->partner_link = link;
-   
+
     if ((node->half_duplex_links) || (node_partner->half_duplex_links))
     {
       if (node->nodeid>node_partner->nodeid)
@@ -614,15 +581,15 @@ first_dest:
         goto second_src_link;
       }
     }
-   
+
 end_get_links:
-        
+
     if (debug&D_LINKS)
     {
       PRINT_TIMER (current_time);
       printf (
       ": GET LINKS\tP%d T%d (t%d) Links reserved between node %d and node %d\n",
-        IDENTIFIERS (thread), 
+        IDENTIFIERS (thread),
         node->nodeid,
         node_partner->nodeid
       );
@@ -640,7 +607,7 @@ end_get_links:
 
 t_boolean
 get_links_port(struct t_thread *thread_s,
-               struct t_node   *node_s, 
+               struct t_node   *node_s,
                struct t_thread *thread_r,
                struct t_node   *node_r)
 {
@@ -719,51 +686,33 @@ free_link(struct t_link *link, struct t_thread *thread)
     {
       PRINT_TIMER (current_time);
       printf (": Free input links for P%d T%d t%d node %d\n",
-              IDENTIFIERS (thread), 
+              IDENTIFIERS (thread),
               node->nodeid);
     }
     inFIFO_queue (&(node->free_in_links), (char *) link);
-#ifdef PARAVER_ALL
-
-    Paraver_event (cpu->unique_number,
-                   1,
-                   node->nodeid,
-                   1 ,
-                   current_time, 
-                   67,
-                   count_queue (&node->free_in_links));
-#endif
     extract_from_queue (&(node->busy_in_links), (char *) link);
 
-    if (node->half_duplex_links) 
+    if (node->half_duplex_links)
     {
       if (debug&D_LINKS)
       {
         PRINT_TIMER (current_time);
         printf (": Free output links for P%d T%d t%d node %d\n",
-                IDENTIFIERS (thread), 
+                IDENTIFIERS (thread),
                 node->nodeid);
       }
       inFIFO_queue (&(node->free_out_links), (char *) thread->partner_hd_link);
       extract_from_queue(&(node->busy_out_links),
                         (char*) thread->partner_hd_link);
       first = (struct t_thread *) outFIFO_queue (&(node->th_for_out));
-#ifdef PARAVER_ALL
-      Paraver_event (cpu->unique_number,
-                     1,
-                     node->nodeid,
-                     1 ,
-                     current_time, 
-                     69,
-                     count_queue (&node->th_for_out));
-#endif
+
       if (first != TH_NIL)
       {
         /* FEC: El primer que faig es acumular el temps que el thread ha
                   estat bloquejat esperant el link */
         ACCUMULATE_LINK_WAIT_TIME(first);
         /***************************************************************/
-        
+
         if (first->original_thread)
         {
           first->last_paraver = current_time;
@@ -782,25 +731,16 @@ free_link(struct t_link *link, struct t_thread *thread)
           really_RMA (first);
       }
     }
-      
+
     first = (struct t_thread *) outFIFO_queue (&(node->th_for_in));
-#ifdef PARAVER_ALL
-    Paraver_event (cpu->unique_number,
-                   1,
-                   node->nodeid,
-                   1,
-                   current_time,
-                   68,
-                   count_queue (&node->th_for_in));
-#endif
 
     if (first != TH_NIL)
     {
-      /* FEC: El primer que faig es acumular el temps que el thread ha estat 
+      /* FEC: El primer que faig es acumular el temps que el thread ha estat
        * bloquejat esperant el link */
       ACCUMULATE_LINK_WAIT_TIME(first);
       /***************************************************************/
-      
+
       if (first->original_thread)
       {
         first->last_paraver = current_time;
@@ -829,7 +769,7 @@ free_link(struct t_link *link, struct t_thread *thread)
         printf (": free link wakeup port communication\n");
       }
       really_port_send (both->port, both->thread_s, both->thread_r);
-      freeame ((char *) both, sizeof (struct t_both));
+      MALLOC_free_memory ((char *) both, sizeof (struct t_both));
       return;
     }
 
@@ -845,7 +785,7 @@ free_link(struct t_link *link, struct t_thread *thread)
                            copyseg->node_s,
                            copyseg->node_d,
                            copyseg->thread->copy_segment_size);
-      freeame ((char *) copyseg, sizeof (struct t_copyseg));
+      MALLOC_free_memory ((char *) copyseg, sizeof (struct t_copyseg));
       return;
     }
   }
@@ -855,45 +795,28 @@ free_link(struct t_link *link, struct t_thread *thread)
     {
       PRINT_TIMER (current_time);
       printf (": Free output links for P%d T%d t%d node %d\n",
-              IDENTIFIERS (thread), 
+              IDENTIFIERS (thread),
               node->nodeid);
     }
     inFIFO_queue (&(node->free_out_links), (char *) link);
-#ifdef PARAVER_ALL
-    Paraver_event (cpu->unique_number,
-                   1,
-                   node->nodeid,
-                   1 ,
-                   current_time, 
-                   66,
-                   count_queue (&node->free_out_links));
-#endif
+
     extract_from_queue (&(node->busy_out_links), (char *) link);
-    if (node->half_duplex_links) 
+    if (node->half_duplex_links)
     {
       if (debug&D_LINKS)
       {
         PRINT_TIMER (current_time);
         printf (": Free input links for P%d T%d t%d node %d\n",
-                IDENTIFIERS (thread), 
+                IDENTIFIERS (thread),
                 node->nodeid);
       }
       inFIFO_queue (&(node->free_in_links), (char *) thread->local_hd_link);
       extract_from_queue(&(node->busy_in_links), (char*) thread->local_hd_link);
       first = (struct t_thread *) outFIFO_queue (&(node->th_for_in));
-#ifdef PARAVER_ALL
-      Paraver_event (cpu->unique_number,
-                     1,
-                     node->nodeid,
-                     1,
-                     current_time,
-                     68,
-                     count_queue (&node->th_for_in));
-#endif
 
       if (first != TH_NIL)
       {
-        /* FEC: El primer que faig es acumular el temps que el thread ha estat 
+        /* FEC: El primer que faig es acumular el temps que el thread ha estat
          * bloquejat esperant el link */
         ACCUMULATE_LINK_WAIT_TIME(first);
         /***************************************************************/
@@ -916,23 +839,14 @@ free_link(struct t_link *link, struct t_thread *thread)
       }
     }
     first = (struct t_thread *) outFIFO_queue (&(node->th_for_out));
-#ifdef PARAVER_ALL
-    Paraver_event (cpu->unique_number,
-                   1,
-                   node->nodeid,
-                   1,
-                   current_time, 
-                   69,
-                   count_queue (&node->th_for_out));
-#endif
 
     if (first != TH_NIL)
     {
-      /* FEC: El primer que faig es acumular el temps que el thread ha estat 
+      /* FEC: El primer que faig es acumular el temps que el thread ha estat
        * bloquejat esperant el link */
       ACCUMULATE_LINK_WAIT_TIME(first);
       /***************************************************************/
-      
+
       if (first->original_thread)
       {
         first->last_paraver = current_time;
@@ -960,7 +874,7 @@ free_link(struct t_link *link, struct t_thread *thread)
         printf (": free link wakeup port communication\n");
       }
       really_port_send (both->port, both->thread_s, both->thread_r);
-      freeame ((char *) both, sizeof (struct t_both));
+      MALLOC_free_memory ((char *) both, sizeof (struct t_both));
       return;
     }
 
@@ -976,7 +890,7 @@ free_link(struct t_link *link, struct t_thread *thread)
                            copyseg->node_s,
                            copyseg->node_d,
                            copyseg->thread->copy_segment_size);
-      freeame ((char *) copyseg, sizeof (struct t_copyseg));
+      MALLOC_free_memory ((char *) copyseg, sizeof (struct t_copyseg));
       return;
     }
 
@@ -994,16 +908,16 @@ free_link(struct t_link *link, struct t_thread *thread)
  ****    #         ##       #    #       #####   #  # #  ######  #
  ****    #        #  #      #    #       #   #   #   ##  #    #  #
  ****    ######  #    #     #    ######  #    #  #    #  #    #  ######
- ****   
- ****   
+ ****
+ ****
  ****        #    #  ######   #####  #    #   ####   #####   #    #
  ****        ##   #  #          #    #    #  #    #  #    #  #   #
  ****        # #  #  #####      #    #    #  #    #  #    #  ####
  ****        #  # #  #          #    # ## #  #    #  #####   #  #
  ****        #   ##  #          #    ##  ##  #    #  #   #   #   #
  ****        #    #  ######     #    #    #   ####   #    #  #    #
- ****   
- ****   
+ ****
+ ****
  ****               #          #    #    #  #    #   ####
  ****               #          #    ##   #  #   #   #
  ****               #          #    # #  #  ####     ####
@@ -1017,12 +931,6 @@ free_link(struct t_link *link, struct t_thread *thread)
 void machine_link_busy(struct t_thread *thread,
                        struct t_machine *machine, int in_out)
 {
-/*
-#ifdef  PARAVER_ALL  
-   struct t_cpu *cpu;
-   cpu = get_cpu_of_thread(thread);
-#endif
-*/
 
    switch (machine->communication.policy)
    {
@@ -1032,22 +940,11 @@ void machine_link_busy(struct t_thread *thread,
            if (in_out==OUT_LINK)
            {
                inFIFO_queue (&(machine->external_net.th_for_out), (char *) thread);
-/*
-#ifdef PARAVER_ALL
-               Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time,
-                              69, count_queue (&node->th_for_out));
-#endif
-*/
            }
            else
            {
                inFIFO_queue (&(machine->external_net.th_for_in), (char *) thread);
-/*
-#ifdef PARAVER_ALL
-               Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time,
-                              68, count_queue (&node->th_for_in));
-#endif
-*/
+
            }
            break;
       default:
@@ -1072,7 +969,7 @@ t_boolean get_machine_links(struct t_thread *thread,
    utilitzen la xarxa externa, els threads reserven tots els links de la
    seva mateixa maquina.
    if (s_machine == d_machine) panic("Trying to get links for the same machine!\n");
-*/   
+*/
 
    if ((s_machine->external_net.half_duplex_links) ||
        (d_machine->external_net.half_duplex_links))
@@ -1080,7 +977,7 @@ t_boolean get_machine_links(struct t_thread *thread,
      if (s_machine->id > d_machine->id)
        goto first_dest;
    }
-   
+
 second_src_link:
    link = thread->local_link;
    if (link == L_NIL)
@@ -1100,13 +997,7 @@ second_src_link:
    {
       if (thread->local_link==L_NIL)
       {
-/*
-#ifdef PARAVER_ALL
-        Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time, 
-                       66, count_queue (&node->free_out_links));
-#endif
-*/
-        if (s_machine->external_net.half_duplex_links) 
+        if (s_machine->external_net.half_duplex_links)
         {
           /* If the output has been obtained, it MUST be an input free */
           thread->local_hd_link = (struct t_link *) outFIFO_queue(&(s_machine->external_net.free_in_links));
@@ -1128,7 +1019,7 @@ second_src_link:
        goto end_get_links;
    }
 
-first_dest:      
+first_dest:
    link = thread->partner_link;
    if (link == L_NIL)
       link = (struct t_link *) outFIFO_queue (&(d_machine->external_net.free_in_links));
@@ -1147,13 +1038,7 @@ first_dest:
    {
      if (thread->partner_link == L_NIL)
      {
-/*
-#ifdef PARAVER_ALL
-        Paraver_event (cpu_partner->unique_number, 1, node_partner->nodeid, 1 , current_time, 
-                       67, count_queue (&node_partner->free_in_links));
-#endif
-*/
-        if (d_machine->external_net.half_duplex_links) 
+        if (d_machine->external_net.half_duplex_links)
         {
           /* If the input has been obtained, it MUST be an output free */
           thread->partner_hd_link = (struct t_link *) outFIFO_queue (&(d_machine->external_net.free_out_links));
@@ -1167,16 +1052,16 @@ first_dest:
      }
    }
    thread->partner_link = link;
-   
+
    if ((s_machine->external_net.half_duplex_links) ||
        (d_machine->external_net.half_duplex_links))
    {
      if (s_machine->id > d_machine->id)
        goto second_src_link;
    }
-   
+
 end_get_links:
-        
+
    if (debug&D_LINKS)
    {
      PRINT_TIMER (current_time);
@@ -1195,12 +1080,7 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
   struct t_thread *first;
   struct t_machine *machine;
 
-/*  
-#ifdef PARAVER_ALL
-  struct t_cpu *cpu;
-  cpu = get_cpu_of_thread(thread);
-#endif  
-*/  
+
   machine = link->info.machine;
   if (link->type == IN_LINK)
   {
@@ -1212,14 +1092,9 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
           machine->id);
     }
     inFIFO_queue (&(machine->external_net.free_in_links), (char *) link);
-/*
-#ifdef PARAVER_ALL
-      Paraver_event (cpu->unique_number, 1, node->nodeid, 1 , current_time, 
-                       67, count_queue (&node->free_in_links));
-#endif
-*/
+
     extract_from_queue (&(machine->external_net.busy_in_links), (char *) link);
-    if (machine->external_net.half_duplex_links) 
+    if (machine->external_net.half_duplex_links)
     {
       if (debug&D_LINKS)
       {
@@ -1231,12 +1106,7 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
       inFIFO_queue (&(machine->external_net.free_out_links), (char *) thread->partner_hd_link);
       extract_from_queue(&(machine->external_net.busy_out_links), (char *) thread->partner_hd_link);
       first = (struct t_thread *) outFIFO_queue (&(machine->external_net.th_for_out));
-/*
-#ifdef PARAVER_ALL
-        Paraver_event (cpu->unique_number, 1, node->nodeid, 1 , current_time, 
-                       69, count_queue (&node->th_for_out));
-#endif
-*/
+
       if (first != TH_NIL)
       {
         /* FEC: El primer que faig es acumular el temps que el thread ha
@@ -1259,14 +1129,8 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
           global_op_reserva_links(first);
       }
     }
-      
+
     first = (struct t_thread *) outFIFO_queue (&(machine->external_net.th_for_in));
-/*
-#ifdef PARAVER_ALL
-      Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time,
-                     68, count_queue (&node->th_for_in));
-#endif
-*/
     if (first != TH_NIL)
     {
       /* FEC: El primer que faig es acumular el temps que el thread ha
@@ -1289,7 +1153,7 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
         global_op_reserva_links(first);
   	  return;
     }
-    
+
     /* Si es vol poder utilitzar PORTS entre maquines, s'hauria de fer aqui */
   }
   else
@@ -1302,14 +1166,8 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
           machine->id);
     }
     inFIFO_queue (&(machine->external_net.free_out_links), (char *) link);
-/*
-#ifdef PARAVER_ALL
-      Paraver_event (cpu->unique_number, 1, node->nodeid, 1 , current_time, 
-                       66, count_queue (&node->free_out_links));
-#endif
-*/
     extract_from_queue (&(machine->external_net.busy_out_links), (char *) link);
-    if (machine->external_net.half_duplex_links) 
+    if (machine->external_net.half_duplex_links)
     {
       if (debug&D_LINKS)
       {
@@ -1321,12 +1179,7 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
       inFIFO_queue (&(machine->external_net.free_in_links), (char *) thread->local_hd_link);
       extract_from_queue(&(machine->external_net.busy_in_links), (char *) thread->local_hd_link);
       first = (struct t_thread *) outFIFO_queue (&(machine->external_net.th_for_in));
-/*
-#ifdef PARAVER_ALL
-               Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time,
-                              68, count_queue (&node->th_for_in));
-#endif
-*/
+
       if (first != TH_NIL)
       {
         /* FEC: El primer que faig es acumular el temps que el thread ha
@@ -1349,14 +1202,9 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
           global_op_reserva_links(first);
 	    }
     }
-    
+
     first = (struct t_thread *) outFIFO_queue (&(machine->external_net.th_for_out));
-/*
-#ifdef PARAVER_ALL
-      Paraver_event (cpu->unique_number, 1, node->nodeid, 1, current_time, 
-                     69, count_queue (&node->th_for_out));
-#endif
-*/
+
     if (first != TH_NIL)
     {
       /* FEC: El primer que faig es acumular el temps que el thread ha
@@ -1390,7 +1238,7 @@ void free_machine_link(struct t_link *link, struct t_thread *thread)
 
 
 
-t_boolean 
+t_boolean
 get_one_machine_link(
   struct t_thread  *thread,
   struct t_machine *machine,
@@ -1408,21 +1256,21 @@ get_one_machine_link(
       machine->id
     );
   }
-   
+
   if (in_out == OUT_LINK) /* Es vol un link de sortida (OUT_LINK) */
-  {    
+  {
     link = thread->local_link;
-    
+
     if (link == L_NIL)
     {
-      link = (struct t_link *) 
+      link = (struct t_link *)
         outFIFO_queue (&(machine->external_net.free_out_links));
     }
-    
+
     if (link == L_NIL)
     {
       machine_link_busy (thread, machine, OUT_LINK);
-      
+
       if (debug&D_LINKS)
       {
         PRINT_TIMER (current_time);
@@ -1438,26 +1286,13 @@ get_one_machine_link(
     {
       if (thread->local_link == L_NIL)
       {
-/*
-#ifdef PARAVER_ALL
-        Paraver_event (
-          cpu->unique_number,
-          1,
-          node->nodeid,
-          1,
-          current_time,
-          66,
-          count_queue (&node->free_out_links)
-        );
-#endif
-*/
         /* De moment no hi poden haver half duplex */
-        if (machine->external_net.half_duplex_links) 
+        if (machine->external_net.half_duplex_links)
         {
           /* If the output has been obtained, it MUST be an input free */
-          thread->local_hd_link = (struct t_link *) 
+          thread->local_hd_link = (struct t_link *)
             outFIFO_queue(&(machine->external_net.free_in_links));
-          
+
           if (thread->local_hd_link==L_NIL)
           {
             panic (
@@ -1478,13 +1313,13 @@ get_one_machine_link(
   else if (in_out == IN_LINK) /* Es vol el link d'entrada (IN_LINK)*/
   {
     link = thread->partner_link;
-    
+
     if (link == L_NIL)
     {
-      link = (struct t_link *) 
+      link = (struct t_link *)
         outFIFO_queue (&(machine->external_net.free_in_links));
     }
-      
+
     if (link == L_NIL)
     {
       machine_link_busy (thread, machine, IN_LINK);
@@ -1503,26 +1338,13 @@ get_one_machine_link(
     {
       if (thread->partner_link == L_NIL)
       {
-/*
-#ifdef PARAVER_ALL
-        Paraver_event (
-          cpu_partner->unique_number,
-          1,
-          node_partner->nodeid,
-          1,
-          current_time, 
-          67,
-          count_queue (&node_partner->free_in_links)
-        );
-#endif
-*/
         /* De moment no hi poden haver half duplex */
-        if (machine->external_net.half_duplex_links) 
+        if (machine->external_net.half_duplex_links)
         {
           /* If the input has been obtained, it MUST be an output free */
-          thread->partner_hd_link = (struct t_link *) 
+          thread->partner_hd_link = (struct t_link *)
             outFIFO_queue (&(machine->external_net.free_out_links));
-          
+
           if (thread->partner_hd_link==L_NIL)
           {
             panic (
@@ -1539,7 +1361,7 @@ get_one_machine_link(
         inFIFO_queue (&(machine->external_net.busy_in_links), (char *)link);
       }
     }
-    thread->partner_link = link;   
+    thread->partner_link = link;
   }
 
   if (debug&D_LINKS)
@@ -1608,7 +1430,7 @@ get_one_machine_link(
 void connection_link_busy(struct t_thread *thread,
                          struct t_dedicated_connection *connection, int in_out)
 {
-  /* La politica de les connexions dedicades sempre es FIFO. Si aixo es 
+  /* La politica de les connexions dedicades sempre es FIFO. Si aixo es
      vol canviar alguna vegada, caldra modificar aixo. */
 
   if (in_out==OUT_LINK)
@@ -1635,12 +1457,12 @@ t_boolean get_connection_links(struct t_thread *thread,
                                struct t_dedicated_connection *connection)
 {
   struct t_link  *link;
-   
-  if ((connection->half_duplex) && 
+
+  if ((connection->half_duplex) &&
       (connection->source_id > connection->destination_id))
     goto first_dest;
-   
-   
+
+
 second_src_link:
    link = thread->local_link;
    if (link == L_NIL)
@@ -1660,7 +1482,7 @@ second_src_link:
    {
       if (thread->local_link==L_NIL)
       {
-        if (connection->half_duplex) 
+        if (connection->half_duplex)
         {
           /* If the output has been obtained, it MUST be an input free */
           thread->local_hd_link = (struct t_link *) outFIFO_queue(&(connection->free_in_links));
@@ -1675,12 +1497,12 @@ second_src_link:
    }
    thread->local_link = link;
 
-  if ((connection->half_duplex) && 
+  if ((connection->half_duplex) &&
       (connection->source_id > connection->destination_id))
     goto end_get_links;
 
 
-first_dest:      
+first_dest:
    link = thread->partner_link;
    if (link == L_NIL)
       link = (struct t_link *) outFIFO_queue (&(connection->free_in_links));
@@ -1699,7 +1521,7 @@ first_dest:
    {
      if (thread->partner_link == L_NIL)
      {
-       if (connection->half_duplex) 
+       if (connection->half_duplex)
        {
          /* If the input has been obtained, it MUST be an output free */
          thread->partner_hd_link = (struct t_link *) outFIFO_queue (&(connection->free_out_links));
@@ -1714,13 +1536,13 @@ first_dest:
    }
    thread->partner_link = link;
 
-  if ((connection->half_duplex) && 
+  if ((connection->half_duplex) &&
       (connection->source_id > connection->destination_id))
     goto second_src_link;
 
-   
+
 end_get_links:
-        
+
    if (debug&D_LINKS)
    {
      PRINT_TIMER (current_time);
@@ -1739,9 +1561,9 @@ void free_connection_link(struct t_link *link, struct t_thread *thread)
 {
   struct t_thread *first;
   struct t_dedicated_connection *connection;
-  
+
   connection=link->info.connection;
-  
+
   if (link->type == IN_LINK)
   {
     if (debug&D_LINKS)
@@ -1752,9 +1574,9 @@ void free_connection_link(struct t_link *link, struct t_thread *thread)
           connection->id);
     }
     inFIFO_queue (&(connection->free_in_links), (char *) link);
-    
+
     extract_from_queue (&(connection->busy_in_links), (char *) link);
-    if (connection->half_duplex) 
+    if (connection->half_duplex)
     {
       if (debug&D_LINKS)
       {
@@ -1784,9 +1606,9 @@ void free_connection_link(struct t_link *link, struct t_thread *thread)
   	      really_send (first);
         else if (first->action->action==MPI_OS)
           really_RMA (first);
-      }          
+      }
     }
-      
+
     first = (struct t_thread *) outFIFO_queue (&(connection->th_for_in));
     if (first != TH_NIL)
     {
@@ -1808,7 +1630,7 @@ void free_connection_link(struct t_link *link, struct t_thread *thread)
   	    really_RMA (first);
   	  return;
     }
-    
+
     /* Si es vol poder utilitzar PORTS amb connexions dedicades,
        s'hauria de fer aqui */
   }
@@ -1823,7 +1645,7 @@ void free_connection_link(struct t_link *link, struct t_thread *thread)
     }
     inFIFO_queue (&(connection->free_out_links), (char *) link);
     extract_from_queue (&(connection->busy_out_links), (char *) link);
-    if (connection->half_duplex) 
+    if (connection->half_duplex)
     {
       if (debug&D_LINKS)
       {
@@ -1855,7 +1677,7 @@ void free_connection_link(struct t_link *link, struct t_thread *thread)
 	        really_RMA (first);
 	    }
     }
-    
+
     first = (struct t_thread *) outFIFO_queue (&(connection->th_for_out));
     if (first != TH_NIL)
     {

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -35,13 +35,16 @@
 #ifndef __mallocame_h
 #define __mallocame_h
 
+#include <stddef.h>
+
 /**
  * External routines defined in file malloc.c
  **/
 
-extern void malloc_init(void);
-extern char *mallocame(size_t s);
-extern void freeame(char  *a, size_t s);
-extern void malloc_end();
+void MALLOC_Init(void);
+void MALLOC_End(void);
+
+char* MALLOC_get_memory  (size_t s);
+void  MALLOC_free_memory (char* a, size_t s);
 
 #endif

@@ -26,8 +26,11 @@ char SCH_ss_mpi_cp_c_rcsid[]="$Id: SCH_ss_mpi_cp.c,v 1.3 2010/12/21 16:46:31 par
 #include "schedule.h"
 #include "subr.h"
 
-void
-SS_MPI_CP_thread_to_ready(struct t_thread *thread)
+#include "simulator.h"
+#include "machine.h"
+#include "node.h"
+
+void SS_MPI_CP_thread_to_ready(struct t_thread *thread)
 {
   struct t_node          *node;
   struct t_cpu           *cpu, *cpu_to_preemp;
@@ -43,21 +46,21 @@ SS_MPI_CP_thread_to_ready(struct t_thread *thread)
 
   /* a little bit dirty
    * for this scheduler - make sure there is no preempting
-   * if there are two consecutive CPU burst 
+   * if there are two consecutive CPU burst
    * so keep the same thread on the same cpu
    */
   if (thread->cpu != NULL) {
      inLIFO_queue (&(node->ready), (char *) thread);
      return;
   }
-     
-     
+
+
   preempted = FALSE;
-  
+
   sch_ss_mpi_cp     = (struct t_SCH_ss_mpi_cp *) thread->sch_parameters;
   priority          = (t_priority) sch_ss_mpi_cp->priority;
   forces_preemption = (t_priority) sch_ss_mpi_cp->forces_preemption;
-   
+
   if (
     (forces_preemption == 1) &&
     (select_free_cpu (node, thread) == C_NIL)
@@ -83,14 +86,14 @@ SS_MPI_CP_thread_to_ready(struct t_thread *thread)
         cpu_to_preemp = cpu;
       }
     }
-    
+
     if (cpu_to_preemp != C_NIL)
     {
       thread = SCHEDULER_preemption (thread, cpu_to_preemp);
       /* thread is now the one that is removed from the CPU */
       preempted = TRUE;
     }
-    
+
     if (thread == TH_NIL)
     {
       return;
@@ -130,18 +133,18 @@ SS_MPI_CP_thread_to_ready(struct t_thread *thread)
   }
 }
 
-t_micro
+t_nano
 SS_MPI_CP_get_execution_time(struct t_thread *thread)
 {
    struct t_action *action;
-   t_micro         ex_time;
+   t_nano         ex_time;
 
    action = thread->action;
    if (action->action != WORK)
       panic ("Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
    ex_time = action->desc.compute.cpu_time;
    thread->action = action->next;
-   freeame ((char *) action, sizeof (struct t_action));
+   MALLOC_free_memory ((char *) action, sizeof (struct t_action));
    return (ex_time);
 }
 
@@ -156,7 +159,7 @@ SS_MPI_CP_init_scheduler_parameters(struct t_thread *thread)
 {
    struct t_SCH_ss_mpi_cp *sch_ss_mpi_cp;
 
-   sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) mallocame (sizeof(struct t_SCH_ss_mpi_cp));
+   sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) MALLOC_get_memory (sizeof(struct t_SCH_ss_mpi_cp));
 //    sch_ss_mpi_cp->priority          = thread->base_priority;
 
    /* this is the highest priority that the thread can have
@@ -174,7 +177,7 @@ SS_MPI_CP_clear_parameters(struct t_thread *thread)
    sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) thread->sch_parameters;
    sch_ss_mpi_cp->priority = BASE_PRIO;
    sch_ss_mpi_cp->forces_preemption = (t_priority) 0;
-   
+
 }
 
 int
@@ -186,8 +189,8 @@ SS_MPI_CP_info(int info)
 void
 SS_MPI_CP_init (char *filename, struct t_machine *machine)
 {
-   assert(filename != NULL);
-   assert(machine  != NULL);   
+  assert(filename != NULL);
+  assert(machine  != NULL);
 }
 
 void
@@ -207,7 +210,7 @@ SS_MPI_CP_free_parameters(struct t_thread *thread)
    struct t_SCH_ss_mpi_cp *sch_ss_mpi_cp;
 
    sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) thread->sch_parameters;
-   freeame ((char *) sch_ss_mpi_cp, sizeof (struct t_SCH_ss_mpi_cp));
+   MALLOC_free_memory ((char *) sch_ss_mpi_cp, sizeof (struct t_SCH_ss_mpi_cp));
 }
 
 /* priority by which the thread is scheduled is

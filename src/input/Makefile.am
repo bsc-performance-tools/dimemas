@@ -1,7 +1,5 @@
 noinst_LTLIBRARIES = libDimemasInput.la
 
-CLEANFILES=yacc.c lex.c
-
 INCLUDES = \
 	-I@common_filesdir@ \
 	-I$(top_srcdir)/include \
@@ -12,19 +10,24 @@ INCLUDES = \
 	-I$(top_srcdir)/src/sched \
 	-I$(top_srcdir)/src/utils \
 	-I$(top_srcdir)/src/venusclient
-  
+
+# Special definition of the yacc header
+
+AM_YFLAGS=-d
+BUILT_SOURCES = yacc.h  
 
 libDimemasInput_la_SOURCES = \
 	yacc.y \
 	lex.l \
 	check.c \
 	check.h \
+	comm_configuration.c \
+	comm_configuration.h \
+	configuration.c \
+	configuration.h \
 	file_data_access.c \
 	file_data_access.h \
 	read.c \
 	read.h \
-	sddf.c \
-	sddf.h \
 	sddf_records.h \
 	ts.h 
-

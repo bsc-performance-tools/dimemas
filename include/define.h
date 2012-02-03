@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -39,25 +39,27 @@
 
 /*
  * Constants
- * 
+ *
  */
 
 #if defined(ENABLE_LARGE_TRACES) && !defined(ARCH_MACOSX)
-  #define MYOPEN    open64
-  #define MYFOPEN   fopen64
-  #define MYFREOPEN freopen64
-  #define MYFSEEK   fseeko64
-  #define MYFTELL   ftello64
-  #define MYFSTAT   fstat64
-  #define MYLSEEK   lseek64
+  #define MYOPEN     open64
+  #define MYFOPEN    fopen64
+  #define MYFREOPEN  freopen64
+  #define MYFCLOSE   fclose
+  #define MYFSEEKO   fseeko64
+  #define MYFTELLO   ftello64
+  #define MYFSTAT    fstat64
+  #define MYLSEEK    lseek64
 #else
-  #define MYOPEN    open
-  #define MYFOPEN   fopen
-  #define MYFREOPEN freopen
-  #define MYFSEEK   fseeko
-  #define MYFTELL   ftello
-  #define MYFSTAT   fstat
-  #define MYLSEEK   lseek
+  #define MYOPEN     open
+  #define MYFOPEN    fopen
+  #define MYFREOPEN  freopen
+  #define MYFCLOSE   fclose
+  #define MYFSEEKO   fseeko
+  #define MYFTELLO   ftello
+  #define MYFSTAT    fstat
+  #define MYLSEEK    lseek
 #endif /* ENABLE_LARGE_TRACES */
 
 #if defined(ARCH_DEC) && defined(__alpha)
@@ -116,7 +118,7 @@
 #define MAX_RELOAD_LIMIT 1000
 
 /* SHOW PERFORMANCE BANNERS */
-// #define SHOW_PERFORMANCE
+#define SHOW_PERFORMANCE
 
 /* USE NEW QUEUE CONTAINERS */
 //#define USE_EQUEUE
@@ -124,29 +126,30 @@
 /*
  * Possible actions in trace files.
  */
-#define DEAD        0 /* Thread wants to die */
-#define WORK        1 /* Thread wants to work */
-#define SEND        2 /* Thread wants to send a message */
-#define RECV        3 /* Thread wants to receive a message */
-#define EVEN        4 /* User or Compiler Event */
-#define PRIO        5 /* Change thread priority */
-#define FS          6 /* Disk operation */
-#define SEM         7 /* Semaphore operation */
-#define PORT_SEND   8
-#define PORT_RECV   9
-#define MEMORY_COPY 10
-#define GLOBAL_OP   11
-#define MPI_IO      12
-#define MPI_OS      13
-#define IRECV       14  /* Immediate recieve (without blocking) */
-#define WAIT        15  /* Block until wait */
+#define NOOP            -1 /* Dummy action record! */
+#define DEAD             0 /* Thread wants to die */
+#define WORK             1 /* Thread wants to work */
+#define SEND             2 /* Thread wants to send a message */
+#define RECV             3 /* Thread wants to receive a message */
+#define EVEN             4 /* User or Compiler Event */
+#define PRIO             5 /* Change thread priority */
+#define FS               6 /* Disk operation */
+#define SEM              7 /* Semaphore operation */
+#define PORT_SEND        8
+#define PORT_RECV        9
+#define MEMORY_COPY     10
+#define GLOBAL_OP       11
+#define MPI_IO          12
+#define MPI_OS          13
+#define IRECV           14  /* Immediate recieve (without blocking) */
+#define WAIT            15  /* Block until wait */
 #define WAIT_FOR_SEND   16  /* Added by Vladimir */
 
 
 /*
- * JGG (29/12/2004): Communication types for notifications 
+ * JGG (29/12/2004): Communication types for notifications
  */
- 
+
 #define ISEND 1001
 #define BSEND 1002
 /* #define IRECV 1003 --> Para no entrar en contradicción con el anterior */
@@ -174,7 +177,7 @@
 #define SEM_SIGNAL   1
 #define SEM_SIGNAL_N 2
 
-/* 
+/*
  * Different MPI IO operations
  */
 #define MPI_IO_Metadata                        0
@@ -199,7 +202,6 @@
 #define MPI_OS_POST_START    1
 #define MPI_OS_POST_COMPLETE 2
 #define MPI_OS_POST_WAIT     3
-
 
 #define IO_Metadata                 100
 #define IO_Block_NonCollective      101
@@ -340,8 +342,8 @@
 #define D_COMM  4
 #define D_EV    8
 #define D_SCH   16
-#define D_LINKS 32 
-#define D_TASK  64 
+#define D_LINKS 32
+#define D_TASK  64
 #define D_PORT  128
 #define D_TH    256 /* JGG: Thread copy and destroy */
 #define D_PRV   512 /* JGG: Paraver trace generation */
@@ -368,6 +370,9 @@
 #define ADD_TIMER(x,y,z) \
         z = x+y
 
+#define ADD_MIN_INCR_TO_TIMER(x, y) \
+        y = x + 1
+
 #define SUB_TIMER(x,y,z) \
         z = x-y
 
@@ -383,8 +388,8 @@
 #define FLOAT_TO_TIMER(x,y) \
         y = x
 
-#define TIMER_TO_DOUBLE(x,y) \
-        y = (x*1e3)
+#define TIMER_TO_DOUBLE(x) \
+        x
 
 #define NEQ_0_TIMER(x) \
         (x != 0)
@@ -402,10 +407,10 @@
         x = (y)
 
 #define PRINT_TIMER(x) \
-        printf("%.6f",x/1e6)
+        printf("%.9f",x/1e9)
 
 #define FPRINT_TIMER(x,y) \
-        fprintf (x,"%.6f",y/1e6)
+        fprintf (x,"%.9f",y/1e9)
 
 #define OUT_OF_LIMIT(x) \
         (x > TIME_LIMIT)
@@ -438,6 +443,10 @@
           ((unsigned int)(3.6e9 -x.micro)); \
         }
 
+#define ADD_MIN_INCR_TO_TIMER(x, y) \
+        y.hours = x.hours; \
+        y.micro = x.micro+1;
+
 #define SUB_TIMER(x,y,x_minus_y) \
         if (x.micro>=y.micro) \
         { \
@@ -469,8 +478,8 @@
         timer_a.hours = (unsigned int) (float_a/(float)3.6e9); \
         timer_a.micro = float_a - timer_a.hours*3.6e9;
 
-#define TIMER_TO_DOUBLE(timer_a, double_a) \
-        double_a = (double)(3.6e9*timer_a.hours*1e3 + timer_a.micro*1e3)
+#define TIMER_TO_DOUBLE(timer_a) \
+        (double) (3.6e12*timer_a.hours + timer_a.micro)
 
 #define NEQ_0_TIMER(timer_a) \
         ((timer_a.hours !=0) || (timer_a.micro!=0))
@@ -495,7 +504,7 @@
 
 #define FPRINT_TIMER(x,y) \
         fprintf (x,"%dH %010u us",y.hours,y.micro)
-        
+
 #define OUT_OF_LIMIT(x)
         (0)
 
@@ -511,19 +520,19 @@
  * Macro per decidir si cal utilitzar rendez vous en un send.
  * Hi ha 4 possibilitats:
  *
- * - TOTES les comunicacions son Asincrones. 
- *   Quan no s'hautoritza l'us del camp que indica sincronisme als sends de la 
- *   traça (RD_SYNC_use_trace_sync == FALSE) i la mida minima del missatge per 
+ * - TOTES les comunicacions son Asincrones.
+ *   Quan no s'hautoritza l'us del camp que indica sincronisme als sends de la
+ *   traça (RD_SYNC_use_trace_sync == FALSE) i la mida minima del missatge per
  *   utilitzar sincronisme es negativa (RD_SYNC_message_size < 0).
  *
- * - Nomes s'utilitza comunicacio Sincrona si s'indica de forma explicita. Quan 
+ * - Nomes s'utilitza comunicacio Sincrona si s'indica de forma explicita. Quan
  *   RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size < 0.
  *
- * - Nomes s'utilitza comunicacio Sincrona si la mida del missatge es >= que la 
+ * - Nomes s'utilitza comunicacio Sincrona si la mida del missatge es >= que la
  *   mida donada. Quan RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size>=0.
  *
- * - S'utilitza comunicacio Sincrona si s'indica de forma explicita o la mida 
- *   del missatge es >= que la mida donada. Quan RD_SYNC_use_trace_sync == TRUE 
+ * - S'utilitza comunicacio Sincrona si s'indica de forma explicita o la mida
+ *   del missatge es >= que la mida donada. Quan RD_SYNC_use_trace_sync == TRUE
  *   i RD_SYNC_message_size >= 0.
  ******************************************************************************/
 #define USE_RENDEZ_VOUS(rende, mida) \
@@ -532,7 +541,7 @@
          ) ? 1 : 0)
 
 
-            
+
 /* Mida dels buffers utilitzats (basicament per llegir fitxers) */
 #define BUFSIZE 100000
 

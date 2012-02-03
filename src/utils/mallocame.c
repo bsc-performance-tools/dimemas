@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -39,13 +39,17 @@
 #include<stdlib.h>
 #include<stdio.h>
 
-void malloc_init()
+void MALLOC_Init()
 {
 }
 
-char *mallocame(size_t s)
+void MALLOC_End()
 {
-  char *adreca;
+}
+
+char* MALLOC_get_memory(size_t s)
+{
+  char* adreca;
 
   adreca = (char*) malloc(s);
   if (adreca == NULL)
@@ -56,18 +60,12 @@ char *mallocame(size_t s)
   return(adreca);
 }
 
-void freeame(char *a, int s)
+void MALLOC_free_memory(char *a, int s)
 {
   free(a);
 }
 
-void malloc_end()
-{
-}
-
-
 #else
-
 
 #include "define.h"
 #include "types.h"
@@ -77,11 +75,10 @@ void malloc_end()
 #include "subr.h"
 
 static struct t_list SPACE[1024];
-static int      veces_malloc = 0;
-static int      malo[1024];
+static int           veces_malloc = 0;
+static int           malo[1024];
 
-void
-malloc_init()
+void MALLOC_Init()
 {
    register int    i;
 
@@ -92,63 +89,76 @@ malloc_init()
    }
 }
 
-char * mallocame(int s)
+void MALLOC_End()
 {
-   register char  *add;
+  register int i;
 
-   veces_malloc++;
-   s = s+1280;
-   if (s < sizeof (struct t_list))
-      s = (sizeof (struct t_list));
-   if (s < 1024)
-   {
-     malo[s]++;
-     if (SPACE[s].next != LI_NIL)
+  if (debug)
+  {
+    for (i = 0; i < 1024; i++)
+    {
+      if (malo[i] != 0)
       {
-	 add = (char *) SPACE[s].next;
-	 SPACE[s].next = ((struct t_list *) add)->next;
-	 return (add);
+        printf ("Memory allocation chunk %d still have %d\n", i, malo[i]);
       }
-   }
-   add = (char *) malloc (s);
-   if (add == (char *) 0)
-   {
-      panic ("Can't get more space %s. Malloc error\n", s);
-      exit (1);
-   }
-   return (add);
+    }
+  }
 }
 
-void freeame(char  *a, int s)
+char * MALLOC_get_memory(size_t s)
 {
-   veces_malloc--;
+  register char *add;
 
-   s = s+1280;
-   if (s < sizeof (struct t_list))
-      s = sizeof (struct t_list);
-   if (s < 1024)
-   {
-      malo[s]--;
-      ((struct t_list *) a)->next = SPACE[s].next;
-      SPACE[s].next = (struct t_list *) a;
-   }
-   else
-      free (a);
+  veces_malloc++;
+  s = s+1280;
 
+  if (s < sizeof (struct t_list))
+  {
+    s = (sizeof (struct t_list));
+  }
+
+  if (s < 1024)
+  {
+    malo[s]++;
+    if (SPACE[s].next != LI_NIL)
+    {
+      add = (char *) SPACE[s].next;
+      SPACE[s].next = ((struct t_list *) add)->next;
+      return (add);
+    }
+  }
+
+  add = (char *) malloc (s);
+  if (add == (char *) 0)
+  {
+    panic ("Can't get more space %s. Memory allocation error\n", s);
+    exit (EXIT_FAILURE);
+  }
+
+  return (add);
 }
 
-void
-malloc_end()
+void MALLOC_free_memory(char  *a, int s)
 {
-   register int    i;
+  veces_malloc--;
 
-   if (debug)
-   {
-      for (i = 0; i < 1024; i++)
-	 if (malo[i] != 0)
-	    printf ("Malloc size %d still have %d\n", i, malo[i]);
-   }
+  s = s + 1280;
+
+  if (s < sizeof (struct t_list))
+  {
+    s = sizeof (struct t_list);
+  }
+
+  if (s < 1024)
+  {
+    malo[s]--;
+    ((struct t_list *) a)->next = SPACE[s].next;
+    SPACE[s].next = (struct t_list *) a;
+  }
+  else
+  {
+    free (a);
+  }
 }
-
 
 #endif

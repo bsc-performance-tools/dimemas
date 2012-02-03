@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -43,10 +43,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/mman.h> 
+#include <sys/mman.h>
 #include <stdint.h>
 
-#ifdef ENABLE_LARGE_TRACES 
+#ifdef ENABLE_LARGE_TRACES
   #ifdef OS_CYGWIN
     #define t_off_fitxer _off64_t
   #else
@@ -65,7 +65,7 @@ typedef int     t_boolean;
 typedef double  t_priority; /* priority for queue elements */
 typedef int     t_count;    /* number of elements in queue */
 
-typedef double  t_micro;
+typedef double  t_nano;
 
 typedef int modules_map;    /* see 'modules_map.h' */
 
@@ -103,6 +103,11 @@ struct t_queue
   struct t_item  *last;  /* Last item in queue */
   struct t_item  *curr;  /* Current item in sequential search */
   t_count         count; /* Number of items */
+};
+
+struct t_list
+{
+  struct t_list  *next;
 };
 
 struct t_module
@@ -145,7 +150,7 @@ struct t_module_cp
 {
   long long module_type;
   long long module_value;
-  
+
   dimemas_timer timer;
   dimemas_timer timer_comm;
 };
@@ -179,7 +184,7 @@ struct t_rand_type
   } parameters;
 };
 
-/* JGG (31/03/2006): Structure to store burst categories, used on synthetic 
+/* JGG (31/03/2006): Structure to store burst categories, used on synthetic
  * burst generation */
 struct _burst_category
 {
@@ -188,7 +193,7 @@ struct _burst_category
 };
 typedef struct _burst_category* burst_category_t;
 
-/* JGG (24/12/2004): Estructuras para marcar las notificaciones de sends y 
+/* JGG (24/12/2004): Estructuras para marcar las notificaciones de sends y
  * receives producidos, y pendientes de ser tratados */
 struct send_notification
 {
@@ -248,7 +253,7 @@ typedef struct mesg_notification* t_mesg_notification;
 
 /*****************************************************************************
  * JGG (15/02/2005): Estructura para gestionar el estado de los threads que se
- * ejecutan en la aplicación 
+ * ejecutan en la aplicación
  *
  * Los estados posibles se corresponden a los estados Paraver definidos en el
  * fichero 'pcf_defines.h'
@@ -263,7 +268,7 @@ typedef struct thread_state* t_thread_state;
 /****************************************************************************/
 
 struct t_dedicated_connection
-{  
+{
   int    id;                /* Connection number */
   int    source_id;         /* Source machine number */
   int    destination_id;    /* Destination machine number */
@@ -271,18 +276,18 @@ struct t_dedicated_connection
   int   *tags;              /* List of tags that will use the connection */
   int    number_of_tags;
   int    first_message_size;    /* Size of messages in bytes */
-  int    first_size_condition;  /* Size condition that should meet messages to 
+  int    first_size_condition;  /* Size condition that should meet messages to
                                  * use the connection. 0 <, 1 =, 2 > */
   int    operation; /*Operation between the conditions: 0 AND, 1 OR */
   int    second_message_size; /* Size of messages in bytes */
-  int    second_size_condition; /* Size condition that should meet messages to 
+  int    second_size_condition; /* Size condition that should meet messages to
                                  * use the connection. 0 <, 1 =, 2 > */
-  int   *communicators; /* List of communicators of collective op. that can use 
+  int   *communicators; /* List of communicators of collective op. that can use
                          * the connection */
   int    number_of_communicators;
   double startup;  /* Connection startup */
   double flight_time; /* Connection flight time */
-  
+
   /* Les cues input_links, output_links, in_links i out_links son cues
    * per si mes endavant es vol tenir connexions amb "mes d'un bus" en
    * cada sentit. Pero actulament podrien ser punters perque nomes hi
@@ -302,7 +307,7 @@ struct t_dedicated_connection
  */
 struct t_compute
 {
-  t_micro cpu_time; /* Cpu time wanted */
+  t_nano cpu_time; /* Cpu time wanted */
 };
 
 struct t_send
@@ -312,7 +317,7 @@ struct t_send
   int                 dest_thread;  /* Thread_id of partner (receiver) */
   int                 mess_tag;     /* Message tag */
   int                 communic_id;  /* Communicator id */
-  
+
   t_boolean           rendez_vous;  /* Rendez vous message or not */
   t_boolean           immediate;    /* Immediate send or not */
 
@@ -333,7 +338,7 @@ struct t_recv
   int mess_size;   /* Size of message */
   int communic_id; /* Communicator id */
   int comm_type;   /* Communication type */
-  
+
   struct t_thread *sender;
   dimemas_timer    logical_recv;
 };
@@ -504,7 +509,7 @@ struct t_link
     struct t_dedicated_connection *connection; /* Connexio dedicada */
   } info;
 
-  int              kind;        /* NODE_LINK/MACHINE_LINK/CONNECTION_LINK */   
+  int              kind;        /* NODE_LINK/MACHINE_LINK/CONNECTION_LINK */
   int              type;        /* IN_LINK/OUT_LINK */
   int              linkid;      /* Identifier */
   struct t_thread *thread;      /* Thread belonging the link */
@@ -532,10 +537,10 @@ struct t_communicator
   struct t_queue global_ranks;         /* Queue of integers, rank of tasks */
   struct t_queue threads;              /* Threads block until syncronization */
   struct t_queue machines_threads;     /* One thread from each machine used */
-  struct t_queue m_threads_with_links; /* Els anteriors que ja tenen links 
+  struct t_queue m_threads_with_links; /* Els anteriors que ja tenen links
                                         * reservats */
 
-  struct t_thread* current_root;       /* Root thread of the 'in-flight' 
+  struct t_thread* current_root;       /* Root thread of the 'in-flight'
                                           operation */
   t_boolean in_flight_op;              /* True when simulating an operation */
 };
@@ -546,31 +551,31 @@ struct t_window
 {
   int window_id;
   struct t_queue global_ranks;            /* Queue of integers, rank of tasks */
-  int mode;                               /* Indicates the current mode of this 
+  int mode;                               /* Indicates the current mode of this
                                            * window */
-  
-  struct t_queue fence_tasks;             /* Queue with blocked threads  due 
+
+  struct t_queue fence_tasks;             /* Queue with blocked threads  due
                                            * fence operation */
-  struct t_queue fence_operations;        /* Queue with threads performing 
+  struct t_queue fence_operations;        /* Queue with threads performing
                                            * operations and the mode is fence */
-  
+
   struct t_task *task_with_lock;           /* Task with lock */
   int    lock_mode;                        /* Indicates if it is shared/
                                             * exclusive */
   struct t_queue threads_with_lock;        /* Threads holding lock */
   struct t_queue threads_waiting_lock;
   struct t_queue threads_waiting_unlock;
-  struct t_queue lock_operations;          /* Threads performing a communiction 
+  struct t_queue lock_operations;          /* Threads performing a communiction
                                             * and the mode is lock */
-  
+
   struct t_queue post_done;
   struct t_queue start_done;
   struct t_queue pending_of_post;
   struct t_queue pending_rma_to_complete;  /* block complete until all RMA
                                             * finish */
-  struct t_queue complete_done;  
+  struct t_queue complete_done;
   struct t_queue pending_wait_to_complete; /* block wait until complete is done */
-  struct t_queue post_operations;          /* Threads performing a communiction 
+  struct t_queue post_operations;          /* Threads performing a communiction
                                             * and the mode is post */
 };
 
@@ -596,22 +601,24 @@ struct t_Ptask
   int             Ptaskid;
   char           *tracefile;
   char           *configfile;
-  
+
 /*
   HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
-  AND THAN READ THE TRF FILE AS IT WAS A STRING 
-*/  
+  AND THAN READ THE TRF FILE AS IT WAS A STRING
+*/
 //   FILE           *file;
   char           *mmapped_file;
   unsigned long   mmap_position;
   struct stat     sb;
   int             is_there_seek_info;
-  
-  
+
+
   int             n_rerun;
   t_boolean       synthetic_application;
-  struct t_queue  tasks;
-  struct t_queue  global_operation; /* Threads pending for sincronization 
+  // struct t_queue  tasks;
+  size_t         tasks_count;
+  struct t_task *tasks;
+  struct t_queue global_operation; /* Threads pending for sincronization
                                      * in global operation */
   struct t_queue      Communicator;
   struct t_queue      Window;
@@ -625,15 +632,16 @@ struct t_Ptask
 
 struct t_task
 {
+  struct t_Ptask *Ptask;
   int             taskid;
   int             nodeid;
-  struct t_queue  threads;
+  // struct t_queue  threads;
 
 /*Vladimir: for optimization, when a task has many threads*/
-  int             num_of_threads;
-  struct t_thread **threads_array;
-  
-  struct t_Ptask *Ptask;
+  int               threads_count;
+  struct t_thread **threads;
+
+
   struct t_queue  mess_recv; /* Queue for received messages */
   struct t_queue  recv;      /* Queue of threads waiting for message */
   struct t_queue  send;      /* Queue of threads waiting for a partner
@@ -697,7 +705,7 @@ struct t_thread
   */
   unsigned long    sstask_id;
   unsigned long    sstask_type;
-  
+
 
     /* making these queues separate for every thread
        only DEPENDENCIES go to this queues
@@ -731,7 +739,7 @@ struct t_thread
                                        * la transmisio. */
   /****************************************************************************/
 
-  
+
   struct t_action *action;
   struct t_action *last_action;
   t_boolean        original_thread;
@@ -754,14 +762,14 @@ struct t_thread
   t_boolean        doing_busy_wait;
   t_boolean        doing_startup;
   t_boolean        startup_done;
-  
+
   /* Library copy control fields */
   t_boolean        doing_copy;
   t_boolean        copy_done;
   /* Roundtrip time control fields */
   t_boolean        doing_roundtrip;
   t_boolean        roundtrip_done;
-  
+
   /* JGG (22/04/2005): Communication values */
   int              comm_action;   /* Marks current Communication operation */
   dimemas_timer    logical_send;
@@ -782,35 +790,35 @@ struct t_thread
   int              copy_segment_size;
   int              portid; /* thread user port */
   struct t_event  *event;
-    
+
   struct t_last_comm
   {
     dimemas_timer ti;
-    t_micro       bandwith;
+    t_nano       bandwith;
     int           bytes;
   } last_comm;
-  
+
   dimemas_timer     initial_communication_time;
-  
+
 /*
   HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
-  AND THAN READ THE TRF FILE AS IT WAS A STRING 
-*/  
+  AND THAN READ THE TRF FILE AS IT WAS A STRING
+*/
 //   FILE           *file;
   char            *mmapped_file;
-  unsigned long   mmap_position;  
-  
+  unsigned long   mmap_position;
+
 //   FILE             *file;
 //   t_boolean         file_shared;               /* TRUE if sharing file pointer*/
-  
-  
+
+
   struct t_queue    modules;
   struct t_queue    Activity;
   struct t_cp_node *last_cp_node;
   t_boolean         global_op_done;
   int               number_buses;
   dimemas_timer     last_time_event_number;
-  
+
   struct
   {
     dimemas_timer arrive_to_collective;
@@ -818,14 +826,14 @@ struct t_thread
     dimemas_timer with_resources;
     dimemas_timer conclude_communication;
   } collective_timers;
-  
+
   int    IO_blocking_point;
   int    marked_for_deletion; /* Indica que s'ha d'eliminar quan es pugui */
   /* JGG IDENTIFICADOR */
   long int       th_copy_id;
   t_boolean      locked; /* INDICA SI EL THREAD SE HA BLOQUEADO */
   t_thread_state current_state; /* Current state of thread (15/02/2005) */
-  
+
   t_boolean      idle_block;  /* True if the thread has entered on NULL block */
 };
 
@@ -870,7 +878,7 @@ struct t_account
   double          n_th_in_run;         /* Number of times thread goes to run */
   double          n_preempt_to_me;     /* Number times i've been preempted */
   double          n_preempt_to_other;  /* Number time i preempt others */
-  dimemas_timer   time_ready_without_cpu; /* Time in ready queue with no 
+  dimemas_timer   time_ready_without_cpu; /* Time in ready queue with no
                                            * processor*/
   /* Send accounting */
   double          n_sends;        /* Total amount of sends */
@@ -879,11 +887,11 @@ struct t_account
   /* Recv accounting */
   double          n_recvs;
   double          n_bytes_recv;
-  double          n_recvs_on_processor; /* Number of receives and message is on 
+  double          n_recvs_on_processor; /* Number of receives and message is on
                                          * processor (no rendez_vous) */
   double          n_recvs_must_wait;
   dimemas_timer   time_waiting_for_message;
-  
+
   /* Misc. communication time accounting */
   dimemas_timer   latency_time;           /* Startup latencies */
   dimemas_timer   block_due_resources;    /* General Resource blocking */
@@ -901,7 +909,7 @@ struct t_account
   dimemas_timer   io_call_time;          /* Temps en IO (si no es separen reads
                                           * i writes) */
 
-  /* Group operations */   
+  /* Group operations */
   double          n_group_operations;
   dimemas_timer   block_due_group_operations;
   dimemas_timer   group_operations_time;
@@ -926,131 +934,11 @@ struct t_bus_utilization
   struct t_thread *sender;
 };
 
-
-struct t_machine
-{
-  char *name; /* Name of the machine */
-  int id; /* Machine number */
-  char *instrumented_arch; /* Architecture used to instrument */
-  int number_nodes; /* Number of nodes on virtual machine */
-  
-  struct t_scheduler /* Informacio del scheduler */
-  {
-    int           policy;
-    t_micro       quantum;
-    t_boolean     priority_preemptive;
-    t_boolean     lost_cpu_on_send;
-    t_micro       context_switch;
-    t_boolean     busywait_before_block;
-    dimemas_timer minimum_quantum;
-  } scheduler;
-   
-  struct t_communication /* Parametres de la xarxa interna */
-  {
-    int            policy;
-    int            quantum;
-    t_micro        remote_bandwith;
-    int            num_messages_on_network;
-    t_micro        port_startup;
-    t_micro        memory_startup;
-    int            global_operation;
-    struct t_queue global_ops_info;
-  } communication;
-   
-  struct t_network /* Dades variables de l'estat de la xarxa interna */
-  {
-    double         total_time_in_queue;
-    double         utilization;
-    dimemas_timer  last_actualization;
-    int            curr_on_network;
-    struct t_queue threads_on_network;
-    struct t_queue queue;
-  } network;
-   
-  struct t_external_net /* Dades variables de l'estat de la xarxa externa */
-  {
-    t_boolean       half_duplex_links; /* TRUE if links are half duplex */
-    struct t_queue  free_in_links;     /* Free input links */
-    struct t_queue  free_out_links;    /* Free output links */
-    struct t_queue  busy_in_links;     /* Busy input links */
-    struct t_queue  busy_out_links;    /* Busy output links */
-    struct t_queue  th_for_in;         /* Awaiting for input link */
-    struct t_queue  th_for_out;        /* Awaiting for output link */
-  } external_net;
-  
-  struct t_dedicated_connections_net /* Dades variables de l'estat */
-  {                                  /* de la xarxa externa */
-    struct t_queue connections;      /* Cua de les connexions dedicades que
-                                      * tenen aquesta maquina com a origen
-                                      * o desti. */
-  } dedicated_connections;
-};
-
-struct t_node
-{
-  char             *arch;
-  int               nodeid;
-  struct t_queue    Cpus;
-  t_micro           relative;
-  t_micro           bandwith;
-  t_micro           local_startup;
-  t_micro           remote_startup;
-  t_micro           external_net_startup; /* Latencia de la xarxa externa */
-  t_micro           local_port_startup;
-  t_micro           remote_port_startup;
-  t_micro           local_memory_startup;
-  t_micro           remote_memory_startup;
-  struct t_queue    ready;
-  t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
-  struct t_queue    free_in_links;        /* Free input links */
-  struct t_queue    free_out_links;       /* Free output link */
-  struct t_queue    busy_in_links;        /* Busy input links */
-  struct t_queue    busy_out_links;       /* Busy output links */
-  struct t_queue    th_for_in;            /* Awaiting for input link */
-  struct t_queue    th_for_out;           /* Awaiting for output link */
-  struct t_queue    wait_outlink_port;
-  struct t_queue    wait_inlink_port;
-  struct t_queue    wait_in_copy_segment;
-  struct t_queue    wait_out_copy_segment;
-  struct t_queue    IO_disks;
-  struct t_queue    IO_disks_threads;
-  struct t_machine *machine;
-};
-
-struct t_simulator
-{
-  int             number_machines; /* Number of machines in wan */
-  struct t_general_net /* General external network */
-  {
-    char           *name;               /* Name of the Wide Area Network 
-                                         * simulated */
-    int             traffic_function;   /* Function of traffic */
-    double          max_traffic_value;  /* Maximum value of the traffic 
-                                         * function */
-    double          bandwidth;          /* Maximum value of external net 
-                                         * bandwidth */
-    int             global_operation;   /* Global communication model */
-    struct t_queue  threads_on_network; /* Cua dels threads que estan utilitzant
-                                         * la xarxa externa */
-    double        **flight_times;       /* Matriu del flight time entre cada 
-                                         * parell de maquines */
-    struct t_queue  global_ops_info;    /* Parametres de les operacions 
-                                         * col.lectives */
-  } general_net;
-  
-  struct t_dedicated_connections /* Dedicated connections between machines */
-  {
-    int number_connections;      /* Number of dedicated connections between 
-                                  * machines */
-  } dedicated_connections;
-};
-
 struct t_user_event_value_info
 {
   int   value;  /* Valor */
   char *name;   /* Nom d'aquest valor */
 };
-
 
 
 struct t_user_event_info
@@ -1063,7 +951,7 @@ struct t_user_event_info
 
 struct t_both
 {
-  struct t_port  *port;
+  struct t_port   *port;
   struct t_thread *thread_s;
   struct t_thread *thread_r;
 };
@@ -1074,11 +962,6 @@ struct t_copyseg
   struct t_node  *node_s;
   struct t_node  *node_d;
   int             size;
-};
-
-struct t_list
-{
-  struct t_list  *next;
 };
 
 #define E_NIL    (struct t_event *)0
@@ -1113,7 +996,7 @@ struct t_scheduler_actions
 {
   char              *name;
   void             (*thread_to_ready) ();
-  t_micro          (*get_execution_time) ();
+  t_nano          (*get_execution_time) ();
   struct t_thread *(*next_thread_to_run) ();
   void             (*init_scheduler_parameters) ();
   void             (*clear_parameters) ();

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -61,8 +61,7 @@ srandomine(unsigned int seed1, unsigned int seed2)
    I2 = seed2 & Mask2;
 }
 
-float
-randomine()
+float randomine()
 {
    b = ((I1 << Q1) ^ I1) & Mask1;
    I1 = ((I1 << S1) ^ (b >> P1mS1)) & Mask1;

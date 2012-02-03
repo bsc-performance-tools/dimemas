@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -34,126 +34,96 @@
 
 #ifndef __task_h
 #define __task_h
-/**
- * External routines defined in file task.c
- **/
+
+/*****************************************************************************
+ * Global variables
+ *****************************************************************************/
+
+/*
+ * Global Applications (Ptask) Queue
+ */
+extern struct t_queue  Ptask_queue;
+
+/*****************************************************************************
+ * Public functions
+ *****************************************************************************/
+
+void TASK_init(int sintetic_io_applications);
+
+void TASK_end (void);
+
+void TASK_New_Ptask(char *trace_name,
+                    int   tasks_count,
+                    int  *tasks_mapping);
+
+void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid);
 
 /* Synthetic burst generation functions */
-extern void
-SYNT_BURST_add_new_burst_category(
-  int    burst_category_id,
-  double burst_category_mean,
-  double burst_category_std_dev
-);
+void SYNT_BURST_add_new_burst_category(int    burst_category_id,
+                                              double burst_category_mean,
+                                              double burst_category_std_dev);
 
-extern double
-SYNT_BURST_get_burst_value( int burst_category_id);
+double SYNT_BURST_get_burst_value( int burst_category_id);
 
-extern void
-TASK_end (void);
+void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id);
 
-extern void
-new_communicator_definition (struct t_Ptask *Ptask, int communicator_id);
+void new_identificator_to_communicator(struct t_Ptask *, int, int);
 
-extern void
-new_identificator_to_communicator(struct t_Ptask *, int, int);
+void clear_account(struct t_account *account);
 
-extern struct t_Ptask*
-create_Ptask(char *tracefile, char *configfile);
+struct t_account *new_accounter(void);
 
-extern void
-clear_account(struct t_account *account);
+void new_account(struct t_queue *acc, int nodeid);
 
-extern struct t_account*
-new_accounter(void);
+void add_account (struct t_account *to, struct t_account *from);
 
-extern void
-new_account(struct t_queue *acc, int nodeid);
+void min_account (struct t_account *to, struct t_account *from);
 
-extern void
-add_account (struct t_account *to, struct t_account *from);
+void max_account (struct t_account *to, struct t_account *from);
 
-extern void
-min_account (struct t_account *to, struct t_account *from);
+struct t_thread *locate_thread(struct t_Ptask *Ptask, int taskid, int thid);
 
-extern void
-max_account (struct t_account *to, struct t_account *from);
+struct t_thread *locate_thread_of_task (struct t_task *task, int thid);
 
-extern void
-new_task_in_Ptask(
-  struct t_Ptask *Ptask,
-  int taskid,
-  int nodeid
-);
+void new_action_to_thread(struct t_Ptask *Ptask,
+                          int taskid,
+                          int thid,
+                          struct t_action *action);
 
-extern struct t_thread*
-locate_thread(struct t_Ptask *Ptask, int taskid, int thid);
+struct t_account *current_account(struct t_thread *thread);
 
-extern struct t_thread*
-locate_thread_of_task (struct t_task *task, int thid);
+struct t_task *locate_task (struct t_Ptask *Ptask, int taskid);
 
-extern void
-new_action_to_thread(
-  struct t_Ptask *Ptask,
-  int taskid, int thid,
-  struct t_action *action
-);
-  
-extern struct t_account*
-current_account(struct t_thread *thread);
+struct t_thread *duplicate_thread_fs (struct t_thread *thread);
 
-extern struct t_task*
-locate_task (struct t_Ptask *Ptask, int taskid);
+void delete_duplicate_thread_fs (struct t_thread *thread);
 
-extern struct t_thread*
-duplicate_thread_fs (struct t_thread *thread);
+struct t_thread *duplicate_thread (struct t_thread *thread);
 
-extern void
-delete_duplicate_thread_fs (struct t_thread *thread);
+void delete_duplicate_thread (struct t_thread *thread);
 
-extern struct t_thread*
-duplicate_thread (struct t_thread *thread);
+t_boolean more_actions_on_Ptask (struct t_Ptask *Ptask);
 
-extern void
-delete_duplicate_thread (struct t_thread *thread);
+void clear_last_actions (struct t_Ptask *Ptask);
 
-extern t_boolean
-more_actions_on_Ptask (struct t_Ptask *Ptask);
+void get_operation (struct t_thread *thread, struct t_fs_op *fs_op);
 
-extern void
-clear_last_actions (struct t_Ptask *Ptask);
 
-extern void
-get_operation (struct t_thread *thread, struct t_fs_op *fs_op);
+t_nano work_time_for_sintetic(void);
 
-extern void
-sddf_seek_next_action_to_thread (struct t_thread *thread);
+void First_action_to_sintetic_application (struct t_Ptask *Ptask);
 
-extern void
-sddf_load_initial_work_to_threads (struct t_Ptask *Ptask);
+void create_sintetic_applications (int num);
 
-extern t_micro
-work_time_for_sintetic(void);
+t_boolean more_actions_to_sintetic (struct t_thread *thread);
 
-extern void
-First_action_to_sintetic_application (struct t_Ptask *Ptask);
+struct t_node *get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid);
 
-extern void
-create_sintetic_applications (int num);
+void TASK_module_new (int    type,
+                             int    value,
+                             double ratio);
 
-extern t_boolean
-more_actions_to_sintetic (struct t_thread *thread);
-
-extern struct t_node*
-get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid);
-
-extern void module_new (struct t_Ptask *Ptask,
-                        long long       type,
-                        long long       value,
-                        double          ratio);
-
-extern void
-file_name (struct t_Ptask *Ptask, int file_id, char *location);
+void file_name (struct t_Ptask *Ptask, int file_id, char *location);
 
 /*
 void module_name(struct t_Ptask *Ptask,
@@ -165,59 +135,40 @@ void module_name(struct t_Ptask *Ptask,
                  int             src_line);
 */
 
-extern void module_entrance(struct t_thread *thread,
-                            long long        module_type,
-                            long long        module_value);
+void module_entrance(struct t_thread *thread,
+                     long long        module_type,
+                     long long        module_value);
 
-extern int module_exit(struct t_thread *thread,
-                       long long        module_type);
+int module_exit(struct t_thread *thread,
+                long long        module_type);
 
-void
-user_event_type_name(
-  struct t_Ptask *Ptask,
-  int   type,
-  char *name,
-  int   color
-);
+void user_event_type_name(struct t_Ptask *Ptask,
+                          int   type,
+                          char *name,
+                          int   color);
 
-void
-user_event_value_name(
-  struct t_Ptask *Ptask,
-  int   type,
-  int   value,
-  char *name
-);
+void user_event_value_name(struct t_Ptask *Ptask,
+                           int   type,
+                           int   value,
+                           char *name);
 
-extern void
-recompute_work_upon_modules(struct t_thread *thread, struct t_action *action);
+void recompute_work_upon_modules(struct t_thread *thread, struct t_action *action);
 
 
-void
-set_tasks_number_of_threads (struct t_task *task, int number_of_threads);
-
-void
-add_thread_to_task (struct t_task *task, int threadid, int nodeid);
-
-void
-add_identificator_to_communicator(struct t_Ptask *Ptask,
+void add_identificator_to_communicator(struct t_Ptask *Ptask,
                                   int communicator_id,
                                   int taskid);
 
-void
-no_more_identificator_to_communicator(struct t_Ptask *Ptask,
+void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
                                       int communicator_id);
 
-void
-new_window_definition (struct t_Ptask *Ptask, int window_id);
+void new_window_definition (struct t_Ptask *Ptask, int window_id);
 
-void
-add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taskid);
+void add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taskid);
 
-void
-no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id);
+void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id);
 
-t_micro
-PREEMP_overhead(struct t_task* task);
+t_nano PREEMP_overhead(struct t_task* task);
 
 
 #endif

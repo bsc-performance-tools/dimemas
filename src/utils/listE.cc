@@ -4,7 +4,6 @@ extern "C" {
 #include "types.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "subr.h"
 }
 
@@ -59,7 +58,7 @@ public:
    		new_element->prev = Q_NIL;*/
 		evQ.insert(pair<double, void *>((double)((struct t_event*)e)->event_time, e));
 		Ecount++;
-	}	
+	}
 	inline void insert(void *e, double order) {
 		evQ.insert(pair<double, void *>((double)order, e));
 		Ecount++;
@@ -220,25 +219,26 @@ extract_from_Equeue(Equeue *q, void * content)
 /*
  * Get first event element from queue
  */
-void *
-outFIFO_Eevent(Equeue *q)
+void *outFIFO_Eevent(Equeue *q)
 {
-   register struct t_event *e = E_NIL;
+  register struct t_event *e = E_NIL;
 
 #ifdef VENUS_ENABLED
-   if (venus_enabled) {
-   	venus_outFIFO_event(q,e);
-   }
+  if (VC_is_enabled())
+  {
+#ifdef USE_EQUEUE
+    venus_outFIFO_event(q,e);
+#endif
+  }
 #endif
 
-   return (Equeues[*q].pop());
+  return (Equeues[*q].pop());
 }
 
 /*
  * Insert element in priority queue (1 preceeds 2)
  */
-void
-insert_Equeue(Equeue *q, char *content, t_priority prio)
+void insert_Equeue(Equeue *q, char *content, t_priority prio)
 {
    //printf("List %d Inserting prio %f\n", *q, prio);
    Equeues[*q].insert((void *)content, (double)prio);

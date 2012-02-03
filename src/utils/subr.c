@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -39,50 +39,49 @@
 #include "subr.h"
 #include "assert.h"
 
-extern char     yy_error_string[];
+extern char      yy_error_string[];
 extern t_boolean yy_error_filled;
 extern t_boolean dimemas_GUI;
 
-#ifdef LIBLEXYACC /* LIBLEXYACC */
-dimemas_timer current_time;
-#endif
-
-void panic(char *fmt, ...)
+void die (const char *fmt, ...)
 {
   va_list args;
+  va_start (args, fmt);
 
-  va_start(args, fmt);
+  fprintf (stderr, "\n");
+  fprintf (stderr, "UNRECOVERABLE ERROR -> ");
+  vfprintf (stderr, fmt, args);
+  fprintf (stderr, "\n");
+  va_end (args);
 
-  // (void) 
+  exit (EXIT_FAILURE);
+}
+
+void warning(const char *fmt, ...)
+{
+  va_list args;
+  va_start (args, fmt);
+  vfprintf (stderr, fmt, args);
+  va_end (args);
+}
+
+void panic (const char *fmt, ...)
+{
+  va_list args;
+  va_start (args, fmt);
+
   fprintf (stdout, "Fatal error at time ");
   FPRINT_TIMER (stdout, current_time);
-  //(void)
   fprintf (stdout, "\n");
-  //(void)
   vfprintf (stdout, fmt, args);
-  va_end(args);
-  
-  /* JGG: Aquí se debe controlar que las trazas parciales de Paraver, si las
+  va_end (args);
+
+  /* JGG: AquÃ­ se debe controlar que las trazas parciales de Paraver, si las
    * hay, se deben destruir */
   // assert(0);
-  exit (-1);
+
+  // PARAVER_Cleanup();
+
+  exit (EXIT_FAILURE);
 }
 
-void
-fill_parse_error(char *fmt, ...)
-{
-  va_list  args;
-
-  if (dimemas_GUI)
-    if (yy_error_filled)
-      return;
-
-  va_start(args, fmt);
-
-  if (dimemas_GUI)
-    vsprintf (yy_error_string, fmt, args);
-  else
-    vfprintf (stdout, fmt, args);
-  va_end(args);
-  yy_error_filled = TRUE;
-}

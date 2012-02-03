@@ -301,7 +301,7 @@ AC_ARG_ENABLE(
   ),
   AC_DEFINE(NO_COMPILATION_INFO,
             [1],
-            [Dimemas won't show compilation information])
+            ["Dimemas won't show compilation information"])
 )
 
 dnl IDLE_ACCOUNTING: if defined, idle CPU regions are computed as CPU
@@ -431,7 +431,7 @@ AC_CONFIG_FILES([
   src/utils/Makefile
 ])
 
-if test "x$venus_enabled" = "yes"; then
+if test "x$venus_enabled" = "xyes"; then
   AC_CONFIG_FILES([
     src/venusclient/Makefile
   ])

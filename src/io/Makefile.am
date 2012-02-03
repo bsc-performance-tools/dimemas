@@ -13,4 +13,4 @@ INCLUDES = \
 
 libDimemasIO_la_SOURCES = \
 	dimemas_io.h \
-	dimemas_io.c 
+	dimemas_io.c

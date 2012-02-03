@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -35,86 +35,78 @@
 #ifndef __communic_h
 #define __communic_h
 
-/**
- * External routines defined in file communic.c
- **/
- 
-extern void 
-COMMUNIC_general(int value, struct t_thread *thread);
+/*****************************************************************************
+ * Global variables
+ *****************************************************************************/
 
-extern int  
-COMMUNIC_get_policy(char *s, int machine_id, FILE *fi, char *filename);
+/*
+ * P2P communications fine tuning
+ */
+extern t_boolean DATA_COPY_enabled;
+extern int       DATA_COPY_message_size;
+extern t_boolean RTT_enabled;
+extern t_nano   RTT_time;
 
-extern void 
-COMMUNIC_init(char *fichero_comm);
+/*
+ * External network status
+ */
+extern double suma_missatges_xarxa_externa;
+extern double increment_missatges_xarxa_externa;
 
-extern void 
-COMMUNIC_end(void);
+/*
+ * External network parameters
+ */
+extern double param_external_net_alfa;    /* Ha de ser < 1 */
+extern double param_external_net_periode; /* En microsegons */
+extern double param_external_net_beta;    /* Coeficients que determinen */
+extern double param_external_net_gamma;   /* la influencia dels traffics*/
 
-extern void 
-COMMUNIC_send(struct t_thread *thread);
 
-extern void 
-COMMUNIC_recv(struct t_thread *thread);
+/*****************************************************************************
+ * Public functions
+ *****************************************************************************/
 
-void
-COMMUNIC_Irecv(struct t_thread *thread);
+void COMMUNIC_init(void);
+void COMMUNIC_end(void);
 
-void
-COMMUNIC_wait(struct t_thread *thread);
+void COMMUNIC_general(int value, struct t_thread *thread);
+void COMMUNIC_send(struct t_thread *thread);
+void COMMUNIC_recv(struct t_thread *thread);
+void COMMUNIC_Irecv(struct t_thread *thread);
+void COMMUNIC_wait(struct t_thread *thread);
+void COMMUNIC_block_after_busy_wait(struct t_thread *thread);
 
-extern void 
-COMMUNIC_block_after_busy_wait(struct t_thread *thread);
+/* It is used also in 'memory' and 'ports' */
+void transferencia(int size,
+                   t_boolean remote,
+                   struct t_thread *thread,
+                   struct t_dedicated_connection *connection,
+                   t_nano *temps_total,
+                   t_nano *temps_recursos);
 
-/*extern t_micro 
-transferencia(
-  int size, 
-  t_boolean remote, 
-  struct t_thread *thread,
-  struct t_dedicated_connection *connection,
-  t_micro *temps_recursos
-);
-*/
+void really_send (struct t_thread *thread);
 
-void
-transferencia(
-  int size, 
-  t_boolean remote, 
-  struct t_thread *thread,
-  struct t_dedicated_connection *connection,
-  t_micro *temps_total,
-  t_micro *temps_recursos
-);
+void new_global_op (int identificator, const char *name);
 
-extern void 
-really_send (struct t_thread *thread);
+int get_global_op_id_by_name (char *name);
 
-extern void 
-new_global_op (int identificator, char *name);
+void GLOBAL_operation (struct t_thread *thread,
+                       int glop_id,
+                       int comm_id,
+                       int root_rank,
+                       int root_thid,
+                       int bytes_send,
+                       int bytes_recv);
 
-int
-get_global_op_id_by_name (char *name);
-
-extern void 
-  GLOBAL_operation (
-  struct t_thread *thread, 
-  int glop_id, 
-  int comm_id, 
-  int root_rank, 
-  int root_thid,
-  int bytes_send, 
-  int bytes_recv
-);
-
-extern struct t_communicator* 
+extern struct t_communicator*
 locate_communicator(struct t_queue *communicator_queue, int commid);
 
-extern void 
-global_op_reserva_links (struct t_thread *thread);
+extern void global_op_reserva_links (struct t_thread *thread);
 
 /* JGG: Constantes para marcar el FAN_IN y el FAN_OUT */
 #define FAN_IN  0
-#define FAN_OUT 1 
+#define FAN_OUT 1
+
 
 
 #endif

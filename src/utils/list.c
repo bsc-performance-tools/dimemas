@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -68,14 +68,14 @@ inFIFO_queue(struct t_queue *queue, char  *content)
    register struct t_item *tmp;
    register struct t_item *new_item;
 
-   new_item = (struct t_item *) mallocame (sizeof (struct t_item));
+   new_item = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
    new_item->content = content;
 
    tmp = queue->last;           /* The ancient last */
    queue->last = new_item;      /* The young last */
-   new_item->next = ITEM_NIL;      /* don't have next */
+   new_item->next = NULL;      /* don't have next */
 
-   if (tmp != ITEM_NIL)
+   if (tmp != NULL)
    {                            /* If no top of queue */
       tmp->next = new_item;     /* set the next */
       new_item->prev = tmp;     /* and the previous */
@@ -83,9 +83,9 @@ inFIFO_queue(struct t_queue *queue, char  *content)
    else
    {
       queue->first   = new_item;  /* set the first */
-      new_item->prev = ITEM_NIL;  /* has no previous */
+      new_item->prev = NULL;  /* has no previous */
    }
-  
+
    queue->count++;              /* One more in queue */
 }
 
@@ -99,14 +99,14 @@ void inLIFO_queue(struct t_queue *queue, char *content)
 
   tmp = queue->first;		/* The ancient first */
 
-  new_item = (struct t_item*) mallocame (sizeof (struct t_item));
+  new_item = (struct t_item*) MALLOC_get_memory (sizeof (struct t_item));
   new_item->content = content;
-  new_item->prev = ITEM_NIL;
+  new_item->prev = NULL;
   new_item->next = tmp;     /* have next */
 
   queue->first = new_item;  /* The young first */
 
-  if (tmp == ITEM_NIL)
+  if (tmp == NULL)
   {
     queue->last = new_item;
   }
@@ -114,7 +114,7 @@ void inLIFO_queue(struct t_queue *queue, char *content)
   {                         /* If no top of queue */
     tmp->prev = new_item;   /* set the next */
   }
-  
+
   queue->count++;           /* One more in queue */
 }
 
@@ -127,8 +127,8 @@ char* outFIFO_queue(struct t_queue *q)
   register char  *res;
 
   e = q->first;
-  
-  if (e == ITEM_NIL) /* Empty queue */
+
+  if (e == NULL) /* Empty queue */
   {
     return (A_NIL);
   }
@@ -137,18 +137,18 @@ char* outFIFO_queue(struct t_queue *q)
 
   if (q->last == e)
   {
-    q->last = ITEM_NIL;
+    q->last = NULL;
   }
 
-  if (e->next != ITEM_NIL)
+  if (e->next != NULL)
   {
-    (e->next)->prev = ITEM_NIL; /* Has no precessor */
+    (e->next)->prev = NULL; /* Has no precessor */
   }
-  
+
   q->count--; /* One less in queue */
   res = e->content;
-  freeame ((char *) e, sizeof (struct t_item));
-  
+  MALLOC_free_memory ((char *) e, sizeof (struct t_item));
+
   return (res);
 }
 
@@ -161,7 +161,7 @@ char* outLIFO_queue(struct t_queue *q)
   register char  *res;
 
   e = q->last;
-  if (e == ITEM_NIL) /* Empty queue */
+  if (e == NULL) /* Empty queue */
   {
       return (A_NIL);
   }
@@ -169,17 +169,17 @@ char* outLIFO_queue(struct t_queue *q)
   q->last = e->prev;  /* second take first place */
   if (q->first == e)
   {
-    q->first = ITEM_NIL;
+    q->first = NULL;
   }
 
-  if (e->prev != ITEM_NIL)
+  if (e->prev != NULL)
   {
-    (e->prev)->next = ITEM_NIL; /* Has no precessor */
+    (e->prev)->next = NULL; /* Has no precessor */
   }
-  
+
   q->count--; /* One less in queue */
   res = e->content;
-  freeame ((char *) e, sizeof (struct t_item));
+  MALLOC_free_memory ((char *) e, sizeof (struct t_item));
   return (res);
 }
 
@@ -208,7 +208,7 @@ char* head_queue(struct t_queue *q)
 
   e = q->curr = q->first;
 
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (A_NIL);
   }
@@ -224,12 +224,12 @@ char* next_queue(struct t_queue *q)
   register struct t_item *e;
 
   e = q->curr;
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (A_NIL);
   }
   e = q->curr = e->next;
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (A_NIL);
   }
@@ -244,7 +244,7 @@ char* tail_queue(struct t_queue *q)
   register struct t_item *e;
 
   e = q->curr = q->last;
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (A_NIL);
   }
@@ -260,7 +260,7 @@ char* prev_queue(struct t_queue *q)
   register struct t_item *e;
 
   e = q->curr;
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (A_NIL);
   }
@@ -276,17 +276,17 @@ void insert_queue(struct t_queue *queue, char *content, t_priority prio)
   register struct t_item *new_element;
   register struct t_item *tmp1, *tmp2;
 
-  new_element = (struct t_item *) mallocame (sizeof (struct t_item));
+  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
 
   new_element->order.priority = prio;
   new_element->content        = content;
-  new_element->next           = ITEM_NIL;
-  new_element->prev           = ITEM_NIL;
+  new_element->next           = NULL;
+  new_element->prev           = NULL;
 
   tmp1 = queue->first;
-  tmp2 = ITEM_NIL;
-  
-  if (tmp1 == ITEM_NIL)
+  tmp2 = NULL;
+
+  if (tmp1 == NULL)
   {
     queue->first = new_element;
     queue->last = new_element;
@@ -298,13 +298,13 @@ void insert_queue(struct t_queue *queue, char *content, t_priority prio)
       tmp2 = tmp1;
       tmp1 = tmp1->next;
 
-      if (tmp1 == ITEM_NIL)
+      if (tmp1 == NULL)
       {
         break;
       }
     }
 
-    if (tmp2 == ITEM_NIL)
+    if (tmp2 == NULL)
     { /* Insertion on queue top */
       queue->first      = new_element;
       new_element->next = tmp1;
@@ -316,7 +316,7 @@ void insert_queue(struct t_queue *queue, char *content, t_priority prio)
       new_element->prev = tmp2;
       new_element->next = tmp1;
 
-      if (tmp1 == ITEM_NIL)
+      if (tmp1 == NULL)
       {
         queue->last = new_element;
       }
@@ -340,17 +340,17 @@ insert_queue_from_back(struct t_queue *queue, char *content, t_priority prio)
   register struct t_item *new_element;
   register struct t_item *tmp1, *tmp2;
 
-  new_element = (struct t_item *) mallocame (sizeof (struct t_item));
+  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
 
   new_element->order.priority = prio;
   new_element->content        = content;
-  new_element->next           = ITEM_NIL;
-  new_element->prev           = ITEM_NIL;
+  new_element->next           = NULL;
+  new_element->prev           = NULL;
 
   tmp1 = queue->last;
-  tmp2 = ITEM_NIL;
+  tmp2 = NULL;
 
-  if (tmp1 == ITEM_NIL)
+  if (tmp1 == NULL)
   {
   queue->first = new_element;
     queue->last = new_element;
@@ -362,13 +362,13 @@ insert_queue_from_back(struct t_queue *queue, char *content, t_priority prio)
       tmp2 = tmp1;
       tmp1 = tmp1->prev;
 
-      if (tmp1 == ITEM_NIL)
+      if (tmp1 == NULL)
       {
         break;
       }
     }
 
-    if (tmp2 == ITEM_NIL)
+    if (tmp2 == NULL)
     {
       /* Insertion on queue back */
       tmp1->next        = new_element;
@@ -382,7 +382,7 @@ insert_queue_from_back(struct t_queue *queue, char *content, t_priority prio)
       new_element->next = tmp2;
       new_element->prev = tmp1;
 
-      if (tmp1 == ITEM_NIL)
+      if (tmp1 == NULL)
       {
           queue->first = new_element;
       }
@@ -405,17 +405,17 @@ void insert_first_queue(struct t_queue *queue, char *content, t_priority prio)
   register struct t_item *tmp1,
                 *tmp2;
 
-  new_element = (struct t_item *) mallocame (sizeof (struct t_item));
+  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
 
   new_element->order.priority = prio;
   new_element->content        = content;
-  new_element->next           = ITEM_NIL;
-  new_element->prev           = ITEM_NIL;
+  new_element->next           = NULL;
+  new_element->prev           = NULL;
 
   tmp1 = queue->first;
-  tmp2 = ITEM_NIL;
-  
-  if (tmp1 == ITEM_NIL)
+  tmp2 = NULL;
+
+  if (tmp1 == NULL)
   {
     queue->first = new_element;
     queue->last = new_element;
@@ -426,12 +426,12 @@ void insert_first_queue(struct t_queue *queue, char *content, t_priority prio)
     {
       tmp2 = tmp1;
       tmp1 = tmp1->next;
-      if (tmp1 == ITEM_NIL)
+      if (tmp1 == NULL)
       {
         break;
       }
     }
-    if (tmp2 == ITEM_NIL)
+    if (tmp2 == NULL)
     { /* Insertion on queue top */
       queue->first      = new_element;
       new_element->next = tmp1;
@@ -442,7 +442,7 @@ void insert_first_queue(struct t_queue *queue, char *content, t_priority prio)
       tmp2->next = new_element;
       new_element->prev = tmp2;
       new_element->next = tmp1;
-      if (tmp1 == ITEM_NIL)
+      if (tmp1 == NULL)
       {
         queue->last = new_element;
       }
@@ -462,7 +462,7 @@ char* query_prio_queue(struct t_queue *queue, t_priority prio)
 {
   register struct t_item *element;
 
-  for (element = queue->first; element != ITEM_NIL; element = element->next)
+  for (element = queue->first; element != NULL; element = element->next)
   {
     if (element->order.priority == prio)
     {
@@ -470,7 +470,7 @@ char* query_prio_queue(struct t_queue *queue, t_priority prio)
     }
   }
 
-  if (element != ITEM_NIL)
+  if (element != NULL)
   {
     return (element->content);
   }
@@ -488,9 +488,9 @@ void extract_from_queue(struct t_queue *queue, char * content)
   register struct t_item *tmp1, *tmp2;
 
   tmp1 = queue->first;
-  tmp2 = ITEM_NIL;
+  tmp2 = NULL;
 
-  if (tmp1 == ITEM_NIL)
+  if (tmp1 == NULL)
   {
     panic ("Can't find element to extract from queue %s\n", content);
   }
@@ -499,45 +499,45 @@ void extract_from_queue(struct t_queue *queue, char * content)
   {
     tmp2 = tmp1;
     tmp1 = tmp1->next;
-    if (tmp1 == ITEM_NIL)
+    if (tmp1 == NULL)
     {
       panic ("Can't find element to extract from queue %s\n", content);
     }
   }
 
-  if (tmp2 == ITEM_NIL)
+  if (tmp2 == NULL)
   { /* Was queue head */
     queue->first = tmp1->next;
-    if (tmp1->next != ITEM_NIL)
+    if (tmp1->next != NULL)
     {
-      (tmp1->next)->prev = ITEM_NIL;
+      (tmp1->next)->prev = NULL;
     }
     else
     {
-      queue->last = ITEM_NIL;
+      queue->last = NULL;
     }
   }
   else
   {
-    if (tmp1->next != ITEM_NIL)
+    if (tmp1->next != NULL)
     {
       tmp2->next         = tmp1->next;
       (tmp1->next)->prev = tmp2;
     }
     else
     {
-      tmp2->next  = ITEM_NIL;
+      tmp2->next  = NULL;
       queue->last = tmp2;
     }
   }
-   
+
   if (tmp1 == queue->curr)
   { /* Si ens carreguem l'element actual, cal posar com a actual l'anterior */
     queue->curr=tmp2;
   }
 
   queue->count--;
-  freeame ((char *) tmp1, sizeof (struct t_item));
+  MALLOC_free_memory ((char *) tmp1, sizeof (struct t_item));
 }
 
 
@@ -548,10 +548,10 @@ void extract_from_queue(struct t_queue *queue, char * content)
  */
 void create_event(struct t_queue *q)
 {
-   q->first = ITEM_NIL;
-   q->last  = ITEM_NIL;
-   q->curr  = ITEM_NIL;
-   q->count = (t_count) 0;
+  q->first = NULL;
+  q->last  = NULL;
+  q->curr  = NULL;
+  q->count = 0;
 }
 
 /*
@@ -562,33 +562,33 @@ void insert_event(struct t_queue *q, struct t_event *e)
   register struct t_item *new_element;
   register struct t_item *tmp1, *tmp2;
 
-  new_element = (struct t_item *) mallocame (sizeof (struct t_item));
+  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
 
   new_element->order.list_time = e->event_time;
-  new_element->content         = (char *) e;
-  new_element->next            = ITEM_NIL;
-  new_element->prev            = ITEM_NIL;
+  new_element->content         = (char*) e;
+  new_element->next            = NULL;
+  new_element->prev            = NULL;
 
   tmp1 = q->first;
-  tmp2 = ITEM_NIL;
-  if (tmp1 == ITEM_NIL)
+  tmp2 = NULL;
+  if (tmp1 == NULL)
   {
     q->first = new_element;
     q->last = new_element;
   }
   else
   {
-    while LE_TIMER (tmp1->order.list_time, e->event_time)
+    while LE_TIMER(tmp1->order.list_time, e->event_time)
     {
       tmp2 = tmp1;
       tmp1 = tmp1->next;
-      if (tmp1 == ITEM_NIL)
+      if (tmp1 == NULL)
       {
         break;
       }
     }
 
-    if (tmp2 == ITEM_NIL)
+    if (tmp2 == NULL)
     { /* Insertion on queue top */
       q->first          = new_element;
       new_element->next = tmp1;
@@ -600,16 +600,18 @@ void insert_event(struct t_queue *q, struct t_event *e)
       new_element->prev = tmp2;
       new_element->next = tmp1;
 
-      if (tmp1 == ITEM_NIL)
-      {
-        q->last = new_element;
-      }
-      else
+
+      if (tmp1 != NULL)
       {
         tmp1->prev = new_element;
       }
+      else
+      {
+        q->last = new_element;
+      }
     }
   }
+
   q->count++;
 }
 
@@ -645,39 +647,41 @@ t_boolean empty_event(struct t_queue *q)
  */
 struct t_event* outFIFO_event(struct t_queue *q)
 {
-  register struct t_item *e      = ITEM_NIL;
-  register struct t_event *event = E_NIL;
+  register struct t_item  *e         = NULL;
+  register struct t_event *event     = NULL;
 
 #ifdef VENUS_ENABLED
-  if (venus_enabled)
+  if (VC_is_enabled())
   {
-    venus_outFIFO_event(q,e);
+    venus_outFIFO_event(q, event);
   }
 #endif
 
-  e = q->first;
-  if (e == ITEM_NIL)
+  if (event == NULL)
   {
-    return (E_NIL);
+    e = q->first;
+    if (e == NULL)
+    {
+      return (NULL);
+    }
+
+    q->first = e->next;
+
+    if (e->next != NULL)
+    {
+      (e->next)->prev = NULL;
+    }
+
+    q->count--;
+
+    if (q->last == e)
+    {
+      q->last = NULL;
+    }
+
+    event = (struct t_event*) e->content;
+    MALLOC_free_memory ((char *) e, sizeof (struct t_item));
   }
-
-  q->first = e->next;
-
-  if (e->next != ITEM_NIL)
-  {
-    (e->next)->prev = ITEM_NIL;
-  }
-
-  q->count--;
-
-  if (q->last == e)
-  {
-    q->last = ITEM_NIL;
-  }
-
-  event = (struct t_event *) e->content;
-  freeame ((char *) e, sizeof (struct t_item));
-
   return (event);
 }
 
@@ -689,11 +693,11 @@ struct t_event* head_event(struct t_queue *q)
   register struct t_item *e;
 
   e = q->curr = q->first;
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (E_NIL);
   }
-  
+
   return ((struct t_event *) (e->content));
 }
 
@@ -705,17 +709,17 @@ struct t_event* next_event(struct t_queue *q)
   register struct t_item *e;
 
   e = q->curr;
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (E_NIL);
   }
 
   e = q->curr = e->next;
-  if (e == ITEM_NIL)
+  if (e == NULL)
   {
     return (E_NIL);
   }
-  
+
   return ((struct t_event *) (e->content));
 }
 
@@ -726,7 +730,7 @@ struct t_queue* new_queue_accounter()
 {
   register struct t_queue *res;
 
-  res = (struct t_queue *) mallocame (sizeof (struct t_queue));
+  res = (struct t_queue *) malloc (sizeof (struct t_queue));
   create_queue (res);
   return (res);
 }

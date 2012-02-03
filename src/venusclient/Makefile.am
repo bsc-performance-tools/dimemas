@@ -10,6 +10,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/utils \
 	-I$(top_srcdir)/src/venusclient
 
+if VENUS_ENABLED
 libDimemasVenusClient_la_SOURCES = \
 	ClientSocket.cc \
 	ClientSocket.h \
@@ -20,4 +21,4 @@ libDimemasVenusClient_la_SOURCES = \
 	Socket.h \
 	venusclient.cc \
 	venusclient.h
-
+endif

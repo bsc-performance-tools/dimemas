@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -35,7 +35,8 @@
 #ifndef __random_h
 #define __random_h
 
-struct t_randomness {
+struct t_randomness
+{
   struct t_rand_type processor_ratio;
   struct t_rand_type network_bandwidth;
   struct t_rand_type network_latency;
@@ -47,7 +48,13 @@ struct t_randomness {
 
 extern struct t_randomness randomness;
 
-extern void RANDOM_init(char *fichero_random);
-extern double random_dist(struct t_rand_type *);
+extern void      RANDOM_Init(void);
+
+extern t_boolean RANDOM_Init_Distribution(char               *dist_name,
+                                          float               param1,
+                                          float               param2,
+                                          struct t_rand_type *rt);
+
+extern double    RANDOM_GenerateRandom(struct t_rand_type *);
 
 #endif

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -630,27 +630,27 @@ void
 SDDF_recv_block (int cpuid_r, int taskid_r, dimemas_timer logical_time)
 {
   t_micro         ti;
-  
+
   if (sddf_file == (FILE *) 0)
     return;
-  
+
   sddf_stats.n_cpus = MAX (sddf_stats.n_cpus, cpuid_r);
   sddf_stats.n_tasks = MAX (sddf_stats.n_tasks, taskid_r);
-  
-  
+
+
   TIMER_TO_FLOAT (logical_time, ti);
   ti = ti / 1000000;
-  
+
   cpuid_r--;
   taskid_r--;
-  
+
   fprintf (sddf_file,
            "\"%s\" { %f, %d, %d, 0, 0, 0 };;\n\n",
            label_47,
            ti,
            taskid_r,
            taskid_r);
-  
+
   fprintf (sddf_file,
            "\"%s\" { %f, %d, %d, 0, 0, 0 };;\n\n",
            label_50,
@@ -670,25 +670,25 @@ SDDF_recv_stop(int           cpuid_r,
                int           taskid_s)
 {
   t_micro         time;
-  
+
   if (sddf_file == (FILE *) 0)
     return;
-  
+
   sddf_stats.n_cpus = MAX (sddf_stats.n_cpus, cpuid_r);
   sddf_stats.n_tasks = MAX (sddf_stats.n_tasks, taskid_r);
   sddf_stats.n_cpus = MAX (sddf_stats.n_cpus, cpuid_s);
   sddf_stats.n_tasks = MAX (sddf_stats.n_tasks, taskid_s);
-  
+
   sddf_stats.n_recvs++;
-  
+
   sddf_stats.min_mesg_len = MIN (sddf_stats.min_mesg_len, size);
   sddf_stats.max_mesg_len = MAX (sddf_stats.max_mesg_len, size);
   sddf_stats.min_tag = MIN (sddf_stats.min_tag, tag);
   sddf_stats.max_tag = MAX (sddf_stats.max_tag, tag);
-  
+
   TIMER_TO_FLOAT (tim, time);
   time = time / 1000000;
-  
+
   cpuid_r--;
   taskid_r--;
   cpuid_s--;
@@ -719,21 +719,21 @@ void
 SDDF_send_start(int cpuid_s, int taskid_s, dimemas_timer physical)
 {
   t_micro         ti;
-  
+
   if (sddf_file == (FILE *) 0)
     return;
-  
+
   sddf_stats.n_cpus = MAX (sddf_stats.n_cpus, cpuid_s);
   sddf_stats.n_tasks = MAX (sddf_stats.n_tasks, taskid_s);
-  
+
   sddf_stats.n_sends++;
-  
+
   cpuid_s--;
   taskid_s--;
-  
+
   TIMER_TO_FLOAT (physical, ti);
   ti = ti / 1000000;
-  
+
   fprintf (sddf_file,
            "\"%s\" { %f, %d, %d, 0, 0, 0 };;\n\n",
            label_44,
@@ -787,9 +787,9 @@ SDDF_in_message (int by)
   current_bytes_queued += by;
   current_messg_queued++;
 
-  sddf_stats.max_mesg_queued = MAX (sddf_stats.max_mesg_queued, 
+  sddf_stats.max_mesg_queued = MAX (sddf_stats.max_mesg_queued,
                                     current_messg_queued);
-   
+
   sddf_stats.max_bytes_queued = MAX (sddf_stats.max_bytes_queued,
                                      current_bytes_queued);
 }
@@ -805,40 +805,39 @@ static char     nom1[1250];
 
 static char     buf[BUFSIZE];
 
-void
-SDDF_do()
+void SDDF_do()
 {
   int             i;
   char           *c;
   FILE           *sour;
-  
+
   if (sddf_file == (FILE *) 0)
     return;
-  
-  fclose (sddf_file);
-  /* NOT USE TEMPNAM 
+
+  IO_fclose (sddf_file);
+  /* NOT USE TEMPNAM
   c = tempnam (".", nom1); */
   c = "Dimemas_SDDF.tmp";
   i = rename (sddf_filename, c);
 
   unlink (c);
-  sour = MYFOPEN (c, "r");
-  
+  sour = IO_fopen (c, "r");
+
   if (sour == (FILE *) 0)
   {
     printf ("Can't open source file %s\n", c);
     perror ((char *) 0);
     exit (2);
   }
-  
-  sddf_file = MYFOPEN (sddf_filename, "w");
+
+  sddf_file = IO_fopen (sddf_filename, "w");
   if (sddf_file == (FILE *) 0)
   {
     printf ("Can't open destination file %s\n", sddf_filename);
     perror ((char *) 0);
     exit (2);
   }
-  
+
   SDDF_Header ();
   while (feof (sour) == FALSE)
   {

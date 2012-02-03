@@ -7,6 +7,60 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2012/02/03 - jgonzale
+	CHANGES:	Complete integration of all Dimemas versions. 
+
+	CHANGES:	Total change of 'file_data_acces.c'. Now is uses 'getline'
+				and 'sscanf' as basic ASCII parsing of DIM traces. It also
+				performs a more sofisticated file descriptor sharing in
+				conjunction with the new IO library (under the 'io' directory).
+				Some primitives defined in the new trace description are not
+				supported yet (One-Sided definitions and operations).
+
+				The new IO library acts as a wrapper between the actual C
+				'stdio.h' and the Dimemas code. The main feature is the
+				ability to account the number of available file descriptors.
+				This accounting is crucial for optimal file descriptor sharing.
+
+	CHANGES:	Also present in the 2012/01/11 commit, but more extended, is
+				the clear separation of simulator loading and the model
+				itself. It is not perfect, but the files 'configuration.c|h'
+				and 'comm_configuration.c|h') include the vast majority of
+				'target machine' initialization. The schedulers initiliazation
+				has not been moved to this location, due to its 'function
+				pointers' design.
+
+	CHANGES:	Paraver trace generation has been completely redesign. Now
+				it produces a set of sorted temporal files for states and
+				communications and a single sorted file for events. The final
+				merge is an external merge sort (found via Wikipedia in:
+				http://cis.stvincent.edu/html/tutorials/swd/extsort/extsort.html)
+				with a fan in of 2. In this way, the required open files
+				is reduced just to 3 (States&Comms. File, Events File, Output
+				PRV tracefile). The memory usage is up to 3 times the size
+				of the MAX_IN_FLIGHT_RECORDS (unfortunately, not in bytes),
+				located in 'external_sort.h'. When producing the temporal 
+				files it just used 1 buffer of this size. When merging it uses
+				3 buffers. The number of states and comms. temporal files is
+				also related to this value (by default: 10000).
+
+				PCF file is copied from the first trace that appears in the
+				configuration file. If not available, default PCF is generated.
+
+	CHANGES:	Now the Dimemas core is *always in nanoseconds*. This is not
+				a dramatic change in terms of configuration files, input
+				traces, etc. (due they expressed in seconds). The output
+				files are afected because the granularity of the timestamps
+				is bigger (9 significant digits).
+
+	CHANGES:	There are some (possible) regressions pending to be checked:
+
+				- Application reloads
+				- Performance messages (they work but need to manually add
+				  'rt' library)
+				- Multi-machine environment and multi-application environment
+				(no traces available)
+
 2012/01/11 - jgonzale
 	CHANGES:	First commit with the merge of the Vladimir+German+Official
 				versions. Now, the TRF trace is deprecated, and all improvements

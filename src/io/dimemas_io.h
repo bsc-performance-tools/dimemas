@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -35,13 +35,28 @@
 #ifndef _DIMEMAS_IO_H_
 #define _DIMEMAS_IO_H_
 
-struct io_file
-{
-  
-}
+#include <stdio.h>
+#include <stdlib.h>
 
-void IO_init(void);
+#include <types.h>
 
-void IO_fini(void);
+void IO_Init(void);
+
+void IO_End(void);
+
+size_t IO_available_streams(void);
+
+FILE *IO_fopen(const char *path, const char *mode);
+
+int   IO_fclose(FILE* fp);
+
+off_t IO_ftello(FILE* stream);
+
+int   IO_fseeko(FILE *stream, off_t offset, int whence);
+
+t_boolean IO_file_exists(const char *path);
+
+const char* IO_get_error(void);
+
 
 #endif

@@ -22,14 +22,20 @@ libDimemasModel_la_SOURCES = \
 	fs.h \
 	links.c \
 	links.h \
+	machine.c \
+	machine.h \
 	memory.c \
 	memory.h \
+	node.c \
+	node.h \
 	ports.c \
 	ports.h \
 	semaphore.c \
 	semaphore.h \
+	simulator.c \
+	simulator.h \
 	task.c \
 	task.h \
 	thread_states.c \
-	thread_states.h
+	thread_states.h 
 

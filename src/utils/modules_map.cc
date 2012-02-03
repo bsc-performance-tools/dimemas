@@ -3,7 +3,6 @@ extern "C" {
 #include "types.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "subr.h"
 }
 
@@ -29,7 +28,7 @@ class ModuleMap
     map<pair<long, long>, void*>::iterator it;
 
     t_count _count;
-    
+
   public:
 
     ModuleMap(void)
@@ -40,6 +39,11 @@ class ModuleMap
 
     inline void* FindModule(long long type, long long value)
     {
+      if (Map.size() == 0)
+      {
+        return NULL;
+      }
+
       if (Map.count(make_pair(type, value)) == 1)
       {
         return Map[make_pair(type, value)];
@@ -59,22 +63,22 @@ class ModuleMap
 
     inline void* head(void)
     {
-      
+
       void *Result = NULL;
       this->curr = Map.begin();
-      
+
       if (this->curr != (this->curr_end = Map.end()))
       {
         Result = (*this->curr).second;
       }
       return Result;
     }
-    
+
     inline void *next(void)
     {
       void *Result = NULL;
       ++this->curr;
-      
+
       if (this->curr != this->curr_end)
       {
         Result = (*this->curr).second;
@@ -95,7 +99,7 @@ void create_modules_map(modules_map *mm)
 {
   *mm = LastModuleMap;
   LastModuleMap++;
-  
+
   if (ModuleMaps.size() <= (LastModuleMap - 1))
   {
     ModuleMaps.resize(*mm+10);
@@ -109,8 +113,6 @@ void* find_module(modules_map* mm,
                   long long    value)
 {
   return ModuleMaps[*mm].FindModule(type, value);
-  
-  
 }
 
 void insert_module(modules_map *mm,
@@ -125,7 +127,7 @@ void *head(modules_map* mm)
 {
   return ModuleMaps[*mm].head();
 }
-    
+
 void *next(modules_map* mm)
 {
   return ModuleMaps[*mm].next();

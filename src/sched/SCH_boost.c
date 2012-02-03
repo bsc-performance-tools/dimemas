@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -48,7 +48,12 @@
 #include "schedule.h"
 #include "subr.h"
 
+#include "node.h"
+#include "machine.h"
+
 static struct t_boost boost[MAX_MACHINES];
+
+extern t_boolean paraver_priorities;
 
 #define BOOST boost[machine->id-1]
 
@@ -71,7 +76,7 @@ SCH_boost_thread_to_ready(struct t_thread *thread)
   machine = node->machine;
 
   if (
-    (machine->scheduler.priority_preemptive) && 
+    (machine->scheduler.priority_preemptive) &&
     (select_free_cpu (node, thread) == C_NIL)
   )
   {
@@ -84,7 +89,7 @@ SCH_boost_thread_to_ready(struct t_thread *thread)
     {
       thread_current = cpu->current_thread;
       sch_boost_cur = (struct t_SCH_boost *)thread_current->sch_parameters;
-      if ((sch_boost_cur->priority>sch_boost->priority) && 
+      if ((sch_boost_cur->priority>sch_boost->priority) &&
           (sch_boost_cur->priority>priority))
       {
         priority      = sch_boost_cur->priority;
@@ -95,7 +100,7 @@ SCH_boost_thread_to_ready(struct t_thread *thread)
     {
       thread = SCHEDULER_preemption(thread, cpu_to_preemp);
     }
-    
+
     if (thread == TH_NIL)
     {
       return;
@@ -113,7 +118,7 @@ SCH_boost_thread_to_ready(struct t_thread *thread)
       IDENTIFIERS (thread)
     );
   }
-   
+
   if ((thread->loose_cpu) || (machine->scheduler.lost_cpu_on_send))
   {
     insert_queue (&(node->ready), (char *) thread, priority);
@@ -124,11 +129,10 @@ SCH_boost_thread_to_ready(struct t_thread *thread)
   }
 }
 
-t_micro
-SCH_boost_get_execution_time(struct t_thread *thread)
+t_nano SCH_boost_get_execution_time(struct t_thread *thread)
 {
   struct t_action    *action;
-  t_micro             ex_time;
+  t_nano             ex_time;
   struct t_SCH_boost *sch_boost;
   struct t_machine   *machine;
   struct t_node      *node;
@@ -138,9 +142,12 @@ SCH_boost_get_execution_time(struct t_thread *thread)
 
   sch_boost = (struct t_SCH_boost *) thread->sch_parameters;
   action = thread->action;
+
   if (action->action != WORK)
-    panic (
-      "Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
+  {
+    panic ("Trying to work when innaproppiate P%d T%d t%d",
+           IDENTIFIERS (thread));
+  }
 
   if ((thread->loose_cpu) ||
       (sch_boost->last_quantum == machine->scheduler.quantum))
@@ -158,7 +165,7 @@ SCH_boost_get_execution_time(struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    freeame ((char *) action, sizeof (struct t_action));
+    MALLOC_free_memory ((char *) action, sizeof (struct t_action));
   }
 
   thread->loose_cpu = TRUE;
@@ -176,9 +183,9 @@ SCH_boost_init_scheduler_parameters(struct t_thread *thread)
 {
   struct t_SCH_boost *sch_boost;
 
-  sch_boost = (struct t_SCH_boost *) mallocame (sizeof (struct t_SCH_boost));
+  sch_boost = (struct t_SCH_boost *) MALLOC_get_memory (sizeof (struct t_SCH_boost));
   sch_boost->priority = thread->base_priority;
-  sch_boost->last_quantum = (t_micro) 0;
+  sch_boost->last_quantum = (t_nano) 0;
   thread->sch_parameters = (char *) sch_boost;
 }
 
@@ -194,7 +201,7 @@ SCH_boost_clear_parameters(struct t_thread *thread)
 
   sch_boost = (struct t_SCH_boost *) thread->sch_parameters;
   sch_boost->priority = BOOST.base_prio;
-  sch_boost->last_quantum = (t_micro) 0;
+  sch_boost->last_quantum = (t_nano) 0;
 }
 
 int
@@ -214,6 +221,7 @@ SCH_boost_info(int info, struct t_thread *th_s, struct t_thread *th_r)
   switch (info)
   {
     case SCH_INFO_SEND:
+
       sch_boost = (struct t_SCH_boost *) th_s->sch_parameters;
       old_prio  = sch_boost->priority;
       thread    = th_s;
@@ -224,7 +232,7 @@ SCH_boost_info(int info, struct t_thread *th_s, struct t_thread *th_r)
         node = get_node_of_thread (th_s);
       }
       break;
-    
+
     case SCH_INFO_RECV_MISS:
       sch_boost = (struct t_SCH_boost *) th_r->sch_parameters;
       old_prio  = sch_boost->priority;
@@ -279,7 +287,7 @@ SCH_boost_info(int info, struct t_thread *th_s, struct t_thread *th_r)
   {
     node = get_node_of_thread(thread);
     cpu = get_cpu_of_thread (thread);
-    Paraver_event(cpu->unique_number,IDENTIFIERS(thread), 
+    PARAVER_Event(cpu->unique_number,IDENTIFIERS(thread),
     current_time, 191, (int)sch_boost->priority);
   }
 
@@ -305,79 +313,84 @@ SCH_boost_init(char *filename, struct t_machine *machine)
     fprintf (stderr, "No boost scheduler parameters. Using default\n");
     return;
   }
-  file = MYFOPEN (filename, "r");
+
+  file = IO_fopen (filename, "r");
   if (file == NULL)
   {
-    fprintf (stderr, "Cant open boost parameter file %s\n", filename);
-    fprintf (stderr, "No boost scheduler parameters. Using default\n");
+    printf ("   * WARNING: Can't open boost parameter file %s\n", filename);
+    printf ("   * WARNING: No boost scheduler parameters. Using default\n");
     return;
   }
 
   fgets (str, 256, file);
   r = sscanf (str, "Policy: %s", buf);
-  if (r!=1)
-    panic ("Invalid format in file %s.\nInvalid policy name %s\n",
-           filename,
-           buf);
+  if (r != 1)
+  {
+    die ("Invalid format in file %s.\nInvalid policy name %s\n",
+         filename,
+         buf);
+  }
 
   fgets (str, 256, file);
   r = sscanf (str, "Best priority: %d", &BOOST.best);
   if (r != 1)
   {
-    panic ("Invalid Best priority in boost scheduler file %s\n", filename);
+    die ("Invalid Best priority in boost scheduler file %s\n", filename);
   }
 
   fgets (str, 256, file);
   r = sscanf (str, "Worst priority: %d", &BOOST.worst);
   if (r != 1)
   {
-    panic ("Invalid worst priority in Boost scheduler file %s\n", filename);
+    die ("Invalid worst priority in Boost scheduler file %s\n", filename);
   }
 
   if (BOOST.best > BOOST.worst)
   {
     BOOST.best = BOOST.worst;
-    fprintf (stderr, "Worst priority must be greater than best priority\n");
-    fprintf (stderr, "Truncated. Best==worst\n");
+    printf ("   * WARNING: Worst priority must be greater than best priority\n");
+    printf ("   * WARNING: Truncated. Best == Worst\n");
   }
 
   fgets (str, 256, file);
   r = sscanf (str, "Base priority: %d", &BOOST.base_prio);
   if (r != 1)
   {
-    panic ("Invalid Best priority in Boost scheduler file %s\n", filename);
+    die ("Invalid Best priority in Boost scheduler file %s\n", filename);
   }
 
   if ((BOOST.base_prio < BOOST.best) || (BOOST.base_prio > BOOST.worst))
   {
-    fprintf (stderr, "Base priority must be into [best,worst]\n");
-    fprintf (stderr, "Truncated\n");
     BOOST.base_prio = (BOOST.base_prio < BOOST.best ? BOOST.best : BOOST.worst);
+
+    printf ("   * WARNING: Base priority must be into [Best, Worst]\n");
+    printf ("   * WARNING: Truncated\n");
+
   }
 
   fgets (str, 256, file);
   r = sscanf (str, "Boost if receiver arrives first: %d", &BOOST.recv_first);
   if (r != 1)
   {
-    panic ("Invalid recv first priority in Boost scheduler file",filename);
+    die ("Invalid recv first priority in Boost scheduler file %s",filename);
   }
 
   fgets (str, 256, file);
   r = sscanf (str, "Boost if receiver arrives last: %d", &BOOST.recv_last);
   if (r != 1)
   {
-    panic ("Invalid recv last priority in Boost scheduler file",filename);
+    die ("Invalid recv last priority in Boost scheduler file %s",filename);
   }
 
   fgets (str, 256, file);
   r = sscanf (str, "Boost if sender arrives last: %d", &BOOST.sender_last);
   if (r != 1)
   {
-    panic ("Invalid sender last priority in Boost scheduler file",filename);
+    die ("Invalid sender last priority in Boost scheduler file %s",filename);
   }
   if (debug)
   {
-    fprintf (stderr, "Boost parameters: [%d,%d], (%d,%d),%d , %d\n",
+    printf ("   * Boost parameters: [%d,%d], (%d,%d),%d , %d\n",
              BOOST.best, BOOST.worst,
              BOOST.recv_first, BOOST.recv_last,
              BOOST.sender_last,
@@ -404,5 +417,5 @@ SCH_boost_free_parameters(struct t_thread *thread)
   struct t_SCH_boost *sch_boost;
 
   sch_boost = (struct t_SCH_boost *) thread->sch_parameters;
-  freeame ((char *) sch_boost, sizeof (struct t_SCH_boost));
+  MALLOC_free_memory ((char *) sch_boost, sizeof (struct t_SCH_boost));
 }

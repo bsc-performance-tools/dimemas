@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -38,7 +38,7 @@
 /**
  * External routines defined in file aleatorias.c
  **/
-extern void srandomine(unsigned int seed1, unsigned int seed2);
+extern void  srandomine(unsigned int seed1, unsigned int seed2);
 extern float rnorm(float p1, float p2, float p3, float p4);
 extern float erlng(float p1, float p2, float p3, float p4);
 extern float expo(float mean, float min, float max);

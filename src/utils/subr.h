@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -37,8 +37,9 @@
 /**
  * External routines defined in file subr.c
  **/
-extern void panic(char *fmt, ...);
-extern void fill_parse_error(char *fmt, ...);
+extern void die    (const char *fmt, ...);
+extern void warning(const char *fmt, ...);
+extern void panic  (const char *fmt, ...);
 
 #endif
 

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -50,69 +50,70 @@
 #include "schedule.h"
 #include "subr.h"
 
-#ifdef VENUS_CLIENT
+#include "node.h"
+
+#ifdef VENUS_ENABLED
 #include "venusclient.h"
 #endif
 
 #ifdef USE_EQUEUE
-Equeue  Event_queue;
+Equeue          Event_queue;
+Equeue          Interactive_event_queue;
 #else
 struct t_queue  Event_queue;
+struct t_queue  Interactive_event_queue;
 #endif
-Equeue  Interactive_event_queue;
+
 
 int             are_only_daemons = 0;
 
-struct t_event*
-EVENT_timer(
-  dimemas_timer    when,
-  int              daemon,
-  int              module,
-  struct t_thread *thread,
-  int              info
-)
+struct t_event* EVENT_timer (dimemas_timer    when,
+                             int              daemon,
+                             int              module,
+                             struct t_thread *thread,
+                             int              info)
 {
   register struct t_event *event;
 
   if (daemon == DAEMON)
   {
-    if ( 
+    if (
 #ifdef USE_EQUEUE
-      (are_only_daemons == count_Equeue (&Event_queue)) && 
+      (are_only_daemons == count_Equeue (&Event_queue) ) &&
 #else
-      (are_only_daemons == count_queue (&Event_queue)) && 
+      (are_only_daemons == count_queue (&Event_queue) ) &&
 #endif
-       NEQ_0_TIMER (current_time)
+      NEQ_0_TIMER (current_time)
     )
     {
-      return(E_NIL);
+      return (E_NIL);
     }
     are_only_daemons++;
   }
- 
-  event = (struct t_event *) mallocame (sizeof (struct t_event));
-  
+
+  event = (struct t_event *) MALLOC_get_memory (sizeof (struct t_event) );
+
   event->event_time = when;
   event->module     = module;
   event->thread     = thread;
   event->info       = info;
   event->daemon     = daemon;
-  
+
   if (
     ( module != M_CTXT_SW) &&
-    ((module != M_COM) || (info != COM_EXT_NET_TRAFFIC_TIMER))
+    ( (module != M_COM) || (info != COM_EXT_NET_TRAFFIC_TIMER) )
   )
   {
     thread->loose_cpu        = TRUE;
     thread->next_event_timer = when;
   }
-  
+
 #ifdef USE_EQUEUE
   insert_Eevent (&Event_queue, event);
 #else
   insert_event (&Event_queue, event);
 #endif
-  
+
   if (debug&D_EV)
   {
     PRINT_TIMER (current_time);
@@ -121,86 +122,86 @@ EVENT_timer(
     printf (" Module %d", module);
     if (event->thread == TH_NIL)
     {
-      printf("\n");
+      printf ("\n");
     }
     else
     {
-      printf(
+      printf (
         ". P%02d T%02d (t%02d)\n",
-        IDENTIFIERS(event->thread)
+        IDENTIFIERS (event->thread)
       );
     }
   }
-  
+
   return event;
 }
 
 
-void
-EVENT_extract_timer(int module, struct t_thread *thread, dimemas_timer *when)
+void EVENT_extract_timer (int              module,
+                          struct t_thread *thread,
+                          dimemas_timer   *when)
 {
-   register struct t_event *event;
+  register struct t_event *event;
 #ifdef USE_EQUEUE
-   Equeue *q = &Event_queue;
+  Equeue *q = &Event_queue;
 #else
-   struct t_queue *q = &Event_queue;
+  struct t_queue *q = &Event_queue;
 #endif
 
-   if (thread->event!=E_NIL)
-   {
-       event = thread->event;
-       if ((event->module == module) && (event->thread == thread))
-       {
-           if (debug&D_EV)
-           {
-               PRINT_TIMER (current_time);
-               printf (": Extracted event from module %d\n", module);
-           }
-#ifdef USE_EQUEUE
-           extract_from_Equeue (q, (char *) event);
-#else
-           extract_from_queue (q, (char *) event);
-#endif
-           *when = event->event_time;
-           freeame ((char *) event, sizeof (struct t_event));
-           return;
-       }
-   }
-#ifdef USE_EQUEUE
-   for (event = head_Eevent (q); event != E_NIL; event = next_Eevent (q))
-#else
-   for (event = head_event (q); event != E_NIL; event = next_event (q))
-#endif
-   {
-      if ((event->module == module) && (event->thread == thread))
+  if (thread->event != E_NIL)
+  {
+    event = thread->event;
+    if ( (event->module == module) && (event->thread == thread) )
+    {
+      if (debug & D_EV)
       {
-	 if (debug&D_EV)
-	 {
-	    PRINT_TIMER (current_time);
-	    printf (": Extracted event from module %d\n", module);
-	 }
-#ifdef USE_EQUEUE
-	 extract_from_Equeue (q, (char *) event);
-#else
-	 extract_from_queue (q, (char *) event);
-#endif
-         *when = event->event_time;
-         freeame ((char *) event, sizeof (struct t_event));
-	 return;
+        PRINT_TIMER (current_time);
+        printf (": Extracted event from module %d\n", module);
       }
-   }
-   panic ("Can't extract requested event for thread P%02d T%02d t%02d\n",
-	  IDENTIFIERS (thread));
-   return;
+#ifdef USE_EQUEUE
+      extract_from_Equeue (q, (char *) event);
+#else
+      extract_from_queue (q, (char *) event);
+#endif
+      *when = event->event_time;
+      MALLOC_free_memory ( (char *) event, sizeof (struct t_event) );
+      return;
+    }
+  }
+#ifdef USE_EQUEUE
+  for (event = head_Eevent (q); event != E_NIL; event = next_Eevent (q) )
+#else
+  for (event = head_event (q); event != E_NIL; event = next_event (q) )
+#endif
+  {
+    if ( (event->module == module) && (event->thread == thread) )
+    {
+      if (debug & D_EV)
+      {
+        PRINT_TIMER (current_time);
+        printf (": Extracted event from module %d\n", module);
+      }
+#ifdef USE_EQUEUE
+      extract_from_Equeue (q, (char *) event);
+#else
+      extract_from_queue (q, (char *) event);
+#endif
+      *when = event->event_time;
+      MALLOC_free_memory ( (char *) event, sizeof (struct t_event) );
+      return;
+    }
+  }
+  panic ("Can't extract requested event for thread P%02d T%02d t%02d\n",
+         IDENTIFIERS (thread) );
+  return;
 }
 
 /*
  * Local routines and simulator routines
  */
-void
-EVENT_init()
+void EVENT_init()
 {
-  if (debug&D_EV)
+  if (debug & D_EV)
   {
     PRINT_TIMER (current_time);
     printf (": EVENT initial routine called\n");
@@ -212,18 +213,16 @@ EVENT_init()
 #endif
 }
 
-void
-EVENT_end()
+void EVENT_end()
 {
-  if (debug&D_EV)
+  if (debug & D_EV)
   {
     PRINT_TIMER (current_time);
     printf (": EVENT end routine called\n");
   }
 }
 
-t_boolean
-events_for_thread (struct t_thread *thread)
+t_boolean events_for_thread (struct t_thread *thread)
 {
   struct t_event *event;
 
@@ -249,8 +248,7 @@ events_for_thread (struct t_thread *thread)
   return (FALSE);
 }
 
-void
-reload_events()
+void reload_events()
 {
   register struct t_node *node;
 
@@ -268,9 +266,9 @@ reload_events()
   )
 #endif
   {
-    while ((count_queue (&(node->ready)) != 0) && (num_free_cpu (node) > 0))
+    while ( (count_queue (& (node->ready) ) != 0) && (num_free_cpu (node) > 0) )
     {
-      SCHEDULER_next_thread_to_run(node);
+      SCHEDULER_next_thread_to_run (node);
     }
   }
 }
@@ -289,7 +287,7 @@ void event_manager (struct t_event *event)
     );
   }
 
-  if (debug&D_EV)
+  if (debug & D_EV)
   {
     PRINT_TIMER (current_time);
     printf (": EVENT Selected ");
@@ -297,25 +295,25 @@ void event_manager (struct t_event *event)
     printf ("Module %d ", event->module);
     if (event->thread == TH_NIL)
     {
-      printf("\n");
+      printf ("\n");
     }
     else
     {
-      printf(
+      printf (
         ": P%02d T%02d (t%02d)\n",
-        IDENTIFIERS(event->thread)
+        IDENTIFIERS (event->thread)
       );
     }
   }
-  
+
   ASS_ALL_TIMER (current_time, event->event_time);
 
-  if (OUT_OF_LIMIT(current_time))
+  if (OUT_OF_LIMIT (current_time) )
   {
     /* Avoid underflow problem */
-    panic("Time out of simulation limit\n");
+    panic ("Time out of simulation limit\n");
   }
-   
+
   if (event->daemon == DAEMON)
   {
     are_only_daemons--;
@@ -324,34 +322,34 @@ void event_manager (struct t_event *event)
 //   printf("to check which type of event it is\n");
   switch (event->module)
   {
-    case M_SCH:
-      SCHEDULER_general (SCH_TIMER_OUT, event->thread);
-      break;
-    case M_COM:
-      COMMUNIC_general (event->info, event->thread);
-      break;
-    case M_FS:
-      FS_general (event->info, event->thread);
-      break;
-    case M_PORT:
-      PORT_general (PORT_TIMER_OUT, event->thread);
-      break;
-    case M_MEM:
-      MEMORY_general (MEMORY_TIMER_OUT, event->thread);
-      break;
-    case M_CTXT_SW:
-      SCHEDULER_info (CONTEXT_SWITCH_TIMER_OUT, event->info, TH_NIL, TH_NIL);
-      break;
-    default:
-      panic ("Invalid event type on queue (%d)\n", event->module);
-      break;
+  case M_SCH:
+    SCHEDULER_general (SCH_TIMER_OUT, event->thread);
+    break;
+  case M_COM:
+    COMMUNIC_general (event->info, event->thread);
+    break;
+  case M_FS:
+    FS_general (event->info, event->thread);
+    break;
+  case M_PORT:
+    PORT_general (PORT_TIMER_OUT, event->thread);
+    break;
+  case M_MEM:
+    MEMORY_general (MEMORY_TIMER_OUT, event->thread);
+    break;
+  case M_CTXT_SW:
+    SCHEDULER_info (CONTEXT_SWITCH_TIMER_OUT, event->info, TH_NIL, TH_NIL);
+    break;
+  default:
+    panic ("Invalid event type on queue (%d)\n", event->module);
+    break;
   }
-  
+
   if (reload_done)
   {
     reload_events();
     reload_done = FALSE;
   }
-  
-  freeame ((char *) event, sizeof (struct t_event));
+
+  MALLOC_free_memory ( (char *) event, sizeof (struct t_event) );
 }

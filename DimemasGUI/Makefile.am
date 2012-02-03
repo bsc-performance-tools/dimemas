@@ -10,7 +10,7 @@ jhdrout = ..
 
 jar_DATA = $(jarfile)
 
-JFLAGS = -Xlint -encoding utf8
+JAVACFLAGS = -Xlint -encoding utf8
 
 #java-headers.stamp: $(dist_noinst_JAVA)
 #	@list="`echo $(dist_noinst_JAVA) |\

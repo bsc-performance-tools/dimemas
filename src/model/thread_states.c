@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -40,9 +40,9 @@ init_thread_state (struct t_thread* thread, int state)
 {
   t_thread_state new_state;
   t_boolean      result;
-  
+
   result = TRUE;
-  
+
   if (thread->current_state != STATE_NIL)
   {
     result   = FALSE;
@@ -50,8 +50,8 @@ init_thread_state (struct t_thread* thread, int state)
   }
   else
   {
-    new_state = (t_thread_state) mallocame(sizeof(struct thread_state));
-    
+    new_state = (t_thread_state) MALLOC_get_memory(sizeof(struct thread_state));
+
     new_state->state      = state;
     new_state->init_time  = current_time;
     thread->current_state = new_state;
@@ -63,7 +63,7 @@ t_boolean
 end_thread_state (struct t_thread* thread, int state)
 {
   t_boolean result = TRUE;
-  
+
   if (thread->current_state == STATE_NIL)
   {
     result   = FALSE;
@@ -78,8 +78,8 @@ end_thread_state (struct t_thread* thread, int state)
   {
     /* JGG (02/05/2005) */
     SUB_TIMER (current_time, thread->current_state->init_time, last_state_time);
-    
-    freeame(thread->current_state, sizeof(struct thread_state));
+
+    MALLOC_free_memory( (char*) thread->current_state, sizeof(struct thread_state));
     thread->current_state = STATE_NIL;
   }
   return result;

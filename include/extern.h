@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -34,7 +34,7 @@
 
 /*
  * External declarations
- * 
+ *
  */
 
 #include <stddef.h>
@@ -63,12 +63,15 @@
 typedef int Equeue;
 
 extern struct t_queue Ptask_queue;
+
 #ifdef USE_EQUEUE
 extern Equeue Event_queue;
+extern Equeue Interactive_event_queue;
 #else
 extern struct t_queue Event_queue;
+extern struct t_queue Interactive_event_queue;
 #endif
-extern Equeue Interactive_event_queue;
+
 extern struct t_queue Port_queue;
 #ifdef USE_EQUEUE
 extern Equeue Node_queue;
@@ -78,34 +81,24 @@ extern struct t_queue Node_queue;
 extern struct t_queue Network_queue;
 extern struct t_queue Global_op;
 
-extern unsigned long total_threads;
-extern unsigned long finished_threads;
-extern int           progress;
-
 /* FEC */
 extern struct t_queue Machine_queue;
 extern struct t_queue Dedicated_Connections_queue;
-extern int last_node_id_used;
-extern dimemas_timer execution_end_time; /* Temps final de l'execucio */
-
-
+extern dimemas_timer  execution_end_time; /* Temps final de l'execucio */
 
 extern dimemas_timer current_time;
 extern dimemas_timer final_statistical_time;
-
-extern struct t_simulator sim_char;
 
 extern int      debug;
 extern int      assert;
 extern int      output_level;
 
-extern int      SCH_prio;
 
 extern int      Ptask_ids;
 extern int      port_ids;
 
 extern t_boolean reload_Ptasks;
-extern int      reload_limit;
+extern int       reload_limit;
 extern t_boolean reload_done;
 
 extern t_boolean full_out_info;
@@ -113,25 +106,16 @@ extern t_boolean short_out_info; /* defined on 'main.c' */
 
 extern char     message_buffer[];
 
-extern char    *paraver_file;
-extern char    *paraver_cfg_include_file;
-extern t_boolean paraver_binary;
-extern t_boolean paraver_cfg_include;
+extern char         *paraver_file;
+extern char         *paraver_cfg_include_file;
+extern t_boolean     paraver_binary;
+extern t_boolean     paraver_cfg_include;
 extern dimemas_timer start_paraver;
 extern dimemas_timer stop_paraver;
-extern t_boolean paraver_initial_timer;
-extern t_boolean paraver_final_timer;
-
-extern FILE    *sddf_file;
-extern char    *sddf_filename;
+extern t_boolean     paraver_initial_timer;
+extern t_boolean     paraver_final_timer;
 
 extern FILE    *salida_datos;
-
-extern t_boolean load_interactive;
-extern t_boolean seek_info;
-extern t_boolean sorted_files;
-extern t_boolean paraver_priorities;
-extern t_boolean paraver_different_waits;
 
 extern t_boolean monitorize_event;
 extern int event_to_monitorize;
@@ -164,12 +148,12 @@ extern int       DATA_COPY_message_size;
 
 /* Round trip time global variables. Defined in 'communic.c' */
 extern t_boolean RTT_enabled;
-extern t_micro   RTT_time;
+extern t_nano   RTT_time;
 
 /* Preemptio overheads global variables. Defined in 'task.c' */
 extern t_boolean PREEMP_enabled;
 extern int       PREEMP_cycle;
-extern t_micro   PREEMP_time;
+extern t_nano   PREEMP_time;
 
 /* Synthetic burst detection. Defined in 'task.c' */
 extern t_boolean synthetic_bursts;
@@ -193,7 +177,6 @@ extern void free_reserved_pointer(void);
 /* File ports.c */
 /* File memory.c */
 /* File paraver.c */
-/* File sddf.c */
 /* File semaphore.c */
 /* File read.c */
 /* File links.c */

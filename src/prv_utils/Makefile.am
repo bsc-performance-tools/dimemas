@@ -14,8 +14,15 @@ INCLUDES = \
 	-I$(top_srcdir)/src/venusclient
 
 libDimemas2ParaverUtils_la_SOURCES = \
-	MPI_EventEncoding.h \
-	paraver.c \
+	paraver_records.cc \
+	paraver_records.h \
+	external_sort.cc \
+	external_sort.h \
+	paraver.cc \
 	paraver.h \
 	paraver_pcf.c \
-	paraver_pcf.h 
+	paraver_pcf.h \
+	pcf_defines.h
+
+nodist_libDimemas2ParaverUtils_la_SOURCES = \
+	$(common_filesdir)/MPI_EventEncoding.h

@@ -16,11 +16,10 @@ INCLUDES = \
 	-I$(top_srcdir)/src/utils \
 	-I$(top_srcdir)/src/venusclient
 
-bin_PROGRAMS = Dimemas3
+bin_PROGRAMS = Dimemas3 DimemasUpdateCFG
 
 Dimemas3_SOURCES = \
-	main.c \
-	main.h
+	main.c 
 
 nodist_Dimemas3_SOURCES = \
 	$(common_filesdir)/ParaverBinaryTrace.c\
@@ -33,8 +32,8 @@ Dimemas3_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include -I$(common_filesdir)
 nodist_EXTRA_Dimemas3_SOURCES = dummy.cc
 
 Dimemas3_LDADD = \
-	$(top_srcdir)/src/io/libDimemasIO.la \
 	$(top_srcdir)/src/input/libDimemasInput.la \
+	$(top_srcdir)/src/io/libDimemasIO.la \
 	$(top_srcdir)/src/model/libDimemasModel.la \
 	$(top_srcdir)/src/prv_utils/libDimemas2ParaverUtils.la \
 	$(top_srcdir)/src/sched/libDimemasScheduling.la \
@@ -44,3 +43,4 @@ if VENUS_ENABLED
 Dimemas3_LDADD += $(top_srcdir)/src/venusclient/libDimemasVenusClient.la
 endif
 
+DimemasUpdateCFG_SOURCES = Dimemas_updateCFGs.cpp

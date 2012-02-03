@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -48,31 +48,34 @@
 #include "mallocame.h"
 #include "subr.h"
 
-void
-FIFO_thread_to_ready(struct t_thread *thread)
+#include "simulator.h"
+#include "machine.h"
+#include "node.h"
+
+void FIFO_thread_to_ready (struct t_thread *thread)
 {
-   struct t_node    *node;
-   struct t_machine *machine;
-   
-   node = get_node_of_thread (thread);
-   machine = node->machine;
-   
-   if ((thread->loose_cpu) || (machine->scheduler.lost_cpu_on_send))
-      inFIFO_queue (&(node->ready), (char *) thread);
-   else
-      inLIFO_queue (&(node->ready), (char *) thread);
+  struct t_node    *node;
+  struct t_machine *machine;
+
+  node = get_node_of_thread (thread);
+  machine = node->machine;
+
+  if ( (thread->loose_cpu) || (machine->scheduler.lost_cpu_on_send) )
+    inFIFO_queue (& (node->ready), (char *) thread);
+  else
+    inLIFO_queue (& (node->ready), (char *) thread);
 }
 
-t_micro
-FIFO_get_execution_time(struct t_thread *thread)
+t_nano
+FIFO_get_execution_time (struct t_thread *thread)
 {
   struct t_action *action;
-  t_micro         ex_time;
+  t_nano         ex_time;
 
   action = thread->action;
   if (action->action != WORK)
   {
-    printf(
+    printf (
       "Must be work for P%d T%d t%d but it was %d\n",
       IDENTIFIERS (thread),
       action->action
@@ -80,36 +83,36 @@ FIFO_get_execution_time(struct t_thread *thread)
   }
   ex_time = action->desc.compute.cpu_time;
   thread->action = action->next;
-  freeame ((char *) action, sizeof (struct t_action));
+  MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
   return (ex_time);
 }
 
 struct t_thread *
-FIFO_next_thread_to_run(struct t_node *node)
+FIFO_next_thread_to_run (struct t_node *node)
 {
-   return ((struct t_thread *) outFIFO_queue (&(node->ready)));
+  return ( (struct t_thread *) outFIFO_queue (& (node->ready) ) );
 }
 
 void
-FIFO_init_scheduler_parameters(struct t_thread *thread)
+FIFO_init_scheduler_parameters (struct t_thread *thread)
 {
-   thread->sch_parameters = A_NIL;
+  thread->sch_parameters = A_NIL;
 }
 
 void
-FIFO_clear_parameters(struct t_thread *thread)
+FIFO_clear_parameters (struct t_thread *thread)
 {
-   assert(thread != NULL);
+  assert (thread != NULL);
 }
 
 int
-FIFO_info(int info)
+FIFO_info (int info)
 {
   return (0);
 }
 
 void
-FIFO_init(char *filename, struct t_machine  *machine)
+FIFO_init (char *filename, struct t_machine  *machine)
 {
   FILE *fp;
   int j;
@@ -117,59 +120,54 @@ FIFO_init(char *filename, struct t_machine  *machine)
   char str[256];
   double fl;
 
+  if (filename == (char *) 0)
+    return;
 
-  if (debug==D_SCH)
-  {
-    PRINT_TIMER (current_time);
-    printf (": FIFO scheduler init with file %s\n", filename);
-  }
-  
-  if (filename==(char *)0)
+  if (strcmp (filename, "") == 0)
     return;
-  
-  if (strcmp(filename,"")==0)
-    return;
-  
-  fp = MYFOPEN (filename,"r");
-  if (fp==(FILE *)0)
+
+  printf ("   * FIFO scheduler init with file %s\n", filename);
+
+  fp = IO_fopen (filename, "r");
+  if (fp == NULL)
   {
-    if (filename!=(char *)0)
-      fprintf(stderr,"Can open FIFO configuration file %s\n",filename);
+    printf ("   * WARNING: Can't open FIFO configuration file %s\n", filename);
     return;
   }
 
   fgets (str, 256, fp);
   j = sscanf (str, "Policy: %s", buf);
-  if (j!=1)
-    panic ("Invalid format in file %s.\nInvalid policy name %s\n",
-	   filename, buf);
-  
+  if (j != 1)
+    die ("Invalid format in file %s.\nInvalid policy name %s\n",
+         filename,
+         buf);
+
   fgets (str, 256, fp);
-  j = sscanf (str, "Context switch cost (seconds): %le",&fl);
-  if ((j!=1) || (fl<0))
-    panic ("Invalid format in file %s.\nInvalid context switch cost %f\n",
-	   filename, fl);
-  machine->scheduler.context_switch = fl*1e6;
-  
+  j = sscanf (str, "Context switch cost (seconds): %le", &fl);
+  if ( (j != 1) || (fl < 0) )
+    die ("Invalid format in file %s.\nInvalid context switch cost %f\n",
+           filename, fl);
+  machine->scheduler.context_switch = fl * 1e9;
+
   fgets (str, 256, fp);
   j = sscanf (str, "Busy wait (seconds):  %le", &fl);
-  if ((j!=1) || (fl<0))
-    panic ("Invalid format in file %s.\nInvalid busy wait %f\n",
-	   filename, fl);
-  machine->scheduler.busywait_before_block = fl*1e6;
-  
-  fclose(fp);
+  if ( (j != 1) || (fl < 0) )
+    die ("Invalid format in file %s.\nInvalid busy wait %f\n",
+           filename, fl);
+  machine->scheduler.busywait_before_block = fl * 1e9;
+
+  IO_fclose (fp);
 }
 
 void
-FIFO_copy_parameters(struct t_thread *th_o, struct t_thread *th_d)
+FIFO_copy_parameters (struct t_thread *th_o, struct t_thread *th_d)
 {
-   assert(th_o != NULL);
-   assert(th_d != NULL);
+  assert (th_o != NULL);
+  assert (th_d != NULL);
 }
 
 void
 FIFO_free_parameters (struct t_thread *thread)
 {
-   assert(thread != NULL);   
+  assert (thread != NULL);
 }

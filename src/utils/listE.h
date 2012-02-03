@@ -80,7 +80,7 @@ insert_first_Equeue(Equeue *q, char *content, t_priority prio);
 /*
  * Query element with priority from queue
  */
-char *
+char*
 query_prio_Equeue(Equeue *q, t_priority prio);
 
 #ifdef __cplusplus

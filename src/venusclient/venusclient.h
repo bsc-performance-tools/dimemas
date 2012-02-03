@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -46,14 +46,15 @@ extern "C" {
 
 /* extern int channel_socket; */
 extern int venusmsgs_in_flight;
-extern int venus_enabled;
 
-int vc_initialize(char const *venusconn);
-int vc_finish();
+extern void      VC_enable(const char* venus_conn_url);
+extern t_boolean VC_is_enabled(void);
 
-int vc_send(char *s);
+extern void VC_Init(void);
+extern void VC_End(void);
 
-int vc_recv(char *s, int maxlen);
+extern int VC_send(char *s);
+extern int VC_recv(char *s, int maxlen);
 
 int print_event (struct t_event *event);
 struct t_event* EVENT_venus_timer(dimemas_timer when, int daemon, int module, struct t_thread *thread, int info);
@@ -61,12 +62,12 @@ struct t_event* EVENT_venus_timer(dimemas_timer when, int daemon, int module, st
 int venus_outFIFO_event (Equeue *q, struct t_event *e);
 #else
 int venus_outFIFO_event (struct t_queue *q, struct t_event *e);
-#endif 
+#endif
 
-int vc_command_send(double dtime, int src, int dest, int size, void *event, void *out_resources_event);
-int vc_command_rdvz_send (double dtime, int src, int dest, int tag, int size);
-int vc_command_rdvz_ready (double dtime, int src, int dest, int tag, int size, void *event, void *event_resources_out);
-	
+int VC_command_send(double dtime, int src, int dest, int size, void *event, void *out_resources_event);
+int VC_command_rdvz_send (double dtime, int src, int dest, int tag, int size);
+int VC_command_rdvz_ready (double dtime, int src, int dest, int tag, int size, void *event, void *event_resources_out);
+
 #ifdef __cplusplus
 }
 #endif

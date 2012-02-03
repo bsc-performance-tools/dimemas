@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -37,7 +37,7 @@
 /**
  * External routines defined in file cp.c
  **/
-extern void new_cp_node (struct t_thread *thread, int status);
-extern void new_cp_relation (struct t_thread *dest, struct t_thread *src);
-extern void show_CP_graph(void);
+void new_cp_node (struct t_thread *thread, int status);
+void new_cp_relation (struct t_thread *dest, struct t_thread *src);
+void show_CP_graph(void);
 #endif

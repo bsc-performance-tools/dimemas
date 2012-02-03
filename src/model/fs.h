@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -37,12 +37,12 @@
 /**
  * External routines defined in file fs.c
  **/
+extern void FS_Init(void);
+extern void FS_End(void);
+extern void FS_Parameters (double, double, double, int , double);
+
 extern void FS_general(int value, struct t_thread *thread);
-extern void FS_init(char *filename, t_boolean hot);
-extern void FS_end(void);
-extern void show_fs_version(void);
-extern int FS_paraver(void);
-extern void new_io_operation (int , char *);
-extern void new_io_operation (int , char *);
-extern void FS_parameters (double, double, double, int , double);
+extern void FS_show_version(void);
+extern void FS_new_io_operation (int , char *);
+
 #endif

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -73,11 +73,11 @@ typedef struct svr4 {
  * External routines defined in file SCH_fifo.c
  **/
 extern void svr4_thread_to_ready(struct t_thread *thread);
-extern t_micro svr4_get_execution_time(struct t_thread *thread);
+extern t_nano svr4_get_execution_time(struct t_thread *thread);
 extern struct t_thread *svr4_next_thread_to_run(struct t_node *node);
 extern void svr4_init_scheduler_parameters(struct t_thread *thread);
 extern void svr4_clear_parameters(struct t_thread *thread);
-extern int svr4_info(int info, struct t_thread *thread_s, 
+extern int svr4_info(int info, struct t_thread *thread_s,
 		     struct t_thread *thread_r);
 extern void svr4_init(char *filename, struct t_machine *machine);
 extern void svr4_copy_parameters(struct t_thread *th_o, struct t_thread *th_d);

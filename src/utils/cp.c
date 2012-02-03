@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -54,7 +54,7 @@ new_cp_node(struct t_thread *thread, int status)
 {
   register struct t_cp_node *cpn;
   register struct t_module *mod;
-  
+
   if (Critical_Path_Analysis == FALSE)
   {
     return;
@@ -65,31 +65,30 @@ new_cp_node(struct t_thread *thread, int status)
   {
     return;
   }
-  
-  cpn = (struct t_cp_node *) mallocame(sizeof(struct t_cp_node));
-  
+
+  cpn = (struct t_cp_node *) MALLOC_get_memory(sizeof(struct t_cp_node));
+
   cpn->prev = thread->last_cp_node;
   if (thread->last_cp_node!=(struct t_cp_node *)0)
   {
     thread->last_cp_node->next = cpn;
   }
-  
+
   cpn->next = (struct t_cp_node *)0;
   thread->last_cp_node = cpn;
   cpn->status = status;
   ASS_ALL_TIMER (cpn->final_time, current_time);
-  
+
   cpn->module_type  = mod->type;
   cpn->module_value = mod->value;
-  
+
   cpn->send = cpn->recv = (struct t_cp_node *)0;
   cpn->thread = thread;
-  
+
   inFIFO_queue (CP_nodes, (char *)cpn);
 }
 
-void
-new_cp_relation (struct t_thread *dest, struct t_thread *src)
+void new_cp_relation (struct t_thread *dest, struct t_thread *src)
 {
   if (Critical_Path_Analysis==FALSE)
   {
@@ -106,15 +105,15 @@ static int compar (const void *p1, const void *p2)
 {
   register struct t_module_cp *mocp1, *mocp2;
   float f1, f2, f3, f4;
-  
+
   mocp1 = (struct t_module_cp *)p1;
   mocp2 = (struct t_module_cp *)p2;
-  
+
   TIMER_TO_FLOAT (mocp1->timer, f1);
-  TIMER_TO_FLOAT (mocp1->timer_comm, f2); 
-  TIMER_TO_FLOAT (mocp2->timer, f3);    
+  TIMER_TO_FLOAT (mocp1->timer_comm, f2);
+  TIMER_TO_FLOAT (mocp2->timer, f3);
   TIMER_TO_FLOAT (mocp2->timer_comm, f4);
-  
+
   if (f1+f2<f3+f4)
   {
     return (1);
@@ -125,14 +124,13 @@ static int compar (const void *p1, const void *p2)
   }
 }
 
-void
-show_CP_graph ()
+void show_CP_graph ()
 {
   register struct t_cp_node *cpn;
   register struct t_cp_node *cpnp;
   register struct t_cp_node *cpnn;
   dimemas_timer diff, diff2, diff3;
-  
+
   modules_map visited_modules;
   struct t_module_cp *mocp;
   int i,n;
@@ -141,16 +139,16 @@ show_CP_graph ()
   struct t_node *node;
   struct t_cpu *cpu;
   struct t_queue CP_to_paraver;
-  
+
   if (Critical_Path_Analysis==FALSE)
     return;
-  
+
   create_queue (&CP_to_paraver);
-  
+
   create_modules_map (&visited_modules);
-  
+
   cpn = (struct t_cp_node *)tail_queue(CP_nodes);
-  
+
   diff3 = 0;
   while (cpn!=(struct t_cp_node *)0)
   {
@@ -165,7 +163,7 @@ show_CP_graph ()
     inFIFO_queue (&CP_to_paraver, (char *)cpn);
 
     SUB_TIMER (diff,diff2, diff);
-    
+
 
     mocp = (struct t_module_cp *) find_module(&visited_modules,
                                               cpn->module_type,
@@ -174,7 +172,7 @@ show_CP_graph ()
     mocp = (struct t_module_cp *) query_prio_queue (&visited_modules,
                                                     (t_priority)cpn->block_identificator);
     */
-    
+
     if (mocp != NULL)
     {
       if (cpn->status==CP_OVERHEAD)
@@ -189,10 +187,10 @@ show_CP_graph ()
     }
     else
     {
-      mocp = (struct t_module_cp *) mallocame(sizeof(struct t_module_cp));
+      mocp = (struct t_module_cp *) MALLOC_get_memory(sizeof(struct t_module_cp));
       mocp->module_type  = cpn->module_type;
       mocp->module_value = cpn->module_value;
-      
+
       if (cpn->status == CP_OVERHEAD)
       {
         ASS_TIMER (mocp->timer, 0);
@@ -216,7 +214,7 @@ show_CP_graph ()
       ADD_TIMER (diff, diff3, diff);
       ASS_ALL_TIMER (diff3,0);
     }
-    
+
     if (cpnp!=(struct t_cp_node *)0)
     {
       if (cpnp->status==CP_BLOCK)
@@ -242,7 +240,7 @@ show_CP_graph ()
 
     if (cpnp==(struct t_cp_node *)0)
     {
-      Paraver_event(0,
+      PARAVER_Event(0,
                     IDENTIFIERS(cpn->thread),
               diff2, PARAVER_CP_BLOCK, PARAVER_CP_ENTER);
     }
@@ -250,17 +248,17 @@ show_CP_graph ()
     {
       if (cpnp->thread!=cpn->thread)
       {
-          Paraver_event (0,
+          PARAVER_Event (0,
                          IDENTIFIERS (cpn->thread),
                          diff2,
                          PARAVER_CP_BLOCK,
                          PARAVER_CP_ENTER);
       }
     }
-    
+
     if (cpnn==(struct t_cp_node *)0)
     {
-      Paraver_event (0,
+      PARAVER_Event (0,
                      IDENTIFIERS (cpn->thread),
                      cpn->final_time,
                      PARAVER_CP_BLOCK,
@@ -269,19 +267,19 @@ show_CP_graph ()
     else
     {
       if (cpnn->thread!=cpn->thread)
-        Paraver_event (0, IDENTIFIERS (cpn->thread),
+        PARAVER_Event (0, IDENTIFIERS (cpn->thread),
                 cpn->final_time, PARAVER_CP_BLOCK, PARAVER_CP_EXIT);
     }
     ASS_ALL_TIMER (diff2, cpn->final_time);
     cpnp = cpn;
     cpn = cpnn;
   }
-  
+
   fprintf(salida_datos," Block\t %%CPU\t%%COMM\n");
   TIMER_TO_FLOAT (current_time, f0);
-  
+
   n = count_map(&visited_modules);
-  mocparr = (struct t_module_cp *)mallocame(n*sizeof(struct t_module_cp));
+  mocparr = (struct t_module_cp *)MALLOC_get_memory(n*sizeof(struct t_module_cp));
 
   mocp = (struct t_module_cp *) head(&visited_modules);
   while(mocp != NULL)
@@ -291,17 +289,17 @@ show_CP_graph ()
   }
 
   /*
-  for (i=0;i<n;i++) 
+  for (i=0;i<n;i++)
   {
     mocp = (struct t_module_cp *)outFIFO_queue(&visited_modules);
     memcpy (&mocparr[i],mocp, sizeof(struct t_module_cp));
   }
   */
-  
+
   /* Sort output */
   qsort (mocparr, n, sizeof(struct t_module_cp), compar);
-  
-  for (i=0;i<n;i++) 
+
+  for (i=0;i<n;i++)
   {
     TIMER_TO_FLOAT (mocparr[i].timer, f1);
     TIMER_TO_FLOAT (mocparr[i].timer_comm, f2);
@@ -311,5 +309,5 @@ show_CP_graph ()
              mocparr[i].module_value,
              f1*100/f0,
              f2*100/f0);
-  }  
+  }
 }

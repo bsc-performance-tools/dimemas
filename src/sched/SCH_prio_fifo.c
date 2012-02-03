@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -49,8 +49,11 @@
 #include "schedule.h"
 #include "subr.h"
 
-void
-PRIO_FIFO_thread_to_ready(struct t_thread *thread)
+#include "simulator.h"
+#include "machine.h"
+#include "node.h"
+
+void PRIO_FIFO_thread_to_ready(struct t_thread *thread)
 {
   struct t_node          *node;
   struct t_cpu           *cpu, *cpu_to_preemp;
@@ -64,9 +67,9 @@ PRIO_FIFO_thread_to_ready(struct t_thread *thread)
 
   sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
   priority      = sch_prio_fifo->priority;
-   
+
   if (
-    (machine->scheduler.priority_preemptive) && 
+    (machine->scheduler.priority_preemptive) &&
     (select_free_cpu (node, thread) == C_NIL)
   )
   {
@@ -79,7 +82,7 @@ PRIO_FIFO_thread_to_ready(struct t_thread *thread)
     )
     {
       thread_current    = cpu->current_thread;
-      sch_prio_fifo_cur = 
+      sch_prio_fifo_cur =
         (struct t_SCH_prio_fifo *) thread_current->sch_parameters;
 
       if (
@@ -91,12 +94,12 @@ PRIO_FIFO_thread_to_ready(struct t_thread *thread)
         cpu_to_preemp = cpu;
       }
     }
-    
+
     if (cpu_to_preemp != C_NIL)
     {
       thread = SCHEDULER_preemption (thread, cpu_to_preemp);
     }
-    
+
     if (thread == TH_NIL)
     {
       return;
@@ -125,23 +128,21 @@ PRIO_FIFO_thread_to_ready(struct t_thread *thread)
   }
 }
 
-t_micro
-PRIO_FIFO_get_execution_time(struct t_thread *thread)
+t_nano PRIO_FIFO_get_execution_time(struct t_thread *thread)
 {
    struct t_action *action;
-   t_micro         ex_time;
+   t_nano         ex_time;
 
    action = thread->action;
    if (action->action != WORK)
       panic ("Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
    ex_time = action->desc.compute.cpu_time;
    thread->action = action->next;
-   freeame ((char *) action, sizeof (struct t_action));
+   MALLOC_free_memory ((char *) action, sizeof (struct t_action));
    return (ex_time);
 }
 
-struct t_thread *
-PRIO_FIFO_next_thread_to_run(struct t_node *node)
+struct t_thread *PRIO_FIFO_next_thread_to_run(struct t_node *node)
 {
    return ((struct t_thread *) outFIFO_queue (&(node->ready)));
 }
@@ -151,7 +152,7 @@ PRIO_FIFO_init_scheduler_parameters(struct t_thread *thread)
 {
    struct t_SCH_prio_fifo *sch_prio_fifo;
 
-   sch_prio_fifo = (struct t_SCH_prio_fifo *) mallocame (sizeof(struct t_SCH_prio_fifo));
+   sch_prio_fifo = (struct t_SCH_prio_fifo *) MALLOC_get_memory (sizeof(struct t_SCH_prio_fifo));
    sch_prio_fifo->priority = thread->base_priority;
    thread->sch_parameters = (char *) sch_prio_fifo;
 }
@@ -174,8 +175,8 @@ PRIO_FIFO_info(int info)
 void
 PRIO_FIFO_init (char *filename, struct t_machine *machine)
 {
-   assert(filename != NULL);
-   assert(machine  != NULL);
+  assert(filename != NULL);
+  assert(machine  != NULL);
 }
 
 void
@@ -195,5 +196,5 @@ PRIO_FIFO_free_parameters(struct t_thread *thread)
    struct t_SCH_prio_fifo *sch_prio_fifo;
 
    sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
-   freeame ((char *) sch_prio_fifo, sizeof (struct t_SCH_prio_fifo));
+   MALLOC_free_memory ((char *) sch_prio_fifo, sizeof (struct t_SCH_prio_fifo));
 }

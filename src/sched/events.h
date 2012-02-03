@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -38,35 +38,25 @@
  * External routines defined in file events.c
  **/
 
-extern struct t_event*
-EVENT_timer(
-  dimemas_timer    when,
-  int              daemon, 
-  int              module,
-  struct t_thread *thread,
-  int              info
-);
+extern void EVENT_init(void);
 
-extern void
-EVENT_extract_timer(
-  int              module,
-  struct t_thread *thread, 
-  dimemas_timer   *when
-);
+extern void EVENT_end(void);
 
-extern void
-EVENT_init(void);
+extern struct t_event* EVENT_timer(dimemas_timer    when,
+                                   int              daemon,
+                                   int              module,
+                                   struct t_thread *thread,
+                                   int              info);
 
-extern void
-EVENT_end(void);
+extern void EVENT_extract_timer(int              module,
+                                struct t_thread *thread,
+                                dimemas_timer   *when);
 
-extern t_boolean
-events_for_thread (struct t_thread *thread);
 
-extern void
-reload_events(void);
+extern t_boolean events_for_thread (struct t_thread *thread);
 
-extern void
-event_manager(struct t_event *event);
+extern void reload_events(void);
+
+extern void event_manager(struct t_event *event);
 
 #endif

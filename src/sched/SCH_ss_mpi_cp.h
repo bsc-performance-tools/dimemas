@@ -5,11 +5,11 @@ static char *__a_SCH_ss_mpi_cp_h=SCH_ss_mpi_cp_h_rcsid;
 /*
  * Scheduling for MPI/SMPSs execution
  * It is fifo with priorities, with preempting for specific threads
- * 
- * Vladimir Subotic 
- * 
+ *
+ * Vladimir Subotic
+ *
  * (c) BSC-UPC 2010-2011
- * 
+ *
  */
 #ifdef BASE_PRIORITY
 #undef BASE_PRIORITY
@@ -25,7 +25,7 @@ struct t_SCH_ss_mpi_cp
  * External routines defined in file SCH_ss_mpi_cp.c
  **/
 extern void SS_MPI_CP_thread_to_ready(struct t_thread *thread);
-extern t_micro SS_MPI_CP_get_execution_time(struct t_thread *thread);
+extern t_nano SS_MPI_CP_get_execution_time(struct t_thread *thread);
 extern struct t_thread *SS_MPI_CP_next_thread_to_run(struct t_node *node);
 extern void SS_MPI_CP_init_scheduler_parameters(struct t_thread *thread);
 extern void SS_MPI_CP_clear_parameters(struct t_thread *thread);

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -37,6 +37,8 @@
 #include "define.h"
 #include "types.h"
 
+#include "node.h"
+
 #include "communic.h"
 #include "cpu.h"
 #include "extern.h"
@@ -53,8 +55,6 @@
 #include "schedule.h"
 #include "subr.h"
 
-
-struct t_queue  Port_queue;
 
 static struct t_port *
 locate_port (int portid)
@@ -160,13 +160,13 @@ void
 PORT_init()
 {
   struct t_node  *node;
-  
+
   if (debug&D_PORT)
   {
     PRINT_TIMER (current_time);
     printf (": PORT initial routine called\n");
   }
-  
+
 #ifdef USE_EQUEUE
   for (node  = (struct t_node*) head_Equeue (&Node_queue);
        node != N_NIL;
@@ -188,7 +188,7 @@ PORT_end()
   struct t_port  *port;
   struct t_node  *node;
   struct t_thread *thread;
-  
+
   if (debug&D_PORT)
   {
     PRINT_TIMER (current_time);
@@ -213,7 +213,7 @@ PORT_end()
             thread  = (struct t_thread *) next_queue (&(port->recv)))
         {
           node = get_node_of_thread (thread);
-          Paraver_thread_idle (0,
+          PARAVER_Idle (0,
                                IDENTIFIERS (thread),
                                thread->last_paraver,
                                current_time);
@@ -232,7 +232,7 @@ PORT_end()
 	      thread = (struct t_thread *) next_queue (&(port->send)))
 	 {
 	    node = get_node_of_thread (thread);
-	    Paraver_thread_idle (0, IDENTIFIERS (thread),
+	    PARAVER_Idle (0, IDENTIFIERS (thread),
 				 thread->last_paraver, current_time);
 	 }
       }
@@ -264,8 +264,8 @@ PORT_create(int portid, struct t_thread *thread)
       port = PO_NIL;
    else {
 //  Vladimir: this locate_port is an EXPENSIVE ASSERT - I ELIMINATED IT
-//  -> ASSUME THAT IT WILL NEVER FIND THE OVERLAP OF PORT_IDs      
-      port = locate_port (portid);      
+//  -> ASSUME THAT IT WILL NEVER FIND THE OVERLAP OF PORT_IDs
+      port = locate_port (portid);
       if (port != PO_NIL)
       {
          assert(0);
@@ -280,7 +280,7 @@ PORT_create(int portid, struct t_thread *thread)
       return (FALSE);
    }
 
-   port = (struct t_port *) mallocame (sizeof (struct t_port));
+   port = (struct t_port *) MALLOC_get_memory (sizeof (struct t_port));
    port->portid = portid;
    port->thread = thread;
    create_queue (&(port->send));
@@ -346,7 +346,7 @@ PORT_delete(int portid)
    }
 
    extract_from_queue (&Port_queue, (char *) port);
-   freeame ((char *) port, sizeof (struct t_port));
+   MALLOC_free_memory ((char *) port, sizeof (struct t_port));
    return (TRUE);
 }
 
@@ -356,7 +356,7 @@ PORT_send (int module, int portid, struct t_thread *thread, int siz)
   struct t_port   *port;
   struct t_thread *receiver;
   struct t_action *action;
-  t_micro          startup;
+  t_nano          startup;
   struct t_node   *node;
 
   port = locate_port (portid);
@@ -385,7 +385,7 @@ PORT_send (int module, int portid, struct t_thread *thread, int siz)
       startup = node->remote_port_startup;
   }
 
-  if ((startup != (t_micro) 0) && (thread->startup_done == FALSE))
+  if ((startup != (t_nano) 0) && (thread->startup_done == FALSE))
   {
     if (debug&D_PORT)
     {
@@ -394,7 +394,7 @@ PORT_send (int module, int portid, struct t_thread *thread, int siz)
               portid,
               IDENTIFIERS (thread));
     }
-    action = (struct t_action *) mallocame (sizeof (struct t_action));
+    action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
     action->next = thread->action;
     action->action = PORT_SEND;
     action->desc.port.portid = portid;
@@ -453,7 +453,7 @@ PORT_receive(int module, int portid, struct t_thread *thread, int siz)
   struct t_thread *sender;
   struct t_action *action;
   struct t_node   *node;
-  t_micro          startup;
+  t_nano          startup;
 
   port = locate_port (portid);
   if (port == PO_NIL)
@@ -490,7 +490,7 @@ PORT_receive(int module, int portid, struct t_thread *thread, int siz)
               portid,
               IDENTIFIERS (thread));
     }
-    action = (struct t_action *) mallocame (sizeof (struct t_action));
+    action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
     action->next = thread->action;
     action->action = PORT_RECV;
     action->desc.port.portid = portid;
@@ -549,7 +549,7 @@ really_port_send(struct t_port *port, struct t_thread *thread_s,
 {
    struct t_node  *node_s,
                   *node_r;
-   t_micro         ti;
+   t_nano         ti;
    struct t_both  *both;
    t_boolean       remote_comm;
    dimemas_timer   tmp_timer;
@@ -563,7 +563,7 @@ really_port_send(struct t_port *port, struct t_thread *thread_s,
 
       /* ti = transferencia (thread_s->size_port, remote_comm, thread_s, NULL, NULL); */
       transferencia (thread_s->size_port, remote_comm, thread_s, NULL, &ti, NULL);
-     
+
       thread_s->port = port;
       port->sending++;
       if (debug&D_PORT)
@@ -583,7 +583,7 @@ really_port_send(struct t_port *port, struct t_thread *thread_s,
    /*
     * Must wait for links
     */
-      both = (struct t_both *) mallocame (sizeof (struct t_both));
+      both = (struct t_both *) MALLOC_get_memory (sizeof (struct t_both));
       both->port = port;
       both->thread_s = thread_s;
       both->thread_r = thread_r;

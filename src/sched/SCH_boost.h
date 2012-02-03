@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -52,7 +52,7 @@
 struct t_SCH_boost
 {
    t_priority      priority;
-   t_micro         last_quantum;
+   t_nano         last_quantum;
 };
 
 /* Boost scheduler parameters */
@@ -72,14 +72,14 @@ struct t_boost
  * External routines defined in file SCH_boost.c
  **/
 extern void SCH_boost_thread_to_ready(struct t_thread *thread);
-extern t_micro SCH_boost_get_execution_time(struct t_thread *thread);
+extern t_nano SCH_boost_get_execution_time(struct t_thread *thread);
 extern struct t_thread *SCH_boost_next_thread_to_run(struct t_node *node);
 extern void SCH_boost_init_scheduler_parameters(struct t_thread *thread);
 extern void SCH_boost_clear_parameters(struct t_thread *thread);
-extern int SCH_boost_info(int info, struct t_thread *thread_s, 
+extern int SCH_boost_info(int info, struct t_thread *thread_s,
 		     struct t_thread *thread_r);
 extern void SCH_boost_init(char *filename, struct t_machine  *machine);
-extern void SCH_boost_copy_parameters(struct t_thread *th_o, 
+extern void SCH_boost_copy_parameters(struct t_thread *th_o,
 				      struct t_thread *th_d);
 extern void SCH_boost_free_parameters (struct t_thread *thread);
 

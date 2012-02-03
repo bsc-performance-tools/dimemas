@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -37,14 +37,14 @@
 
 struct t_SCH_rr
 {
-   t_micro         last_quantum;
+   t_nano         last_quantum;
 };
 
 /**
  * External routines defined in file SCH_rr.c
  **/
 extern void RR_thread_to_ready(struct t_thread *thread);
-extern t_micro RR_get_execution_time(struct t_thread *thread);
+extern t_nano RR_get_execution_time(struct t_thread *thread);
 extern struct t_thread *RR_next_thread_to_run(struct t_node *node);
 extern void RR_init_scheduler_parameters(struct t_thread *thread);
 extern void RR_clear_parameters(struct t_thread *thread);

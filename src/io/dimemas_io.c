@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -32,18 +32,37 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include <sys/resource.h>
-#include <stdio.h>
+#include <sys/resource.h> // GETRLIMIT(2)
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>       // FSTAT(2)
+#include <stdarg.h>
+#include <string.h>
 #include <errno.h>
 
-#include <stdlib.h>
+#include <types.h> // t_boolean
+
+#include "dimemas_io.h"
+
+// #define DEBUG_IO
+
+static size_t IO_MaximumFileDescriptors;
+static size_t IO_OpenedFileDescriptors;
+
+t_boolean     IO_error_state;
+static char   IO_error_string[256]; // Hardcoded :(
+
+void IO_report_error(const char *format, ...);
+
 /**
  * Initializes the control structures and variables to guarantee the IO
  * scalability
  */
-void IO_init(void)
+void IO_Init(void)
 {
-  struct rlimit nofile_limits;
+  struct        rlimit nofile_limits;
+  int           i;
+  struct stat   stats;
 
   if (getrlimit(RLIMIT_NOFILE, &nofile_limits) == -1)
   {
@@ -51,11 +70,167 @@ void IO_init(void)
     exit(EXIT_FAILURE);
   }
 
-  /* DEBUG */
+  /* DEBUG
   printf("No. Files. Hard limit %d. Sof Limit %d\n",
          nofile_limits.rlim_max,
          nofile_limits.rlim_cur);
+  */
 
-  exit(EXIT_SUCCESS);
+  IO_MaximumFileDescriptors = nofile_limits.rlim_cur;
+  IO_OpenedFileDescriptors  = 0;
+
+  /* Check the number of opened files on initialization */
+  for ( i = 0; i <= IO_MaximumFileDescriptors; i++ )
+  {
+    fstat(i, &stats);
+
+    if ( errno != EBADF )
+    {
+      IO_OpenedFileDescriptors++;
+    }
+  }
+
+  IO_error_state            = FALSE;
+  sprintf(IO_error_string, "no I/O error");
 }
 
+size_t IO_available_streams(void)
+{
+  return (IO_MaximumFileDescriptors - IO_OpenedFileDescriptors);
+}
+
+/**
+ * FOPEN(3) wrapper to keep track of the number of descriptors available
+ */
+FILE *IO_fopen(const char *path, const char *mode)
+{
+  FILE* result;
+
+#ifdef DEBUG_IO
+  // PRINT_TIMER(current_time);
+  printf ("IO_fopen('%s', '%s') [%d/%d]\n",
+          path,
+          mode,
+          IO_OpenedFileDescriptors,
+          IO_MaximumFileDescriptors);
+#endif
+
+  if (IO_OpenedFileDescriptors == IO_MaximumFileDescriptors)
+  {
+    IO_report_error("no file pointers available, please check OS limits (total: %zu)",
+                    IO_MaximumFileDescriptors);
+    result = NULL;
+  }
+  else
+  {
+    if ((result = MYFOPEN(path, mode)) == NULL)
+    {
+      IO_report_error("%s", strerror(errno));
+    }
+    else
+    {
+      IO_OpenedFileDescriptors++;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * FCLOSE(3) wrapper to keep track of the number of descriptors available
+ */
+int IO_fclose(FILE* fp)
+{
+  int result = 0;
+
+  if (fp == NULL)
+  {
+    IO_report_error("unable to close an already closed file");
+    result = EOF;
+  }
+  else
+  {
+    if ( (result = MYFCLOSE(fp)) == EOF)
+    {
+      IO_report_error("%s", strerror(errno));
+    }
+    else
+    {
+      IO_OpenedFileDescriptors--;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * FTELLO(3) wrapper to keep uniform the I/O
+ */
+off_t IO_ftello(FILE* stream)
+{
+  off_t result;
+
+  if ( (result = MYFTELLO(stream)) == -1)
+  {
+    IO_report_error("%s", strerror(errno));
+  }
+
+  return result;
+}
+
+/**
+ * FSEEKO(3) wrapper to keep uniform the I/O
+ */
+int IO_fseeko(FILE *stream, off_t offset, int whence)
+{
+  int result;
+
+  if ( (result = MYFSEEKO(stream, offset, whence)) == -1)
+  {
+    IO_report_error("%s", strerror(errno));
+  }
+
+  return result;
+}
+
+/**
+ * Return the error message
+ */
+const char* IO_get_error(void)
+{
+  return IO_error_string;
+}
+
+/**
+ * Checks if the given path corresponds to an existing file
+ */
+t_boolean IO_file_exists(const char *path)
+{
+  struct stat stats;
+
+  if (stat(path, &stats) == -1)
+  {
+    return FALSE;
+  }
+
+  if (S_ISREG(stats.st_mode))
+  {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Processes error messages in a 'printf' style
+ */
+void IO_report_error (const char *format, ...)
+{
+
+  va_list args;
+  va_start (args, format);
+  vsprintf(IO_error_string, format, args);
+  va_end(args);
+
+  IO_error_state = TRUE;
+}
