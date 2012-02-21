@@ -64,9 +64,10 @@ int venus_outFIFO_event (Equeue *q, struct t_event *e);
 int venus_outFIFO_event (struct t_queue *q, struct t_event *e);
 #endif
 
-int VC_command_send(double dtime, int src, int dest, int size, void *event, void *out_resources_event);
-int VC_command_rdvz_send (double dtime, int src, int dest, int tag, int size);
-int VC_command_rdvz_ready (double dtime, int src, int dest, int tag, int size, void *event, void *event_resources_out);
+int VC_command_send(double dtime, int src, int dest, int size, void *event, void *out_resources_event, int src_app, int dest_app);
+int VC_command_rdvz_send (double dtime, int src, int dest, int tag, int size, int src_app, int dest_app);
+int VC_command_rdvz_ready (double dtime, int src, int dest, int tag, int size, void *event, void *event_resources_out, int src_app, int dest_app);
+
 
 #ifdef __cplusplus
 }

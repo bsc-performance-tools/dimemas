@@ -975,7 +975,7 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
     BAD_TYPES(f->tipo, el->type);
   }
 
-  if (f->value.real <= 0)
+  if (f->value.real < 0)
   {
     near_line ();
     die ("Invalid relative processor speed (%le) for node %d\n",

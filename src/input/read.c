@@ -136,74 +136,36 @@ t_boolean check_new_trace_format()
 static void Ptask_reload (struct t_Ptask *Ptask,
                           char           *TraceFile)
 {
-  struct t_queue        *comms_queue;
-  struct t_communicator *comm;
 
   struct t_task   *task;
   struct t_thread *thread;
+  
+  int tasks_it, threads_it;
 
-  int main_app_findex = -1;
-
-  size_t i, j;
 
   if (debug)
   {
     printf ("* RELOADing Ptask %02d\n", Ptask->Ptaskid);
   }
 
-  /*
-   * The reload should be done with a API operation
-  main_app_findex = DATA_ACCESS_ptask_id_end(Ptask->Ptaskid); // End current task (closes the file, frees memory, etc.)
+  DATA_ACCESS_reload_ptask (Ptask->Ptaskid);
 
-  if (main_app_findex < 0) {
-    panic ("While reloading - DATA_ACCESS_end did not find the Ptask %02d\n", Ptask->Ptaskid);
-  }
-
-  if (DATA_ACCESS_init_index(Ptask->Ptaskid, TraceFile, main_app_findex) == FALSE)
+  // Load "next" action for each thread of each task of each Ptask.
+  for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+       Ptask != P_NIL;
+       Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
-    die(DATA_ACCESS_get_error());
-  }
-
-
-  if (DATA_ACCESS_get_communicators(Ptask->Ptaskid, &comms_queue) == FALSE)
-    panic(DATA_ACCESS_get_error());
-
-
-  for(comm  = (struct t_communicator*) head_queue (comms_queue);
-      comm != COM_NIL;
-      comm  = (struct t_communicator*) next_queue(comms_queue))
-  {
-    insert_queue(&Ptask->Communicator,
-                 (char*) comm,
-                 (t_priority)comm->communicator_id);
-  }
-
-  /* This comm_queue is not freed? */
-
-  /* Load initial actions to each thread */
-
-
-
-  /* JGG (2012/01/13): New way to iterate through tasks and threads
-  for(task  = (struct t_task *) head_queue (&(Ptask->tasks));
-      task != T_NIL;
-      task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-  {
-    for(thread  = (struct t_thread *) head_queue (&(task->threads));
-        thread != TH_NIL;
-        thread  = (struct t_thread *) next_queue (&(task->threads)))
+    for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
+      task = &(Ptask->tasks[tasks_it]);
 
-  for(i = 0; i < Ptask->tasks_count; i++)
-  {
-    task = &(Ptask->tasks[i]);
-
-    for(j = 0; j < task->threads_count; j++)
-    {
-      get_next_action(task->threads[i]);
+      for (threads_it = 0; threads_it < task->threads_count; threads_it++ )
+      {
+        thread = task->threads[threads_it];
+        READ_get_next_action(thread);
+      }
     }
   }
-  */
 
   return;
 }
@@ -220,12 +182,14 @@ void reload_new_Ptask (struct t_Ptask *Ptask)
   struct t_task   *task;
   struct t_thread *thread;
   struct t_cpu    *cpu;
-  int count_finished_apps = 1;
 
-  if (orig_apps_count == 0) {
-     orig_apps_count = count_queue (&(Ptask_queue));
-     PRINT_TIMER(current_time);
-     printf(" DIMEMAS: # apps: %d\n", orig_apps_count);
+  if (orig_apps_count == 0)
+  {
+    orig_apps_count = count_queue (&(Ptask_queue));
+    if (debug) {
+      PRINT_TIMER(current_time);
+      printf(": RELOAD: # apps: %d\n", orig_apps_count);
+    }
   }
 
   if (reload_while_longest_running && !stop_restarts)
@@ -233,13 +197,18 @@ void reload_new_Ptask (struct t_Ptask *Ptask)
     if (Ptask->n_rerun == 0)
     {
       count_finished_apps++;
-      PRINT_TIMER(current_time);
-      printf(" DIMEMAS: # app %d finished; count_finished_apps=%d\n", Ptask->Ptaskid, count_finished_apps);
+      if (debug)
+      {
+        PRINT_TIMER(current_time);
+        printf(": RELOAD: # app %d finished; count_finished_apps=%d\n", Ptask->Ptaskid, count_finished_apps);
+      }
     }
 
     if (count_finished_apps >= orig_apps_count)
     {
-      printf("DIMEMAS: count_finished_apps=%d, orig_apps_count=%d - STOPPING RESTARTS\n", count_finished_apps, count_finished_apps);
+      if (debug) {
+        printf("RELOAD: count_finished_apps=%d, orig_apps_count=%d - STOPPING RESTARTS\n", count_finished_apps, orig_apps_count);
+      }
       stop_restarts = 1;
     }
   }

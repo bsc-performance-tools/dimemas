@@ -7,6 +7,17 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2012/02/21 - grodrigu
+	FEATURES:	Added support for application reloading
+
+	BUGFIX:		Solved a bug when using 'off_t', 'size_t' and 'int' to
+				index structures.
+
+	BUGFIX:		Corrected spelling mistake in 'configure.ac'
+
+	BUGFIX:		Solved a pattern matching when reading MPI communaction
+				primitives and some pointer errors in 'file_data_access.c'
+
 2012/02/03 - jgonzale
 	CHANGES:	Complete integration of all Dimemas versions. 
 

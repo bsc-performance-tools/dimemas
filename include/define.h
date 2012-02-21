@@ -117,8 +117,10 @@
 /* MAX RELOAD LIMIT */
 #define MAX_RELOAD_LIMIT 1000
 
-/* SHOW PERFORMANCE BANNERS */
+/* SHOW PERFORMANCE BANNERS: requires clock_gettime(), in library -lrt */
+/*
 #define SHOW_PERFORMANCE
+*/
 
 /* USE NEW QUEUE CONTAINERS */
 //#define USE_EQUEUE

@@ -60,8 +60,6 @@
 #define EXTERN extern
 #endif  /* CHECK */
 
-typedef int Equeue;
-
 extern struct t_queue Ptask_queue;
 
 #ifdef USE_EQUEUE

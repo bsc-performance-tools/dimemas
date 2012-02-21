@@ -63,6 +63,12 @@
 #include "venusclient.h"
 #endif
 
+#define PERIODIC_TRAFFIC 10e9
+// For venus, 10e9 is too much
+#ifdef VENUS_ENABLED
+#define VENUS_PERIODIC_TRAFFIC 1e9
+#endif
+
 /******************************************************************************
  * Global variables                                                           *
  *****************************************************************************/
@@ -498,13 +504,13 @@ void periodic_external_network_traffic_init()
    * que s'esta simulant. */
 #ifdef VENUS_ENABLED
   if (VC_is_enabled() ) {
-    ADD_TIMER (1e9, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
+    ADD_TIMER (VENUS_PERIODIC_TRAFFIC, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
   }
   else {
-    ADD_TIMER (10e9, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
+    ADD_TIMER (PERIODIC_TRAFFIC, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
   }
 #else
-  ADD_TIMER (10e9, current_time, tmp_timer);
+  ADD_TIMER (PERIODIC_TRAFFIC, current_time, tmp_timer);
 #endif
 
   EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, NULL, COM_EXT_NET_TRAFFIC_TIMER);
@@ -533,9 +539,16 @@ void periodic_recompute_external_network_traffic()
 
   dimemas_timer tmp_timer;
 
+  double periodic_traffic_interval = PERIODIC_TRAFFIC;
+#ifdef VENUS_ENABLED
+  if (VC_is_enabled()) {
+    periodic_traffic_interval = VENUS_PERIODIC_TRAFFIC;
+  }
+#endif
+
   suma_missatges_xarxa_externa =
     suma_missatges_xarxa_externa * param_external_net_alfa +
-    (increment_missatges_xarxa_externa / (10 * 1e9) ) *
+    (increment_missatges_xarxa_externa / (periodic_traffic_interval) ) *
     (1 - param_external_net_alfa);
 
   if (debug & D_COMM)
@@ -575,13 +588,13 @@ void periodic_recompute_external_network_traffic()
        seguiria simulant sense que hi hagues cap altre event que aquests. */
 #ifdef VENUS_ENABLED
     if (VC_is_enabled() ) {
-      ADD_TIMER (1e9, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
+      ADD_TIMER (VENUS_PERIODIC_TRAFFIC, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
     }
     else {
-      ADD_TIMER (10e6, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
+      ADD_TIMER (PERIODIC_TRAFFIC, current_time, tmp_timer); /* grodrigu: 10e6 is too much when interfaced with Venus */
     }
 #else
-    ADD_TIMER (10e6, current_time, tmp_timer);
+    ADD_TIMER (PERIODIC_TRAFFIC, current_time, tmp_timer);
 #endif
 
     EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, NULL, COM_EXT_NET_TRAFFIC_TIMER);
@@ -2900,7 +2913,7 @@ COMMUNIC_send (struct t_thread *thread)
     double dtime;
     TIMER_TO_FLOAT (current_time, dtime);
     if (mess->rendez_vous) {
-      VC_command_rdvz_send (dtime, node_s->nodeid - 1, node_r->nodeid - 1, mess->mess_tag, mess->mess_size);
+      VC_command_rdvz_send (dtime, node_s->nodeid, node_r->nodeid, mess->mess_tag, mess->mess_size, task->Ptask->Ptaskid, task_partner->Ptask->Ptaskid);
     }
   }
 #endif
@@ -4282,11 +4295,11 @@ really_send_single_machine (struct t_thread *thread)
       dtime = thread->physical_send;
       if (mess->rendez_vous)
       {
-        VC_command_rdvz_ready (dtime, node->nodeid - 1, node_partner->nodeid - 1, mess->mess_tag, mess->mess_size, thread->event, out_resources_ev);
+        VC_command_rdvz_ready (dtime, node->nodeid, node_partner->nodeid, mess->mess_tag, mess->mess_size, thread->event, out_resources_ev, task->Ptask->Ptaskid, task_partner->Ptask->Ptaskid);
       }
       else
       {
-        VC_command_send (dtime, node->nodeid - 1, node_partner->nodeid - 1, mess->mess_size, thread->event, out_resources_ev);
+        VC_command_send (dtime, node->nodeid, node_partner->nodeid, mess->mess_size, thread->event, out_resources_ev, task->Ptask->Ptaskid, task_partner->Ptask->Ptaskid);
       }
     }
 #else

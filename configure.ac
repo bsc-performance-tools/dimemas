@@ -251,11 +251,11 @@ AC_ARG_WITH(
   time_limit,
   AS_HELP_STRING(
     [--with-time-limit=TIME-LIMIT], 
-    [give the simulation time limit in microseconds (scientific notation can  
+    [give the simulation time limit in nanoseconds (scientific notation can  
      be used)]
   ),
   time_limit="$withval",
-  time_limit="2.52e10"
+  time_limit="2.52e13"
 )
 
 AC_DEFINE_UNQUOTED(TIME_LIMIT,
@@ -411,7 +411,7 @@ dnl Mandatory FLAGS
 dnl =======================================================================
 
 CFLAGS="$CFLAGS -DDIMEMAS_COMPILATION"
-CXXFLAGS="$CXXFLAGS -DDIMEAMS_COMPILATION"
+CXXFLAGS="$CXXFLAGS -DDIMEMAS_COMPILATION"
 LDFLAGS="$LDFLAGS"
 
 dnl =======================================================================

@@ -137,7 +137,7 @@ create_Equeue(Equeue *q)
 {
 	*q = lastQueueCreated;
 	lastQueueCreated++;
-        if (Equeues.size() <= (*q - 1)) {
+        if (Equeues.size() <= (lastQueueCreated - 1)) {
 		Equeues.resize(*q+10000);
 	}
 	//printf("Created queue %d\n", *q);

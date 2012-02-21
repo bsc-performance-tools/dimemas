@@ -64,6 +64,7 @@
 #include "simulator.h"
 
 #ifdef VENUS_ENABLED
+#include "listE.h"
 #include "venusclient.h"
 #endif
 
@@ -415,11 +416,15 @@ void parse_arguments(int argc, char *argv[])
           j++;
           reload_Ptasks = TRUE;
           reload_limit = atoi (argv[j]);
-          if (reload_limit <= 0) {
+          if (reload_limit == 0) {
             /* Changed behaviour: 0 is "inifinite" until all have executed at least once */
             reload_limit = MAX_RELOAD_LIMIT;
             reload_while_longest_running = TRUE;
-            /* <0 should be an error if it is undefined... but well... */
+          }
+          if (reload_limit < 0) {
+              fprintf (stderr, "# reloads must be >= 0, given: -r %d\n", reload_limit);
+              fprintf (stderr, USAGE, argv[0]);
+              exit (1);
           }
           break;
         case 'O':

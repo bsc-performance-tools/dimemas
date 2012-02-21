@@ -32,12 +32,13 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#define _GNU_SOURCE // for getline
+#include <stdio.h>
+
 /* JGG: to use 'USE_RENDEZ_VOUS' macro */
 #include <define.h>
 #include <types.h>
 #include <extern.h>
-
-#include <stdio.h>
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -45,8 +46,13 @@
 #include <string.h>
 #include <errno.h>
 
+#include <mallocame.h> // should use mallocame
+// char* MALLOC_get_memory  (size_t s);
+// void  MALLOC_free_memory (char* a); // , size_t s); // 's' is not used
+
 #include "file_data_access.h"
 #include <dimemas_io.h>
+#include <list.h>
 
 // Definition and configuartion parameters of data access api
 #define DATA_ACCESS_DIMEMAS_HELLO_SIGN "#DIMEMAS"
@@ -92,7 +98,7 @@
 #define MSG_RECV_REGEXP_SS  "%d:%d:%ld:%d:%d:%d"  // ssrc_task_id:src_thread_id:msg_size:tag:comm_id:recv_type
 
 #define RECORD_GLOBAL_OP 10
-#define GLOBAL_OP_REGEXP    "%d:%d:%d:%d:%d:%d:%ld:%ld" // global_op_id:comm_id:root_task:root_th:bytes_send:bytes_recv
+#define GLOBAL_OP_REGEXP    "%d:%d:%d:%d:%ld:%ld" // global_op_id:comm_id:root_task:root_th:bytes_send:bytes_recv
 
 #define RECORD_EVENT     20
 #define EVENT_REGEXP     "%ld:%ld" // event_type:event_value
@@ -115,8 +121,8 @@
 typedef struct _fp_share
 {
 
-  int   last_task_id;
-  int   last_thread_id;
+  count_t  last_task_id;
+  count_t  last_thread_id;
   FILE *fp;
 
 } fp_share;
@@ -131,20 +137,20 @@ typedef struct _app_struct
   int             ptask_id;
   char           *app_name;
   char           *trace_file_name;
-  size_t          tasks_count;
-  size_t         *threads_count;
-  size_t          total_threads_count;
+  count_t         tasks_count;
+  count_t        *threads_count;
+  count_t         total_threads_count;
   int             offset_type;
   off_t           offsets_offset;
   off_t           records_offset;
   off_t         **threads_offsets;
 
-  size_t          streams_count;
+  count_t         streams_count;
   fp_share       *streams;
   size_t        **streams_idxs; // Index of the 'fp_share' assigned to each thread
   off_t         **current_threads_offsets;
 
-  int             comms_count;
+  count_t         comms_count;
   struct t_queue  comms;
 
 } app_struct;
@@ -183,9 +189,9 @@ void      DAP_end_ptask (app_struct *app);
 t_boolean DAP_initialize_app (app_struct *app,
                               int         ptask_id,
                               char       *app_name,
-                              int         tasks_count,
-                              int        *threads_count,
-                              int         comms_count,
+                              count_t     tasks_count,
+                              count_t    *threads_count,
+                              count_t     comms_count,
                               off_t       offsets_offset);
 
 /*
@@ -322,11 +328,11 @@ t_boolean DATA_ACCESS_get_ptask_structure (int                      ptask_id,
     (*ptask_info)->tasks_count   = app->tasks_count;
 
     (*ptask_info)->threads_per_task =
-      (size_t*) MALLOC_get_memory(app->tasks_count*sizeof(size_t));
+      (count_t*) MALLOC_get_memory(app->tasks_count*sizeof(count_t));
 
     memcpy((*ptask_info)->threads_per_task,
            app->threads_count,
-           app->tasks_count*sizeof(size_t));
+           app->tasks_count*sizeof(count_t));
 
     return TRUE;
   }
@@ -446,6 +452,7 @@ int DATA_ACCESS_test_routine (int ptask_id)
       DAP_print_app_structure(main_struct.apps[i]);
     }
   }
+  return i;
 }
 
 /******************************************************************************
@@ -514,12 +521,42 @@ app_struct* DAP_locate_app_struct (int ptask_id)
 }
 
 /**
+ * Reload of an application
+ */
+t_boolean DATA_ACCESS_reload_ptask (int ptask_id)
+{
+  app_struct *app;
+  count_t     tasks_it;
+  count_t     threads_it;
+
+  if ( (app = DAP_locate_app_struct (ptask_id)) == NULL)
+  {
+    DAP_report_error ("invalid Ptask id %d", ptask_id);
+    return FALSE;
+  }
+
+  for (tasks_it = 0; tasks_it < app->tasks_count; tasks_it++)
+  {
+    for (threads_it = 0;
+         threads_it < app->threads_count[tasks_it];
+         threads_it++)
+    {
+      app->current_threads_offsets[tasks_it][threads_it] =
+        app->threads_offsets[tasks_it][threads_it];
+    }
+  }
+  DAP_reset_app_stream_fps (app);
+
+  return TRUE;
+}
+
+
+/**
  * Initialization of an application
  */
 t_boolean DAP_add_ptask (int ptask_id, char *trace_file_name, int index)
 {
   int num_a      = 0;
-  int res_i_proc = 0;
 
   app_struct *app;
 
@@ -548,7 +585,7 @@ t_boolean DAP_add_ptask (int ptask_id, char *trace_file_name, int index)
     {
       DAP_report_error("unable to open trace file: %s",
                        IO_get_error());
-      return;
+      return FALSE;
     }
 
     /* Strat reading procedures: header, definitions, offsets */
@@ -608,7 +645,6 @@ t_boolean DAP_add_ptask (int ptask_id, char *trace_file_name, int index)
 void DAP_end_ptask (app_struct *app)
 {
   int i = 0;
-  t_boolean res = 0;
 
   MALLOC_free_memory (app->app_name);
   MALLOC_free_memory (app->trace_file_name);
@@ -654,23 +690,21 @@ void DAP_end_ptask (app_struct *app)
 t_boolean DAP_initialize_app (app_struct *app,
                               int         ptask_id,
                               char       *app_name,
-                              int         tasks_count,
-                              int        *threads_count,
-                              int         comms_count,
+                              count_t     tasks_count,
+                              count_t    *threads_count,
+                              count_t     comms_count,
                               off_t       offsets_offset)
 {
   // Local variables
-  int i, j;       // Local iterators
-  int total_threads;
+  int i;        // Local iterators
 
-  char read_mode = 'r';
 
   app->ptask_id      = ptask_id;
   app->app_name      = strdup(app_name);
   app->tasks_count   = tasks_count;
 
-  app->threads_count = (int*) MALLOC_get_memory(tasks_count*sizeof(int));
-  memcpy(app->threads_count, threads_count, tasks_count*sizeof(int));
+  app->threads_count = (count_t*) MALLOC_get_memory(tasks_count*sizeof(count_t));
+  memcpy(app->threads_count, threads_count, tasks_count*sizeof(count_t));
 
   app->comms_count    = comms_count;
   app->offsets_offset = offsets_offset;
@@ -716,13 +750,13 @@ t_boolean DAP_read_header (app_struct *ptask,
   int     offset_present;
   size_t  offsets_offset = 0;
 
-  int     tasks_count;
+  count_t tasks_count;
   char   *threads_str;
-  int     comms_count;
+  count_t comms_count;
 
-  int    *threads_count;
-  char   *current_thread_count;
-  int     current_task;
+  count_t *threads_count;
+  char    *current_thread_count_str;
+  count_t  current_task;
 
   /* Obtain the header line */
   if ( (bytes_read = getline(&header,
@@ -799,16 +833,16 @@ t_boolean DAP_read_header (app_struct *ptask,
     return DATA_ACCESS_ERROR;
   }
 
-  threads_count = MALLOC_get_memory(tasks_count*sizeof(int));
+  threads_count = (count_t *) MALLOC_get_memory(tasks_count*sizeof(count_t));
 
   /* 'Tokenize' the tasks definition to obtain the threads per task */
   current_task = 0;
-  current_thread_count = strtok(threads_str, ",");
-  while (current_thread_count != NULL)
+  current_thread_count_str = strtok(threads_str, ",");
+  while (current_thread_count_str != NULL)
   {
-    threads_count[current_task] = atoi(current_thread_count);
+    threads_count[current_task] = atoi(current_thread_count_str);
     current_task++;
-    current_thread_count = strtok(NULL, ",");
+    current_thread_count_str = strtok(NULL, ",");
   }
 
   if (current_task != tasks_count)
@@ -828,7 +862,7 @@ t_boolean DAP_read_header (app_struct *ptask,
     return FALSE;
   }
 
-  MALLOC_free_memory (current_thread_count);
+  MALLOC_free_memory (current_thread_count_str);
   MALLOC_free_memory (app_name_str);
   MALLOC_free_memory (offsets_str);
   MALLOC_free_memory (ptask_info_str);
@@ -926,7 +960,6 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
 
   char* current_task_str;
   int   actual_comm_tasks_count;
-  int*  actual_comm_tasks;
 
   comm_tasks_str = MALLOC_get_memory(strlen(comm_fields)+1);
 
@@ -968,7 +1001,7 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
   current_task_str = strtok(comm_tasks_str, ":");
   while (current_task_str != NULL)
   {
-    int* current_task_ptr = MALLOC_get_memory(sizeof(int));
+    count_t* current_task_ptr = (count_t *) MALLOC_get_memory(sizeof(count_t));
 
     if (current_task_ptr == NULL)
     {
@@ -977,7 +1010,7 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
 
     (*current_task_ptr) = atoi(current_task_str);
 
-    inFIFO_queue(&new_communicator->global_ranks, current_task_ptr);
+    inFIFO_queue(&new_communicator->global_ranks, (char*) current_task_ptr);
     actual_comm_tasks_count++;
     current_task_str = strtok(NULL, ":");
   }
@@ -993,7 +1026,7 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
     return FALSE;
   }
 
-  insert_queue(&(app->comms), (char*) new_communicator);
+  insert_queue(&(app->comms), (char*) new_communicator, (t_prioirity) comm_id);
 
   return TRUE;
 }
@@ -1007,12 +1040,11 @@ t_boolean DAP_read_offsets (app_struct *app)
   size_t  line_length = 0;
   ssize_t bytes_read;
 
-  size_t  current_task;
+  count_t  current_task;
 
-  char  offset_record_id;
-  int   current_task_read;
-  char* threads_offsets_str;
-  char* current_thread_offset_str;
+  count_t current_task_read;
+  char*   threads_offsets_str;
+  char*   current_thread_offset_str;
 
   // Set the stream to the offsets offset position
   if ( IO_fseeko(main_struct.current_stream, app->offsets_offset, SEEK_SET) < 0)
@@ -1024,7 +1056,7 @@ t_boolean DAP_read_offsets (app_struct *app)
   // Read the offset of each task/thread of the application
   for (current_task = 0; current_task < app->tasks_count; current_task++)
   {
-    size_t current_thread;
+    count_t current_thread;
 
     line        = NULL;
     line_length = 0;
@@ -1099,7 +1131,7 @@ t_boolean DAP_read_offsets (app_struct *app)
 
     if (current_thread < app->threads_count[current_task])
     {
-      DAP_report_error("number of threads offsets bigger than task threads (%d expected, %d read)",
+      DAP_report_error("number of threads offsets smaller than task threads (%d expected, %d read)",
                        app->threads_count[current_task],
                        current_thread);
       return FALSE;
@@ -1117,7 +1149,7 @@ t_boolean DAP_read_offsets (app_struct *app)
  */
 t_boolean DAP_locate_offsets(app_struct *app)
 {
-  int task, thread;
+  count_t task, thread;
 
   off_t last_thread_offset;
   off_t file_size;
@@ -1173,8 +1205,8 @@ t_boolean DAP_locate_offsets(app_struct *app)
  * Dicotomic search to locate the offset of a single thread
  */
 off_t DAP_locate_thread_offset(app_struct *app,
-                               int         task_id,
-                               int         thread_id,
+                               count_t     task_id,
+                               count_t     thread_id,
                                off_t       lower_bound,
                                off_t       upper_bound)
 {
@@ -1184,8 +1216,9 @@ off_t DAP_locate_thread_offset(app_struct *app,
 
   off_t result;
 
-  int   op_id, read_task_id, read_thread_id;
-  char *op_fields;
+  int     op_id; 
+  count_t read_task_id, read_thread_id;
+  char   *op_fields;
 
   t_boolean found = FALSE;
 
@@ -1353,7 +1386,6 @@ t_boolean DAP_io_init(void)
   int         apps_it;
   app_struct *app;
 
-  size_t threads_per_app[DATA_ACCESS_MAX_NUM_APP];
   size_t total_api_threads;
 
   size_t streams_per_app[DATA_ACCESS_MAX_NUM_APP];
@@ -1391,9 +1423,15 @@ t_boolean DAP_io_init(void)
         (app->total_threads_count/total_api_threads)*total_available_streams;
     }
 
+    if (!streams_per_app[apps_it]) {
+      DAP_report_error("streams per app is 0 for app=%d", apps_it);
+      return FALSE;
+    }
+
     if (!DAP_allocate_streams(app,
                               streams_per_app[apps_it]))
     {
+      DAP_report_error("Could not allocate streams for apps_it=%d", apps_it);
       return FALSE;
     }
   }
@@ -1414,13 +1452,15 @@ t_boolean DAP_io_init(void)
   return TRUE;
 }
 
+
 /**
  * Initialization of I/O file sharing for each application
  */
 t_boolean DAP_allocate_streams(app_struct *app, size_t assigned_streams)
 {
-  int i, tasks_it, threads_it;
-  size_t current_thread;
+  size_t i; 
+  count_t tasks_it, threads_it;
+  count_t current_thread;
 
   app->streams_count = assigned_streams;
 
@@ -1454,7 +1494,7 @@ t_boolean DAP_allocate_streams(app_struct *app, size_t assigned_streams)
 
   /* Initialize the thread stream indexes */
   app->streams_idxs =
-    (size_t**) MALLOC_get_memory(app->tasks_count*sizeof(size_t));
+    (size_t**) MALLOC_get_memory(app->tasks_count*sizeof(size_t*));
 
   /* DEBUG
   printf ("Ptask %d assigned streams = %d\n", app->ptask_id, assigned_streams);
@@ -1563,6 +1603,28 @@ FILE* DAP_get_stream (app_struct* app, int task_id, int thread_id)
 }
 
 /**
+ * This function resests the "fp" for a ptask's streams
+ * So that the "next_action" is forced to reposition the offset.
+ */
+t_boolean DAP_reset_app_stream_fps (app_struct *app) {
+  count_t task, thread;
+
+  for (task = 0; task < app->tasks_count; task++)
+  {
+    for (thread = 0; thread < app->threads_count[task]; thread++)
+    {
+      fp_share *assigned_fp;
+      size_t assigned_stream_idx = app->streams_idxs[task][thread];
+      assigned_fp = &(app->streams[assigned_stream_idx]);
+      assigned_fp->last_task_id   = -1;
+      assigned_fp->last_thread_id = -1;
+    }
+  }
+
+  return TRUE;
+} 
+
+/**
  * Reads an operation (action) record from the given task/thread, if available
  */
 t_boolean DAP_read_action (app_struct       *app,
@@ -1603,7 +1665,7 @@ t_boolean DAP_read_action (app_struct       *app,
     return FALSE;
   }
 
-  if ( (op_fields = MALLOC_get_memory(strlen(line)+1)) == NULL)
+  if ( (op_fields = MALLOC_get_memory(bytes_read+1)) == NULL)
   {
     DAP_report_error("unable to allocate memory to parse an action record");
     return FALSE;
@@ -1677,7 +1739,7 @@ t_boolean DAP_read_action (app_struct       *app,
   {
     /* Allocate memory for new action */
     (*action) = (struct t_action*) MALLOC_get_memory(sizeof(struct t_action));
-    if (action == NULL)
+    if ( (*action) == NULL)
     {
       DAP_report_error("unable to allocate space for new action");
       return FALSE;
@@ -1827,7 +1889,7 @@ t_boolean DAP_read_msg_recv  (const char      *msg_recv_str,
              &rcvt) != 6)
   {
     if (sscanf(msg_recv_str,
-                   MSG_SEND_REGEXP_SS,
+                   MSG_RECV_REGEXP_MPI,
                   &src_task_id,
                   &msg_size,
                   &tag,

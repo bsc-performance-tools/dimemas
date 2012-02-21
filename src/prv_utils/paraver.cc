@@ -1089,10 +1089,12 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
       }
     }
 
+    Header << "),";
+
     total_communicators += (unsigned int) count_queue(&(ptask->Communicator));
   }
 
-  Header << ")," << total_communicators << std::endl;
+  Header << total_communicators << std::endl;
 
   /*
    * Iterate through applications (ptasks) to print the tasks/threads

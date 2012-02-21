@@ -81,6 +81,8 @@ typedef struct
 typedef double  dimemas_timer;
 #endif  /* PACA */
 
+typedef int Equeue;
+
 /*
  * Item for queues and lists Double chained item previous item of first in
  * queue is NIL next item of last in queue is NIL

@@ -35,12 +35,14 @@
 #include <stdio.h>
 #include "types.h"
 
+typedef int count_t; // int or size_t?
+
 // API PUBLIC STRUCTURES
 struct ptask_structure
 {
-  int     ptask_id;
-  size_t  tasks_count;
-  size_t *threads_per_task;
+  int      ptask_id;
+  count_t  tasks_count;
+  count_t *threads_per_task;
 };
 
 // API MAIN FUNCTIONS

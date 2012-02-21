@@ -138,6 +138,8 @@ void TASK_Init(int sintetic_io_applications)
     create_sintetic_applications(sintetic_io_applications);
   }
 
+  // For multiple tasks, first do the IO initializations, then get the "next actions"
+  // Otherwise, the IO streams cannot be shared among the apps.
   for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
        Ptask != P_NIL;
        Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
@@ -205,6 +207,13 @@ void TASK_Init(int sintetic_io_applications)
                    (t_priority)comm->communicator_id);
     }
 
+  } // end of loading the Ptasks.
+
+  // Load "next" action for each thread of each task of each Ptask.
+  for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+       Ptask != P_NIL;
+       Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+  {
     /* Load initial actions to each thread */
     /* JGG (2012/01/17): new way to navigate through tasks and threads
     for ( task  = (struct t_task *) head_queue (&(Ptask->tasks));

@@ -135,7 +135,7 @@ bool ProcessModulesInformation(FILE  *CFGFile,
     fprintf(CFGModifiedFile, "\t// Module value\n");
     fprintf(CFGModifiedFile, "\tint     \"value\";\n");
     fprintf(CFGModifiedFile, "\t// Speed ratio for this module, 0 means instantaneous execution\n");
-    fprintf(CFGModifiedFile, "\tdouble  \"execution_ratio\"\n");
+    fprintf(CFGModifiedFile, "\tdouble  \"execution_ratio;\"\n");
     fprintf(CFGModifiedFile, "};;\n");
 
     /* Advance three lines! */
