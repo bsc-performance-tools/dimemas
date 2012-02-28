@@ -1483,8 +1483,6 @@ t_boolean more_actions (struct t_thread *thread)
   struct t_action *action;
   struct t_account *account;
   struct t_Ptask *Ptask;
-  struct t_cpu   *cpu;
-  struct t_node  *node;
 
   //if ((load_interactive) && (thread->action == AC_NIL))
   //{
@@ -1507,7 +1505,7 @@ t_boolean more_actions (struct t_thread *thread)
     if (debug&D_SCH)
     {
       PRINT_TIMER (current_time);
-      printf (": SCHEDULER no more actions P%02d T%02d (t%02d)\n",
+      printf (": SCHEDULER no more actions (NULL) P%02d T%02d (t%02d)\n",
               IDENTIFIERS (thread));
     }
 
@@ -1518,8 +1516,6 @@ t_boolean more_actions (struct t_thread *thread)
     }
     else
     {
-      cpu  = get_cpu_of_thread (thread);
-      node = get_node_of_thread (thread);
       PARAVER_Dead (0, IDENTIFIERS (thread), current_time);
     }
 
@@ -1549,7 +1545,7 @@ t_boolean more_actions (struct t_thread *thread)
     if (debug&D_SCH)
     {
       PRINT_TIMER (current_time);
-      printf (": SCHEDULER no more actions P%02d T%02d (t%02d)\n",
+      printf (": SCHEDULER no more actions (DEAD) P%02d T%02d (t%02d)\n",
               IDENTIFIERS (thread));
     }
 
@@ -1560,8 +1556,6 @@ t_boolean more_actions (struct t_thread *thread)
     }
     else
     {
-      cpu = get_cpu_of_thread (thread);
-      node = get_node_of_thread (thread);
       PARAVER_Dead (0, IDENTIFIERS (thread), current_time);
     }
     return (FALSE);

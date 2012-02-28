@@ -34,6 +34,7 @@
 
 #include <define.h>
 #include <types.h>
+#include <assert.h>
 
 #include "read.h"
 
@@ -43,7 +44,7 @@
 
 // #include "cpu.h"
 // #include "extern.h"
-// #include "list.h"
+#include "list.h"
 // #include "mallocame.h"
 // #include "random.h"
 //
@@ -150,20 +151,15 @@ static void Ptask_reload (struct t_Ptask *Ptask,
 
   DATA_ACCESS_reload_ptask (Ptask->Ptaskid);
 
-  // Load "next" action for each thread of each task of each Ptask.
-  for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
-       Ptask != P_NIL;
-       Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+  for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
   {
-    for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
-    {
-      task = &(Ptask->tasks[tasks_it]);
+    task = &(Ptask->tasks[tasks_it]);
 
-      for (threads_it = 0; threads_it < task->threads_count; threads_it++ )
-      {
-        thread = task->threads[threads_it];
-        READ_get_next_action(thread);
-      }
+    for (threads_it = 0; threads_it < task->threads_count; threads_it++ )
+    {
+      thread = task->threads[threads_it];
+      assert(thread->action == NULL);
+      READ_get_next_action(thread);
     }
   }
 
@@ -973,7 +969,13 @@ void READ_get_next_action(struct t_thread *thread)
   thread_id = thread->threadid;
 
   /* Free previous action! */
-  MALLOC_free_memory(thread->action);
+  if (thread->action != NULL)
+  { // When app (re)starts, it could be NULL
+    assert(thread->action != NULL);
+    new_action_aux = thread->action->next;
+    MALLOC_free_memory(thread->action);
+    thread->action = new_action_aux;
+  }
 
   if (!DATA_ACCESS_get_next_action(Ptask_id,
                                    task_id,
@@ -986,7 +988,8 @@ void READ_get_next_action(struct t_thread *thread)
   if (new_action == NULL)
   {
     /* DEBUG
-    fprintf(stdout,"NULL ACTION\n"); */
+    fprintf(stdout,"NULL ACTION on %d %d %d\n", Ptask_id, task_id, thread_id); */
+    assert(thread->action == NULL);
     thread->action = NULL;
     return;
   }
@@ -1040,14 +1043,16 @@ void READ_get_next_action(struct t_thread *thread)
     recompute_work_upon_modules(thread, new_action);
   }
 
+  assert(thread->action == NULL);
   thread->action = new_action;
 
   /* Ensure last action is not a MPI IO action */
   new_action = thread->action;
-  if (new_action == AC_NIL)
+  assert(thread->action != NULL);
+  /*if (new_action == AC_NIL)
   {
     return;
-  }
+  }*/
 
   while (new_action->next != AC_NIL)
   {

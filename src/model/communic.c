@@ -901,7 +901,15 @@ static struct t_thread* locate_receiver_real_MPI_transfer (
   {
     action = thread->action;
     mess   = & (action->desc.recv);
-    assert (mess->ori_thread == -1);
+
+    /* rod: following checks should be added. Sometimes actions is WORK, or other */
+    //if (action->action != RECV || action->action != SEND)
+    //   continue;
+    assert (mess->ori_thread == -1); // rod: True for SS?
+    /* if (debug)
+      PRINT_TIMER (current_time);
+      printf(": Locating a message for %d, %d, %d, %d, %d\n", taskid_ori, threadid_ori, dest_threadid, communic_id, mess_tag);
+    } */
 
 //     assert(thread->task->taskid == dest);
 //     assert(dest > 0);

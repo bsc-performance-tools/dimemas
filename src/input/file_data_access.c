@@ -528,6 +528,10 @@ t_boolean DATA_ACCESS_reload_ptask (int ptask_id)
   app_struct *app;
   count_t     tasks_it;
   count_t     threads_it;
+  if (debug) {
+    PRINT_TIMER(current_time);
+    printf(": Reloading task %d\n", ptask_id);
+  }
 
   if ( (app = DAP_locate_app_struct (ptask_id)) == NULL)
   {
@@ -1511,10 +1515,13 @@ t_boolean DAP_allocate_streams(app_struct *app, size_t assigned_streams)
          threads_it < app->threads_count[tasks_it];
          threads_it++)
     {
-      /* DEBUG
-      printf("[%d:%d] -> %d ",
+      /* DEBUG 
+      printf("Stream (app %d, assigned %d) [%d:%d] -> %d (%d)\n",
+             app->ptask_id,
+             assigned_streams,
              tasks_it,
              threads_it,
+             (current_thread*assigned_streams)/app->total_threads_count,
              (current_thread*assigned_streams)/app->threads_count[tasks_it]);
       */
 
@@ -1609,6 +1616,9 @@ FILE* DAP_get_stream (app_struct* app, int task_id, int thread_id)
 t_boolean DAP_reset_app_stream_fps (app_struct *app) {
   count_t task, thread;
 
+  /* PRINT_TIMER(current_time);
+  printf(": Resetting app stream fps for %s\n", app->trace_file_name); */
+
   for (task = 0; task < app->tasks_count; task++)
   {
     for (thread = 0; thread < app->threads_count[task]; thread++)
@@ -1616,8 +1626,10 @@ t_boolean DAP_reset_app_stream_fps (app_struct *app) {
       fp_share *assigned_fp;
       size_t assigned_stream_idx = app->streams_idxs[task][thread];
       assigned_fp = &(app->streams[assigned_stream_idx]);
-      assigned_fp->last_task_id   = -1;
-      assigned_fp->last_thread_id = -1;
+      if (assigned_fp) { // Forces repositioning of file descriptor pointer
+        assigned_fp->last_task_id   = -1;
+        assigned_fp->last_thread_id = -1;
+      }
     }
   }
 
@@ -1645,6 +1657,7 @@ t_boolean DAP_read_action (app_struct       *app,
 
   if ( (stream = DAP_get_stream(app, task_id, thread_id)) == NULL)
   {
+    printf("DAP_get_stream failed %d,%d\n", task_id, thread_id);
     return FALSE;
   }
 
@@ -1655,6 +1668,7 @@ t_boolean DAP_read_action (app_struct       *app,
     if (feof(stream))
     {
       /* EOF is not an error */
+      /* printf("EOF reached %d,%d, read %d bytes\n", task_id, thread_id, bytes_read); */
       (*action) = NULL;
       return TRUE;
     }
@@ -1664,6 +1678,9 @@ t_boolean DAP_read_action (app_struct       *app,
 
     return FALSE;
   }
+ 
+  /* PRINT_TIMER (current_time);
+  printf(": App %d read: %s\n", app->ptask_id, line); */
 
   if ( (op_fields = MALLOC_get_memory(bytes_read+1)) == NULL)
   {

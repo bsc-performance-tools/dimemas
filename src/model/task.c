@@ -1597,6 +1597,8 @@ void clear_last_actions (struct t_Ptask *Ptask)
       if (thread->last_action != AC_NIL)
         MALLOC_free_memory (thread->last_action, sizeof (struct t_action));
       */
+      assert(thread->last_action == AC_NIL);
+      assert(thread->action == AC_NIL);
       thread->last_paraver  = current_time;
       thread->last_action   = AC_NIL;
       thread->seek_position = thread->original_seek;
