@@ -46,9 +46,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <mallocame.h> // should use mallocame
-// char* MALLOC_get_memory  (size_t s);
-// void  MALLOC_free_memory (char* a); // , size_t s); // 's' is not used
+#include <mallocame.h>
 
 #include "file_data_access.h"
 #include <dimemas_io.h>
@@ -650,20 +648,20 @@ void DAP_end_ptask (app_struct *app)
 {
   int i = 0;
 
-  MALLOC_free_memory (app->app_name);
-  MALLOC_free_memory (app->trace_file_name);
-  MALLOC_free_memory (app->threads_count);
+  MALLOC_free_memory ((char*) app->app_name);
+  MALLOC_free_memory ((char*) app->trace_file_name);
+  MALLOC_free_memory ((char*) app->threads_count);
 
   for (i = 0; i < app->tasks_count; i++)
   {
-    MALLOC_free_memory (app->threads_offsets[i]);
-    MALLOC_free_memory (app->streams_idxs[i]);
-    MALLOC_free_memory (app->current_threads_offsets[i]);
+    MALLOC_free_memory ((char*) app->threads_offsets[i]);
+    MALLOC_free_memory ((char*) app->streams_idxs[i]);
+    MALLOC_free_memory ((char*) app->current_threads_offsets[i]);
   }
 
-  MALLOC_free_memory (app->threads_offsets);
-  MALLOC_free_memory (app->streams_idxs);
-  MALLOC_free_memory (app->current_threads_offsets);
+  MALLOC_free_memory ((char*) app->threads_offsets);
+  MALLOC_free_memory ((char*) app->streams_idxs);
+  MALLOC_free_memory ((char*) app->current_threads_offsets);
 
 
   /* Close all streams used by the application */
@@ -674,7 +672,7 @@ void DAP_end_ptask (app_struct *app)
       IO_fclose (app->streams[i].fp);
     }
   }
-  MALLOC_free_memory (app->streams);
+  MALLOC_free_memory ((char*) app->streams);
 
   // Free array of streams
 
@@ -1026,11 +1024,11 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
                      comm_id,
                      comm_tasks_count);
 
-    MALLOC_free_memory(new_communicator);
+    MALLOC_free_memory((char*) new_communicator);
     return FALSE;
   }
 
-  insert_queue(&(app->comms), (char*) new_communicator, (t_prioirity) comm_id);
+  insert_queue(&(app->comms), (char*) new_communicator, (t_priority) comm_id);
 
   return TRUE;
 }
@@ -1220,7 +1218,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
 
   off_t result;
 
-  int     op_id; 
+  int     op_id;
   count_t read_task_id, read_thread_id;
   char   *op_fields;
 
@@ -1462,7 +1460,7 @@ t_boolean DAP_io_init(void)
  */
 t_boolean DAP_allocate_streams(app_struct *app, size_t assigned_streams)
 {
-  size_t i; 
+  size_t i;
   count_t tasks_it, threads_it;
   count_t current_thread;
 
@@ -1515,7 +1513,7 @@ t_boolean DAP_allocate_streams(app_struct *app, size_t assigned_streams)
          threads_it < app->threads_count[tasks_it];
          threads_it++)
     {
-      /* DEBUG 
+      /* DEBUG
       printf("Stream (app %d, assigned %d) [%d:%d] -> %d (%d)\n",
              app->ptask_id,
              assigned_streams,
@@ -1634,7 +1632,7 @@ t_boolean DAP_reset_app_stream_fps (app_struct *app) {
   }
 
   return TRUE;
-} 
+}
 
 /**
  * Reads an operation (action) record from the given task/thread, if available
@@ -1678,7 +1676,7 @@ t_boolean DAP_read_action (app_struct       *app,
 
     return FALSE;
   }
- 
+
   /* PRINT_TIMER (current_time);
   printf(": App %d read: %s\n", app->ptask_id, line); */
 
@@ -2028,7 +2026,7 @@ void DAP_print_app_structure(app_struct *app)
   {
     for (j = 0; j < app->threads_count[i]; j++)
     {
-      printf(" %zu ", app->threads_offsets[i][j]);
+      printf(" %ju ", app->threads_offsets[i][j]);
     }
   }
   printf ("\n");

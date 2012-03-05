@@ -287,7 +287,7 @@ void Next_Action_to_thread (struct t_thread *thread)
 
   action = thread->action;
   thread->action = action->next;
-  MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+  MALLOC_free_memory ( (char*) action);
   if (more_actions (thread) )
   {
     thread->loose_cpu = FALSE;
@@ -376,7 +376,7 @@ void FS_general (int value, struct t_thread *thread)
             copy->IO_blocking_point = IO_Block_NonCollective;
             break;
           }
-          MALLOC_free_memory ( (char *) token, sizeof (int) );
+          MALLOC_free_memory ( (char*) token);
         }
 A:
         FLOAT_TO_TIMER (compute_IO_time (thread), tmp_timer);
@@ -508,7 +508,7 @@ A:
             copy->IO_blocking_point = IO_NonBlock_NonCollective;
             break;
           }
-          MALLOC_free_memory ( (char *) token, sizeof (int) );
+          MALLOC_free_memory ( (char*) token);
         }
 B:
         FLOAT_TO_TIMER (compute_IO_time (copy), tmp_timer);
@@ -539,7 +539,7 @@ B:
                              thread, mpi_io->request) ) != (struct t_request_thread *) 0)
       {
         extract_from_queue (&thread->task->Ptask->MPI_IO_request_thread, (char *) request_thread);
-        MALLOC_free_memory ( (char *) request_thread, sizeof (struct t_request_thread *) );
+        MALLOC_free_memory ( (char*) request_thread);
         cpu = get_cpu_of_thread (thread);
         PARAVER_Event (cpu->unique_number, IDENTIFIERS (thread),
                        current_time,
@@ -627,7 +627,7 @@ B:
                              thread, mpi_io->request) ) != (struct t_request_thread *) 0)
       {
         extract_from_queue (&thread->task->Ptask->MPI_IO_request_thread, (char *) request_thread);
-        MALLOC_free_memory ( (char *) request_thread, sizeof (struct t_request_thread *) );
+        MALLOC_free_memory ( (char*) request_thread);
         cpu = get_cpu_of_thread (thread);
         PARAVER_Event (cpu->unique_number, IDENTIFIERS (thread),
                        current_time,
@@ -682,7 +682,7 @@ B:
                 thread->IO_blocking_point = IO_Block_Collective;
                 continue;
               }
-              MALLOC_free_memory ( (char *) token, sizeof (int) );
+              MALLOC_free_memory ( (char*) token);
             }
 
             ti = compute_IO_collective_time (&fh_commid->threads);
@@ -803,12 +803,12 @@ B:
     {
       extract_from_queue (&thread->task->Ptask->MPI_IO_request_thread,
                           (char *) request_thread);
-      MALLOC_free_memory ( (char *) request_thread, sizeof (struct t_request_thread *) );
+      MALLOC_free_memory ( (char*) request_thread);
       cpu = get_cpu_of_thread (thread);
       PARAVER_Event (cpu->unique_number, IDENTIFIERS (thread),
                      current_time,
                      PARAVER_IO, PARAVER_IO_NONBLOCK_NONCOLLECTIVE_END);
-      MALLOC_free_memory ( (char *) copy->action, sizeof (struct t_action) );
+      MALLOC_free_memory ( (char*) copy->action);
       PARAVER_IO_Blocked (0, IDENTIFIERS (thread),
                           thread->last_paraver, current_time);
       thread->last_paraver = current_time;
@@ -820,7 +820,7 @@ B:
     }
     else
     {
-      MALLOC_free_memory ( (char *) copy->action, sizeof (struct t_action) );
+      MALLOC_free_memory ( (char*) copy->action);
       delete_duplicate_thread_fs (copy);
       request_thread = (struct t_request_thread *) MALLOC_get_memory (sizeof (struct t_request_thread) );
       request_thread->thread = thread;
@@ -836,7 +836,7 @@ B:
     if (copy->action->action == FS)
     {
       action = copy->action->next;
-      MALLOC_free_memory ( (char *) copy->action, sizeof (struct t_action) );
+      MALLOC_free_memory ( (char*) copy->action);
       copy->action = action;
     }
     else
@@ -868,7 +868,7 @@ B:
                 thread->IO_blocking_point = IO_NonBlock_Collective;
                 continue;
               }
-              MALLOC_free_memory ( (char *) token, sizeof (int) );
+              MALLOC_free_memory ( (char*) token);
             }
 
             ti = compute_IO_collective_time (&fh_commid->threads);
@@ -945,13 +945,13 @@ B:
       {
         extract_from_queue (&thread->task->Ptask->MPI_IO_request_thread,
                             (char *) request_thread);
-        MALLOC_free_memory ( (char *) request_thread, sizeof (struct t_request_thread *) );
+        MALLOC_free_memory ( (char*) request_thread);
         node = get_node_of_thread (thread);
         cpu  = get_cpu_of_thread (thread);
         PARAVER_Event (cpu->unique_number, IDENTIFIERS (thread),
                        current_time,
                        PARAVER_IO, PARAVER_IO_NONBLOCK_COLLECTIVE_END);
-        MALLOC_free_memory ( (char *) copy->action, sizeof (struct t_action) );
+        MALLOC_free_memory ( (char*) copy->action);
         PARAVER_IO_Blocked (0, IDENTIFIERS (thread),
                             thread->last_paraver, current_time);
         thread->last_paraver = current_time;
@@ -961,7 +961,7 @@ B:
       }
       else
       {
-        MALLOC_free_memory ( (char *) copy->action, sizeof (struct t_action) );
+        MALLOC_free_memory ( (char*) copy->action);
         delete_duplicate_thread_fs (copy);
         request_thread = (struct t_request_thread *) MALLOC_get_memory (sizeof (struct t_request_thread) );
         request_thread->thread = thread;

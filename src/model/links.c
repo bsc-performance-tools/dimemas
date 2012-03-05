@@ -769,7 +769,7 @@ free_link(struct t_link *link, struct t_thread *thread)
         printf (": free link wakeup port communication\n");
       }
       really_port_send (both->port, both->thread_s, both->thread_r);
-      MALLOC_free_memory ((char *) both, sizeof (struct t_both));
+      MALLOC_free_memory ((char*) both);
       return;
     }
 
@@ -785,7 +785,7 @@ free_link(struct t_link *link, struct t_thread *thread)
                            copyseg->node_s,
                            copyseg->node_d,
                            copyseg->thread->copy_segment_size);
-      MALLOC_free_memory ((char *) copyseg, sizeof (struct t_copyseg));
+      MALLOC_free_memory ((char*) copyseg);
       return;
     }
   }
@@ -874,7 +874,7 @@ free_link(struct t_link *link, struct t_thread *thread)
         printf (": free link wakeup port communication\n");
       }
       really_port_send (both->port, both->thread_s, both->thread_r);
-      MALLOC_free_memory ((char *) both, sizeof (struct t_both));
+      MALLOC_free_memory ((char*) both);
       return;
     }
 
@@ -890,7 +890,7 @@ free_link(struct t_link *link, struct t_thread *thread)
                            copyseg->node_s,
                            copyseg->node_d,
                            copyseg->thread->copy_segment_size);
-      MALLOC_free_memory ((char *) copyseg, sizeof (struct t_copyseg));
+      MALLOC_free_memory ((char*) copyseg);
       return;
     }
 

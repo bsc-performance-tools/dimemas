@@ -138,7 +138,7 @@ t_nano PRIO_FIFO_get_execution_time(struct t_thread *thread)
       panic ("Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
    ex_time = action->desc.compute.cpu_time;
    thread->action = action->next;
-   MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+   MALLOC_free_memory ((char*) action);
    return (ex_time);
 }
 
@@ -196,5 +196,5 @@ PRIO_FIFO_free_parameters(struct t_thread *thread)
    struct t_SCH_prio_fifo *sch_prio_fifo;
 
    sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
-   MALLOC_free_memory ((char *) sch_prio_fifo, sizeof (struct t_SCH_prio_fifo));
+   MALLOC_free_memory ((char*) sch_prio_fifo);
 }

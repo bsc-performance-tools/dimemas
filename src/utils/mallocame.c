@@ -32,10 +32,6 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#define NORMAL_MALLOC
-
-#ifdef NORMAL_MALLOC
-
 #include<stdlib.h>
 #include<stdio.h>
 
@@ -60,105 +56,8 @@ char* MALLOC_get_memory(size_t s)
   return(adreca);
 }
 
-void MALLOC_free_memory(char *a, int s)
+void MALLOC_free_memory(char *a)
 {
   free(a);
 }
 
-#else
-
-#include "define.h"
-#include "types.h"
-
-#include "extern.h"
-#include "mallocame.h"
-#include "subr.h"
-
-static struct t_list SPACE[1024];
-static int           veces_malloc = 0;
-static int           malo[1024];
-
-void MALLOC_Init()
-{
-   register int    i;
-
-   for (i = sizeof (struct t_list); i < 1024; i++)
-   {
-      SPACE[i].next = LI_NIL;
-      malo[i] = 0;
-   }
-}
-
-void MALLOC_End()
-{
-  register int i;
-
-  if (debug)
-  {
-    for (i = 0; i < 1024; i++)
-    {
-      if (malo[i] != 0)
-      {
-        printf ("Memory allocation chunk %d still have %d\n", i, malo[i]);
-      }
-    }
-  }
-}
-
-char * MALLOC_get_memory(size_t s)
-{
-  register char *add;
-
-  veces_malloc++;
-  s = s+1280;
-
-  if (s < sizeof (struct t_list))
-  {
-    s = (sizeof (struct t_list));
-  }
-
-  if (s < 1024)
-  {
-    malo[s]++;
-    if (SPACE[s].next != LI_NIL)
-    {
-      add = (char *) SPACE[s].next;
-      SPACE[s].next = ((struct t_list *) add)->next;
-      return (add);
-    }
-  }
-
-  add = (char *) malloc (s);
-  if (add == (char *) 0)
-  {
-    panic ("Can't get more space %s. Memory allocation error\n", s);
-    exit (EXIT_FAILURE);
-  }
-
-  return (add);
-}
-
-void MALLOC_free_memory(char  *a, int s)
-{
-  veces_malloc--;
-
-  s = s + 1280;
-
-  if (s < sizeof (struct t_list))
-  {
-    s = sizeof (struct t_list);
-  }
-
-  if (s < 1024)
-  {
-    malo[s]--;
-    ((struct t_list *) a)->next = SPACE[s].next;
-    SPACE[s].next = (struct t_list *) a;
-  }
-  else
-  {
-    free (a);
-  }
-}
-
-#endif

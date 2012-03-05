@@ -164,7 +164,7 @@ void EVENT_extract_timer (int              module,
       extract_from_queue (q, (char *) event);
 #endif
       *when = event->event_time;
-      MALLOC_free_memory ( (char *) event, sizeof (struct t_event) );
+      MALLOC_free_memory ( (char*) event);
       return;
     }
   }
@@ -187,7 +187,7 @@ void EVENT_extract_timer (int              module,
       extract_from_queue (q, (char *) event);
 #endif
       *when = event->event_time;
-      MALLOC_free_memory ( (char *) event, sizeof (struct t_event) );
+      MALLOC_free_memory ( (char *) event);
       return;
     }
   }
@@ -351,5 +351,5 @@ void event_manager (struct t_event *event)
     reload_done = FALSE;
   }
 
-  MALLOC_free_memory ( (char *) event, sizeof (struct t_event) );
+  MALLOC_free_memory ( (char*) event);
 }

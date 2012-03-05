@@ -165,7 +165,7 @@ t_nano SCH_boost_get_execution_time(struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+    MALLOC_free_memory ((char*) action);
   }
 
   thread->loose_cpu = TRUE;
@@ -417,5 +417,5 @@ SCH_boost_free_parameters(struct t_thread *thread)
   struct t_SCH_boost *sch_boost;
 
   sch_boost = (struct t_SCH_boost *) thread->sch_parameters;
-  MALLOC_free_memory ((char *) sch_boost, sizeof (struct t_SCH_boost));
+  MALLOC_free_memory ((char*) sch_boost);
 }

@@ -83,7 +83,7 @@ FIFO_get_execution_time (struct t_thread *thread)
   }
   ex_time = action->desc.compute.cpu_time;
   thread->action = action->next;
-  MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+  MALLOC_free_memory ( (char*) action);
   return (ex_time);
 }
 

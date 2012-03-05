@@ -7,6 +7,11 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2012/03/05 - jgonzale
+	
+	CHANGES:	MALLOC_free_memory does not need size any more. Erased
+				alternative implementation of memory allocation (pool based).
+
 2012/02/28 - jgonzale
 	CHANGES:	Minimun integration
 

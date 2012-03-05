@@ -99,7 +99,7 @@ RR_get_execution_time (struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
   }
 
   thread->loose_cpu = TRUE;
@@ -215,5 +215,5 @@ RR_free_parameters (struct t_thread *thread)
   struct t_SCH_rr *sch_rr;
 
   sch_rr = (struct t_SCH_rr *) thread->sch_parameters;
-  MALLOC_free_memory ( (char *) sch_rr, sizeof (struct t_SCH_rr) );
+  MALLOC_free_memory ( (char*) sch_rr);
 }

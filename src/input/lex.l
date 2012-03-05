@@ -176,7 +176,7 @@ insert_string()
   for (new_str = first_str; new_str!=(struct Str *)0; new_str=new_str->next_str)
     if (strcmp(new_str->str, new)==0)
   {
-      MALLOC_free_memory (new,i);
+      MALLOC_free_memory (new);
       return ((YYSTYPE)(new_str->str));
   }
 
@@ -184,7 +184,7 @@ insert_string()
   new_str->str = strdup(new);
   new_str->next_str = first_str;
   first_str = new_str;
-  MALLOC_free_memory (new,i);
+  MALLOC_free_memory (new);
   return ((YYSTYPE)(new_str->str));
 }
 

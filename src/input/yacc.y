@@ -267,7 +267,7 @@ campo:DECIMAL
   f = (struct t_field *) MALLOC_get_memory(sizeof(struct t_field));
   f->tipo = 1;
   f->value.real = * (double*) $$;
-  MALLOC_free_memory((char *) $$, sizeof(double));
+  MALLOC_free_memory((char *) $$);
   $$ = (YYSTYPE) f;
 }
 

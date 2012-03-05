@@ -783,7 +783,7 @@ next_op:
                               current_time);
 
             thread->action = action->next;
-            MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+            MALLOC_free_memory ((char*) action);
 
             if (more_actions (thread))
             {
@@ -944,7 +944,7 @@ next_op:
                            action->desc.even.value);
 
             thread->action = action->next;
-            MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+            MALLOC_free_memory ((char*) action);
 
             if (more_actions (thread))
             {
@@ -981,12 +981,12 @@ next_op:
               case SEM_WAIT:
                 thread->action = action->next;
                 SEMAPHORE_wait (action->desc.sem_op.sem_id, thread);
-                MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+                MALLOC_free_memory ((char*) action);
                 break;
               case SEM_SIGNAL:
                 SEMAPHORE_signal (action->desc.sem_op.sem_id, thread);
                 thread->action = action->next;
-                MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+                MALLOC_free_memory ((char*) action);
                 if (more_actions (thread))
                 {
                    thread->loose_cpu = FALSE;
@@ -998,7 +998,7 @@ next_op:
                         action->desc.sem_op.n,
                         thread);
                 thread->action = action->next;
-                MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+                MALLOC_free_memory ((char*) action);
                 if (more_actions (thread))
                 {
                    thread->loose_cpu = FALSE;
@@ -1021,7 +1021,7 @@ next_op:
                        thread,
                        action->desc.port.size);
             thread->action = action->next;
-            MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+            MALLOC_free_memory ((char*) action);
             break;
           }
           case PORT_RECV:
@@ -1034,7 +1034,7 @@ next_op:
                            action->desc.port.portid,
                            thread, action->desc.port.size);
             thread->action = action->next;
-            MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+            MALLOC_free_memory ((char*) action);
             break;
           }
           case MEMORY_COPY:
@@ -1050,7 +1050,7 @@ next_op:
                                  action->desc.memory.size);
 
             thread->action = action->next;
-            MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+            MALLOC_free_memory ((char*) action);
             break;
           }
           case GLOBAL_OP:

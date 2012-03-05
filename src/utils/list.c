@@ -147,7 +147,7 @@ char* outFIFO_queue(struct t_queue *q)
 
   q->count--; /* One less in queue */
   res = e->content;
-  MALLOC_free_memory ((char *) e, sizeof (struct t_item));
+  MALLOC_free_memory ((char*) e);
 
   return (res);
 }
@@ -179,7 +179,7 @@ char* outLIFO_queue(struct t_queue *q)
 
   q->count--; /* One less in queue */
   res = e->content;
-  MALLOC_free_memory ((char *) e, sizeof (struct t_item));
+  MALLOC_free_memory ((char*) e);
   return (res);
 }
 
@@ -537,7 +537,7 @@ void extract_from_queue(struct t_queue *queue, char * content)
   }
 
   queue->count--;
-  MALLOC_free_memory ((char *) tmp1, sizeof (struct t_item));
+  MALLOC_free_memory ((char*) tmp1);
 }
 
 
@@ -680,7 +680,7 @@ struct t_event* outFIFO_event(struct t_queue *q)
     }
 
     event = (struct t_event*) e->content;
-    MALLOC_free_memory ((char *) e, sizeof (struct t_item));
+    MALLOC_free_memory ((char*) e);
   }
   return (event);
 }

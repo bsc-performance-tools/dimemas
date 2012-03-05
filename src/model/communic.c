@@ -1091,7 +1091,7 @@ static void message_received (struct t_thread *thread)
             partner->last_paraver = current_time;
             action = partner->action;
             partner->action = action->next;
-            MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+            MALLOC_free_memory ( (char*) action);
 
             if (more_actions (partner) )
             {
@@ -1183,7 +1183,7 @@ static void message_received (struct t_thread *thread)
 
     action          = partner->action;
     partner->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
     if (more_actions (partner) )
     {
       partner->loose_cpu = TRUE;
@@ -1567,7 +1567,7 @@ Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (
   {
     action = sender->action;
     sender->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
     if (more_actions (sender) )
     {
       sender->loose_cpu = FALSE;
@@ -1680,7 +1680,7 @@ Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization 
   {
     action = sender->action;
     sender->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
     if (more_actions (sender) )
     {
       sender->loose_cpu = FALSE;
@@ -1789,7 +1789,7 @@ COMMUNIC_external_network_COM_TIMER_OUT (struct t_thread *thread)
     &Simulator.wan.threads_on_network,
     (char *)bus_utilization
   );
-  MALLOC_free_memory ((char *) bus_utilization, sizeof(struct t_bus_utilization));
+  MALLOC_free_memory ((char*) bus_utilization);
 
   if (debug&D_COMM)
   {
@@ -2036,7 +2036,7 @@ COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
   {
     action         = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
 
     if (more_actions (thread) )
     {
@@ -2101,7 +2101,7 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
       (char *) bus_utilization
     );
 
-    MALLOC_free_memory ( (char *) bus_utilization, sizeof (struct t_bus_utilization) );
+    MALLOC_free_memory ( (char*) bus_utilization);
   }
 
   if (debug & D_COMM)
@@ -2227,7 +2227,7 @@ COMMUNIC_external_resources_COM_TIMER_OUT (struct t_thread *thread)
     &Simulator.wan.threads_on_network,
     (char *)bus_utilization
   );
-  MALLOC_free_memory ((char *) bus_utilization, sizeof(struct t_bus_utilization));
+  MALLOC_free_memory ((char*) bus_utilization);
   *****************************************************************************/
 
   free_machine_link (thread->local_link, thread);
@@ -2990,7 +2990,7 @@ COMMUNIC_send (struct t_thread *thread)
         /* El thread original pot continuar */
         action = thread->action;
         thread->action = action->next;
-        MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+        MALLOC_free_memory ( (char*) action);
         if (more_actions (thread) )
         {
           thread->loose_cpu = FALSE;
@@ -3020,7 +3020,7 @@ COMMUNIC_send (struct t_thread *thread)
 
       action = thread->action;
       thread->action = action->next;
-      MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+      MALLOC_free_memory ( (char*) action);
       if (more_actions (thread) )
       {
         thread->loose_cpu = FALSE;
@@ -3041,7 +3041,7 @@ COMMUNIC_send (struct t_thread *thread)
 
     action = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -3227,7 +3227,7 @@ COMMUNIC_recv (struct t_thread *thread)
     }
 
     thread->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -3471,7 +3471,7 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   }
 
   thread->action = action->next;
-  MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+  MALLOC_free_memory ( (char*) action);
   if (more_actions (thread) )
   {
     thread->loose_cpu = FALSE;
@@ -3641,7 +3641,7 @@ COMMUNIC_wait (struct t_thread *thread)
     }
 
     thread->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -5720,7 +5720,7 @@ static void free_global_communication_resources (struct t_thread *thread)
        d'alliberar una vegada. */
     if (i > 0)
     {
-      MALLOC_free_memory ( (char *) bus_utilization, sizeof (struct t_bus_utilization) );
+      MALLOC_free_memory ( (char*) bus_utilization);
     }
 
     /* Si hi havia més d'una màquina, aqui cal alliberar els links
@@ -5912,7 +5912,7 @@ static void close_global_communication (struct t_thread *thread)
 
     action         = others->action;
     others->action = action->next;
-    MALLOC_free_memory ( (char *) action, sizeof (struct t_action) );
+    MALLOC_free_memory ( (char*) action);
 
     if (more_actions (others) )
     {

@@ -667,7 +667,7 @@ void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
     trips[i] = 1;
     i++;
   }
-  MALLOC_free_memory ((char *)trips, count_queue(&comm->global_ranks)*sizeof(int));
+  MALLOC_free_memory ((char*)trips);
 }
 
 void
@@ -777,7 +777,7 @@ void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id)
     trips[i] = 1;
     i++;
   }
-  MALLOC_free_memory ((char *)trips, count_queue(&win->global_ranks)*sizeof(int));
+  MALLOC_free_memory ((char*)trips);
   */
 }
 
@@ -1147,7 +1147,7 @@ void new_action_to_thread (struct t_Ptask *Ptask,
     if ((action->action == WORK) && (last_action->action == WORK))
     {
       last_action->desc.compute.cpu_time += action->desc.compute.cpu_time;
-      MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+      MALLOC_free_memory ((char*) action);
       return;
     }
     last_action->next = action;
@@ -1227,7 +1227,7 @@ struct t_thread *duplicate_thread_fs (struct t_thread *thread)
 void delete_duplicate_thread_fs (struct t_thread *thread)
 {
   SCHEDULER_free_parameters (thread);
-  MALLOC_free_memory ((char *) thread, sizeof (struct t_thread));
+  MALLOC_free_memory ((char*) thread);
 }
 
 struct t_thread *duplicate_thread (struct t_thread *thread)
@@ -1494,7 +1494,7 @@ void delete_duplicate_thread (struct t_thread *thread)
 
 //  }
 
-  MALLOC_free_memory ((char*) thread->action, sizeof (struct t_action));
+  MALLOC_free_memory ((char*) thread->action);
 
 /*
   printf("delete duplicate thread step 5\n");
@@ -1503,7 +1503,7 @@ void delete_duplicate_thread (struct t_thread *thread)
   printf("WHAT HAPPENS HERE delete dupl account thread ONLY twin 82\n");
 */
 
-  MALLOC_free_memory ((char*) thread, sizeof (struct t_thread));
+  MALLOC_free_memory ((char*) thread);
 }
 
 static t_boolean more_actions_on_task (struct t_task  *task)
@@ -1533,7 +1533,7 @@ static t_boolean more_actions_on_task (struct t_task  *task)
 //    EVERYTHING LEAKS -> WHO IS FREEING ALL THE THREADS????
 //    TODO: I'm not freeing this array now -> because there might be a restart
 //    if (task->num_of_threads != 0) {
-//      MALLOC_free_memory(/*(struct t_thread**)*/(char *) task->threads_array, sizeof(struct t_thread*) * task->num_of_threads);
+//      MALLOC_free_memory(/*(struct t_thread**)*/(char *) task->threads_array);
 //      task->num_of_threads = 0;
 //   }
 
@@ -1595,7 +1595,7 @@ void clear_last_actions (struct t_Ptask *Ptask)
       thread = task->threads[thread_it];
       /*
       if (thread->last_action != AC_NIL)
-        MALLOC_free_memory (thread->last_action, sizeof (struct t_action));
+        MALLOC_free_memory (thread->last_action);
       */
       assert(thread->last_action == AC_NIL);
       assert(thread->action == AC_NIL);
@@ -1620,7 +1620,7 @@ void get_operation (struct t_thread *thread, struct t_fs_op *fs_op)
   {
     *fs_op = action->desc.fs_op;
     thread->action = action->next;
-    MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+    MALLOC_free_memory ((char*) action);
   }
 }
 
@@ -2099,7 +2099,7 @@ void user_event_type_name(struct t_Ptask *Ptask,
   else
   {
     printf ("Warning: redefinition of user event type %d\n",type);
-    MALLOC_free_memory(name, strlen(name)+1);
+    MALLOC_free_memory(name);
   }
 }
 
@@ -2121,7 +2121,7 @@ void user_event_value_name (struct t_Ptask *Ptask,
     printf ("Warning: User event type %d not defined for user event value %d definition\n",
             type,
             value);
-    MALLOC_free_memory(name, strlen(name)+1);
+    MALLOC_free_memory(name);
     return;
   }
 
@@ -2143,6 +2143,6 @@ void user_event_value_name (struct t_Ptask *Ptask,
     printf ("Warning: redefinition of user event value %d for type %d\n",
             value,
             type);
-    MALLOC_free_memory(name,strlen(name)+1);
+    MALLOC_free_memory(name);
   }
 }

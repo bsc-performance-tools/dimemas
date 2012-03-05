@@ -79,7 +79,7 @@ end_thread_state (struct t_thread* thread, int state)
     /* JGG (02/05/2005) */
     SUB_TIMER (current_time, thread->current_state->init_time, last_state_time);
 
-    MALLOC_free_memory( (char*) thread->current_state, sizeof(struct thread_state));
+    MALLOC_free_memory( (char*) thread->current_state);
     thread->current_state = STATE_NIL;
   }
   return result;

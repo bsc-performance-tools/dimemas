@@ -144,7 +144,7 @@ SS_MPI_CP_get_execution_time(struct t_thread *thread)
       panic ("Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
    ex_time = action->desc.compute.cpu_time;
    thread->action = action->next;
-   MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+   MALLOC_free_memory ((char*) action);
    return (ex_time);
 }
 
@@ -210,7 +210,7 @@ SS_MPI_CP_free_parameters(struct t_thread *thread)
    struct t_SCH_ss_mpi_cp *sch_ss_mpi_cp;
 
    sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) thread->sch_parameters;
-   MALLOC_free_memory ((char *) sch_ss_mpi_cp, sizeof (struct t_SCH_ss_mpi_cp));
+   MALLOC_free_memory ((char*) sch_ss_mpi_cp);
 }
 
 /* priority by which the thread is scheduled is

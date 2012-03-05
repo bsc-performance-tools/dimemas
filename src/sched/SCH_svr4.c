@@ -246,7 +246,7 @@ svr4_get_execution_time(struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    MALLOC_free_memory ((char *) action, sizeof (struct t_action));
+    MALLOC_free_memory ((char*) action);
   }
   return (ex_time);
 }
@@ -426,5 +426,5 @@ svr4_free_parameters (struct t_thread *thread)
   tsproc_t *sch_par;
 
   sch_par = (tsproc_t *)thread->sch_parameters;
-  MALLOC_free_memory ((char *)sch_par, sizeof(tsproc_t));
+  MALLOC_free_memory ((char*)sch_par);
 }

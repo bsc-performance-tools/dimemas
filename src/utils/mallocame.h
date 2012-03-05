@@ -45,6 +45,6 @@ void MALLOC_Init(void);
 void MALLOC_End(void);
 
 char* MALLOC_get_memory  (size_t s);
-void  MALLOC_free_memory (char* a, size_t s); // 's' is not used
+void  MALLOC_free_memory (char* a);
 
 #endif

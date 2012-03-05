@@ -154,19 +154,19 @@ int free_memory (void)
          el  = (struct t_element *) outFIFO_queue (entry->types) )
     {
       ar = el->i3;
-      MALLOC_free_memory ( (char *) ar, sizeof (struct t_array) );
-      MALLOC_free_memory ( (char *) el, sizeof (struct t_element) );
+      MALLOC_free_memory ( (char *) ar);
+      MALLOC_free_memory ( (char *) el);
     }
-    MALLOC_free_memory ( (char *) entry->types, sizeof (struct t_queue) );
-    MALLOC_free_memory ( (char *) entry, sizeof (struct t_entry) );
+    MALLOC_free_memory ( (char *) entry->types);
+    MALLOC_free_memory ( (char *) entry);
   }
 
   str = first_str;
   while (str != (struct Str *) 0)
   {
     n = str->next_str;
-    MALLOC_free_memory (str->str, strlen (str->str) + 1);
-    MALLOC_free_memory ( (char *) str, sizeof (struct Str) );
+    MALLOC_free_memory (str->str);
+    MALLOC_free_memory ( (char *) str);
     str = n;
   }
 
