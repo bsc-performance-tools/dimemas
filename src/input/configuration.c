@@ -277,7 +277,7 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
            IO_get_error());
     }
 
-    policy_str = (char*) malloc(strlen(current_line));
+    policy_str = (char*) malloc (strlen(current_line));
 
     matches = sscanf (current_line, "Policy: %s\n", policy_str);
     if (matches != 1)

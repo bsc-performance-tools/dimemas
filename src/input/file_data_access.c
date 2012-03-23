@@ -1677,8 +1677,10 @@ t_boolean DAP_read_action (app_struct       *app,
     return FALSE;
   }
 
-  /* PRINT_TIMER (current_time);
-  printf(": App %d read: %s\n", app->ptask_id, line); */
+  /*
+  PRINT_TIMER (current_time);
+  printf(": App %d read: %s", app->ptask_id, line);
+  */
 
   if ( (op_fields = MALLOC_get_memory(bytes_read+1)) == NULL)
   {
@@ -1715,8 +1717,10 @@ t_boolean DAP_read_action (app_struct       *app,
           return FALSE;
         }
 
-      (*action)->next = NULL;
+      (*action)->next   = NULL;
       (*action)->action = NOOP;
+
+      app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
 
       free(line);
       return TRUE;
@@ -1792,7 +1796,16 @@ t_boolean DAP_read_action (app_struct       *app,
     }
     else
     {
-      app->current_threads_offsets[task_id][thread_id] += bytes_read;
+      app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
+
+      /* DEBUG
+      PRINT_TIMER (current_time);
+      printf(": [P%02d:T%02d:t%02d] Offset: %jd\n",
+             app->ptask_id,
+             task_id,
+             thread_id,
+             (intmax_t) app->current_threads_offsets[task_id][thread_id]);
+      */
     }
   }
 

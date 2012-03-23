@@ -107,7 +107,8 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
   Simulator.number_machines = number_of_machines;
 
   /* Flight times matrix */
-  Simulator.wan.flight_times = (double**) malloc( number_of_machines*number_of_machines*sizeof(double));
+  Simulator.wan.flight_times =
+    (double**) MALLOC_get_memory( number_of_machines*number_of_machines*sizeof(double));
 
   if (Simulator.wan.flight_times == NULL)
   {
@@ -115,7 +116,7 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
   }
 
   /* Initialize the machines container */
-  Machines = malloc(number_of_machines*sizeof(struct t_machine));
+  Machines = MALLOC_get_memory(number_of_machines*sizeof(struct t_machine));
 
   /* And each container */
   for (i = 0; i < Simulator.number_machines; i++)

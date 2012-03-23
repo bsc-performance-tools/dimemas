@@ -77,7 +77,12 @@ void MACHINE_Init_Empty_Machine(struct t_machine* machine, int machine_id)
   machine->external_net.half_duplex_links = FALSE;
 
   /* Single external network out link  */
-  link = (struct t_link *) MALLOC_get_memory (sizeof (struct t_link));
+  if ( (link = (struct t_link*) MALLOC_get_memory (sizeof (struct t_link))) == NULL)
+  {
+    die("Error reserving memory for machine %d input link",
+        machine_id);
+  }
+
   link->linkid       = 0;
   link->info.machine = machine;
   link->kind         = MACHINE_LINK;
@@ -87,7 +92,12 @@ void MACHINE_Init_Empty_Machine(struct t_machine* machine, int machine_id)
   inFIFO_queue (&(machine->external_net.free_in_links), (char *) link);
 
   /* Single external network input link */
-  link = (struct t_link *) malloc (sizeof (struct t_link));
+  if ( (link = (struct t_link*) MALLOC_get_memory (sizeof (struct t_link))) == NULL)
+  {
+    die("Error reserving memory for machine %d output link",
+        machine_id);
+  }
+
   link->linkid       = 1;
   link->info.machine = machine;
   link->kind         = MACHINE_LINK;

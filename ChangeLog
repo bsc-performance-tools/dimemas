@@ -7,6 +7,11 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2012/03/22 - grodrigu
+	
+	BUGFIX:		Solved a bug on parsing: when reading NOOPs offset location
+				was not updated properly.
+
 2012/03/05 - jgonzale
 	
 	CHANGES:	MALLOC_free_memory does not need size any more. Erased

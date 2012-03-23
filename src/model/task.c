@@ -316,9 +316,9 @@ void TASK_end()
           node = get_node_of_thread (thread);
           cpu  = get_cpu_of_thread (thread);
           PARAVER_Idle(0,
-                              IDENTIFIERS (thread),
-                              thread->last_paraver,
-                              current_time);
+                       IDENTIFIERS (thread),
+                       thread->last_paraver,
+                       current_time);
         }
       }
 
@@ -336,9 +336,9 @@ void TASK_end()
           node = get_node_of_thread (thread);
           cpu = get_cpu_of_thread (thread);
           PARAVER_Idle(0,
-                              IDENTIFIERS (thread),
-                              thread->last_paraver,
-                              current_time);
+                       IDENTIFIERS (thread),
+                       thread->last_paraver,
+                       current_time);
 
           printf ("\t* Thread %02d ->",
                   thread->threadid);

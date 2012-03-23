@@ -140,7 +140,7 @@ static void Ptask_reload (struct t_Ptask *Ptask,
 
   struct t_task   *task;
   struct t_thread *thread;
-  
+
   int tasks_it, threads_it;
 
 
@@ -689,7 +689,8 @@ static void show_individual_statistics_pallas (struct t_Ptask *Ptask)
 
   /* Initialization of accounters per reload */
   /* We have (n_rerun + 1) iterations */
-  acc_Ptask_rerun = (struct t_account **)malloc(sizeof(struct t_account *) * (Ptask->n_rerun + 1));
+  acc_Ptask_rerun =
+    (struct t_account **)MALLOC_get_memory(sizeof(struct t_account *) * (Ptask->n_rerun + 1));
   for(i = 0; i <= Ptask->n_rerun; i++)
   {
     acc_Ptask_rerun[i] = new_accounter();

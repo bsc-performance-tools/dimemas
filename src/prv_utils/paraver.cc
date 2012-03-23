@@ -319,17 +319,20 @@ void PARAVER_end(void)
   }
 
   /* Flush last collapsed events */
-  to_ascii.str("");
-  to_ascii << EventCollapser.toString();
+  if (!EventCollapser.voidEvent())
+  {
+    /* Flush previous event */
+    to_ascii.str("");
+    to_ascii << EventCollapser.toString();
 
-  TraceMerger.NewRecord(PRV_EVENT,
-                        EventCollapser.cpu(),
-                        EventCollapser.ptask(),
-                        EventCollapser.task(),
-                        EventCollapser.thread(),
-                        EventCollapser.timestamp(),
-                        to_ascii.str());
-
+    TraceMerger.NewRecord(PRV_EVENT,
+                          EventCollapser.cpu(),
+                          EventCollapser.ptask(),
+                          EventCollapser.task(),
+                          EventCollapser.thread(),
+                          EventCollapser.timestamp(),
+                          to_ascii.str());
+  }
 
   /* Generate trace header */
   GenerateParaverHeader(ParaverTraceFile);
