@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -113,10 +113,10 @@ public class ConfigurationData
   // Método que inicializa los datos a valores por defecto.
   public void initialValues()
   {
-    scheduler = DEFAULT_SCHEDULER;
-    fileSys = DEFAULT_FILE_SYS;
+    scheduler     = DEFAULT_SCHEDULER;
+    fileSys       = DEFAULT_FILE_SYS;
     communication = DEFAULT_COMMUNICATION;
-    sensitivity = DEFAULT_SENSITIVITY;
+    sensitivity   = DEFAULT_SENSITIVITY;
   }
 
   /*

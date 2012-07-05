@@ -7,9 +7,7 @@ dist_noinst_JAVA += \
   $(data_pkgpath)/DedicatedConnectionData.java \
   $(data_pkgpath)/EnvironmentData.java \
   $(data_pkgpath)/FileSystemData.java \
-  $(data_pkgpath)/MachineDataBase.java \
   $(data_pkgpath)/MappingData.java \
-  $(data_pkgpath)/NetworkDataBase.java \
   $(data_pkgpath)/NodeData.java \
   $(data_pkgpath)/Node.java \
   $(data_pkgpath)/SimulatorCallData.java \

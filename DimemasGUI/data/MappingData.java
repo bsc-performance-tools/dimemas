@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -60,7 +60,7 @@ public class MappingData
   private String tracefile; // Tracefile name of application.
   private String map;       // List of nodes in application.
   private int    mapInfo;   // Map type, for informational pourposes
-  
+
 
   /*
   * El método loadData almacena en la estructura de datos de MAPPING, la
@@ -74,11 +74,12 @@ public class MappingData
   {
     int first = Data.MAPPING.length();
     int second = line.indexOf(",",first);
-
     setTracefile(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setTasks(Tools.blanks(line.substring(first,second)));
+
     first = line.indexOf("{",second) + 1;
     second = line.indexOf("}",first);
     setMap(Tools.blanks(line.substring(first,second)));
@@ -163,7 +164,7 @@ public class MappingData
 
     return map;
   }
-  
+
   public int getMapInfo()
   {
     return mapInfo;
@@ -206,10 +207,10 @@ public class MappingData
       throw new NumberFormatException();
     }
   }
-  
+
   public void setMapInfo(int newMapInfo)
   {
     mapInfo = newMapInfo;
   }
-  
+
 }

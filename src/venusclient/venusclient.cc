@@ -121,7 +121,8 @@ void VC_Init(void) {
       //return 0;
     }
   }
-  if (!channelSocket) {
+  if (!channelSocket)
+  {
     die ("Could not connect to Venus, exiting\n");
     exit(-100); // Why -100?
   }

@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -55,7 +55,7 @@ import java.awt.event.*;
 public class EnvironmentWindow extends GUIWindow
 {
   public static final long serialVersionUID = 8L;
-  
+
   private JRadioButton lin;
   private JRadioButton log;
   private JRadioButton ct;
@@ -67,7 +67,7 @@ public class EnvironmentWindow extends GUIWindow
   private JButton b_close = createButton("Close");
   private JButton b_same = createButton("Do all the same");
 
-  private JComboBox cb_architecture = createComboBox();
+  // private JComboBox cb_architecture = createComboBox();
 
   private JTextField tf_architecture = new JTextField(10);
   private JTextField tf_number = createTextField(2);
@@ -82,7 +82,7 @@ public class EnvironmentWindow extends GUIWindow
   * los nombres de las arquitecturas/máquinas predefinidas en la base de datos.
   *
   * @ret JComboBox: Selector Swing creado.
-  */
+
   private JComboBox createComboBox()
   {
     JComboBox cb = new JComboBox();
@@ -98,6 +98,7 @@ public class EnvironmentWindow extends GUIWindow
 
     return cb;
   }
+  */
 
   /*
   * El método createTextField genera un campo de texto Swing que actuará como
@@ -142,6 +143,7 @@ public class EnvironmentWindow extends GUIWindow
   */
   private void fillInformation(int index)
   {
+    /*
     if(data.environment.machine[index].getIndex() == -1)
     {
       cb_architecture.setSelectedIndex(0);
@@ -150,6 +152,7 @@ public class EnvironmentWindow extends GUIWindow
     {
       cb_architecture.setSelectedIndex(data.environment.machine[index].getIndex()+1);
     }
+    */
 
     switch(Integer.parseInt(data.environment.machine[index].getCommunication()))
     {
@@ -223,7 +226,7 @@ public class EnvironmentWindow extends GUIWindow
 
     try
     {
-      data.environment.machine[index].setIndex(cb_architecture.getSelectedIndex()-1);
+      // data.environment.machine[index].setIndex(cb_architecture.getSelectedIndex()-1);
       data.environment.machine[index].setNodeArchitecture(tf_architecture.getText());
       data.environment.machine[index].setNodes(tf_nodes.getText());
       data.environment.machine[index].setBandwidth(tf_bandwidth.getText());
@@ -233,15 +236,15 @@ public class EnvironmentWindow extends GUIWindow
 
       if(reply)
       {
-        data.processor.verifyArchitecture(oldId,String.valueOf(index),
-          data.machineDB,data.environment,index);
+        // data.processor.verifyArchitecture(oldId,String.valueOf(index), data.machineDB,data.environment,index);
+        data.processor.verifyArchitecture(oldId,String.valueOf(index), data.environment,index);
       }
       else
       {
         data.environment.machine[index].setId(tf_id.getText());
         data.environment.machine[index].setName(tf_name.getText());
-        data.processor.verifyArchitecture(oldId,tf_id.getText(),data.machineDB,
-          data.environment,index);
+        // data.processor.verifyArchitecture(oldId,tf_id.getText(),data.machineDB, data.environment,index);
+        data.processor.verifyArchitecture(oldId,tf_id.getText(), data.environment,index);
       }
 
       if(ct.isSelected())
@@ -279,7 +282,7 @@ public class EnvironmentWindow extends GUIWindow
     drawLine(new Component[] {new JLabel("Machine number"),b_left,tf_number,b_right});
     drawLine(new Component[] {new JLabel("Machine name"),tf_name});
     drawLine(new Component[] {new JLabel("Machine id"),tf_id});
-    drawLine(new Component[] {new JLabel("Simulated architecture"),cb_architecture,tf_architecture});
+    // drawLine(new Component[] {new JLabel("Simulated architecture"),cb_architecture,tf_architecture});
     drawLine(new Component[] {new JLabel("Number of nodes"),tf_nodes});
     drawLine(new Component[] {new JLabel("Network bandwidth [MByte/s]"),tf_bandwidth});
     drawLine(new Component[] {new JLabel("Number of buses"),tf_buses});
@@ -358,6 +361,7 @@ public class EnvironmentWindow extends GUIWindow
         fillInformation(Integer.parseInt(tf_number.getText())-1);
       }
     }
+    /*
     else if(e.getSource() == cb_architecture)
     {
       if(cb_architecture.getSelectedIndex() != 0)
@@ -373,6 +377,7 @@ public class EnvironmentWindow extends GUIWindow
         tf_nodes.setText(data.environment.DEFAULT_NODES);
       }
     }
+    */
     else if(e.getSource() == b_save)
     {
       if(storeInformation(Integer.parseInt(tf_number.getText())-1,false))
@@ -390,11 +395,13 @@ public class EnvironmentWindow extends GUIWindow
 
           if(data.processor.node == null)
           {
-            data.processor.createNodes(data.environment,data.machineDB.machine);
+            // data.processor.createNodes(data.environment,data.machineDB.machine);
+            data.processor.createNodes(data.environment);
           }
           else
           {
-            data.processor.changeAtNodes(data.environment,data.machineDB.machine);
+            // data.processor.changeAtNodes(data.environment,data.machineDB.machine);
+            data.processor.changeAtNodes(data.environment);
           }
         } catch(Exception exc) {}
 

@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -56,58 +56,16 @@ import java.awt.event.*;
 public class InitialMachineWindow extends GUIWindow
 {
   public static final long serialVersionUID = 11L;
-  
-  private JComboBox cb_architecture = createComboBox(false);
-  private JComboBox cb_tasks = createComboBox(true);
 
-  private JTextField tf_tracefile = new JTextField(33);
-  private JTextField tf_instrumentedArch = new JTextField(17);
-  private JTextField tf_tasks = new JTextField(17);
+  // private JComboBox cb_architecture = createComboBox(false);
+  // private JComboBox cb_tasks = createComboBox(true);
 
-  private JButton b_save = createButton("Save");
+  private JTextField tf_tracefile        = new JTextField(33);
+  private JTextField tf_tasks            = new JTextField(17);
+
+  private JButton b_save   = createButton("Save");
   private JButton b_select = createButton("Select tracefile");
-  private JButton b_tasks = createButton("Compute number of tasks");
-  private JButton b_close = createButton("Close");
-
-  /*
-  * El método createComboBox genera un selector Swing que tiene como opciones
-  * los nombres de las arquitecturas/máquinas predefinidas en la base de datos
-  * o diversos números enteros (para fijar el número de tareas) según indique
-  * el parámetroe @tasks.
-  *
-  * @param: boolean tasks -> TRUE si el selector irá destinado a escoger el
-  *                          número de tareas, FALSE si el selector mostrará
-  *                          nombres de arquitecturas predefinidas.
-  *
-  * @ret JComboBox: Selector Swing creado.
-  */
-  private JComboBox createComboBox(boolean tasks)
-  {
-    JComboBox cb = new JComboBox();
-
-    cb.addItem("Edit");
-
-    if(tasks)
-    {
-      cb.addItem("1");
-      cb.addItem("2");
-      cb.addItem("4");
-      cb.addItem("8");
-      cb.addItem("16");
-      cb.addItem("32");
-    }
-    else
-    {
-      for(int i = 0; i <data.machineDB.getNumberOfMachinesInDB(); i++)
-      {
-        cb.addItem(data.machineDB.machine[i].getLabel());
-      }
-    }
-
-    cb.addActionListener(this);
-
-    return cb;
-  }
+  private JButton b_close  = createButton("Close");
 
   // Constructor de la clase InitialMachineWindow.
   public InitialMachineWindow(Data d)
@@ -119,18 +77,24 @@ public class InitialMachineWindow extends GUIWindow
 
     // Añadiendo información.
     tf_tracefile.setText(data.map.getTracefile(false));
-    tf_instrumentedArch.setText(data.instrumentedArchitecture);
+    // tf_instrumentedArch.setText(data.instrumentedArchitecture);
     tf_tasks.setText(String.valueOf(data.map.getTasks()));
 
     // Añadiendo los componentes a la ventana.
     drawLine(new Component[] {new JLabel("Input tracefile name"),tf_tracefile});
+    tf_tracefile.setEditable(false);
+
+    /*
     drawLine(new Component[] {new JLabel("Architecture used to instrument"),
                               cb_architecture,
                               tf_instrumentedArch});
+    */
     drawLine(new Component[] {new JLabel("Number of aplication tasks"),
-                              cb_tasks,
+                              // cb_tasks,
                               tf_tasks});
-    drawButtons(new Component[] {b_save,b_select,b_tasks,b_close},20,5);
+    tf_tasks.setEditable(false);
+
+    drawButtons(new Component[] {b_save,b_select,b_close},20,5);
 
     // Más propiedades de ventana.
     setBounds(25,150,getWidth()+20,getHeight());
@@ -150,7 +114,12 @@ public class InitialMachineWindow extends GUIWindow
       Tools.showWarningMessage("TRACEFILE");
       return false;
     }
-    else if(tf_tasks.getText().equalsIgnoreCase("") || tf_tasks.getText().equalsIgnoreCase("0"))
+    else
+    {
+
+    }
+
+    if(tf_tasks.getText().equalsIgnoreCase("") || tf_tasks.getText().equalsIgnoreCase("0"))
     {
       Tools.showWarningMessage("NUMBER OF TASKS");
       return false;
@@ -171,21 +140,24 @@ public class InitialMachineWindow extends GUIWindow
     int nTasks = 0;
     int first;
     int second;
-    progress prog;
+    // progress prog;
     RandomAccessFile sourceFile;
 
     // Constructor de la clase workUnit.
-    public workUnit(File file, progress p)
+    // public workUnit(File file, progress p)
+    public workUnit(File file)
     {
-      prog = p;
+      // prog = p;
 
       try
       {
         sourceFile = new RandomAccessFile(file,"r");
-      } catch(FileNotFoundException fe)
-        {
-          Tools.showInformationMessage(fe.toString());
-        }
+
+      }
+      catch(FileNotFoundException fe)
+      {
+        Tools.showErrorDialog("Tracefile "+file.getName()+ " not found");
+      }
     }
 
     // Método que permite acceder al número de tareas desde fuera de la clase.
@@ -200,38 +172,58 @@ public class InitialMachineWindow extends GUIWindow
       {
         sleep(50);
 
-        while(sourceFile.getFilePointer() != sourceFile.length())
+        do
         {
+
           line = sourceFile.readLine();
 
-          if(line.startsWith("\"CPU burst\" {") && line.endsWith(";;"))
+        } while(line.equals(""));
+
+        if (line.startsWith("#DIMEMAS"))
+        {
+          /* line contains the header! */
+          String[] tokens = line.split("[:,()]+");
+
+          /* 0: Magic!
+           * 1: Trace Name
+           * 2: Offsets Presence
+           */
+          if (tokens[2].equals("0"))
           {
-            first = line.indexOf("{")+1;
-            second = line.indexOf(",");
-            line = Tools.blanks(line.substring(first,second));
-
-            if(!line.equalsIgnoreCase("") && nTasks < Integer.parseInt(line)+1)
-            {
-              nTasks = Integer.parseInt(line)+1;
-            }
+            tf_tasks.setText(tokens[3]);
           }
-
-          prog.setCurrent((int)sourceFile.getFilePointer());
+          else if (tokens[2].equals("1"))
+          {
+            tf_tasks.setText(tokens[4]);
+          }
+          else
+          {
+            Tools.showErrorDialog("Wrong header in tracefile");
+          }
+        }
+        else if (line.startsWith("SDDFA;;"))
+        {
+          Tools.showErrorDialog("This version does not support TRF tracefiles. Plase translate the trace");
+          tf_tracefile.setText(null);
+        }
+        else
+        {
+          Tools.showErrorDialog("Unknown input trace format");
+          tf_tracefile.setText(null);
         }
 
         sourceFile.close();
-      } catch(InterruptedException ie)
-        {
-          Tools.showInformationMessage(ie.toString());
-        }
-        catch(IOException ioe)
-        {
-          Tools.showInformationMessage(ioe.toString());
-        }
+      }
+      catch(InterruptedException ie)
+      {
+        Tools.showInformationMessage(ie.toString());
+      }
+      catch(IOException ioe)
+      {
+        Tools.showInformationMessage(ioe.toString());
+      }
 
-      prog.interrupt();
-      tf_tasks.setText(String.valueOf(nTasks));
-      b_tasks.setEnabled(true);
+      // prog.interrupt();
     }
   }
 
@@ -290,6 +282,7 @@ public class InitialMachineWindow extends GUIWindow
   // usuario al interactuar con los elementos de la ventana.
   public void actionPerformed(ActionEvent e)
   {
+    /*
     if(e.getSource() == cb_architecture)
     {
       if(cb_architecture.getSelectedIndex() != 0)
@@ -303,7 +296,8 @@ public class InitialMachineWindow extends GUIWindow
         tf_instrumentedArch.setText("");
       }
     }
-    else if (e.getSource() == cb_tasks)
+    else
+    if (e.getSource() == cb_tasks)
     {
       if(cb_tasks.getSelectedIndex() != 0)
       {
@@ -314,16 +308,15 @@ public class InitialMachineWindow extends GUIWindow
         tf_tasks.setText(String.valueOf(data.map.DEFAULT_TASKS));
       }
     }
-    else if(e.getSource() == b_save)
+    else */
+    if(e.getSource() == b_save)
     {
       if(dataOK())
       {
         try
         {
-          data.block.destroyFactors();
-          data.block.createFactors(tf_tracefile.getText());
           data.map.setTasks(tf_tasks.getText());
-          data.instrumentedArchitecture = tf_instrumentedArch.getText();
+          //data.instrumentedArchitecture = tf_instrumentedArch.getText();
           data.map.setTracefile(tf_tracefile.getText());
 
           for(int i = data.environment.getNumberOfMachines()-1; i >= 0; i--)
@@ -337,7 +330,8 @@ public class InitialMachineWindow extends GUIWindow
     }
     else if(e.getSource() == b_select)
     {
-      Tools.fc.addChoosableFileFilter(new Tools.TRFfilter());
+      Tools.fc.addChoosableFileFilter(new Tools.DIMfilter());
+
       int result = Tools.fc.showOpenDialog(null);
 
       if(result == JFileChooser.APPROVE_OPTION)
@@ -345,19 +339,12 @@ public class InitialMachineWindow extends GUIWindow
         tf_tracefile.setText(Tools.fc.getSelectedFile().getAbsolutePath());
       }
 
+      // Check the trace format and the number of tasks
+      File source = new File(tf_tracefile.getText());
+      workUnit wu = new workUnit(source);
+      wu.start();
+
       Tools.fc.resetChoosableFileFilters();
-    }
-    else if(e.getSource() == b_tasks)
-    {
-      if(!tf_tracefile.getText().equals(""))
-      {
-        File source = new File(tf_tracefile.getText());
-        b_tasks.setEnabled(false);
-        progress p = new progress((int)source.length());
-        workUnit wu = new workUnit(source,p);
-        p.start();
-        wu.start();
-      }
     }
     else if(e.getSource() == b_close)
     {

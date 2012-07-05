@@ -1,6 +1,6 @@
 JAVAROOT = .
 
-jarfile = $(PACKAGE)-$(VERSION)-gui.jar
+jarfile = $(PACKAGE)-$(VERSION).$(SVNREV)-gui.jar
 runscript = dimemas-gui.sh
 jardir  = $(bindir)
 jhdrout = ..

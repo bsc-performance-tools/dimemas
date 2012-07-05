@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -56,12 +56,13 @@ public class Data
   public String instrumentedArchitecture = "";
 
   // Ficheros externos.
-  static public final String HOME = os();
-  static public final String ICON_IMAGE = HOME + "icon.jpg";
-  static public final String HEADER_FILE = HOME + "header.txt";
-  static public final String MACHINE_DB_FILE = HOME + "machines.db";
-  static public final String NETWORK_DB_FILE = HOME + "networks.db";
-  
+  static public boolean       UNDEFINED_HOME  = false;
+  static public final String  HOME            = os();
+  static public final String  ICON_IMAGE      = HOME + "icon.jpg";
+  static public final String  HEADER_FILE     = HOME + "header.txt";
+  // static public final String  MACHINE_DB_FILE = HOME + "machines.db";
+  // static public final String  NETWORK_DB_FILE = HOME + "networks.db";
+
   // Constantes de Mapeo
   static public final int NO_MAP         = -1;
   static public final int UNKNOW_MAP     =  0;
@@ -72,26 +73,26 @@ public class Data
   // Número de elementos que componen las COLLECTIVE OPERATIONS.
   static public final int DEFAULT_MPI_ITEMS = 14;
 
-  static public final String WAN = "\"wide area network information\" {";
-  static public final String CONNECTION = "\"dedicated connection information\" {";
+  static public final String WAN         = "\"wide area network information\" {";
+  static public final String CONNECTION  = "\"dedicated connection information\" {";
   static public final String ENVIRONMENT = "\"environment information\" {";
-  static public final String NODE = "\"node information\" {";
-  static public final String MAPPING = "\"mapping information\" {";
-  static public final String CONFIG = "\"configuration files\" {";
-  static public final String MODULE = "\"modules information\" {";
-  static public final String FILE_SYS = "\"file system parameters\" {";
+  static public final String NODE        = "\"node information\" {";
+  static public final String MAPPING     = "\"mapping information\" {";
+  static public final String CONFIG      = "\"configuration files\" {";
+  static public final String MODULE      = "\"modules information\" {";
+  static public final String FILE_SYS    = "\"file system parameters\" {";
 
-  public MachineDataBase machineDB = new MachineDataBase();
-  public NetworkDataBase netDB = new NetworkDataBase();
-  public WideAreaNetworkData wan = new WideAreaNetworkData();
+  // public MachineDataBase machineDB         = new MachineDataBase();
+  // public NetworkDataBase netDB             = new NetworkDataBase();
+  public WideAreaNetworkData wan           = new WideAreaNetworkData();
   public DedicatedConnectionData dedicated = new DedicatedConnectionData();
-  public EnvironmentData environment = new EnvironmentData();
-  public NodeData processor = new NodeData();
-  public MappingData map = new MappingData();
-  public ConfigurationData config = new ConfigurationData();
-  public FileSystemData fileSys = new FileSystemData();
-  public SimulatorCallData simOptions = new SimulatorCallData();
-  public BlockData block = new BlockData();
+  public EnvironmentData environment       = new EnvironmentData();
+  public NodeData processor                = new NodeData();
+  public MappingData map                   = new MappingData();
+  public ConfigurationData config          = new ConfigurationData();
+  public FileSystemData fileSys            = new FileSystemData();
+  public SimulatorCallData simOptions      = new SimulatorCallData();
+  public BlockData block                   = new BlockData();
 
   /*
   * El método os genera una cadena con el path correcto para llegar a los
@@ -101,7 +102,27 @@ public class Data
   */
   private static String os()
   {
-    return System.getProperty("DIMEMAS_HOME")+"/share/dimemas_defaults/";
+    if(System.getProperty("os.name").startsWith("Windows"))
+    {
+      return System.getProperty("USER_HOME") + "/DIMEMAS_defaults/";
+    }
+    else
+    {
+      String HomeDirectory = System.getenv("DIMEMAS_HOME");
+
+      if (HomeDirectory == null || HomeDirectory.equals(""))
+      {
+        UNDEFINED_HOME = true;
+        return "";
+      }
+      else
+      {
+        return HomeDirectory+"/share/dimemas_defaults/";
+      }
+    }
+
+
+
     /*
     if(System.getProperty("os.name").startsWith("Windows"))
     {
@@ -121,6 +142,57 @@ public class Data
     currentConfigurationFile.setBorder(null);
     currentConfigurationFile.setEditable(false);
   }
+
+  public static boolean checkConfigurationFiles()
+  {
+    RandomAccessFile test;
+
+    if (UNDEFINED_HOME)
+    {
+      Tools.showErrorDialog("'DIMEMAS_HOME' environment variable not set!");
+      return false;
+    }
+
+    /*
+    try
+    {
+      test = new RandomAccessFile(new File(Data.MACHINE_DB_FILE),"r");
+      test.close();
+    }
+    catch(Exception e)
+    {
+      Tools.showErrorDialog("Unable to open 'machine.db' file. Check existence and permissions on DIMEMAS_HOME directories");
+      return false;
+    }
+
+    try
+    {
+      test = new RandomAccessFile(new File(Data.NETWORK_DB_FILE),"r");
+      test.close();
+    }
+    catch(Exception e)
+    {
+      Tools.showErrorDialog("Unable to open 'network.db' file.  Check existence and permissions on DIMEMAS_HOME directories");
+      return false;
+    }
+    */
+
+    try
+    {
+      test = new RandomAccessFile(new File(Data.HEADER_FILE),"r");
+      test.close();
+    }
+    catch(Exception e)
+    {
+      Tools.showErrorDialog("Unable to open 'header.txt' file.  Check existence and permissions on DIMEMAS_HOME directories");
+      return false;
+    }
+
+    return true;
+  }
+
+
+
 
   /*
   * Método que permite el acceso externo al nombre del fichero de configuración
@@ -263,9 +335,9 @@ public class Data
   {
     int first;
     int second;
-    long seek = 0;
-    String line = "";
-    boolean oldFile = true;
+    long seek         = 0;
+    String line       = "";
+    boolean oldFile   = true;
     boolean validFile = false;
     RandomAccessFile source;
 
@@ -278,7 +350,7 @@ public class Data
       {
         if(line.startsWith("#"))   // Empieza un módulo de configuración.
         {
-          if(line.endsWith("};;")) // Acaba un mÃ³dulo de configuración.
+          if(line.endsWith("};;")) // Acaba un módulo de configuración.
           {
             if(oldFile && (line.startsWith("#0") || line.startsWith("#7")))
             {
@@ -355,6 +427,7 @@ public class Data
           {
             boolean created = false;
 
+            /*
             for(int i = netDB.getNumberOfNetworksInDB()-1; i >= 0; i--)
             {
               if(netDB.net[i].getLabel().equalsIgnoreCase(instrumentedArchitecture))
@@ -364,6 +437,7 @@ public class Data
                 break;
               }
             }
+            */
 
             if(!created)
             {
@@ -385,7 +459,8 @@ public class Data
         }
         else if(line.startsWith(NODE))        // Datos de NODES.
         {
-          processor.createNodes(environment,machineDB.machine);
+          // processor.createNodes(environment,machineDB.machine);
+          processor.createNodes(environment);
 
           for(int i = 0; i < processor.getNumberOfNodes(); i++)
           {
@@ -397,11 +472,6 @@ public class Data
         {
           map.loadData(splitLine(line,source));
           map.setMapInfo(Data.UNKNOW_MAP);
-
-          if(!map.getTracefile(false).equalsIgnoreCase(""))
-          {
-            block.createFactors(map.getTracefile(false));
-          }
         }
         else if(line.startsWith(CONFIG))      // Datos de EXTRA CONFIG FILES.
         {
@@ -414,10 +484,7 @@ public class Data
         }
         else if(line.startsWith(MODULE))      // Datos de BLOCK FACTORS/MODULES.
         {
-          if(block.getNumberOfBlocks() != 0)
-          {
-            block.loadData(splitLine(line,source));
-          }
+          block.loadData(splitLine(line,source));
         }
         else if(line.startsWith(FILE_SYS))    // Datos de FILE SYSTEM INFO.
         {
@@ -426,13 +493,16 @@ public class Data
       } // END while()
 
       source.close();
-    } catch(Throwable exc)
-      {
-        Tools.showInformationMessage(exc.toString());
-      }
+    }
+    catch(Throwable exc)
+    {
+      Tools.showInformationMessage(exc.getMessage());
+      exc.printStackTrace();
+    }
 
-    for(int i = environment.getNumberOfMachines()-1; i >= 0; i--)
-    { // Los nodos de una máquina tendrán su misma arquitectura.
+    for (int i = environment.getNumberOfMachines()-1; i >= 0; i--)
+    {
+      // Los nodos de una máquina tendrán su misma arquitectura.
       for(int j = 0; j < processor.getNumberOfNodes(); j++)
       {
         if(processor.node[j].getMachine_id().equalsIgnoreCase(environment.machine[i].getId()))
@@ -444,6 +514,7 @@ public class Data
 
       // Fijar el índice que permitirá encontrar los datos de la arquitectura
       // en MachineDB.
+      /*
       for(int k = machineDB.getNumberOfMachinesInDB()-1; k >= 0; k--)
       {
         if(machineDB.machine[k].getLabel().equalsIgnoreCase(environment.machine[i].getNodeArchitecture()))
@@ -452,6 +523,7 @@ public class Data
           break;
         }
       }
+      */
     }
   }
 
@@ -515,7 +587,8 @@ public class Data
       if(processor.getNumberOfNodes() == 0)
       {
         processor.setNumberOfNodes(environment.getNumberOfMachines());
-        processor.createNodes(environment,machineDB.machine);
+        //processor.createNodes(environment, machineDB.machine);
+        processor.createNodes(environment);
       }
 
       for(int i = 0; i < processor.getNumberOfNodes(); i++)

@@ -7,6 +7,12 @@ Date - user
 	BUGFIX:   	explanation of bug solved
 	CHANGES:  	explanation of codification changes
 
+2012/07/05 - jgonzale
+	
+	CHANGES:	Deep modification of 'DimemasGUI' to correctly generate new
+				CFGs files (using new block codification). It is still
+				under validation.
+
 2012/03/22 - grodrigu
 	
 	BUGFIX:		Solved a bug on parsing: when reading NOOPs offset location

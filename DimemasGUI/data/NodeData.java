@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -102,8 +102,9 @@ public class NodeData
   *
   * @exc: Valor numérico no válido.
   */
-  public void verifyArchitecture(String oldId, String newId, MachineDataBase mDB,
-    EnvironmentData env, int index) throws Exception
+  //public void verifyArchitecture(String oldId, String newId, MachineDataBase mDB,
+  //  EnvironmentData env, int index) throws Exception
+  public void verifyArchitecture(String oldId, String newId, EnvironmentData env, int index) throws Exception
   {
     for(int i = nNodes-1; i >= 0; i--)
     {
@@ -111,6 +112,7 @@ public class NodeData
       {
         node[i].setMachine_id(newId);
 
+        /*
         if(!node[i].getArchitecture(false).equalsIgnoreCase(env.machine[index].getNodeArchitecture()))
         {
           node[i].setArchitecture(mDB.machine[env.machine[index].getIndex()].getLabel());
@@ -121,6 +123,7 @@ public class NodeData
           node[i].setRemote(mDB.machine[env.machine[index].getIndex()].getRemoteStartup());
           node[i].setBandwidth(mDB.machine[env.machine[index].getIndex()].getDataTransferRate());
         }
+        */
       }
     }
   }
@@ -135,7 +138,8 @@ public class NodeData
   *
   * @exc: Valor numérico no válido.
   */
-  public void createNodes(EnvironmentData env, MachineDataBase.Machine[] mDB) throws Exception
+  // public void createNodes(EnvironmentData env, MachineDataBase.Machine[] mDB) throws Exception
+  public void createNodes(EnvironmentData env) throws Exception
   {
     node = new Node[nNodes];
     int aux = nNodes-1;
@@ -146,6 +150,7 @@ public class NodeData
       {
         node[aux] = new Node(String.valueOf(aux),env.machine[i].getId());
 
+        /*
         if(env.machine[i].getIndex() != -1)
         { // Datos de la arquitectura de la máquina a la que pertenece el nodo.
           node[aux].setArchitecture(mDB[env.machine[i].getIndex()].getLabel());
@@ -156,6 +161,7 @@ public class NodeData
           node[aux].setRemote(mDB[env.machine[i].getIndex()].getRemoteStartup());
           node[aux].setBandwidth(mDB[env.machine[i].getIndex()].getDataTransferRate());
         }
+        */
 
         aux--;
       }
@@ -196,7 +202,8 @@ public class NodeData
   *
   * @exc: Valor numérico no válido.
   */
-  public void changeAtNodes(EnvironmentData env, MachineDataBase.Machine[] mDB) throws Exception
+  //public void changeAtNodes(EnvironmentData env, MachineDataBase.Machine[] mDB) throws Exception
+  public void changeAtNodes(EnvironmentData env) throws Exception
   {
     int k = nNodes-1;
     Node[] aux = new Node[nNodes];
@@ -235,6 +242,7 @@ public class NodeData
         {
           for(int j = env.getNumberOfMachines()-1; j >= 0; j--)
           {
+            /*
             if(env.machine[j].getId().equalsIgnoreCase(aux[i].getMachine_id())
                && (env.machine[j].getIndex() != -1))
             {
@@ -247,6 +255,7 @@ public class NodeData
               aux[i].setBandwidth(mDB[env.machine[j].getIndex()].getDataTransferRate());
               break;
             }
+            */
           }
         }
       }

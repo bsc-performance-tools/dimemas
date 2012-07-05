@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -44,110 +44,48 @@ package data;
 
 import tools.*;
 import java.io.*;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
+
 
 /*
 * Clase que albergará los datos correspondientes a BLOCK FACTORS.
 */
 public class BlockData
 {
-  static public final String DEFAULT_VALUE = "1.0";
-  static public final String BLOCK_LINE = "\"block definition\" {";
+  private HashSet<ModuleInformation>     ModuleRatios = new HashSet<ModuleInformation>();
+  private Iterator<ModuleInformation>    ExternalIterator;
+  private ModuleInformation              ExternalModuleInformation;
 
-  private int nBlocks = 0;      // Número de BLOCK FACTORS.
-  public Definition[] factors;  // BLOCK FACTORS.
+  public BlockData()
+  {
+  }
 
-  // Método que permite acceder al número de BLOCK FACTORS fuera de la clase.
   public int getNumberOfBlocks()
   {
-    return nBlocks;
+    return ModuleRatios.size();
+  }
+
+  public boolean defaultValues()
+  {
+    if (ModuleRatios.size() == 0)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
 
   // Método que elimina la info. existente para poder albergar nuevos datos.
   public void destroyFactors()
   {
-    for(int i = nBlocks-1; i >= 0; i--)
-    {
-      factors[i] = null;
-    }
-
-    nBlocks = 0;
-    factors = null;
+    ModuleRatios.clear();
     System.gc();
-  }
-
-  /*
-  * El método createFactors permitirá obtener el número de BLOCK FACTORS así
-  * como parte de la información correspondiente a partir de @filename (fichero
-  * de trazas).
-  *
-  * @param: String filename -> nombre del fichero de trazas actualmente en uso.
-  */
-  public void createFactors(String filename)
-  {
-    try
-    {
-      long seekPoint = 0;
-      String line;
-      RandomAccessFile source = new RandomAccessFile(new File(filename),"r");
-
-      // Recorrido del fichero de trazas para obtener el núm. de BLOCK FACTORS.
-      while(source.getFilePointer() != source.length())
-      {
-        line = Tools.blanks(source.readLine());
-
-        if(!line.equalsIgnoreCase(""))
-        {
-          if(line.startsWith("#"))
-          {
-            line = splitLine(line,source);
-            seekPoint = source.getFilePointer();
-          }
-          else if(line.startsWith(BLOCK_LINE))
-          {
-            line = splitLine(line,source);
-            nBlocks++;
-          }
-          else if(line.startsWith("\"CPU burst\""))
-          {
-            break;
-          }
-        }
-      }
-
-      factors = new Definition[nBlocks];
-      source.seek(seekPoint);
-      int i = 0;
-      int first = 0;
-      int second = 0;
-
-      // Obtención de los datos de los BLOCK FACTORS (nombre e identificador).
-      while((i < nBlocks) && (source.getFilePointer() != source.length()))
-      {
-        line = Tools.blanks(source.readLine());
-
-        if(line.startsWith(BLOCK_LINE))
-        {
-          line = splitLine(line,source);
-          factors[i] = new Definition();
-          first = line.indexOf("{")+1;
-          second = line.indexOf(",",first);
-          factors[i].setId(Tools.blanks(line.substring(first,second)));
-          first = second+1;
-          second = line.indexOf(",",first);
-          factors[i].setName(Tools.blanks(line.substring(first,second)));
-          i++;
-        }
-      }
-
-      source.close();
-    } catch(FileNotFoundException fne)
-      {
-        Tools.showInformationMessage(fne.toString());
-      }
-      catch(IOException ioe)
-      {
-        Tools.showInformationMessage(ioe.toString());
-      }
   }
 
   /*
@@ -173,28 +111,57 @@ public class BlockData
   }
 
   /*
+  * JGG (2012/03/30): Updated! Now, block ratios are expressed as
+  *                   'type value ratio'
+  *
   * El método loadData permite obtener el valor asociado a un BLOCK FACTOR
   * determinado, a partir de una cadena de caracteres @line extraida de un
   * fichero de configuración.
   *
-  * @param: String line -> línea que contiene la tupla [id,valor] de un BLOCK
-  *                         FACTOR.
+  * @param: String line -> línea que contiene la tupla [type,value,valor] de un
+  *                        BLOCK FACTOR.
   *
   * @exc: Valor numérico no válido.
   */
   public void loadData(String line) throws Exception
   {
-    String id = Tools.blanks(line.substring(line.indexOf("{")+1,line.indexOf(",")));
-    String value = Tools.blanks(line.substring(line.indexOf(",")+1,line.indexOf("}")));
+    String            type, value, ratio;
+    int               first, second;
+    ModuleInformation NewModuleInformation = new ModuleInformation();
 
-    // Búsqueda del BLOCK FACTOR con el id. correspondiente.
-    for(int i = 0; i < nBlocks; i++)
+    first  = line.indexOf("{")+1;
+    second = line.indexOf(",",first);
+    type   = Tools.blanks(line.substring(first,second));
+
+    first  = second + 1;
+    second = line.indexOf(",",first);
+
+    /* Check if it is an old format */
+    if (second == -1)
     {
-      if(factors[i].getId().equalsIgnoreCase(id))
-      {
-        factors[i].setValue(value);
-        break;
-      }
+      Tools.showInformationMessage("Old configuration file, modules information will not be extracted.");
+      return;
+    }
+
+    value  = Tools.blanks(line.substring(first,second));
+
+
+    first  = second + 1;
+    second = line.indexOf("}",first);
+    ratio  = Tools.blanks(line.substring(first,second));
+
+    NewModuleInformation.setType(type);
+    NewModuleInformation.setValue(value);
+    NewModuleInformation.setRatio(ratio);
+
+    if ( !ModuleRatios.contains(NewModuleInformation) )
+    {
+      ModuleRatios.add(NewModuleInformation);
+    }
+    else
+    {
+      Tools.showInformationMessage("Duplicated block "+NewModuleInformation+" not updated");
+      return;
     }
   }
 
@@ -209,98 +176,196 @@ public class BlockData
   */
   public void saveData(RandomAccessFile target) throws IOException
   {
-    for(int i = 0; i < nBlocks; i++)
+    /* JGG (2012/03/30): UPDATE! "modules information { type, value, ratio };; */
+
+    Iterator<ModuleInformation> it = ModuleRatios.iterator();
+
+    while ( it.hasNext() )
     {
-      // Composición de la línea "modules information {id , valor};;".
-      if(!factors[i].getValue().equalsIgnoreCase(DEFAULT_VALUE))
-      {
-        target.writeBytes(Data.MODULE);
-        target.writeBytes(factors[i].getId() + ", ");
-        target.writeBytes(factors[i].getValue() + "};;\n");
-      }
+      ModuleInformation CurrentModuleInformation = it.next();
+
+      target.writeBytes(Data.MODULE);
+      target.writeBytes(" "+CurrentModuleInformation.getType() + ", ");
+      target.writeBytes(CurrentModuleInformation.getValue() + ", ");
+      target.writeBytes(CurrentModuleInformation.getRatio() + " };;\n");
     }
   }
 
-  /*
-  * El método defaultValues permite comprobar si la totalidad de BLOCK FACTORS
-  * tienen asociado el valor por defecto en sus datos.
-  *
-  * @ret boolean: TRUE si todos tienen el valor por defecto, FALSE en otro caso.
-  */
-  public boolean defaultValues()
+
+  public void addModuleRatio(String type, String value, String ratio)
   {
-    for(int i = 0; i < nBlocks; i++)
+    ModuleInformation NewModuleInformation = new ModuleInformation();
+
+    NewModuleInformation.setType(type);
+    NewModuleInformation.setValue(value);
+    NewModuleInformation.setRatio(ratio);
+
+    if ( !ModuleRatios.contains(NewModuleInformation) )
     {
-      if(!factors[i].value.equalsIgnoreCase(DEFAULT_VALUE))
+      ModuleRatios.add(NewModuleInformation);
+    }
+    else
+    {
+      Tools.showInformationMessage("Duplicated block "+NewModuleInformation+" not updated");
+      return;
+    }
+  }
+
+  public void startIterator()
+  {
+    ExternalIterator = ModuleRatios.iterator();
+  }
+
+  public boolean hasNext()
+  {
+    boolean result = ExternalIterator.hasNext();
+    if (result)
+    {
+      ExternalModuleInformation = ExternalIterator.next();
+    }
+    else
+    {
+      ExternalModuleInformation = null;
+    }
+
+    return result;
+  }
+
+  public String getType()
+  {
+    if (ExternalModuleInformation != null)
+    {
+      return ExternalModuleInformation.getType();
+    }
+    else
+    {
+      throw new NoSuchElementException();
+    }
+  }
+
+  public String getValue()
+  {
+    if (ExternalModuleInformation != null)
+    {
+      return ExternalModuleInformation.getValue();
+    }
+    else
+    {
+      throw new NoSuchElementException();
+    }
+  }
+
+  public String getRatio()
+  {
+    if (ExternalModuleInformation != null)
+    {
+      return ExternalModuleInformation.getRatio();
+    }
+    else
+    {
+      throw new NoSuchElementException();
+    }
+  }
+
+    /*
+   * JGG: External container for module ratios
+   */
+
+  public class ModuleInformation
+  {
+    private int    type;
+    private int    value;
+    private double ratio;
+
+    public ModuleInformation()
+    {
+      type  = 0;
+      value = 0;
+      ratio = 0;
+    }
+
+    public void setType(String type)
+    {
+      try
+      {
+        this.type = Integer.parseInt(type);
+      }
+      catch(NumberFormatException e)
+      {
+        Tools.showInformationMessage("Wrong format of 'Type' field (" + e.toString()+")");
+      }
+    }
+
+    public void setValue(String value)
+    {
+      try
+      {
+        this.value = Integer.parseInt(value);
+      }
+      catch(NumberFormatException e)
+      {
+        Tools.showInformationMessage("Wrong format of 'Value' field ("+e.toString()+")");
+      }
+    }
+
+    public void setRatio(String ratio)
+    {
+      try
+      {
+        this.ratio = Double.parseDouble(ratio);
+      }
+      catch(NumberFormatException e)
+      {
+        Tools.showInformationMessage("Wrong format of 'Ratio' field ("+e.toString()+")");
+      }
+    }
+
+    public int hashCode()
+    {
+      return (type + value) * value + type;
+    }
+
+    public boolean equals(Object other)
+    {
+      if (other instanceof ModuleInformation)
+      {
+        ModuleInformation otherModuleInformation = (ModuleInformation) other;
+
+        if ( (this.type  == otherModuleInformation.type) &&
+             (this.value == otherModuleInformation.value))
+        {
+          return true;
+        }
+        else
+        {
+          return false;
+        }
+      }
+      else
       {
         return false;
       }
     }
 
-    return true;
-  }
-
-  /*
-  * La clase Definition provee la información de un BLOCK FACTOR determinado:
-  * Nombre, identificador y valor asociado.
-  */
-  public class Definition
-  {
-    private String name;   // Descripción del BLOCK FACTOR.
-    private String id;     // Identificador del BLOCK FACTOR.
-    private String value;  // Valor asociado al BLOCK FACTOR.
-
-    // Constructor de la clase Definition.
-    public Definition()
+    public String toString()
     {
-      value = DEFAULT_VALUE;
+      return "(" + type + ", " + value + ", " + ratio + ")";
     }
 
-    // Métodos GET: Permiten el acceso externo a los datos de un BLOCK FACTOR.
-    public String getName()
+    public String getType()
     {
-      return name;
-    }
-
-    public String getId()
-    {
-      return id;
+      return Integer.toString(type);
     }
 
     public String getValue()
     {
-      return value;
+      return Integer.toString(value);
     }
 
-    // Métodos SET: Permiten la modificación de los datos de un BLOCK FACTOR.
-    public void setName(String value)
+    public String getRatio()
     {
-      name = value;
+      return Double.toString(ratio);
     }
 
-    public void setId(String value)
-    {
-      try
-      {
-        Integer.parseInt(value);
-        id = value;
-      } catch(NumberFormatException e)
-        {
-          Tools.showInformationMessage(e.toString());
-        }
-    }
-
-    public void setValue(String number) throws Exception
-    {
-      try
-      {
-        Double.parseDouble(number);
-        value = Tools.filterForDouble(number);
-      } catch(NumberFormatException e)
-        {
-          Tools.showErrorMessage("Wrong value at :" + name);
-          throw e;
-        }
-    }
   }
 }

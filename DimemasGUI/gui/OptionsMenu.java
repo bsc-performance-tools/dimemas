@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -55,12 +55,12 @@ import java.awt.event.*;
 public class OptionsMenu extends JMenuBar implements ActionListener
 {
   public static final long serialVersionUID = 18L;
-  
+
   private Data data;
 
   private JMenu config = new JMenu("Configuration");
   private JMenu sim    = new JMenu("Simulator");
-  private JMenu db     = new JMenu("Database");
+  // private JMenu db     = new JMenu("Database");
   private JMenu info   = new JMenu("Information");
 
   private JMenuItem initial      = createMenuItem("Initial machine");
@@ -68,15 +68,15 @@ public class OptionsMenu extends JMenuBar implements ActionListener
   private JMenuItem loadConf     = createMenuItem("Load configuration");
   private JMenuItem saveConf     = createMenuItem("Save configuration");
 
-  
+
   private JMenuItem exit         = createMenuItem("Exit");
   private JMenuItem dimemas      = createMenuItem("Dimemas");
   private JMenuItem critical     = createMenuItem("Critical path analysis");
   private JMenuItem perturbation = createMenuItem("Synthetic perturbation analysis");
   private JMenuItem loadOp       = createMenuItem("Load options");
   private JMenuItem saveOp       = createMenuItem("Save options");
-  private JMenuItem machines     = createMenuItem("Machines");
-  private JMenuItem networks     = createMenuItem("Networks");
+  // private JMenuItem machines     = createMenuItem("Machines");
+  // private JMenuItem networks     = createMenuItem("Networks");
   private JMenuItem about        = createMenuItem("About");
 
   ConfigurationOptionsWindow cow;
@@ -116,9 +116,9 @@ public class OptionsMenu extends JMenuBar implements ActionListener
     sim.add(loadOp);
     sim.add(saveOp);
 
-    /// Añadiendo opciones al menú "Database".
-    db.add(machines);
-    db.add(networks);
+    // Añadiendo opciones al menú "Database".
+    // db.add(machines);
+    // db.add(networks);
 
     // Añadiendo opciones al menú "Information".
     info.add(about);
@@ -126,7 +126,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
     // Creando la barra de menú.
     add(config);
     add(sim);
-    add(db);
+    // add(db);
     add(info);
   }
 
@@ -216,7 +216,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
           "Are you sure you want to quit?",
           "Dimemas Question",
           JOptionPane.YES_NO_OPTION
-        ) 
+        )
       )
       {
         System.exit(0);
@@ -275,6 +275,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
 
       Tools.fc.resetChoosableFileFilters();
     }
+    /*
     else if(e.getSource() == machines)
     {
       machines.setEnabled(false);
@@ -303,6 +304,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
         }
       );
     }
+    */
     else if(e.getSource() == about)
     {
       about.setEnabled(false);

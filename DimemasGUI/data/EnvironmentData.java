@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -359,7 +359,7 @@ public class EnvironmentData
   */
   public class Machine
   {
-    private int index; // MachineDB[index] --> Simulated Architecture properties.
+    // private int index; // MachineDB[index] --> Simulated Architecture properties.
     private String DEFAULT_ID;
     private String nodeArchitecture; // Simulated architecture.
     private String name;             // Machine name.
@@ -384,7 +384,7 @@ public class EnvironmentData
     // Método que inicializa los datos con los valores por defecto.
     private void initialValues()
     {
-      index = -1;
+      // index = -1;
       nodeArchitecture = DEFAULT_NODE_ARCHITECTURE;
       name = DEFAULT_NAME;
       id = DEFAULT_ID;
@@ -638,6 +638,7 @@ public class EnvironmentData
       target.writeBytes(getCommunication() + "};;\n");
     }
 
+    /*
     // Métodos GET: permiten el acceso externo a los datos de una máquina.
     public int getIndex()
     {
@@ -648,6 +649,7 @@ public class EnvironmentData
     {
       index = value;
     }
+    */
 
     public String getNodeArchitecture()
     {

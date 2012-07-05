@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -55,12 +55,12 @@ import java.awt.event.*;
 public class ConfigurationOptionsWindow extends GUIWindow
 {
   public static final long serialVersionUID = 6L;
-  
+
   private final String CONFIG_BUTTON_TEXT = "Config!";
   private final String STATUS_OPEN        = "Open";
   private final String STATUS_DEFAULT     = "Default";
   private final String STATUS_MODIFIED    = "Altered";
-  
+
   /* JGG: tamaño de los JTextFields para que se visualicen correctamente */
   private final int   TXTFIELD_COLS      = 10;
 
@@ -181,7 +181,7 @@ public class ConfigurationOptionsWindow extends GUIWindow
 
     if(b_block.isEnabled())
     {
-      if(false)
+      if(!data.block.defaultValues())
       {
         lbl_block.setText(STATUS_MODIFIED);
         lbl_block.setForeground(Color.blue);
@@ -197,7 +197,7 @@ public class ConfigurationOptionsWindow extends GUIWindow
   // no) de un módulo determinado.
   private JLabel createLabel()
   {
-    /* JGG: La inicilización fija el tamaño en columnas, para la correcta 
+    /* JGG: La inicilización fija el tamaño en columnas, para la correcta
      * visualización */
     JLabel lbl = new JLabel(STATUS_DEFAULT, JLabel.LEFT);
 
@@ -228,7 +228,7 @@ public class ConfigurationOptionsWindow extends GUIWindow
     drawButtons(new Component[] {b_close},5,5);
 
     // Más propiedades de ventana.
-    
+
     setBounds(500,150,getWidth()+35,getHeight());
     pack();
     setVisible(true);
@@ -482,40 +482,33 @@ public class ConfigurationOptionsWindow extends GUIWindow
     }
     else if(e.getSource() == b_block)
     {
-      if(data.block.getNumberOfBlocks() == 0)
-      {
-        Tools.showInformationMessage("Block definition not found");
-      }
-      else
-      {
-        new BlockFactorsWindow(data).addWindowListener(
-          new WindowAdapter()
+      new BlockFactorsWindow(data).addWindowListener(
+        new WindowAdapter()
+        {
+          public void windowOpened(WindowEvent we)
           {
-            public void windowOpened(WindowEvent we)
+            b_block.setEnabled(false);
+            lbl_block.setText(STATUS_OPEN);
+            lbl_block.setForeground(Color.red);
+          }
+
+          public void windowClosed(WindowEvent we)
+          {
+            b_block.setEnabled(true);
+            lbl_block.setForeground(Color.black);
+
+            if(data.block.defaultValues())
             {
-              b_block.setEnabled(false);
-              lbl_block.setText(STATUS_OPEN);
-              lbl_block.setForeground(Color.red);
+              lbl_block.setText(STATUS_DEFAULT);
             }
-
-            public void windowClosed(WindowEvent we)
+            else
             {
-              b_block.setEnabled(true);
-              lbl_block.setForeground(Color.black);
-
-              if(data.block.defaultValues())
-              {
-                lbl_block.setText(STATUS_DEFAULT);
-              }
-              else
-              {
-                lbl_block.setText(STATUS_MODIFIED);
-                lbl_block.setForeground(Color.blue);
-              }
+              lbl_block.setText(STATUS_MODIFIED);
+              lbl_block.setForeground(Color.blue);
             }
           }
-        );
-      }
+        }
+      );
     }
     else if(e.getSource() == b_close)
     {

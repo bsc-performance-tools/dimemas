@@ -13,11 +13,7 @@ dist_noinst_JAVA += \
   $(gui_pkgpath)/FlightTimeWindow.java \
   $(gui_pkgpath)/GUIWindow.java \
   $(gui_pkgpath)/InitialMachineWindow.java \
-  $(gui_pkgpath)/MachineDBAddWindow.java \
-  $(gui_pkgpath)/MachineDBWindow.java \
   $(gui_pkgpath)/MappingWindow.java \
-  $(gui_pkgpath)/NetworkDBAddWindow.java \
-  $(gui_pkgpath)/NetworkDBWindow.java \
   $(gui_pkgpath)/NodeWindow.java \
   $(gui_pkgpath)/OptionsMenu.java \
   $(gui_pkgpath)/ResultsWindow.java \

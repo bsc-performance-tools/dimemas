@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -202,10 +202,11 @@ public class MachineDataBase
       }
 
       source.close();
-    } catch(Throwable exc)
-      {
-        Tools.showInformationMessage(exc.toString());
-      }
+    }
+    catch(Throwable exc)
+    {
+      Tools.showInformationMessage(exc.toString());
+    }
   }
 
   // Método que salva en fichero la base de datos existente en memoria.

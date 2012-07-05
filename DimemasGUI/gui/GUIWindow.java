@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -52,8 +52,8 @@ import java.awt.event.*;
 abstract class GUIWindow extends JFrame implements ActionListener
 {
   protected Data data;
-  protected Container windowPanel = getContentPane();
-  protected GridBagLayout layout = new GridBagLayout();
+  protected Container windowPanel   = getContentPane();
+  protected GridBagLayout layout    = new GridBagLayout();
   protected GridBagConstraints grid = new GridBagConstraints();
 
   /*

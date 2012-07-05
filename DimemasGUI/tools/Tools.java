@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -137,8 +137,8 @@ public class Tools
     }
   }
 
-  // Filtro para el selector de ficheros: archivos con extensión ".trf"
-  static public class TRFfilter extends javax.swing.filechooser.FileFilter
+  // Filtro para el selector de ficheros: archivos con extensión ".dim"
+  static public class DIMfilter extends javax.swing.filechooser.FileFilter
   {
     public boolean accept(java.io.File file)
     {
@@ -151,7 +151,7 @@ public class Tools
 
       if(extension != "")
       {
-        return extension.equals("trf");
+        return extension.equals("dim");
       }
       else
       {
@@ -161,7 +161,7 @@ public class Tools
 
     public String getDescription()
     {
-      return "TRF files (*.trf)";
+      return "DIM files (*.dim)";
     }
   }
 
@@ -197,6 +197,17 @@ public class Tools
   {
     JOptionPane.showMessageDialog((Component)null,
     "Wrong value at " + text + ".","Error",JOptionPane.ERROR_MESSAGE);
+  }
+
+  /*
+  * La clase showErrorDialog provee una ventana con el mensaje @text.
+  *
+  * @param: String text -> nombre del campo que contiene el valor no válido.
+  */
+  static public void showErrorDialog(String text)
+  {
+    JOptionPane.showMessageDialog((Component) null,
+    text,"Error",JOptionPane.ERROR_MESSAGE);
   }
 
   /*

@@ -400,7 +400,7 @@ if test "x$have_java" = "xno"; then
   echo "------------------------------------------------------------"
 fi
 
-AM_CONDITIONAL([HAVE_JAVA], [test "x$have_java" = xyes])
+AM_CONDITIONAL([HAVE_JAVA], [test "x$have_java" = "xyes"])
 
 dnl if test "x$have_java" = xyes; then
 dnl  AC_DEFINE(HAVE_JAVA, 1, Define to 1 if JAVA is installed in the system)

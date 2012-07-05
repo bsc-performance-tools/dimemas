@@ -1,7 +1,7 @@
 SDDFA
 /*
- * "Dimemas Configuration Format:" "Version 2.5"
- * "Last update"  "09/18/02 at 12:51"
+ * "Dimemas Configuration Format:" "Version 3.99"
+ * "Last update"  "2012/03/31"
  */ ;;
 
 
@@ -94,8 +94,10 @@ SDDFA
 
 #5:
 "modules information" {
-	// Module identificator number
-	int     "identificator";
+	// Module type
+	int     "type";
+	// Module value
+	int     "value";
 	// Speed ratio for this module, 0 means instantaneous execution
 	double  "execution_ratio";
 };;

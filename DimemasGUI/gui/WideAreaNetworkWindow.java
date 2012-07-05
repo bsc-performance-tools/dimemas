@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -54,7 +54,7 @@ import java.awt.event.*;
 public class WideAreaNetworkWindow extends GUIWindow
 {
   public static final long serialVersionUID = 21L;
-  
+
   private JRadioButton commLin;
   private JRadioButton commLog;
   private JRadioButton commCt;
@@ -66,7 +66,8 @@ public class WideAreaNetworkWindow extends GUIWindow
   private JRadioButton trafficCt;
   private ButtonGroup trafficGroup = createGroup(false);
 
-  private JComboBox cb_architecture = createComboBox(true);
+
+  //private JComboBox cb_architecture = createComboBox(true);
   private JComboBox cb_bandwidth = createComboBox(false);
 
   private JTextField tf_name = new JTextField(10);
@@ -86,10 +87,12 @@ public class WideAreaNetworkWindow extends GUIWindow
 
     if(architecture)
     {
+      /*
       for(int i = 0; i < data.netDB.getNumberOfNetworksInDB(); i++)
       {
         cb.addItem(data.netDB.net[i].getName());
       }
+      */
     }
     else
     {
@@ -145,6 +148,7 @@ public class WideAreaNetworkWindow extends GUIWindow
     // Añadiendo información..
     tf_name.setText(data.wan.getName(false));
 
+    /*
     for(int i = data.netDB.getNumberOfNetworksInDB()-1; i >= 0; i--)
     {
       if(data.netDB.net[i].getLabel().equalsIgnoreCase(tf_name.getText()))
@@ -152,6 +156,7 @@ public class WideAreaNetworkWindow extends GUIWindow
         cb_architecture.setSelectedIndex(i+1);
       }
     }
+    */
 
     tf_machines.setText(data.wan.getMachines());
     tf_connections.setText(data.wan.getDedicated());
@@ -181,7 +186,7 @@ public class WideAreaNetworkWindow extends GUIWindow
     }
 
     // Añadiendo los componentes a la ventana.
-    drawLine(new Component[] {new JLabel("Wide Area Network name"),cb_architecture,tf_name});
+    // drawLine(new Component[] {new JLabel("Wide Area Network name"),cb_architecture,tf_name});
     drawLine(new Component[] {new JLabel("Number of machines"),tf_machines});
     drawLine(new Component[] {new JLabel("Number of dedicated connections"),tf_connections});
     drawLine(new Component[] {new JLabel("Function of traffic"),trafficExp,trafficLog,trafficLin,trafficCt});
@@ -320,13 +325,16 @@ public class WideAreaNetworkWindow extends GUIWindow
             data.environment.changeAtMachines();
           }
 
+          /*
           if(cb_architecture.getSelectedIndex() == 0)
           {
+          */
             for(int i = data.environment.getNumberOfMachines()-1; i >= 0; i--)
             {
               data.environment.machine[i].setArchitecture(data.environment.DEFAULT_ARCHITECTURE);
               data.environment.machine[i].setBuses(data.environment.DEFAULT_BUSES);
             }
+          /*
           }
           else if(cb_architecture.getSelectedIndex() != 0)
           {
@@ -338,6 +346,7 @@ public class WideAreaNetworkWindow extends GUIWindow
                 (data.netDB.net[cb_architecture.getSelectedIndex()-1].getBuses());
             }
           }
+          */
 
           dispose();
         } catch(Exception exc) {}
@@ -347,7 +356,7 @@ public class WideAreaNetworkWindow extends GUIWindow
     {
       dispose();
     }
-    else if(e.getSource() == cb_architecture)
+    /*else if(e.getSource() == cb_architecture)
     {
       if(cb_architecture.getSelectedIndex() != 0)
       {
@@ -362,6 +371,7 @@ public class WideAreaNetworkWindow extends GUIWindow
         tf_bandwidth.setText(data.wan.DEFAULT_BANDWIDTH);
       }
     }
+    */
     else if(e.getSource() == cb_bandwidth)
     {
       if(cb_bandwidth.getSelectedIndex() != 0)

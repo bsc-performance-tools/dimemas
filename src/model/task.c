@@ -168,6 +168,7 @@ void TASK_Init(int sintetic_io_applications)
     {
       die("Different number of tasks defined on configuration file (%d) than the present in trace '%s' (%d)\n",
           Ptask->tasks_count,
+          Ptask->tracefile,
           ptask_structure->tasks_count);
     }
 
