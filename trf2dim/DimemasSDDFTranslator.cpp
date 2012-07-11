@@ -54,24 +54,24 @@ extern bool VerboseMode;
  * Public functions
  ****************************************************************************/
 
-DimemasSDDFTranslator::DimemasSDDFTranslator(string SDDFTraceName, 
+DimemasSDDFTranslator::DimemasSDDFTranslator(string SDDFTraceName,
                                              string OutputTraceName)
 {
   if ( (SDDFTraceFile = fopen(SDDFTraceName.c_str(), "r")) == NULL)
   {
     char CurrentError[128];
-    
+
     sprintf(CurrentError,
             "Unable to open SDDF trace (%s)",
             SDDFTraceName.c_str());
-    
+
     SetError(true);
     SetErrorMessage(CurrentError, strerror(errno));
     return;
   }
-  
+
   Parser = new DimemasSDDFTraceParser(SDDFTraceName, SDDFTraceFile);
-  
+
   if (Parser->GetError())
   {
     SetError(true);
@@ -79,22 +79,22 @@ DimemasSDDFTranslator::DimemasSDDFTranslator(string SDDFTraceName,
                     Parser->GetLastError().c_str());
     return;
   }
-  
+
   this->SDDFTraceName = SDDFTraceName;
-  
+
   if ((OutputTraceFile = fopen(OutputTraceName.c_str(), "w")) == NULL)
   {
     char CurrentError[128];
-    
+
     sprintf(CurrentError,
             "Unable to create output trace (%s)",
             OutputTraceName.c_str());
-    
+
     SetError(true);
     SetErrorMessage(CurrentError, strerror(errno));
     return;
   }
-  
+
   this->OutputTraceName = OutputTraceName;
 }
 
@@ -107,7 +107,7 @@ DimemasSDDFTranslator::InitTranslator(void)
                     Parser->GetLastError().c_str());
     return false;
   }
-  
+
   return true;
 }
 
@@ -125,27 +125,27 @@ DimemasSDDFTranslator::Translate(void)
   vector<off_t>            OutputOffsets;
   off_t                    OffsetsOffset;
   INT32                    CurrentPercentage, PercentageRead;
-  
+
   if (!Parser->Reload())
   {
     SetErrorMessage("Unable to reload SDDF trace",
                     Parser->GetLastError().c_str());
     return false;
   }
-  
+
   ApplicationStructure = Parser->GetApplicationsDescription();
-  
+
   if (!WriteHeader(ApplicationStructure))
     return false;
-  
+
   if (!WriteCommunicators(ApplicationStructure))
     return false;
-    
+
   if (Parser->GetError())
   {
     return false;
   }
-  
+
   if (VerboseMode)
   {
     CurrentPercentage = 0;
@@ -156,35 +156,35 @@ DimemasSDDFTranslator::Translate(void)
   for (INT32 Task = 0; Task < ApplicationStructure->GetTaskCount(); Task++)
   {
     OutputOffsets.push_back(ftello(OutputTraceFile));
-    
+
     if (OutputOffsets[Task] == -1)
     {
       char CurrentError[128];
-      
+
       sprintf(CurrentError,
               "Error getting output file position for task %02d",
               Task);
-      
+
       SetError(true);
       SetErrorMessage(CurrentError, strerror(errno));
       return false;
     }
-    
+
     CurrentRecord = Parser->GetNextRecord(Task, 0); /* Only thread 0 is needed*/
-    
+
     while (CurrentRecord != NULL)
     {
       CurrentRecord->ToDimemas(OutputTraceFile);
-      
+
       /* DEBUG
       cout << (*CurrentRecord) << endl; */
-      
+
       delete CurrentRecord;
       CurrentRecord = Parser->GetNextRecord(Task, 0);
-      
+
       if (VerboseMode)
       {
-        PercentageRead = 
+        PercentageRead =
           (INT32) lround (100.0 * Parser->GetCurrentOffset(Task)/
                                   Parser->GetTraceSize());
         if (PercentageRead > CurrentPercentage)
@@ -195,27 +195,27 @@ DimemasSDDFTranslator::Translate(void)
         }
       }
     }
-    
+
     if (Parser->GetError())
     {
       char CurrentError[128];
-      
+
       sprintf(CurrentError,
               "Error reading records for task %02d",
               Task);
-      
+
       SetError(true);
       SetErrorMessage(CurrentError, Parser->GetLastError().c_str());
       return false;
     }
   }
-  
+
   if (VerboseMode)
   {
     SHOW_PROGRESS_END(stdout, "-> Translating records");
     fprintf(stdout, "\n");
   }
-  
+
   OffsetsOffset = ftello(OutputTraceFile);
   if (OffsetsOffset == -1)
   {
@@ -224,21 +224,12 @@ DimemasSDDFTranslator::Translate(void)
                     strerror(errno));
     return false;
   }
-  
-  /* Write offset line */
-  if (fprintf(OutputTraceFile, "s") < 0)
-  {
-    SetError(true);
-    SetErrorMessage("Error printing offsets line",
-                    strerror(errno));
-    return false;
-  }
-  
+
+  /* Write offset lines */
   for (INT32 Task = 0; Task < ApplicationStructure->GetTaskCount(); Task++)
   {
-    if (fprintf(OutputTraceFile, ":%lld", OutputOffsets[Task]) < 0)
+    if (fprintf(OutputTraceFile, "s:%d:%lld\n", Task, OutputOffsets[Task]) < 0)
     {
-      SetError(true);
       SetErrorMessage("Error printing offsets line",
                       strerror(errno));
       return false;
@@ -247,7 +238,7 @@ DimemasSDDFTranslator::Translate(void)
 
   if (!WriteHeader(ApplicationStructure, false, OffsetsOffset))
     return false;
-  
+
   return true;
 }
 
@@ -264,9 +255,9 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
 #define OFFSETS_OFFSET_RESERVE 15
 
   INT32 OffsetsLength;
-  
+
   char   OffsetsLengthStr[10];
-  
+
   if (InitialHeader)
   {
     if (VerboseMode)
@@ -292,7 +283,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
       return false;
     }
   }
-  
+
   if (fprintf (OutputTraceFile,
                  "#DIMEMAS:\"%s\":1,",
                  OutputTraceName.c_str()) < 0)
@@ -302,7 +293,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
       cout << "Error!" << endl;
     return false;
   }
-  
+
   if (InitialHeader)
   {
     /* Reserve characters for future information */
@@ -324,7 +315,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
       return false;
     }
   }
-  
+
   if (fprintf (OutputTraceFile, ":%d(", AppDescription->GetTaskCount()) < 0)
   {
     SetErrorMessage("error writing header", strerror(errno));
@@ -333,7 +324,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
       cout << "Error!" << endl;
     return false;
   }
-  
+
   for (INT32 i = 0; i < AppDescription->GetTaskCount()-1; i++)
   {
     if (fprintf (OutputTraceFile, "1,") < 0)
@@ -345,7 +336,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
       return false;
     }
   }
-  
+
   if (fprintf(OutputTraceFile,
               "1),%d",
               AppDescription->GetCommunicatorCount()) < 0)
@@ -356,7 +347,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
       cout << "Error!" << endl;
     return false;
   }
-  
+
   if (!InitialHeader)
   {
     for (INT32 i = 0; i < OFFSETS_OFFSET_RESERVE - OffsetsLength; i++)
@@ -377,10 +368,10 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
     cout << "Error!" << endl;
     return false;
   }
-  
+
   if (VerboseMode)
     cout << "Done!" << endl;
-  
+
   return true;
 }
 
@@ -396,8 +387,8 @@ DimemasSDDFTranslator::WriteCommunicators(
   UINT32                 Index;
 
   Communicators = AppDescription->GetCommunicators();
-  
-  
+
+
   if (VerboseMode)
   {
     cout << "-> Translating communicators 0/0";
@@ -406,28 +397,28 @@ DimemasSDDFTranslator::WriteCommunicators(
             Communicators.size());
   }
 
-  for (Index = 0; 
+  for (Index = 0;
        Index < Communicators.size();
        Index++)
   {
     CurrentCommunicator = Communicators[Index];
-    TaskIdList = (int*) calloc (CurrentCommunicator->GetCommunicatorSize(), 
+    TaskIdList = (int*) calloc (CurrentCommunicator->GetCommunicatorSize(),
                                 sizeof(int));
-    
+
     CommunicatorTasks = CurrentCommunicator->GetCommunicatorTasks();
 
-    set<INT32>::iterator it = CommunicatorTasks.begin(); 
+    set<INT32>::iterator it = CommunicatorTasks.begin();
     INT32 i = 0;
-    while(it != CommunicatorTasks.end()) 
+    while(it != CommunicatorTasks.end())
     {
       /* TaskIdList[i] = (int) (*it)+1; */
       TaskIdList[i] = (int) (*it);
-      
+
       ++it; ++i;
     }
-    
+
     /*
-    for (INT32 i = 0; 
+    for (INT32 i = 0;
          i < CommunicatorTasks.size();
          i++)
     {
@@ -450,19 +441,19 @@ DimemasSDDFTranslator::WriteCommunicators(
       cout << endl << "Error!" << endl;
       return false;
     }
-    
+
     free(TaskIdList);
-    
+
     if (VerboseMode)
       fprintf(stdout,
               "\r-> Translating communicators %d/%d",
               Index+1,
               Communicators.size());
-    
+
   }
-  
+
   if (VerboseMode)
     fprintf(stdout, "\n");
-  
+
   return true;
 }

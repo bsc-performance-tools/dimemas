@@ -12,6 +12,15 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 2012/07/11 - jgonzale - Other
 
+	CHANGES:	'configure.ac.' moved to 'configure.ac.template' to keep
+				track of the versioning easily.
+
+2012/07/11 - jgonzale - trf2dim
+
+	BUGFIX:		Offsets generation adapted to new trace format.
+
+2012/07/11 - jgonzale - Other
+
 	CHANGES:	Full integration of the simulator, GUI and translators in
 				a single package to ease the tool distribution and maintenance.
 

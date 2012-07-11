@@ -7,6 +7,9 @@ INCLUDES = \
 
 bin_PROGRAMS = trf2dim
 
+trf2dim_CFLAGS   = -DNEW_DIMEMAS_TRACE
+trf2dim_CXXFLAGS = -DNEW_DIMEMAS_TRACE
+
 trf2dim_SOURCES = \
 	ApplicationDescription.cpp\
 	ApplicationDescription.hpp\
