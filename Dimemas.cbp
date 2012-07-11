@@ -32,44 +32,218 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="DimemasGUI/Main.java" />
-		<Unit filename="DimemasGUI/data/BlockData.java" />
-		<Unit filename="DimemasGUI/data/ConfigurationData.java" />
-		<Unit filename="DimemasGUI/data/Data.java" />
-		<Unit filename="DimemasGUI/data/DedicatedConnectionData.java" />
-		<Unit filename="DimemasGUI/data/EnvironmentData.java" />
-		<Unit filename="DimemasGUI/data/FileSystemData.java" />
-		<Unit filename="DimemasGUI/data/MachineDataBase.java" />
-		<Unit filename="DimemasGUI/data/MappingData.java" />
-		<Unit filename="DimemasGUI/data/NetworkDataBase.java" />
-		<Unit filename="DimemasGUI/data/Node.java" />
-		<Unit filename="DimemasGUI/data/NodeData.java" />
-		<Unit filename="DimemasGUI/data/SimulatorCallData.java" />
-		<Unit filename="DimemasGUI/data/WideAreaNetworkData.java" />
-		<Unit filename="DimemasGUI/gui/AboutWindow.java" />
-		<Unit filename="DimemasGUI/gui/BlockFactorsWindow.java" />
-		<Unit filename="DimemasGUI/gui/CollectiveOpWindow.java" />
-		<Unit filename="DimemasGUI/gui/CommunicationWindow.java" />
-		<Unit filename="DimemasGUI/gui/ConfigurationFilesWindow.java" />
-		<Unit filename="DimemasGUI/gui/ConfigurationOptionsWindow.java" />
-		<Unit filename="DimemasGUI/gui/DedicatedConnectionWindow.java" />
-		<Unit filename="DimemasGUI/gui/EnvironmentWindow.java" />
-		<Unit filename="DimemasGUI/gui/FileSystemWindow.java" />
-		<Unit filename="DimemasGUI/gui/FlightTimeWindow.java" />
-		<Unit filename="DimemasGUI/gui/GUIWindow.java" />
-		<Unit filename="DimemasGUI/gui/InitialMachineWindow.java" />
-		<Unit filename="DimemasGUI/gui/MachineDBAddWindow.java" />
-		<Unit filename="DimemasGUI/gui/MachineDBWindow.java" />
-		<Unit filename="DimemasGUI/gui/MappingWindow.java" />
-		<Unit filename="DimemasGUI/gui/NetworkDBAddWindow.java" />
-		<Unit filename="DimemasGUI/gui/NetworkDBWindow.java" />
-		<Unit filename="DimemasGUI/gui/NodeWindow.java" />
-		<Unit filename="DimemasGUI/gui/OptionsMenu.java" />
-		<Unit filename="DimemasGUI/gui/ResultsWindow.java" />
-		<Unit filename="DimemasGUI/gui/SimulatorCallWindow.java" />
-		<Unit filename="DimemasGUI/gui/WideAreaNetworkWindow.java" />
-		<Unit filename="DimemasGUI/tools/Tools.java" />
+		<Unit filename="GUI/Main.java" />
+		<Unit filename="GUI/data/BlockData.java" />
+		<Unit filename="GUI/data/ConfigurationData.java" />
+		<Unit filename="GUI/data/Data.java" />
+		<Unit filename="GUI/data/DedicatedConnectionData.java" />
+		<Unit filename="GUI/data/EnvironmentData.java" />
+		<Unit filename="GUI/data/FileSystemData.java" />
+		<Unit filename="GUI/data/MachineDataBase.java" />
+		<Unit filename="GUI/data/MappingData.java" />
+		<Unit filename="GUI/data/NetworkDataBase.java" />
+		<Unit filename="GUI/data/Node.java" />
+		<Unit filename="GUI/data/NodeData.java" />
+		<Unit filename="GUI/data/SimulatorCallData.java" />
+		<Unit filename="GUI/data/WideAreaNetworkData.java" />
+		<Unit filename="GUI/gui/AboutWindow.java" />
+		<Unit filename="GUI/gui/BlockFactorsWindow.java" />
+		<Unit filename="GUI/gui/CollectiveOpWindow.java" />
+		<Unit filename="GUI/gui/CommunicationWindow.java" />
+		<Unit filename="GUI/gui/ConfigurationFilesWindow.java" />
+		<Unit filename="GUI/gui/ConfigurationOptionsWindow.java" />
+		<Unit filename="GUI/gui/DedicatedConnectionWindow.java" />
+		<Unit filename="GUI/gui/EnvironmentWindow.java" />
+		<Unit filename="GUI/gui/FileSystemWindow.java" />
+		<Unit filename="GUI/gui/FlightTimeWindow.java" />
+		<Unit filename="GUI/gui/GUIWindow.java" />
+		<Unit filename="GUI/gui/InitialMachineWindow.java" />
+		<Unit filename="GUI/gui/MachineDBAddWindow.java" />
+		<Unit filename="GUI/gui/MachineDBWindow.java" />
+		<Unit filename="GUI/gui/MappingWindow.java" />
+		<Unit filename="GUI/gui/NetworkDBAddWindow.java" />
+		<Unit filename="GUI/gui/NetworkDBWindow.java" />
+		<Unit filename="GUI/gui/NodeWindow.java" />
+		<Unit filename="GUI/gui/OptionsMenu.java" />
+		<Unit filename="GUI/gui/ResultsWindow.java" />
+		<Unit filename="GUI/gui/SimulatorCallWindow.java" />
+		<Unit filename="GUI/gui/WideAreaNetworkWindow.java" />
+		<Unit filename="GUI/tools/Tools.java" />
+		<Unit filename="Simulator/Dimemas_updateCFGs.cpp" />
+		<Unit filename="Simulator/input/check.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/check.h" />
+		<Unit filename="Simulator/input/comm_configuration.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/comm_configuration.h" />
+		<Unit filename="Simulator/input/configuration.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/configuration.h" />
+		<Unit filename="Simulator/input/file_data_access.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/file_data_access.h" />
+		<Unit filename="Simulator/input/lex.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/read.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/read.h" />
+		<Unit filename="Simulator/input/sddf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/sddf.h" />
+		<Unit filename="Simulator/input/sddf_records.h" />
+		<Unit filename="Simulator/input/ts.h" />
+		<Unit filename="Simulator/input/yacc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/yacc.h" />
+		<Unit filename="Simulator/io/dimemas_io.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/io/dimemas_io.h" />
+		<Unit filename="Simulator/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/communic.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/communic.h" />
+		<Unit filename="Simulator/model/cpu.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/cpu.h" />
+		<Unit filename="Simulator/model/fs.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/fs.h" />
+		<Unit filename="Simulator/model/links.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/links.h" />
+		<Unit filename="Simulator/model/machine.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/machine.h" />
+		<Unit filename="Simulator/model/memory.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/memory.h" />
+		<Unit filename="Simulator/model/node.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/node.h" />
+		<Unit filename="Simulator/model/ports.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/ports.h" />
+		<Unit filename="Simulator/model/semaphore.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/semaphore.h" />
+		<Unit filename="Simulator/model/simulator.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/simulator.h" />
+		<Unit filename="Simulator/model/task.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/task.h" />
+		<Unit filename="Simulator/model/thread_states.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/thread_states.h" />
+		<Unit filename="Simulator/prv_utils/external_sort.cc" />
+		<Unit filename="Simulator/prv_utils/external_sort.h" />
+		<Unit filename="Simulator/prv_utils/paraver.cc" />
+		<Unit filename="Simulator/prv_utils/paraver.h" />
+		<Unit filename="Simulator/prv_utils/paraver_pcf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/prv_utils/paraver_pcf.h" />
+		<Unit filename="Simulator/prv_utils/paraver_records.cc" />
+		<Unit filename="Simulator/prv_utils/paraver_records.h" />
+		<Unit filename="Simulator/prv_utils/pcf_defines.h" />
+		<Unit filename="Simulator/sched/SCH_boost.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/SCH_boost.h" />
+		<Unit filename="Simulator/sched/SCH_fifo.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/SCH_fifo.h" />
+		<Unit filename="Simulator/sched/SCH_prio_fifo.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/SCH_prio_fifo.h" />
+		<Unit filename="Simulator/sched/SCH_rr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/SCH_rr.h" />
+		<Unit filename="Simulator/sched/SCH_ss_mpi_cp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/SCH_ss_mpi_cp.h" />
+		<Unit filename="Simulator/sched/SCH_svr4.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/SCH_svr4.h" />
+		<Unit filename="Simulator/sched/events.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/events.h" />
+		<Unit filename="Simulator/sched/sched_vars.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/sched_vars.h" />
+		<Unit filename="Simulator/sched/schedule.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/sched/schedule.h" />
+		<Unit filename="Simulator/utils/aleatorias.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/utils/aleatorias.h" />
+		<Unit filename="Simulator/utils/cp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/utils/cp.h" />
+		<Unit filename="Simulator/utils/list.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/utils/list.h" />
+		<Unit filename="Simulator/utils/listE.cc" />
+		<Unit filename="Simulator/utils/listE.h" />
+		<Unit filename="Simulator/utils/mallocame.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/utils/mallocame.h" />
+		<Unit filename="Simulator/utils/modules_map.cc" />
+		<Unit filename="Simulator/utils/modules_map.h" />
+		<Unit filename="Simulator/utils/random.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/utils/random.h" />
+		<Unit filename="Simulator/utils/subr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/utils/subr.h" />
+		<Unit filename="Simulator/venusclient/ClientSocket.cc" />
+		<Unit filename="Simulator/venusclient/ClientSocket.h" />
+		<Unit filename="Simulator/venusclient/ServerSocket.cc" />
+		<Unit filename="Simulator/venusclient/ServerSocket.h" />
+		<Unit filename="Simulator/venusclient/Socket.cc" />
+		<Unit filename="Simulator/venusclient/Socket.h" />
+		<Unit filename="Simulator/venusclient/SocketException.h" />
+		<Unit filename="Simulator/venusclient/venusclient.cc" />
+		<Unit filename="Simulator/venusclient/venusclient.h" />
 		<Unit filename="include/Macros.h" />
+		<Unit filename="include/basic_types.h" />
 		<Unit filename="include/data_types.h" />
 		<Unit filename="include/define.h" />
 		<Unit filename="include/dimemas_defs.h" />
@@ -77,170 +251,39 @@
 		<Unit filename="include/macosx_limits.h" />
 		<Unit filename="include/pcf_defines.h" />
 		<Unit filename="include/types.h" />
-		<Unit filename="src/Dimemas_updateCFGs.cpp" />
-		<Unit filename="src/input/check.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/input/check.h" />
-		<Unit filename="src/input/comm_configuration.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/input/comm_configuration.h" />
-		<Unit filename="src/input/configuration.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/input/configuration.h" />
-		<Unit filename="src/input/file_data_access.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/input/file_data_access.h" />
-		<Unit filename="src/input/lex.l" />
-		<Unit filename="src/input/read.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/input/read.h" />
-		<Unit filename="src/input/sddf_records.h" />
-		<Unit filename="src/input/ts.h" />
-		<Unit filename="src/input/yacc.y" />
-		<Unit filename="src/io/dimemas_io.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/io/dimemas_io.h" />
-		<Unit filename="src/main.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/main.h" />
-		<Unit filename="src/model/communic.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/communic.h" />
-		<Unit filename="src/model/cpu.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/cpu.h" />
-		<Unit filename="src/model/fs.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/fs.h" />
-		<Unit filename="src/model/links.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/links.h" />
-		<Unit filename="src/model/machine.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/machine.h" />
-		<Unit filename="src/model/memory.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/memory.h" />
-		<Unit filename="src/model/node.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/node.h" />
-		<Unit filename="src/model/ports.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/ports.h" />
-		<Unit filename="src/model/semaphore.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/semaphore.h" />
-		<Unit filename="src/model/simulator.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/simulator.h" />
-		<Unit filename="src/model/task.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/task.h" />
-		<Unit filename="src/model/thread_states.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/model/thread_states.h" />
-		<Unit filename="src/prv_utils/external_sort.cc" />
-		<Unit filename="src/prv_utils/external_sort.h" />
-		<Unit filename="src/prv_utils/paraver.cc" />
-		<Unit filename="src/prv_utils/paraver.h" />
-		<Unit filename="src/prv_utils/paraver_pcf.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/prv_utils/paraver_pcf.h" />
-		<Unit filename="src/prv_utils/paraver_records.cc" />
-		<Unit filename="src/prv_utils/paraver_records.h" />
-		<Unit filename="src/sched/SCH_boost.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/SCH_boost.h" />
-		<Unit filename="src/sched/SCH_fifo.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/SCH_fifo.h" />
-		<Unit filename="src/sched/SCH_prio_fifo.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/SCH_prio_fifo.h" />
-		<Unit filename="src/sched/SCH_rr.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/SCH_rr.h" />
-		<Unit filename="src/sched/SCH_ss_mpi_cp.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/SCH_ss_mpi_cp.h" />
-		<Unit filename="src/sched/SCH_svr4.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/SCH_svr4.h" />
-		<Unit filename="src/sched/events.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/events.h" />
-		<Unit filename="src/sched/sched_vars.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/sched_vars.h" />
-		<Unit filename="src/sched/schedule.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/sched/schedule.h" />
-		<Unit filename="src/utils/aleatorias.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/utils/aleatorias.h" />
-		<Unit filename="src/utils/cp.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/utils/cp.h" />
-		<Unit filename="src/utils/list.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/utils/list.h" />
-		<Unit filename="src/utils/listE.cc" />
-		<Unit filename="src/utils/listE.h" />
-		<Unit filename="src/utils/mallocame.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/utils/mallocame.h" />
-		<Unit filename="src/utils/modules_map.cc" />
-		<Unit filename="src/utils/modules_map.h" />
-		<Unit filename="src/utils/random.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/utils/random.h" />
-		<Unit filename="src/utils/subr.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/utils/subr.h" />
-		<Unit filename="src/venusclient/ClientSocket.cc" />
-		<Unit filename="src/venusclient/ClientSocket.h" />
-		<Unit filename="src/venusclient/ServerSocket.cc" />
-		<Unit filename="src/venusclient/ServerSocket.h" />
-		<Unit filename="src/venusclient/Socket.cc" />
-		<Unit filename="src/venusclient/Socket.h" />
-		<Unit filename="src/venusclient/SocketException.h" />
-		<Unit filename="src/venusclient/venusclient.cc" />
-		<Unit filename="src/venusclient/venusclient.h" />
+		<Unit filename="prv2dim/PCFGeneration.cpp" />
+		<Unit filename="prv2dim/PCFGeneration.hpp" />
+		<Unit filename="prv2dim/PCFdefines.h" />
+		<Unit filename="prv2dim/ParaverApplicationDescription.cpp" />
+		<Unit filename="prv2dim/ParaverApplicationDescription.hpp" />
+		<Unit filename="prv2dim/ParaverCommunicator.cpp" />
+		<Unit filename="prv2dim/ParaverCommunicator.hpp" />
+		<Unit filename="prv2dim/ParaverHeader.cpp" />
+		<Unit filename="prv2dim/ParaverHeader.hpp" />
+		<Unit filename="prv2dim/ParaverRecord.cpp" />
+		<Unit filename="prv2dim/ParaverRecord.hpp" />
+		<Unit filename="prv2dim/ParaverTraceParser.cpp" />
+		<Unit filename="prv2dim/ParaverTraceParser.hpp" />
+		<Unit filename="prv2dim/ParaverTraceTranslator.cpp" />
+		<Unit filename="prv2dim/ParaverTraceTranslator.hpp" />
+		<Unit filename="prv2dim/Prv2DimMain.cpp" />
+		<Unit filename="prv2dim/TaskTranslationInfo.cpp" />
+		<Unit filename="prv2dim/TaskTranslationInfo.hpp" />
+		<Unit filename="prv2dim/TranslatorRecord.cpp" />
+		<Unit filename="prv2dim/TranslatorRecord.hpp" />
+		<Unit filename="trf2dim/ApplicationDescription.cpp" />
+		<Unit filename="trf2dim/ApplicationDescription.hpp" />
+		<Unit filename="trf2dim/Communicator.hpp" />
+		<Unit filename="trf2dim/DimemasRecord.cpp" />
+		<Unit filename="trf2dim/DimemasRecord.hpp" />
+		<Unit filename="trf2dim/DimemasSDDFTraceParser.cpp" />
+		<Unit filename="trf2dim/DimemasSDDFTraceParser.hpp" />
+		<Unit filename="trf2dim/DimemasSDDFTranslator.cpp" />
+		<Unit filename="trf2dim/DimemasSDDFTranslator.hpp" />
+		<Unit filename="trf2dim/PCFGenerator.cpp" />
+		<Unit filename="trf2dim/PCFGenerator.hpp" />
+		<Unit filename="trf2dim/SDDFCommunicator.cpp" />
+		<Unit filename="trf2dim/Trf2DimMain.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

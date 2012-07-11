@@ -173,6 +173,15 @@ extern int StackNumber;
   x = NULL;\
 }
 
+/* PROGRESS MESSAGE */
+#define SHOW_PROGRESS(channel, message, percentage) \
+  fprintf(channel, "\r%s %03d %%", message, percentage); \
+  fflush(channel)
+
+#define SHOW_PROGRESS_END(channel, message) \
+  fprintf(channel, "\r%s 100 %%", message); \
+  fflush(channel)
+
 #endif
 
 #define DEBUG0( x )

@@ -6,4 +6,5 @@ noinst_HEADERS = \
 	macosx_limits.h\
 	Macros.h\
 	pcf_defines.h\
-	types.h
+	types.h\
+	basic_types.h

@@ -1,11 +1,15 @@
 AUTOMAKE_OPTIONS = foreign no-dependencies
 
-SUBDIRS = include src 
+SUBDIRS = include Simulator prv2dim 
 
 if HAVE_JAVA
-SUBDIRS += DimemasGUI
+SUBDIRS += GUI
 endif
 
-EXTRA_DIST = SVNREV
+if HAVE_BOOST
+SUBDIRS += trf2dim
+endif
 
-distdir = $(PACKAGE)-$(VERSION).$(SVNREV)
+EXTRA_DIST = 
+
+distdir = $(PACKAGE)-$(VERSION)
