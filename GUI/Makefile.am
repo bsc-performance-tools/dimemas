@@ -1,7 +1,7 @@
 JAVAROOT = .
 
 jarfile = $(PACKAGE)-gui-$(VERSION).jar
-runscript = dimemas-gui.sh
+runscript = DimemasGUI
 jardir  = $(bindir)
 jhdrout = ..
 gui_srcdir = $(top_srcdir)/GUI
@@ -16,13 +16,8 @@ else
 all: 
 endif
 
-DIMEMAS_HOME_TEXT="DIMEMAS_HOME"
-
-$(runscript):
-	echo "#!/bin/sh"                                           > $(runscript)
-	echo "export DIMEMAS_HOME=$(prefix)"                      >> $(runscript)
-	echo ""                                                   >> $(runscript)
-	echo "$(JAVA) -jar -DDIMEMAS_HOME=$(prefix) $$$(DIMEMAS_HOME_TEXT)/bin/$(jarfile)" >> $(runscript)
+$(runscript): DimemasGUI.template
+	sed s/@@JARFILE@@/$(jarfile)/ < DimemasGUI.template >> DimemasGUI
 
 CLEANFILES = $(jarfile) $(runscript) 
 
@@ -37,7 +32,7 @@ dist_noinst_DATA = manifest.mf
 # The sleep command is to guarantee the compilation before the packaging
 
 $(jarfile): $(dist_noinst_JAVA) manifest.mf
-	sleep 10 && $(JAR) cvfm $(jarfile) manifest.mf $(srcdir)/data/*.class $(srcdir)/gui/*.class $(srcdir)/tools/*.class *.class
+	sleep 5 && $(JAR) cvfm $(jarfile) manifest.mf $(srcdir)/data/*.class $(srcdir)/gui/*.class $(srcdir)/tools/*.class *.class
 
 install-data-hook: $(jarfile) $(runscript)
 	chmod u+x $(runscript)
