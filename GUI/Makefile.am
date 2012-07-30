@@ -27,7 +27,7 @@ include gui/Makefile.sources
 include tools/Makefile.sources
 include defaults/Makefile.sources
 
-dist_noinst_DATA = manifest.mf
+dist_noinst_DATA = manifest.mf DimemasGUI.template
 
 # The sleep command is to guarantee the compilation before the packaging
 
