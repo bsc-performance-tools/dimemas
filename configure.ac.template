@@ -269,27 +269,28 @@ if test "x$enable_cflags_setting" = "xyes"; then
   
   dnl Optimization
   CFLAGS="-g -O3 -Os"
-
-  dnl Large files
-  if test "$Operating_System" = "cygwin"; then
-    CFLAGS="$CFLAGS -D__LARGE64_FILES"
-  elif test "$Operating_System" = "linux" ; then
-    CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
-  fi
-
 fi
+
+dnl Large files
+if test "$Operating_System" = "cygwin"; then
+  CFLAGS="$CFLAGS -D__LARGE64_FILES"
+elif test "$Operating_System" = "linux" ; then
+  CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
+fi
+
 
 if test "x$enable_cxxflags_setting" = "xyes"; then
 
   dnl Optimization
   CXXFLAGS="-g -O3 -Os"
 
-  dnl Large files
-  if test "$Operating_System" = "cygwin"; then
-    CXXFLAGS="$CXXFLAGS -D__LARGE64_FILES"
-  elif test "$Operating_System" = "linux" ; then
-    CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
-  fi
+fi
+
+dnl Large files
+if test "$Operating_System" = "cygwin"; then
+  CXXFLAGS="$CXXFLAGS -D__LARGE64_FILES"
+elif test "$Operating_System" = "linux" ; then
+  CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
 fi
 
 CFLAGS="$CFLAGS -DDIMEMAS_COMPILATION"
