@@ -10,6 +10,9 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/09/03 - vladimir - Simulator
+	CHANGES:	Updates on the StarSs scheduler.
+
 2012/09/03 - jgonzale - Other
 	CHANGES:	Added a missing header (basic_types.h) and changed the
 				building numbering system.

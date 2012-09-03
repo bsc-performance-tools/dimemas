@@ -44,17 +44,6 @@ void SS_MPI_CP_thread_to_ready(struct t_thread *thread)
   node    = get_node_of_thread (thread);
   machine = node->machine;
 
-  /* a little bit dirty
-   * for this scheduler - make sure there is no preempting
-   * if there are two consecutive CPU burst
-   * so keep the same thread on the same cpu
-   */
-  if (thread->cpu != NULL) {
-     inLIFO_queue (&(node->ready), (char *) thread);
-     return;
-  }
-
-
   preempted = FALSE;
 
   sch_ss_mpi_cp     = (struct t_SCH_ss_mpi_cp *) thread->sch_parameters;
