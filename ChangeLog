@@ -10,6 +10,10 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/09/03 - jgonzale - Other
+	CHANGES:	Added a missing header (basic_types.h) and changed the
+				building numbering system.
+
 2012/07/31 - jgonzale - Other
 	CHANGES:	Small change in the building system to guarantee the
 				big file flags inclusion.

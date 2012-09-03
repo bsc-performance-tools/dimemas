@@ -1,9 +1,10 @@
 #!/bin/sh
 MAJOR=4
 MINOR=0
+REV=1
 sh -c "svnversion -n . | cut -d: -f2 | cut -dS -f1 | tr -d '\n'" > ./SVN_VERSION
 SVN_VERSION=`cat ./SVN_VERSION`
-VERSION="$MAJOR.$MINOR-r$SVN_VERSION"
+VERSION="$MAJOR.$MINOR.$REV-r$SVN_VERSION"
 
 if test -e ./configure.ac; then
   rm ./configure.ac
