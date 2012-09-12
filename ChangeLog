@@ -10,6 +10,10 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/09/12 - jgonzale - GUI
+	BUGFIX:		Corrected the binary path to call the simulator
+				(Dimemas3->Dimemas).
+
 2012/09/03 - vladimir - Simulator
 	CHANGES:	Updates on the StarSs scheduler.
 
