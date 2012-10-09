@@ -30,8 +30,7 @@ prv2dim_SOURCES = \
 	TranslatorRecord.cpp\
 	TranslatorRecord.hpp\
 	PCFGeneration.cpp\
-	PCFGeneration.hpp\
-	PCFdefines.h
+	PCFGeneration.hpp
 
 prv2dim_LDADD = \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la
