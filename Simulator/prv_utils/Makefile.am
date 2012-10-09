@@ -21,8 +21,7 @@ libDimemas2ParaverUtils_la_SOURCES = \
 	paraver.cc \
 	paraver.h \
 	paraver_pcf.c \
-	paraver_pcf.h \
-	pcf_defines.h
+	paraver_pcf.h 
 
 libDimemas2ParaverUtils_la_LIBADD = \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la
