@@ -38,6 +38,8 @@
 #include "define.h"
 #include "types.h"
 
+#include <dimemas_io.h>
+
 /* Include propio */
 #include "SCH_fifo.h"
 
@@ -45,7 +47,6 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "subr.h"
 
 #include "simulator.h"
@@ -83,7 +84,7 @@ FIFO_get_execution_time (struct t_thread *thread)
   }
   ex_time = action->desc.compute.cpu_time;
   thread->action = action->next;
-  MALLOC_free_memory ( (char*) action);
+  READ_free_action(action);
   return (ex_time);
 }
 

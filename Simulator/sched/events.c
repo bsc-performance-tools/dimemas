@@ -44,7 +44,6 @@
 #ifdef  USE_EQUEUE
 #include "listE.h"
 #endif
-#include "mallocame.h"
 #include "memory.h"
 #include "ports.h"
 #include "schedule.h"
@@ -91,7 +90,7 @@ struct t_event* EVENT_timer (dimemas_timer    when,
     are_only_daemons++;
   }
 
-  event = (struct t_event *) MALLOC_get_memory (sizeof (struct t_event) );
+  event = (struct t_event *) malloc (sizeof (struct t_event) );
 
   event->event_time = when;
   event->module     = module;
@@ -164,7 +163,7 @@ void EVENT_extract_timer (int              module,
       extract_from_queue (q, (char *) event);
 #endif
       *when = event->event_time;
-      MALLOC_free_memory ( (char*) event);
+      free (event);
       return;
     }
   }
@@ -187,7 +186,7 @@ void EVENT_extract_timer (int              module,
       extract_from_queue (q, (char *) event);
 #endif
       *when = event->event_time;
-      MALLOC_free_memory ( (char *) event);
+      free (event);
       return;
     }
   }
@@ -227,25 +226,21 @@ t_boolean events_for_thread (struct t_thread *thread)
   struct t_event *event;
 
 #ifdef USE_EQUEUE
-  for (
-    event  = head_Eevent (&Event_queue);
-    event != E_NIL;
-    event  = next_Eevent (&Event_queue)
-  )
+  for (event  = head_Eevent (&Event_queue);
+       event != E_NIL;
+       event  = next_Eevent (&Event_queue))
 #else
-  for (
-    event  = head_event (&Event_queue);
-    event != E_NIL;
-    event  = next_event (&Event_queue)
-  )
+  for (event  = head_event (&Event_queue);
+       event != E_NIL;
+       event  = next_event (&Event_queue))
 #endif
   {
     if (event->thread == thread)
     {
-      return (TRUE);
+      return TRUE;
     }
   }
-  return (FALSE);
+  return FALSE;
 }
 
 void reload_events()
@@ -253,17 +248,13 @@ void reload_events()
   register struct t_node *node;
 
 #ifdef USE_EQUEUE
-  for (
-    node  = (struct t_node *) head_Equeue (&Node_queue);
-    node != N_NIL;
-    node  = (struct t_node *) next_Equeue (&Node_queue)
-  )
+  for (node  = (struct t_node *) head_Equeue (&Node_queue);
+       node != N_NIL;
+       node  = (struct t_node *) next_Equeue (&Node_queue))
 #else
-  for (
-    node  = (struct t_node *) head_queue (&Node_queue);
-    node != N_NIL;
-    node  = (struct t_node *) next_queue (&Node_queue)
-  )
+  for (node  = (struct t_node *) head_queue (&Node_queue);
+       node != N_NIL;
+       node  = (struct t_node *) next_queue (&Node_queue))
 #endif
   {
     while ( (count_queue (& (node->ready) ) != 0) && (num_free_cpu (node) > 0) )
@@ -351,5 +342,5 @@ void event_manager (struct t_event *event)
     reload_done = FALSE;
   }
 
-  MALLOC_free_memory ( (char*) event);
+  free (event);
 }

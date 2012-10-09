@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign no-dependencies
 
-SUBDIRS = include Simulator prv2dim 
+SUBDIRS = common_utilities include Simulator prv2dim 
 
 if HAVE_JAVA
 SUBDIRS += GUI

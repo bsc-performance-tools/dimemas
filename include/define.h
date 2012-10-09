@@ -133,7 +133,7 @@
 #define WORK             1 /* Thread wants to work */
 #define SEND             2 /* Thread wants to send a message */
 #define RECV             3 /* Thread wants to receive a message */
-#define EVEN             4 /* User or Compiler Event */
+#define EVENT            4 /* User or Compiler Event */
 #define PRIO             5 /* Change thread priority */
 #define FS               6 /* Disk operation */
 #define SEM              7 /* Semaphore operation */

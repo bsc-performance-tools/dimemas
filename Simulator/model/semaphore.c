@@ -38,7 +38,6 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "paraver.h"
 #include "schedule.h"
 #include "semaphore.h"
@@ -82,7 +81,7 @@ void SEMAPHORE_Init()
       create_queue (& (task->semaphores) );
       for (sem_id = 0; sem_id < MAX_SEMAPHORES; sem_id++)
       {
-        sem = (struct t_semaphore *) MALLOC_get_memory (sizeof (struct t_semaphore) );
+        sem = (struct t_semaphore *) malloc (sizeof (struct t_semaphore) );
         sem->sem_id = sem_id + 1;
         sem->counter = 0;
 

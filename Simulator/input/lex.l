@@ -144,8 +144,8 @@ rela()
   double k,l;
   double *r;
 
-  r = (double *)MALLOC_get_memory (sizeof (double));
-  v = (char *)yytext;
+  r = (double*) malloc(sizeof (double));
+  v = (char*) yytext;
   j = 0;
   for (i=0;i<yyleng && v[i]!='.'; j=j*10+v[i++]-'0');
   k = (double)j;
@@ -160,31 +160,31 @@ rela()
   return ((YYSTYPE)r);
 }
 
-YYSTYPE
-insert_string()
+YYSTYPE insert_string()
 {
   char *v;
   int i;
   struct Str *new_str;
   char *new;
 
-  i=yyleng-1;
-  new = (char *)MALLOC_get_memory (i);
+  i = yyleng-1;
+  
+  new      = (char*) malloc(i);
   strncpy (new, &yytext[1],i);
   new[i-1] = (char)0;
 
   for (new_str = first_str; new_str!=(struct Str *)0; new_str=new_str->next_str)
     if (strcmp(new_str->str, new)==0)
   {
-      MALLOC_free_memory (new);
+      free(new);
       return ((YYSTYPE)(new_str->str));
   }
 
-  new_str      = (struct Str*) MALLOC_get_memory(sizeof(struct Str));
+  new_str      = (struct Str*) malloc(sizeof(struct Str));
   new_str->str = strdup(new);
   new_str->next_str = first_str;
   first_str = new_str;
-  MALLOC_free_memory (new);
+  free(new);
   return ((YYSTYPE)(new_str->str));
 }
 

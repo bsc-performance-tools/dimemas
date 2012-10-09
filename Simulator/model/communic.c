@@ -47,16 +47,19 @@
 #include "communic.h"
 
 
-
+#include "events.h"
 #include "simulator.h"
 #include "sched_vars.h"
 // #include "machine.h"
 #include "node.h"
 #include "paraver.h"
 #include "random.h"
+#include "cpu.h"
 
 #ifdef USE_EQUEUE
 #include "listE.h"
+#else
+#include "list.h"
 #endif
 
 #ifdef VENUS_ENABLED
@@ -242,14 +245,27 @@ void COMMUNIC_init (void)
 
 void COMMUNIC_end()
 {
-  struct t_node   *node;
+
+  struct t_Ptask  *Ptask;
+  struct t_task   *task;
   struct t_thread *thread;
+  struct t_node   *node;
+  struct t_cpu    *cpu;
+  struct t_send   *mess_source;
+  struct t_action *action;
+  struct t_recv   *mess;
+  struct t_communicator *communicator;
+  struct t_global_op_definition * glop;
+
+  t_boolean pending_comm_msg_shown = FALSE;
 
   if (debug & D_COMM)
   {
     PRINT_TIMER (current_time);
     printf (": COMMUNIC_end called\n");
   }
+
+  /* PENDING LINKS INFORMATION */
 
 #ifdef USE_EQUEUE
   for (
@@ -324,6 +340,147 @@ void COMMUNIC_end()
           printf ("             P%d T%d th%d\n", IDENTIFIERS (thread));
         }
         */
+      }
+    }
+  }
+
+  /* PENDING COMMUNICATIONS INFORMATION */
+
+  for(Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+      Ptask != P_NIL;
+      Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+  {
+    for (communicator  = (struct t_communicator *)head_queue(&Ptask->Communicator);
+         communicator != (struct t_communicator *)0;
+         communicator  = (struct t_communicator *)next_queue(&Ptask->Communicator))
+    {
+      /* JGG (07/07/2010): Easy way to check if it is a global operation in flight */
+      /* if (count_queue(&communicator->threads)!=0) */
+      if (communicator->in_flight_op == TRUE)
+      {
+        size_t involved_tasks = 0;
+
+        warning(": COMMUNIC_end: Application finished with a pending global operation\n");
+
+        for(thread  = (struct t_thread *)head_queue(&communicator->threads);
+            thread != (struct t_thread *)0;
+            thread  = (struct t_thread *)next_queue(&communicator->threads))
+        {
+          glop = (struct t_global_op_definition *)
+            query_prio_queue (&Global_op,
+                              (t_priority)thread->action->desc.global_op.glop_id);
+
+          /*
+          warning(": COMMUNIC_end: tasks P%d T%d th%d waiting for global operation %s\n",
+                  IDENTIFIERS(thread),
+                  glop->name);
+          */
+
+          involved_tasks++;
+        }
+
+        warning(": * %d tasks involved\n", involved_tasks);
+      }
+    }
+
+    /* JGG (2012/01/12): New way to navigate through tasks
+    for(task  = (struct t_task *) head_queue (&(Ptask->tasks));
+        task != T_NIL;
+        task  = (struct t_task *) next_queue (&(Ptask->tasks)))
+    {
+    */
+    size_t i;
+    for(i = 0; i < Ptask->tasks_count; i++)
+    {
+      task = &(Ptask->tasks[i]);
+
+      if (count_queue (&(task->recv)) != 0)
+      {
+        warning (": COMMUNIC_end: Task %02d ends with %d threads waiting to recv message:\n",
+                 task->taskid,
+                 count_queue (&(task->recv)));
+
+        for(thread  = (struct t_thread *) head_queue (&(task->recv));
+            thread != TH_NIL;
+            thread  = (struct t_thread *) next_queue (&(task->recv)))
+        {
+          printf ("          * Thread %02d <-",
+                  thread->threadid);
+          action = thread->action;
+          mess = &(action->desc.recv);
+
+          printf ("          * Sender: T%02d  t%02d, Destination T%02d  t%02d  Tag: %02d CommId: %02d Size: %d\n",
+                  mess->ori,
+                  mess->ori_thread,
+                  thread->task->taskid,
+                  thread->threadid,
+                  mess->mess_tag,
+                  mess->communic_id,
+                  mess->mess_size);
+
+          node = get_node_of_thread (thread);
+          cpu  = get_cpu_of_thread (thread);
+          PARAVER_Idle(0,
+                       IDENTIFIERS (thread),
+                       thread->last_paraver,
+                       current_time);
+        }
+      }
+
+      if (count_queue (&(task->send)) != 0)
+      {
+        warning (": COMMUNIC_end: Task %02d ends with %d message(s) pending to send:\n",
+          task->taskid,
+          count_queue (&(task->send)));
+
+        for(thread  = (struct t_thread *) head_queue (&(task->send));
+            thread != TH_NIL;
+            thread  = (struct t_thread *) next_queue (&(task->send)))
+        {
+          node = get_node_of_thread (thread);
+          cpu = get_cpu_of_thread (thread);
+          PARAVER_Idle(0,
+                       IDENTIFIERS (thread),
+                       thread->last_paraver,
+                       current_time);
+
+          printf ("          * Thread %02d ->",
+                  thread->threadid);
+          action = thread->action;
+          // Vladimir: it has to be action->desc.send
+          mess_source = &(action->desc.send);
+          // mess_source = &(action->desc.recv);
+
+          printf (" Dest-: T%02d Tag: %02d CommId: %02d Size: %d\n",
+                  mess_source->dest,
+                  mess_source->mess_tag,
+                  mess_source->communic_id,
+                  mess_source->mess_size);
+
+        }
+      }
+
+      if (count_queue (&(task->mess_recv)) != 0)
+      {
+        warning (": COMMUNIC_end: Task %02d ends with %d message(s) in reception queue:\n",
+          task->taskid,
+          count_queue (&(task->mess_recv)));
+
+        for(thread  = (struct t_thread *) head_queue (&(task->mess_recv));
+            thread != TH_NIL;
+            thread  = (struct t_thread *) next_queue (&(task->mess_recv)))
+        {
+          action = thread->action;
+          mess_source = &(action->desc.send);
+          printf ("          -> Sender: T%02d t%02d  destT%02d  destt%02d  Tag: %02d CommId: %d Size: %d\n",
+                  thread->task->taskid,
+                  thread->threadid,
+                  mess_source->dest,
+                  mess_source->dest_thread,
+                  mess_source->mess_tag,
+                  mess_source->communic_id,
+                  mess_source->mess_size);
+        }
       }
     }
   }
@@ -913,12 +1070,12 @@ static struct t_thread* locate_receiver_real_MPI_transfer (
 
 //     assert(thread->task->taskid == dest);
 //     assert(dest > 0);
-    if ( ( (thread->threadid     == dest_threadid) || (dest_threadid == -1) )    &&
-         /*((thread->task->taskid == dest)          || (dest          == -1)     && */
-         (mess->mess_tag        == mess_tag)                                   &&
-         (mess->communic_id     == communic_id)                                &&
-         ( (mess->ori            == taskid_ori)    || (mess->ori == -1) )        &&
-         ( (mess->ori_thread     == threadid_ori)  || (mess->ori_thread == -1) )
+    if ( ( (thread->threadid      == dest_threadid) || (dest_threadid == -1) )    &&
+         /*((thread->task->taskid == dest)          || (dest          == -1)      && */
+         (mess->mess_tag          == mess_tag)                                    &&
+         (mess->communic_id       == communic_id)                                 &&
+         ( (mess->ori             == taskid_ori)    || (mess->ori        == -1) ) &&
+         ( (mess->ori_thread      == threadid_ori)  || (mess->ori_thread == -1) )
        )
     {
       return (thread);
@@ -1006,7 +1163,7 @@ static void message_received (struct t_thread *thread)
   }
   else
   {
-    /* real MPI transfer - we look for it at the level of threads  */
+    /* low level transfer - we look for it at the level of threads  */
     thread_partner = locate_thread_of_task (task_partner, mess->dest_thread);
 
     assert (thread_partner != TH_NIL);
@@ -1091,7 +1248,7 @@ static void message_received (struct t_thread *thread)
             partner->last_paraver = current_time;
             action = partner->action;
             partner->action = action->next;
-            MALLOC_free_memory ( (char*) action);
+            READ_free_action(action);
 
             if (more_actions (partner) )
             {
@@ -1183,7 +1340,7 @@ static void message_received (struct t_thread *thread)
 
     action          = partner->action;
     partner->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (partner) )
     {
       partner->loose_cpu = TRUE;
@@ -1537,7 +1694,7 @@ Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (
 //    printf("start communication if there is the original thread on the sends list\n");
 
     sender->last_paraver = current_time;
-    copy_thread = duplicate_thread (sender);
+    copy_thread          = duplicate_thread (sender);
   }
   else
   {
@@ -1567,7 +1724,7 @@ Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (
   {
     action = sender->action;
     sender->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (sender) )
     {
       sender->loose_cpu = FALSE;
@@ -1680,7 +1837,7 @@ Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization 
   {
     action = sender->action;
     sender->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (sender) )
     {
       sender->loose_cpu = FALSE;
@@ -1789,7 +1946,7 @@ COMMUNIC_external_network_COM_TIMER_OUT (struct t_thread *thread)
     &Simulator.wan.threads_on_network,
     (char *)bus_utilization
   );
-  MALLOC_free_memory ((char*) bus_utilization);
+  free ( bus_utilization);
 
   if (debug&D_COMM)
   {
@@ -2036,7 +2193,7 @@ COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
   {
     action         = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
 
     if (more_actions (thread) )
     {
@@ -2101,7 +2258,7 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
       (char *) bus_utilization
     );
 
-    MALLOC_free_memory ( (char*) bus_utilization);
+    free (bus_utilization);
   }
 
   if (debug & D_COMM)
@@ -2227,7 +2384,7 @@ COMMUNIC_external_resources_COM_TIMER_OUT (struct t_thread *thread)
     &Simulator.wan.threads_on_network,
     (char *)bus_utilization
   );
-  MALLOC_free_memory ((char*) bus_utilization);
+  free (bus_utilization);
   *****************************************************************************/
 
   free_machine_link (thread->local_link, thread);
@@ -2372,7 +2529,8 @@ void COMMUNIC_general (int value, struct t_thread *thread)
  * indicar que cal desbloquejar el send immediatament. En cas contrari es
  * retorna 0.
  */
-int COMMUNIC_recv_reached_real_MPI_transfer (struct t_thread *thread, struct t_recv *mess)
+int COMMUNIC_recv_reached_real_MPI_transfer (struct t_thread *thread,
+                                             struct t_recv   *mess)
 {
   struct t_task   *task, *source_task;
   struct t_thread *partner_send;
@@ -2384,16 +2542,17 @@ int COMMUNIC_recv_reached_real_MPI_transfer (struct t_thread *thread, struct t_r
   assert (mess->ori_thread == -1);
   task = thread->task;
   for (
-    partner_send = (struct t_thread *) head_queue (& (task->send_without_recv) );
+    partner_send  = (struct t_thread *) head_queue (& (task->send_without_recv) );
     partner_send != TH_NIL;
-    partner_send = (struct t_thread *) next_queue (& (task->send_without_recv) )
+    partner_send  = (struct t_thread *) next_queue (& (task->send_without_recv) )
   )
   {
     source_task = partner_send->task;
     action      = partner_send->action;
-    mess_send   = & (action->desc.send);
+    mess_send   = &(action->desc.send);
+
     assert (mess_send->dest_thread == -1);
-    assert (mess_send->dest            == thread->task->taskid);
+    assert (mess_send->dest == thread->task->taskid);
     /* JGG (2012/01/18): now, internal structures are indexed from 0 to n-1
     assert(mess_send->dest > 0); */
     if ( ( (partner_send->threadid     == mess->ori_thread)     || (mess->ori_thread == -1) )  &&
@@ -2990,7 +3149,7 @@ COMMUNIC_send (struct t_thread *thread)
         /* El thread original pot continuar */
         action = thread->action;
         thread->action = action->next;
-        MALLOC_free_memory ( (char*) action);
+        READ_free_action(action);
         if (more_actions (thread) )
         {
           thread->loose_cpu = FALSE;
@@ -3020,7 +3179,7 @@ COMMUNIC_send (struct t_thread *thread)
 
       action = thread->action;
       thread->action = action->next;
-      MALLOC_free_memory ( (char*) action);
+      READ_free_action(action);
       if (more_actions (thread) )
       {
         thread->loose_cpu = FALSE;
@@ -3041,7 +3200,7 @@ COMMUNIC_send (struct t_thread *thread)
 
     action = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -3227,7 +3386,7 @@ COMMUNIC_recv (struct t_thread *thread)
     }
 
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -3471,7 +3630,7 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   }
 
   thread->action = action->next;
-  MALLOC_free_memory ( (char*) action);
+  READ_free_action(action);
   if (more_actions (thread) )
   {
     thread->loose_cpu = FALSE;
@@ -3641,7 +3800,7 @@ COMMUNIC_wait (struct t_thread *thread)
     }
 
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -3796,7 +3955,7 @@ static void inicialitza_info_nova_globalop (int model,
   }
 
   glop_info = (struct t_global_op_information *)
-              MALLOC_get_memory (sizeof (struct t_global_op_information) );
+              malloc (sizeof (struct t_global_op_information) );
 
   glop_info->identificator = glop->identificator;
   glop_info->FIN_model     = model;
@@ -3831,7 +3990,7 @@ void new_global_op (int identificator, const char *name)
   }
 
   glop = (struct t_global_op_definition *)
-         MALLOC_get_memory (sizeof (struct t_global_op_definition) );
+         malloc (sizeof (struct t_global_op_definition) );
 
   glop->name          = strdup (name);
   glop->identificator = identificator;
@@ -4203,7 +4362,7 @@ really_send_single_machine (struct t_thread *thread)
         }
         machine->network.curr_on_network++;
         bus_utilization = (struct t_bus_utilization *)
-                          MALLOC_get_memory (sizeof (struct t_bus_utilization) );
+                          malloc (sizeof (struct t_bus_utilization) );
         bus_utilization->sender = thread;
         ASS_ALL_TIMER (bus_utilization->initial_time, current_time);
         inFIFO_queue (
@@ -4354,7 +4513,7 @@ really_send_external_network (struct t_thread *thread)
      * on s'alliberen els busos. */
     /*
       bus_utilization =
-        (struct t_bus_utilization *) MALLOC_get_memory(sizeof(struct t_bus_utilization));
+        (struct t_bus_utilization *) malloc(sizeof(struct t_bus_utilization));
       bus_utilization->sender = thread;
       ASS_ALL_TIMER (bus_utilization->initial_time, current_time);
       inFIFO_queue (
@@ -4717,7 +4876,7 @@ void global_op_get_all_buses (struct t_thread *thread)
     machine->communication.num_messages_on_network;
 
   bus_utilization =
-    (struct t_bus_utilization *) MALLOC_get_memory (sizeof (struct t_bus_utilization) );
+    (struct t_bus_utilization *) malloc (sizeof (struct t_bus_utilization) );
 
   bus_utilization->sender = thread;
   ASS_ALL_TIMER (bus_utilization->initial_time, current_time);
@@ -5720,7 +5879,7 @@ static void free_global_communication_resources (struct t_thread *thread)
        d'alliberar una vegada. */
     if (i > 0)
     {
-      MALLOC_free_memory ( (char*) bus_utilization);
+      free (bus_utilization);
     }
 
     /* Si hi havia més d'una màquina, aqui cal alliberar els links
@@ -5912,7 +6071,7 @@ static void close_global_communication (struct t_thread *thread)
 
     action         = others->action;
     others->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
 
     if (more_actions (others) )
     {
@@ -5924,7 +6083,7 @@ static void close_global_communication (struct t_thread *thread)
 }
 
 static t_boolean thread_in_communicator (struct t_communicator *comm,
-    struct t_thread *thread)
+                                         struct t_thread       *thread)
 {
   int *taskid;
 
@@ -6174,10 +6333,7 @@ void GLOBAL_operation (struct t_thread *thread,
     {
       PRINT_TIMER (current_time);
       printf (": GLOBAL_operation P%02d T%02d (t%02d) Root-less operation. Current thread will be the root\n",
-              IDENTIFIERS (thread),
-              glop->name,
-              comm_id,
-              Total_threads_involved);
+              IDENTIFIERS (thread));
     }
 
     communicator->current_root = thread;
@@ -6211,7 +6367,9 @@ void GLOBAL_operation (struct t_thread *thread,
   maquina_usada = node_usat->machine;
 
   /* S'afegeix root a la llista de maquines utilitzades */
-  insert_queue (&communicator->machines_threads, (char*) others, maquina_usada->id);
+  insert_queue (&communicator->machines_threads,
+                (char*) others,
+                (t_priority) maquina_usada->id);
 
   /* Es treu de la llista de threads per poder detectar quan esta tot reservat*/
   extract_from_queue (&communicator->threads, (char *) others);
@@ -6232,9 +6390,8 @@ void GLOBAL_operation (struct t_thread *thread,
     node_usat     = get_node_of_thread (others);
     maquina_usada = node_usat->machine;
     /* Es mira si ja hem trobat un thread d'aquesta maquina */
-    if
-    ( query_prio_queue (&communicator->machines_threads, maquina_usada->id) == A_NIL
-    )
+    if( query_prio_queue (&communicator->machines_threads,
+                          (t_priority) maquina_usada->id) == A_NIL)
     {
       /* Es una maquina nova */
       /* S'afegeix el thread a la llista de maquines utilitzades */

@@ -10,6 +10,22 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/10/09 - jgonzale - Simulator
+	BUGFIX:		Solved a massive leak in 'file_data_access.c' when
+				reading actions. 'op_fields' variable was never free'd
+				causing a total memory waste (each trace line stay in
+				memory during the whole execution)
+
+	CHANGES:	'MALLOC_*' (in 'mallocame.h|c') never used anymore.
+				All memory allocation now uses the pure standard
+				'malloc/free' calls.
+
+	CHANGES:	All 'common-files' dependencies are now inside the
+				source code package. This is the first step in to rebuild
+				an actual 'common-files' in the Performance Tools team.
+
+	BUGFIX:		Almost all compilation 'warnings' cleaned.
+
 2012/09/12 - jgonzale - GUI
 	BUGFIX:		Corrected the binary path to call the simulator
 				(Dimemas3->Dimemas).

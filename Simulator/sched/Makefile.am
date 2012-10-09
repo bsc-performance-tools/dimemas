@@ -4,6 +4,7 @@ simulator_dir = $(top_srcdir)/Simulator
 common_filesdir = @common_filesdir@
 
 INCLUDES = \
+	-I$(top_srcdir)/common_utilities \
 	-I$(top_srcdir)/include \
 	-I$(common_filesdir) \
 	-I$(simulator_dir)/io \

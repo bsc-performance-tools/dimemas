@@ -31,7 +31,7 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 extern "C" {
-#include "PCFdefines.h"
+#include "pcf_defines.h"
 }
 
 #include <cstdlib>
@@ -192,7 +192,7 @@ bool PCFGeneration::GenerateDefaultPCF(FILE* OutputPCF)
   {
     fprintf(OutputPCF,
             "%d\t%s\n",
-            i,
+            (int) i,
             ParaverDefaultPalette[i].name);
   }
 
@@ -201,7 +201,7 @@ bool PCFGeneration::GenerateDefaultPCF(FILE* OutputPCF)
   {
     fprintf(OutputPCF,
             "%d\t%s\n",
-            i + PRV_STATE_COUNT,
+            (int) i + PRV_STATE_COUNT,
             DimemasDefaultPalette[i].name);
   }
 
@@ -210,7 +210,7 @@ bool PCFGeneration::GenerateDefaultPCF(FILE* OutputPCF)
   {
     fprintf(OutputPCF,
             "%d\t{%d,%d,%d}\n",
-            i,
+            (int) i,
             ParaverDefaultPalette[i].RGB[0],
             ParaverDefaultPalette[i].RGB[1],
             ParaverDefaultPalette[i].RGB[2]);
@@ -221,7 +221,7 @@ bool PCFGeneration::GenerateDefaultPCF(FILE* OutputPCF)
   {
     fprintf(OutputPCF,
             "%d\t{%d,%d,%d}\n",
-            i + PRV_STATE_COUNT,
+            (int) i + PRV_STATE_COUNT,
             DimemasDefaultPalette[i].RGB[0],
             DimemasDefaultPalette[i].RGB[1],
             DimemasDefaultPalette[i].RGB[2]);

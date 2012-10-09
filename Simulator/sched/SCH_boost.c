@@ -36,6 +36,8 @@
 #include "define.h"
 #include "types.h"
 
+#include <dimemas_io.h>
+
 /* Include propio */
 #include "SCH_boost.h"
 
@@ -43,7 +45,6 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "paraver.h"
 #include "schedule.h"
 #include "subr.h"
@@ -165,7 +166,7 @@ t_nano SCH_boost_get_execution_time(struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    MALLOC_free_memory ((char*) action);
+    READ_free_action(action);
   }
 
   thread->loose_cpu = TRUE;
@@ -183,7 +184,7 @@ SCH_boost_init_scheduler_parameters(struct t_thread *thread)
 {
   struct t_SCH_boost *sch_boost;
 
-  sch_boost = (struct t_SCH_boost *) MALLOC_get_memory (sizeof (struct t_SCH_boost));
+  sch_boost = (struct t_SCH_boost *) malloc (sizeof (struct t_SCH_boost));
   sch_boost->priority = thread->base_priority;
   sch_boost->last_quantum = (t_nano) 0;
   thread->sch_parameters = (char *) sch_boost;
@@ -417,5 +418,5 @@ SCH_boost_free_parameters(struct t_thread *thread)
   struct t_SCH_boost *sch_boost;
 
   sch_boost = (struct t_SCH_boost *) thread->sch_parameters;
-  MALLOC_free_memory ((char*) sch_boost);
+  free (sch_boost);
 }

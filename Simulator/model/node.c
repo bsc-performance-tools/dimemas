@@ -32,6 +32,9 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "simulator.h"
 #include "node.h"
 
@@ -98,13 +101,13 @@ void NODE_Fill_Node_Fields(struct t_node *node,
 
   for (j = 0; j < no_processors; j++)
   {
-    cpu = (struct t_cpu *) MALLOC_get_memory (sizeof (struct t_cpu));
+    cpu = (struct t_cpu *) malloc (sizeof (struct t_cpu));
 
     cpu->cpuid                  = j + 1;
     cpu->current_thread         = TH_NIL;
     cpu->current_thread_context = TH_NIL;
     cpu->current_load           = (double) 0;
-    cpu->io                     = Q_NIL;
+    cpu->io                     = QU_NIL;
     insert_queue (&(node->Cpus), (char *) cpu, (t_priority) (j + 1));
   }
 
@@ -123,7 +126,7 @@ void NODE_Fill_Node_Fields(struct t_node *node,
 
   for (j = 0; j < no_input; j++)
   {
-    link = (struct t_link *) MALLOC_get_memory (sizeof (struct t_link));
+    link = (struct t_link *) malloc (sizeof (struct t_link));
 
     link->linkid    = j + 1;
     link->info.node = node;
@@ -137,7 +140,7 @@ void NODE_Fill_Node_Fields(struct t_node *node,
 
   for (j = 0; j < no_output; j++)
   {
-    link = (struct t_link *) MALLOC_get_memory (sizeof (struct t_link));
+    link = (struct t_link *) malloc (sizeof (struct t_link));
 
     link->linkid    = j + 1;
     link->info.node = node;

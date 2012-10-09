@@ -32,8 +32,19 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include<stdlib.h>
-#include<stdio.h>
+#include <stdlib.h>
+
+#include <types.h>
+#include <extern.h>
+#include <assert.h>
+
+// #include "mallocame.h"
+
+#include <stdio.h>
+
+static size_t memory_requests        = 0;
+static size_t memory_requested_space = 0;
+static size_t memory_frees           = 0;
 
 void MALLOC_Init()
 {
@@ -41,23 +52,73 @@ void MALLOC_Init()
 
 void MALLOC_End()
 {
+  PRINT_TIMER (current_time);
+  printf(": MALLOC_end called. Memory usage statistics:\n");
+  printf("        * Total requests            = %zd\n", memory_requests);
+  printf("        * Total space requested (B) = %zd\n", memory_requested_space);
+  printf("        * Total frees               = %zd\n", memory_frees);
+
+  return;
 }
 
-char* MALLOC_get_memory(size_t s)
+char* malloc(size_t size)
 {
-  char* adreca;
+  char* result_address;
 
-  adreca = (char*) malloc(s);
-  if (adreca == NULL)
+  if ( (result_address = (char*) malloc(size)) == NULL)
   {
-    fprintf(stderr,"Out of Memory\n");
-    exit(1);
+    fprintf(stderr, "Out of Memory\n");
+    exit(EXIT_FAILURE);
   }
-  return(adreca);
+
+  memory_requests++;
+  memory_requested_space += size;
+
+  // printf("@ allocated = %p (", result_address);
+  /*
+  if (MemoryRequests.count(result_address) > 0)
+  {
+    MemoryRequests[result_address]++;
+  }
+  else
+  {
+    MemoryRequests[result_address] = 1;
+  }
+  */
+
+  // printf("%d times)\n", MemoryRequests[result_address]);
+
+  return(result_address);
 }
 
 void MALLOC_free_memory(char *a)
 {
+
+  /*
+  if (MemoryRequests.count(a) == 1)
+  {
+    // printf("@ freeing = %p (", a);
+
+    MemoryRequests[a]--;
+
+    // printf("%d times)\n", MemoryRequests[a]);
+
+
+    assert (MemoryRequests[a] >= 0);
+
+    if (MemoryRequests[a] == 0)
+    {
+      MemoryRequests.erase(a);
+    }
+  }
+  else
+  {
+    // printf("@ freeing = %p (allocated externally)\n", a);
+    memory_frees++;
+  }
+  */
+  memory_frees++;
+
   free(a);
 }
 

@@ -31,6 +31,7 @@
   $Date::                 $:  Date of last commit
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,6 +39,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <dimemas_io.h>
 #include <Dimemas2Prv.h>
 #include <EventEncoding.h>
 
@@ -76,7 +78,7 @@ t_boolean MakeParaverPCF(const char *output_trace_name,
   struct t_Ptask* ptask;
 
   FILE *input_pcf_file, *output_pcf_file, *pcf_insert_file;
-  char *input_pcf_name,  *output_pcf_name;
+  char *input_pcf_name, *output_pcf_name;
 
   /* Generate the output PCF name */
   output_pcf_name = strdup(output_trace_name);
@@ -85,6 +87,7 @@ t_boolean MakeParaverPCF(const char *output_trace_name,
   {
     warning ("Wrong extension in output Paraver trace. PCF file would be named wrong\n");
   }
+
   strcpy(&output_pcf_name[strlen(output_trace_name)-4],".pcf");
 
   if ( (output_pcf_file = IO_fopen(output_pcf_name, "w")) == NULL)
@@ -125,7 +128,7 @@ t_boolean MakeParaverPCF(const char *output_trace_name,
   }
   else
   {
-    strcpy(&input_pcf_name[strlen(input_pcf_name)-3],"pcf");
+    strncpy(&input_pcf_name[strlen(input_pcf_name)-3],"pcf", 3);
 
     printf("PCF to be copied = %s\n",
            input_pcf_name);
@@ -307,7 +310,7 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
 //#ifdef PUT_ALL_VALUES
   /* JGG: That should be changed at certain point... */
   for (i = 0; i < NUM_MPICALLS; i++) {
-     MPIEventEncoding_EnableOperation(i);
+     MPIEventEncoding_EnableOperation( (MPIVal) i);
   }
   MPIEventEncoding_WriteEnabledOperations(output_pcf);
 // #endif

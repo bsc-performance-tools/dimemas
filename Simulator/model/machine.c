@@ -32,7 +32,9 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include "mallocame.h"
+#include <stdlib.h>
+#include <string.h>
+
 #include "simulator.h"
 #include "machine.h"
 #include "node.h"
@@ -77,7 +79,7 @@ void MACHINE_Init_Empty_Machine(struct t_machine* machine, int machine_id)
   machine->external_net.half_duplex_links = FALSE;
 
   /* Single external network out link  */
-  if ( (link = (struct t_link*) MALLOC_get_memory (sizeof (struct t_link))) == NULL)
+  if ( (link = (struct t_link*) malloc (sizeof (struct t_link))) == NULL)
   {
     die("Error reserving memory for machine %d input link",
         machine_id);
@@ -92,7 +94,7 @@ void MACHINE_Init_Empty_Machine(struct t_machine* machine, int machine_id)
   inFIFO_queue (&(machine->external_net.free_in_links), (char *) link);
 
   /* Single external network input link */
-  if ( (link = (struct t_link*) MALLOC_get_memory (sizeof (struct t_link))) == NULL)
+  if ( (link = (struct t_link*) malloc (sizeof (struct t_link))) == NULL)
   {
     die("Error reserving memory for machine %d output link",
         machine_id);

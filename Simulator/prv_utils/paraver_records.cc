@@ -107,7 +107,7 @@ bool SimpleParaverRecord::deserialize(const char* ascii_record)
   _ascii_record = string(ascii_record_def);
 
   /* This free caused an error when deleting the record! */
-  // free(ascii_record_def);
+  free(ascii_record_def);
 
   return true;
 }

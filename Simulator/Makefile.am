@@ -8,6 +8,7 @@ if VENUS_ENABLED
 endif
 
 INCLUDES = \
+	-I$(top_srcdir)/common_utilities \
 	-I$(top_srcdir)/include \
 	-I$(simulator_dir)/io \
 	-I$(simulator_dir)/input \
@@ -22,17 +23,13 @@ bin_PROGRAMS = Dimemas DimemasUpdateCFG
 Dimemas_SOURCES = \
 	main.c 
 
-nodist_Dimemas_SOURCES = \
-	$(common_filesdir)/ParaverBinaryTrace.c\
-	$(common_filesdir)/Dimemas2Prv.c \
-	$(common_filesdir)/EventEncoding.c
-
-Dimemas_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include -I$(common_filesdir)
-Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include -I$(common_filesdir)
+Dimemas_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
+Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
 
 nodist_EXTRA_Dimemas_SOURCES = dummy.cc
 
 Dimemas_LDADD = \
+	$(top_srcdir)/common_utilities/libCommonUtilities.la \
 	$(simulator_dir)/input/libDimemasInput.la \
 	$(simulator_dir)/io/libDimemasIO.la \
 	$(simulator_dir)/model/libDimemasModel.la \

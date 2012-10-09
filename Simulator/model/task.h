@@ -119,9 +119,9 @@ t_boolean more_actions_to_sintetic (struct t_thread *thread);
 
 struct t_node *get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid);
 
-void TASK_module_new (int    type,
-                             int    value,
-                             double ratio);
+void TASK_module_new (long long int type,
+                      long long int value,
+                      double        ratio);
 
 void file_name (struct t_Ptask *Ptask, int file_id, char *location);
 

@@ -54,7 +54,6 @@
 #include "events.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
 #include "ports.h"
@@ -107,6 +106,7 @@ struct t_queue burst_categories;
 void new_task_in_Ptask(struct t_Ptask *Ptask, int taskid, int nodeid);
 
 void TASK_add_thread_to_task (struct t_task *task, int threadid);
+void TASK_Delete_Task (struct t_task *task);
 
 /*****************************************************************************
 * Public functions implementation
@@ -181,7 +181,7 @@ void TASK_Init(int sintetic_io_applications)
       Simulator.threads_count += task->threads_count;
 
       task->threads = (struct t_thread**)
-        MALLOC_get_memory(task->threads_count*sizeof(struct t_thread*));
+        malloc(task->threads_count*sizeof(struct t_thread*));
 
       for (threads_it = 0;
            threads_it < task->threads_count;
@@ -252,6 +252,7 @@ void TASK_end()
   struct t_communicator *communicator;
   struct t_global_op_definition * glop;
 
+
   for(Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
       Ptask != P_NIL;
       Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
@@ -289,97 +290,12 @@ void TASK_end()
     for(i = 0; i < Ptask->tasks_count; i++)
     {
       task = &(Ptask->tasks[i]);
+      /* DELETE ALL MEMORY STRUCTURES */
 
-      if (count_queue (&(task->recv)) != 0)
-      {
-        warning ("Task %02d ends with %d threads waiting to recv message:\n",
-                 task->taskid,
-                 count_queue (&(task->recv)));
-
-        for(thread  = (struct t_thread *) head_queue (&(task->recv));
-            thread != TH_NIL;
-            thread  = (struct t_thread *) next_queue (&(task->recv)))
-        {
-          printf ("\t* Thread %02d <-",
-                  IDENTIFIERS(thread));
-          action = thread->action;
-          mess = &(action->desc.recv);
-
-          printf (" Sender: T%02d  t%02d, Destination T%02d  t%02d  Tag: %02d CommId: %02d Size: %d\n",
-                  mess->ori,
-                  mess->ori_thread,
-                  thread->task->taskid,
-                  thread->threadid,
-                  mess->mess_tag,
-                  mess->communic_id,
-                  mess->mess_size);
-
-          node = get_node_of_thread (thread);
-          cpu  = get_cpu_of_thread (thread);
-          PARAVER_Idle(0,
-                       IDENTIFIERS (thread),
-                       thread->last_paraver,
-                       current_time);
-        }
-      }
-
-      if (count_queue (&(task->send)) != 0)
-      {
-        printf (
-          "WARNING: Task %02d ends with %d message(s) pending to send:\n",
-          task->taskid,
-          count_queue (&(task->send)));
-
-        for(thread  = (struct t_thread *) head_queue (&(task->send));
-            thread != TH_NIL;
-            thread  = (struct t_thread *) next_queue (&(task->send)))
-        {
-          node = get_node_of_thread (thread);
-          cpu = get_cpu_of_thread (thread);
-          PARAVER_Idle(0,
-                       IDENTIFIERS (thread),
-                       thread->last_paraver,
-                       current_time);
-
-          printf ("\t* Thread %02d ->",
-                  thread->threadid);
-          action = thread->action;
-          // Vladimir: it has to be action->desc.send
-          mess_source = &(action->desc.send);
-          // mess_source = &(action->desc.recv);
-
-          printf (" Dest-: T%02d Tag: %02d CommId: %02d Size: %d\n",
-                  mess_source->dest,
-                  mess_source->mess_tag,
-                  mess_source->communic_id,
-                  mess_source->mess_size);
-
-        }
-      }
-
-      if (count_queue (&(task->mess_recv)) != 0)
-      {
-        printf (
-          "WARNING: Task %02d ends with %d message(s) in reception queue:\n",
-          task->taskid,
-          count_queue (&(task->mess_recv)));
-        for(thread  = (struct t_thread *) head_queue (&(task->mess_recv));
-            thread != TH_NIL;
-            thread  = (struct t_thread *) next_queue (&(task->mess_recv)))
-        {
-          action = thread->action;
-          mess_source = &(action->desc.send);
-          printf ("\t-> Sender: T%02d t%02d  destT%02d  destt%02d  Tag: %02d CommId: %d Size: %d\n",
-                  thread->task->taskid,
-                  thread->threadid,
-                  mess_source->dest,
-                  mess_source->dest_thread,
-                  mess_source->mess_tag,
-                  mess_source->communic_id,
-                  mess_source->mess_size);
-        }
-      }
+      TASK_Delete_Task(task);
     }
+
+    free(Ptask->tasks);
   }
 
   DATA_ACCESS_end();
@@ -436,7 +352,8 @@ void TASK_New_Ptask(char *trace_name, int tasks_count, int *tasks_mapping)
 #else
     Ptask->tasks_count = count_queue(&Node_queue);
 #endif
-    Ptask->tasks      = malloc(Ptask->tasks_count*sizeof(struct t_task));
+
+    Ptask->tasks = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
     for (synth_task = 0; synth_task < Ptask->tasks_count; synth_task++)
     {
@@ -446,7 +363,7 @@ void TASK_New_Ptask(char *trace_name, int tasks_count, int *tasks_mapping)
   else
   {
     Ptask->tasks_count = tasks_count;
-    Ptask->tasks       = malloc(Ptask->tasks_count*sizeof(struct t_task));
+    Ptask->tasks       = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
     for (new_taskid = 0; new_taskid < tasks_count; new_taskid++)
     {
@@ -488,6 +405,22 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
 
 }
 
+void TASK_Delete_Task(struct t_task *task)
+{
+  struct t_thread *thread;
+  size_t i;
+
+  /* Delete all threads on the task */
+  for (i = 0; i < task->threads_count; i++)
+  {
+    thread = task->threads[i];
+
+    free(thread);
+  }
+
+  return;
+}
+
 /* Synthetic burst generation functions */
 void SYNT_BURST_add_new_burst_category(int    burst_category_id,
                                        double burst_category_mean,
@@ -501,7 +434,7 @@ void SYNT_BURST_add_new_burst_category(int    burst_category_id,
     create_queue(&(burst_categories));
   }
 
-  new_category = (burst_category_t) MALLOC_get_memory(sizeof(struct _burst_category));
+  new_category = (burst_category_t) malloc(sizeof(struct _burst_category));
 
   if (new_category == NULL)
   {
@@ -540,7 +473,7 @@ void PREEMP_init(struct t_Ptask *Ptask)
 {
   size_t task_num = Ptask->tasks_count;
 
-  PREEMP_table = (int*) MALLOC_get_memory (task_num * sizeof(int));
+  PREEMP_table = (int*) malloc (task_num * sizeof(int));
 
   srand((unsigned int) time(NULL));
 
@@ -584,7 +517,8 @@ void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
             Ptask->Ptaskid);
   }
 
-  comm = (struct t_communicator *)MALLOC_get_memory(sizeof(struct t_communicator));
+  comm = (struct t_communicator *)malloc(sizeof(struct t_communicator));
+
   comm->communicator_id = communicator_id;
   create_queue (&comm->global_ranks);
   create_queue (&comm->threads);
@@ -619,7 +553,7 @@ void add_identificator_to_communicator(struct t_Ptask *Ptask,
   {
     for (i = 0; i <  Ptask->tasks_count; i++)
     {
-      mtaskid = (int *)MALLOC_get_memory(sizeof(int));
+      mtaskid = (int *)malloc(sizeof(int));
       *mtaskid = i+1;
       inFIFO_queue (&comm->global_ranks, (char*)mtaskid);
     }
@@ -633,7 +567,7 @@ void add_identificator_to_communicator(struct t_Ptask *Ptask,
       taskid);
   }
 
-  mtaskid = (int *)MALLOC_get_memory(sizeof(int));
+  mtaskid = (int*) malloc(sizeof(int));
   *mtaskid = taskid+1;
   inFIFO_queue (&comm->global_ranks, (char *)mtaskid);
 }
@@ -655,7 +589,7 @@ void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
              communicator_id,
              Ptask->Ptaskid);
   }
-  trips = (int *)MALLOC_get_memory (3*count_queue(&comm->global_ranks)*sizeof(int));
+  trips = (int*) malloc (3*count_queue(&comm->global_ranks)*sizeof(int));
   i=0;
   for (mtaskid=(int *)head_queue(&comm->global_ranks);
        mtaskid!=(int *)0;
@@ -668,7 +602,7 @@ void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
     trips[i] = 1;
     i++;
   }
-  MALLOC_free_memory ((char*)trips);
+  free (trips);
 }
 
 void
@@ -685,7 +619,7 @@ new_window_definition (struct t_Ptask *Ptask, int window_id)
             Ptask->Ptaskid);
   }
 
-  win = (struct t_window *)MALLOC_get_memory(sizeof(struct t_window));
+  win = (struct t_window*) malloc(sizeof(struct t_window));
   win->window_id = window_id;
   win->mode = WINDOW_MODE_NONE;
   create_queue (&win->global_ranks);
@@ -730,7 +664,7 @@ void add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taski
   {
     for (i=0; i < Ptask->tasks_count; i++)
     {
-      mtaskid = (int *)MALLOC_get_memory(sizeof(int));
+      mtaskid = (int*) malloc(sizeof(int));
       *mtaskid = i+1;
       inFIFO_queue (&win->global_ranks, (char *)mtaskid);
     }
@@ -742,7 +676,7 @@ void add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taski
     panic("Specified rank %d not valid in this Ptask\n", taskid);
   }
 
-  mtaskid = (int *)MALLOC_get_memory(sizeof(int));
+  mtaskid = (int*) malloc(sizeof(int));
   *mtaskid = taskid+1;
   inFIFO_queue (&win->global_ranks, (char *)mtaskid);
 }
@@ -765,7 +699,7 @@ void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id)
   }
   /* FEC: Aqui no s'esta fent res!!!!!!!
    * Per fer aixo ja es pot retornar! Per tant, ho comento.
-  trips = (int *)MALLOC_get_memory (3*count_queue(&win->global_ranks)*sizeof(int));
+  trips = (int*) malloc (3*count_queue(&win->global_ranks)*sizeof(int));
   i=0;
   for (mtaskid=(int *)head_queue(&win->global_ranks);
        mtaskid!=(int *)0;
@@ -778,7 +712,7 @@ void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id)
     trips[i] = 1;
     i++;
   }
-  MALLOC_free_memory ((char*)trips);
+  free (trips);
   */
 }
 
@@ -793,7 +727,7 @@ void clear_account (struct t_account *account)
   bzero(account,sizeof(struct t_account));
 
   /* FEC: Es segueixen inicialitzant manualment alguns camps */
-  ASS_TIMER (account->initial_time, LDBL_MAX);
+  ASS_TIMER (account->initial_time, DBL_MAX);
   ASS_TIMER (account->final_time, 0);
   account->nodeid = 0;
 
@@ -823,7 +757,7 @@ struct t_account* new_accounter()
 {
   struct t_account *res;
 
-  res = (struct t_account *) MALLOC_get_memory (sizeof (struct t_account));
+  res = (struct t_account*) malloc (sizeof (struct t_account));
   clear_account (res);
   return (res);
 }
@@ -835,7 +769,7 @@ void new_account (struct t_queue *acc, int nodeid)
 {
   struct t_account *new_acc;
 
-  new_acc = (struct t_account *) MALLOC_get_memory (sizeof (struct t_account));
+  new_acc = (struct t_account*) malloc (sizeof (struct t_account));
   clear_account (new_acc);
   new_acc->nodeid = nodeid;
   new_acc->iteration = count_queue (acc) + 1;
@@ -993,54 +927,58 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   }
 
   /* Insert new thread in task */
-  thread = (struct t_thread*) MALLOC_get_memory (sizeof (struct t_thread));
+  thread = (struct t_thread*) malloc (sizeof (struct t_thread));
 
   create_queue (&(thread->account));
   create_queue (&(thread->modules));
   create_queue (&(thread->Activity));
-  thread->threadid = thread_id;
-  thread->task = task;
-  thread->put_into_ready = current_time;
-  thread->action = AC_NIL;
-  thread->original_thread = TRUE;
-  thread->twin_thread = TH_NIL;
-  thread->doing_context_switch = FALSE;
+
+  thread->threadid                 = thread_id;
+  thread->task                     = task;
+  thread->put_into_ready           = current_time;
+  thread->action                   = AC_NIL;
+  thread->original_thread          = TRUE;
+  thread->twin_thread              = TH_NIL;
+  thread->doing_context_switch     = FALSE;
   thread->min_time_to_be_preempted = current_time;
-  thread->doing_busy_wait = FALSE;
-  thread->last_action = AC_NIL;
-  thread->local_link = L_NIL;
-  thread->partner_link = L_NIL;
-  thread->local_hd_link = L_NIL;
-  thread->partner_hd_link = L_NIL;
-  thread->partner_node = N_NIL;
-  thread->doing_startup = FALSE;
-  thread->startup_done  = FALSE;
-  thread->doing_copy    = FALSE;
-  thread->copy_done     = FALSE; /* JGG New latency modelling */
-  thread->loose_cpu     = TRUE;
-  thread->last_paraver = current_time;
-  thread->size_port = 0;
-  thread->port_send_link = L_NIL;
-  thread->port_recv_link = L_NIL;
-  thread->to_module = 0;
-  thread->port = PO_NIL;
+  thread->doing_busy_wait          = FALSE;
+  thread->last_action              = AC_NIL;
+  thread->local_link               = L_NIL;
+  thread->partner_link             = L_NIL;
+  thread->local_hd_link            = L_NIL;
+  thread->partner_hd_link          = L_NIL;
+  thread->partner_node             = N_NIL;
+  thread->doing_startup            = FALSE;
+  thread->startup_done             = FALSE;
+  thread->doing_copy               = FALSE;
+  thread->copy_done                = FALSE; /* JGG New latency modelling */
+  thread->doing_roundtrip          = FALSE;
+  thread->roundtrip_done           = FALSE;
+  thread->loose_cpu                = TRUE;
+  thread->idle_block               = FALSE;
+  thread->last_paraver             = current_time;
+  thread->size_port                = 0;
+  thread->port_send_link           = L_NIL;
+  thread->port_recv_link           = L_NIL;
+  thread->to_module                = 0;
+  thread->port                     = PO_NIL;
   thread->copy_segment_link_source = L_NIL;
-  thread->copy_segment_link_dest = L_NIL;
-  thread->copy_segment_size = 0;
-  thread->original_seek = 0;
-  thread->seek_position = 0;
-  thread->base_priority = 0;
+  thread->copy_segment_link_dest   = L_NIL;
+  thread->copy_segment_size        = 0;
+  thread->original_seek            = 0;
+  thread->seek_position            = 0;
+  thread->base_priority            = 0;
 
-  thread->sstask_id   = 0;
-  thread->sstask_type = 0;
+  thread->sstask_id                = 0;
+  thread->sstask_type              = 0;
 
-  thread->portid = port_ids++;
+  thread->portid                   = port_ids++;
   PORT_create (thread->portid, thread);
 
-  thread->portid = port_ids++;
+  thread->portid                   = port_ids++;
   PORT_create (thread->portid, thread);
 
-  thread->portid = port_ids++;
+  thread->portid                   = port_ids++;
   PORT_create (thread->portid, thread);
 
   /* making these queues separate for every thread
@@ -1089,7 +1027,6 @@ struct t_thread* locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
 {
   struct t_task   *task;
   struct t_thread *thread;
-  size_t           tasks_it;
 
   if (taskid < 0 || taskid >= Ptask->tasks_count)
   {
@@ -1099,7 +1036,7 @@ struct t_thread* locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
            Ptask->Ptaskid);
   }
 
-  task = &(Ptask->tasks[tasks_it]);
+  task = &(Ptask->tasks[taskid]);
 
   // this is optimized by indexing threads in tasks
   thread = locate_thread_of_task (task, thid);
@@ -1148,7 +1085,7 @@ void new_action_to_thread (struct t_Ptask *Ptask,
     if ((action->action == WORK) && (last_action->action == WORK))
     {
       last_action->desc.compute.cpu_time += action->desc.compute.cpu_time;
-      MALLOC_free_memory ((char*) action);
+      READ_free_action(action);
       return;
     }
     last_action->next = action;
@@ -1192,8 +1129,10 @@ struct t_thread *duplicate_thread_fs (struct t_thread *thread)
   node = get_node_of_thread (thread);
   machine = node->machine;
 
-  copy_thread = (struct t_thread *) MALLOC_get_memory (sizeof (struct t_thread));
-  bcopy (thread, copy_thread, sizeof(struct t_thread));
+  copy_thread = (struct t_thread *) malloc (sizeof (struct t_thread));
+  // bcopy (thread, copy_thread, sizeof(struct t_thread));
+  memcpy(copy_thread, thread, sizeof(struct t_thread));
+
   copy_thread->original_thread = FALSE;
   copy_thread->twin_thread = thread;
   copy_thread->doing_context_switch = FALSE;
@@ -1228,21 +1167,22 @@ struct t_thread *duplicate_thread_fs (struct t_thread *thread)
 void delete_duplicate_thread_fs (struct t_thread *thread)
 {
   SCHEDULER_free_parameters (thread);
-  MALLOC_free_memory ((char*) thread);
+  free (thread);
 }
 
 struct t_thread *duplicate_thread (struct t_thread *thread)
 {
-  struct t_thread *copy_thread;
-  struct t_action *action, *ac;
+  struct t_thread  *copy_thread;
+  struct t_action  *action, *ac;
   struct t_node    *node;
   struct t_machine *machine;
 
   node = get_node_of_thread (thread);
   machine = node->machine;
 
-  copy_thread = (struct t_thread *) MALLOC_get_memory (sizeof (struct t_thread));
-  bcopy (thread, copy_thread, sizeof(struct t_thread));
+  copy_thread = (struct t_thread *) malloc (sizeof (struct t_thread));
+  // bcopy (thread, copy_thread, sizeof(struct t_thread));
+  memcpy(copy_thread, thread, sizeof(struct t_thread));
 
   copy_thread->original_thread          = FALSE;
   copy_thread->twin_thread              = thread;
@@ -1274,11 +1214,15 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
   (*SCH[machine->scheduler.policy].init_scheduler_parameters) (copy_thread);
   SCHEDULER_copy_parameters (thread, copy_thread);
 
-  ac = thread->action;
-  action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
-  memcpy (action, ac,sizeof(struct t_action));
-  action->next = AC_NIL;
-  copy_thread->action = action;
+  // ac = thread->action;
+  //action = (struct t_action *) malloc (sizeof (struct t_action));
+
+  READ_create_action(&copy_thread->action);
+  READ_copy_action(thread->action, copy_thread->action);
+
+  // memcpy (copy_thread->action, ac, sizeof(struct t_action));
+  copy_thread->action->next = AC_NIL;
+  // copy_thread->action = action;
 
   /* Intent de crear un nou accounting pel thread nou, que al destruir-se
   * s'afegira al thread original. */
@@ -1408,8 +1352,11 @@ struct t_thread *promote_to_original2 (struct t_thread *copy_thread, struct t_th
 
 
   ac = copy_thread->action;
-  action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
-  memcpy (action, ac,sizeof(struct t_action));
+
+  // action = (struct t_action *) malloc (sizeof (struct t_action));
+  READ_create_action(&action);
+
+  memcpy (action, ac, sizeof(struct t_action));
   action->next = thread->action;
   thread->action = action;
 
@@ -1444,6 +1391,8 @@ void delete_duplicate_thread (struct t_thread *thread)
 
   SCHEDULER_free_parameters (thread);
 
+  // printf("Deleting duplicated thread %p\n", thread);
+
   /* Intent d'afegir les dades d'accounting al thread original. */
   acc_th_copia = current_account (thread);
 
@@ -1460,7 +1409,7 @@ void delete_duplicate_thread (struct t_thread *thread)
 //  {
 
   acc_th_original = current_account (thread->twin_thread);
-  add_account(acc_th_original,acc_th_copia);
+  add_account(acc_th_original, acc_th_copia);
 
 /*
   printf("WHAT HAPPENS HERE delete dupl account thread and twin 41\n");
@@ -1495,7 +1444,7 @@ void delete_duplicate_thread (struct t_thread *thread)
 
 //  }
 
-  MALLOC_free_memory ((char*) thread->action);
+  READ_free_action(thread->action);
 
 /*
   printf("delete duplicate thread step 5\n");
@@ -1504,7 +1453,7 @@ void delete_duplicate_thread (struct t_thread *thread)
   printf("WHAT HAPPENS HERE delete dupl account thread ONLY twin 82\n");
 */
 
-  MALLOC_free_memory ((char*) thread);
+  free (thread);
 }
 
 static t_boolean more_actions_on_task (struct t_task  *task)
@@ -1522,10 +1471,10 @@ static t_boolean more_actions_on_task (struct t_task  *task)
     thread = task->threads[thread_it];
 
     if (thread->action != AC_NIL)
-      return (TRUE);
+      return TRUE;
 
     if (events_for_thread (thread))
-      return (TRUE);
+      return TRUE;
   }
 
 //    this task is finished
@@ -1534,11 +1483,11 @@ static t_boolean more_actions_on_task (struct t_task  *task)
 //    EVERYTHING LEAKS -> WHO IS FREEING ALL THE THREADS????
 //    TODO: I'm not freeing this array now -> because there might be a restart
 //    if (task->num_of_threads != 0) {
-//      MALLOC_free_memory(/*(struct t_thread**)*/(char *) task->threads_array);
+//      free(/*(struct t_thread**)*/(char *) task->threads_array);
 //      task->num_of_threads = 0;
 //   }
 
-  return (FALSE);
+  return FALSE;
 }
 
 t_boolean more_actions_on_Ptask (struct t_Ptask *Ptask)
@@ -1596,7 +1545,7 @@ void clear_last_actions (struct t_Ptask *Ptask)
       thread = task->threads[thread_it];
       /*
       if (thread->last_action != AC_NIL)
-        MALLOC_free_memory (thread->last_action);
+        free (thread->last_action);
       */
       assert(thread->last_action == AC_NIL);
       assert(thread->action == AC_NIL);
@@ -1621,7 +1570,7 @@ void get_operation (struct t_thread *thread, struct t_fs_op *fs_op)
   {
     *fs_op = action->desc.fs_op;
     thread->action = action->next;
-    MALLOC_free_memory ((char*) action);
+    READ_free_action(action);
   }
 }
 
@@ -1634,7 +1583,7 @@ void file_name (struct t_Ptask *Ptask, int file_id, char *location)
 
   if (filed == F_NIL)
   {
-    filed = (struct t_filed *)MALLOC_get_memory (sizeof(struct t_filed));
+    filed = (struct t_filed*) malloc (sizeof(struct t_filed));
     filed->file_id = file_id;
     filed->location = location;
     insert_queue (&Ptask->Filesd, (char *)filed, (t_priority) file_id);
@@ -1683,7 +1632,10 @@ void First_action_to_sintetic_application (struct t_Ptask *Ptask)
     {
       thread = task->threads[threads_it];
 
-      action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+      // action = (struct t_action *) malloc (sizeof (struct t_action));
+
+      READ_create_action(&action);
+
       action->action = WORK;
       (action->desc).compute.cpu_time = work_time_for_sintetic ();
       (action->desc).compute.cpu_time = (t_nano) unform ((float) 0,
@@ -1734,7 +1686,9 @@ t_boolean more_actions_to_sintetic (struct t_thread *thread)
   if ((thread->seek_position == 0) && (i == count_queue (&(Ptask_queue)) - sin))
     return (FALSE);
 
-  action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+  // action = (struct t_action *) malloc (sizeof (struct t_action));
+  READ_create_action(&action);
+
   if (thread->seek_position == -1)
   {
     action->action = WORK;
@@ -1773,9 +1727,11 @@ struct t_node *get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid)
   return (node);
 }
 
-void TASK_module_new (int module_type, int module_value, double ratio)
+void TASK_module_new (long long int module_type,
+                      long long int module_value,
+                      double ratio)
 {
-  long long module_type_ll, module_value_ll;
+  long long int module_type_ll, module_value_ll;
 
   struct t_Ptask  *current_Ptask;
   struct t_module *mod;
@@ -1797,7 +1753,8 @@ void TASK_module_new (int module_type, int module_value, double ratio)
   /*
    * Last Ptask is Ptasks_ids - 1
    */
-  current_Ptask = query_prio_queue(&Ptask_queue, (t_priority) Ptask_ids-1);
+  current_Ptask = (struct t_Ptask*) query_prio_queue(&Ptask_queue,
+                                                     (t_priority) Ptask_ids-1);
 
   if (current_Ptask == NULL)
   {
@@ -1827,13 +1784,13 @@ void TASK_module_new (int module_type, int module_value, double ratio)
 
   // mod = (struct t_module *) query_prio_queue (&Ptask->Modules, (t_priority)identificator);
 
-  mod = find_module (&(current_Ptask->Modules),
-                     module_type_ll,
-                     module_value_ll);
+  mod = (struct t_module*) find_module (&(current_Ptask->Modules),
+                                          module_type_ll,
+                                          module_value_ll);
 
   if (mod == M_NIL)
   {
-    mod = (struct t_module*) MALLOC_get_memory (sizeof(struct t_module));
+    mod = (struct t_module*) malloc (sizeof(struct t_module));
     mod->type          = module_type_ll;
     mod->value         = module_value_ll;
     mod->ratio         = ratio;
@@ -1888,7 +1845,9 @@ void module_entrance(struct t_thread *thread,
     thread->idle_block = TRUE;
   }
 
-  mod = find_module(&Ptask->Modules, module_type, module_value);
+  mod = (struct t_module*) find_module(&Ptask->Modules,
+                                       module_type,
+                                       module_value);
 
   if (mod != M_NIL)
   {
@@ -1898,7 +1857,7 @@ void module_entrance(struct t_thread *thread,
     if (debug&D_TASK)
     {
       PRINT_TIMER (current_time);
-      printf (": Going into module [%ld:%ld] (%s) for P%d T%d th%d\n",
+      printf (": Going into module [%lld:%lld] (%s) for P%d T%d th%d\n",
               mod->type,
               mod->value,
               mod->module_name,
@@ -2010,7 +1969,7 @@ int module_exit (struct t_thread* thread,
       if (debug&D_TASK)
       {
         PRINT_TIMER (current_time);
-        printf (": Going out module: [%ld] (Unknown) for P%02d T%02d th%02d\n",
+        printf (": Going out module: [%lld] (Unknown) for P%02d T%02d th%02d\n",
                 module_type,
                 IDENTIFIERS(thread));
       }
@@ -2089,7 +2048,7 @@ void user_event_type_name(struct t_Ptask *Ptask,
   if (evinfo == (struct t_user_event_info*) 0)
   {
     evinfo = (struct t_user_event_info*)
-      MALLOC_get_memory(sizeof(struct t_user_event_info));
+      malloc(sizeof(struct t_user_event_info));
 
     evinfo->type  = type;
     evinfo->color = color;
@@ -2100,7 +2059,7 @@ void user_event_type_name(struct t_Ptask *Ptask,
   else
   {
     printf ("Warning: redefinition of user event type %d\n",type);
-    MALLOC_free_memory(name);
+    free(name);
   }
 }
 
@@ -2122,7 +2081,7 @@ void user_event_value_name (struct t_Ptask *Ptask,
     printf ("Warning: User event type %d not defined for user event value %d definition\n",
             type,
             value);
-    MALLOC_free_memory(name);
+    free(name);
     return;
   }
 
@@ -2133,7 +2092,7 @@ void user_event_value_name (struct t_Ptask *Ptask,
   if (evinfo_val == (struct t_user_event_value_info*) 0)
   {
     evinfo_val = (struct t_user_event_value_info*)
-      MALLOC_get_memory (sizeof(struct t_user_event_value_info));
+      malloc (sizeof(struct t_user_event_value_info));
 
     evinfo_val->value = value;
     evinfo_val->name  = name;
@@ -2144,6 +2103,6 @@ void user_event_value_name (struct t_Ptask *Ptask,
     printf ("Warning: redefinition of user event value %d for type %d\n",
             value,
             type);
-    MALLOC_free_memory(name);
+    free(name);
   }
 }

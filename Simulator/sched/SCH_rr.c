@@ -36,6 +36,8 @@
 #include "define.h"
 #include "types.h"
 
+#include <dimemas_io.h>
+
 /* Include propio */
 #include "SCH_rr.h"
 
@@ -43,7 +45,6 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "subr.h"
 
 #include "simulator.h"
@@ -99,7 +100,7 @@ RR_get_execution_time (struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
   }
 
   thread->loose_cpu = TRUE;
@@ -117,7 +118,7 @@ RR_init_scheduler_parameters (struct t_thread *thread)
 {
   struct t_SCH_rr *sch_rr;
 
-  sch_rr = (struct t_SCH_rr *) MALLOC_get_memory (sizeof (struct t_SCH_rr) );
+  sch_rr = (struct t_SCH_rr *) malloc (sizeof (struct t_SCH_rr) );
   sch_rr->last_quantum = (t_nano) 0;
   thread->sch_parameters = (char *) sch_rr;
 }
@@ -215,5 +216,5 @@ RR_free_parameters (struct t_thread *thread)
   struct t_SCH_rr *sch_rr;
 
   sch_rr = (struct t_SCH_rr *) thread->sch_parameters;
-  MALLOC_free_memory ( (char*) sch_rr);
+  free (sch_rr);
 }

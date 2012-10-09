@@ -1,9 +1,8 @@
 ## Process this file with automake to produce Makefile.in
-common_filesdir=@common_filesdir@
 
 INCLUDES = \
-	-I$(top_srcdir)/include \
-	-I$(common_filesdir)
+	-I$(top_srcdir)/common_utilities \
+	-I$(top_srcdir)/include 
 
 bin_PROGRAMS = trf2dim
 
@@ -25,9 +24,12 @@ trf2dim_SOURCES = \
 	PCFGenerator.cpp\
 	Trf2DimMain.cpp
 
-nodist_trf2dim_SOURCES = \
-	$(common_filesdir)/Dimemas_Generation.c\
-    $(common_filesdir)/EventEncoding.c\
-    $(common_filesdir)/Dimemas2Prv.c \
-    $(common_filesdir)/Error.hpp \
-    $(common_filesdir)/Error.cpp
+trf2dim_LDADD = \
+	$(top_srcdir)/common_utilities/libCommonUtilities.la
+
+#nodist_trf2dim_SOURCES = \
+#	$(common_filesdir)/Dimemas_Generation.c\
+#    $(common_filesdir)/EventEncoding.c\
+#    $(common_filesdir)/Dimemas2Prv.c \
+#    $(common_filesdir)/Error.hpp \
+#    $(common_filesdir)/Error.cpp

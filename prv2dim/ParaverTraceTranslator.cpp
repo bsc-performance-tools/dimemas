@@ -33,7 +33,7 @@
 
 #include "EventEncoding.h"
 #include "Dimemas_Generation.h"
-#include "UIParaverTraceConfig.h"
+// #include "UIParaverTraceConfig.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -171,12 +171,12 @@ ParaverTraceTranslator::SplitCommunications(void)
   INT32 CurrentPercentage = 0;
   INT32 PercentageRead    = 0;
 
-  char* tmp_dir_default = "/tmp";
+  const char* tmp_dir_default = "/tmp";
   char* tmp_dir;
 
   if ( (tmp_dir = getenv("TMPDIR")) == NULL)
   {
-    tmp_dir = tmp_dir_default;
+    tmp_dir = strdup(tmp_dir_default);
   }
 
   CommunicationsFileName = (char*) malloc (strlen(tmp_dir) + 1 + 20);
@@ -435,7 +435,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   off_t                    OffsetsOffset;
   vector<off_t>            OutputOffsets;
 
-  /* For obtaining cluster labels from .pcf */
+  /* For obtaining cluster labels from .pcf 
   using namespace libparaver;
   UIParaverTraceConfig *pcfTrace;
   string               InputPCFName;
@@ -445,6 +445,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
 
   int                 *pcfValues;
   char               **pcfLabels;
+  */
 
   cout << flush;
 
@@ -949,12 +950,12 @@ ParaverTraceTranslator::InitTranslationStructures(
 
   /* Temporal directory management */
   char* TemporaryFileName;
-  char* tmp_dir_default = "/tmp";
+  const char* tmp_dir_default = "/tmp";
   char* tmp_dir;
 
   if ( (tmp_dir = getenv("TMPDIR")) == NULL)
   {
-    tmp_dir = tmp_dir_default;
+    tmp_dir = strdup(tmp_dir_default);
   }
 
   /* Translation communicator initialization */
@@ -1137,11 +1138,11 @@ ParaverTraceTranslator::TranslateCommunicators(
               CurrentCommunicator->GetCommunicatorId());
       SetErrorMessage(CurrentError, strerror(errno));
 
-      cfree (TaskIdList);
+      free (TaskIdList);
       return false;
     }
 
-    cfree(TaskIdList);
+    free(TaskIdList);
   }
 
   return true;

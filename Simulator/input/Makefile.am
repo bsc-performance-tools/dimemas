@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = libDimemasInput.la
 simulator_dir = $(top_srcdir)/Simulator
 
 INCLUDES = \
-	-I@common_filesdir@ \
+	-I$(top_srcdir)/common_utilities \
 	-I$(top_srcdir)/include \
 	-I$(simulator_dir)/io \
 	-I$(simulator_dir)/input \

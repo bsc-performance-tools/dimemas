@@ -42,16 +42,13 @@ extern "C" {
 #include "types.h"
 #include "extern.h"
 
+#include "pcf_defines.h"
+
 /* Record identifier */
 #define PRV_STATE     1
 #define PRV_EVENT     2
 #define PRV_COMM      3
 #define PRV_STATE_RUN 4// Special state
-
-/* Esto debe quedar fuera de aquí, hay que añadir incluir el fichero
- * 'pcf_defines' */
-
-#include "pcf_defines.h"
 
 /* #define PA_STATE_IDLE       0  */
 /* #define PA_STATE_BUSY       1  */

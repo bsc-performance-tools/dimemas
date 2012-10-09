@@ -38,7 +38,6 @@
 #include "extern.h"
 #include "list.h"
 #include "modules_map.h"
-#include "mallocame.h"
 #include "paraver.h"
 #include "cpu.h"
 
@@ -66,7 +65,7 @@ new_cp_node(struct t_thread *thread, int status)
     return;
   }
 
-  cpn = (struct t_cp_node *) MALLOC_get_memory(sizeof(struct t_cp_node));
+  cpn = (struct t_cp_node*) malloc(sizeof(struct t_cp_node));
 
   cpn->prev = thread->last_cp_node;
   if (thread->last_cp_node!=(struct t_cp_node *)0)
@@ -187,7 +186,7 @@ void show_CP_graph ()
     }
     else
     {
-      mocp = (struct t_module_cp *) MALLOC_get_memory(sizeof(struct t_module_cp));
+      mocp = (struct t_module_cp*) malloc(sizeof(struct t_module_cp));
       mocp->module_type  = cpn->module_type;
       mocp->module_value = cpn->module_value;
 
@@ -279,7 +278,7 @@ void show_CP_graph ()
   TIMER_TO_FLOAT (current_time, f0);
 
   n = count_map(&visited_modules);
-  mocparr = (struct t_module_cp *)MALLOC_get_memory(n*sizeof(struct t_module_cp));
+  mocparr = (struct t_module_cp*) malloc(n*sizeof(struct t_module_cp));
 
   mocp = (struct t_module_cp *) head(&visited_modules);
   while(mocp != NULL)
@@ -304,7 +303,7 @@ void show_CP_graph ()
     TIMER_TO_FLOAT (mocparr[i].timer, f1);
     TIMER_TO_FLOAT (mocparr[i].timer_comm, f2);
     fprintf (salida_datos,
-             "[%ld:%ld]\t%5.2f\t%5.2f\n",
+             "[%lld:%lld]\t%5.2f\t%5.2f\n",
              mocparr[i].module_type,
              mocparr[i].module_value,
              f1*100/f0,

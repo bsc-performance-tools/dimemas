@@ -37,7 +37,6 @@
 
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "subr.h"
 
 
@@ -50,8 +49,7 @@
 /*
  * Create empty queue
  */
-void
-create_queue(struct t_queue *q)
+void create_queue(struct t_queue *q)
 {
    q->first = (struct t_item *) Q_NIL;
    q->last  = (struct t_item *) Q_NIL;
@@ -68,7 +66,7 @@ inFIFO_queue(struct t_queue *queue, char  *content)
    register struct t_item *tmp;
    register struct t_item *new_item;
 
-   new_item = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
+   new_item = (struct t_item *) malloc (sizeof (struct t_item));
    new_item->content = content;
 
    tmp = queue->last;           /* The ancient last */
@@ -99,7 +97,7 @@ void inLIFO_queue(struct t_queue *queue, char *content)
 
   tmp = queue->first;		/* The ancient first */
 
-  new_item = (struct t_item*) MALLOC_get_memory (sizeof (struct t_item));
+  new_item = (struct t_item*) malloc (sizeof (struct t_item));
   new_item->content = content;
   new_item->prev = NULL;
   new_item->next = tmp;     /* have next */
@@ -147,7 +145,7 @@ char* outFIFO_queue(struct t_queue *q)
 
   q->count--; /* One less in queue */
   res = e->content;
-  MALLOC_free_memory ((char*) e);
+  free (e);
 
   return (res);
 }
@@ -179,7 +177,7 @@ char* outLIFO_queue(struct t_queue *q)
 
   q->count--; /* One less in queue */
   res = e->content;
-  MALLOC_free_memory ((char*) e);
+  free (e);
   return (res);
 }
 
@@ -276,7 +274,7 @@ void insert_queue(struct t_queue *queue, char *content, t_priority prio)
   register struct t_item *new_element;
   register struct t_item *tmp1, *tmp2;
 
-  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
+  new_element = (struct t_item *) malloc (sizeof (struct t_item));
 
   new_element->order.priority = prio;
   new_element->content        = content;
@@ -340,7 +338,7 @@ insert_queue_from_back(struct t_queue *queue, char *content, t_priority prio)
   register struct t_item *new_element;
   register struct t_item *tmp1, *tmp2;
 
-  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
+  new_element = (struct t_item *) malloc (sizeof (struct t_item));
 
   new_element->order.priority = prio;
   new_element->content        = content;
@@ -405,7 +403,7 @@ void insert_first_queue(struct t_queue *queue, char *content, t_priority prio)
   register struct t_item *tmp1,
                 *tmp2;
 
-  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
+  new_element = (struct t_item *) malloc (sizeof (struct t_item));
 
   new_element->order.priority = prio;
   new_element->content        = content;
@@ -537,7 +535,7 @@ void extract_from_queue(struct t_queue *queue, char * content)
   }
 
   queue->count--;
-  MALLOC_free_memory ((char*) tmp1);
+  free (tmp1);
 }
 
 
@@ -562,7 +560,7 @@ void insert_event(struct t_queue *q, struct t_event *e)
   register struct t_item *new_element;
   register struct t_item *tmp1, *tmp2;
 
-  new_element = (struct t_item *) MALLOC_get_memory (sizeof (struct t_item));
+  new_element = (struct t_item *) malloc (sizeof (struct t_item));
 
   new_element->order.list_time = e->event_time;
   new_element->content         = (char*) e;
@@ -680,7 +678,7 @@ struct t_event* outFIFO_event(struct t_queue *q)
     }
 
     event = (struct t_event*) e->content;
-    MALLOC_free_memory ((char*) e);
+    free (e);
   }
   return (event);
 }

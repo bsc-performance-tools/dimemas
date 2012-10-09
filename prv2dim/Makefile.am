@@ -1,23 +1,17 @@
-common_filesdir=@common_filesdir@
-
 nodistdir=`pwd`
 
 INCLUDES = \
- -I$(top_srcdir)/include\
- -I$(common_filesdir)\
- -I$(common_filesdir)/pcfparser
+	-I$(top_srcdir)/common_utilities\
+	-I$(top_srcdir)/include
 
 bin_PROGRAMS           = prv2dim
 
 # 'prv2dim' configuration
 prv2dim_CFLAGS         = -DNEW_DIMEMAS_TRACE
 prv2dim_CXXFLAGS       = -DNEW_DIMEMAS_TRACE
-prv2dim_SOURCES        = $(DIST_PROGRAM_SRCS)
-nodist_prv2dim_SOURCES = $(COMMON_FILES_SRCS) 
-
 
 # Common list of sources
-DIST_PROGRAM_SRCS = \
+prv2dim_SOURCES = \
 	ParaverApplicationDescription.cpp\
 	ParaverApplicationDescription.hpp\
 	ParaverCommunicator.cpp\
@@ -39,10 +33,13 @@ DIST_PROGRAM_SRCS = \
 	PCFGeneration.hpp\
 	PCFdefines.h
 
+prv2dim_LDADD = \
+	$(top_srcdir)/common_utilities/libCommonUtilities.la
+
 # 'common-files' regular dependencies
-COMMON_FILES_SRCS = \
-	$(common_filesdir)/Dimemas_Generation.c\
-    $(common_filesdir)/EventEncoding.c\
-    $(common_filesdir)/Dimemas2Prv.c \
-	$(common_filesdir)/Error.hpp \
-	$(common_filesdir)/Error.cpp 
+# COMMON_FILES_SRCS = \
+#	$(common_filesdir)/Dimemas_Generation.c\
+#    $(common_filesdir)/EventEncoding.c\
+#    $(common_filesdir)/Dimemas2Prv.c \
+#	$(common_filesdir)/Error.hpp \
+#	$(common_filesdir)/Error.cpp 

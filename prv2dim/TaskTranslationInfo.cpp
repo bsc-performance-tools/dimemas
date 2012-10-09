@@ -71,7 +71,7 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
                                          char*   TemporaryFileName,
                                          FILE*   TemporaryFile)
 {
-  char* tmp_dir_default = "/tmp";
+  const char* tmp_dir_default = "/tmp";
   char* tmp_dir;
 
   this->TaskId = TaskId;
@@ -239,7 +239,7 @@ TaskTranslationInfo::~TaskTranslationInfo(void)
 {
   {
     unlink(TemporaryFileName);
-    cfree(TemporaryFileName);
+    free(TemporaryFileName);
   }
   return;
 }
@@ -740,7 +740,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 #ifdef DEBUG
       fprintf(
           stdout,
-          "[%03d:%02d %lld] Opening Block %03d (%s)\n",
+          "[%03d:%02d %lld] Opening Block %03lld (%s)\n",
           CurrentEvent->GetTaskId(),
           CurrentEvent->GetThreadId(),
           CurrentEvent->GetTimestamp(),
@@ -841,7 +841,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 #ifdef DEBUG
       fprintf(
         stdout,
-        "[%03d:%02d %lld] Closing Block %03d (%s)\n",
+        "[%03d:%02d %lld] Closing Block %03lld (%s)\n",
         CurrentEvent->GetTaskId(),
         CurrentEvent->GetThreadId(),
         CurrentEvent->GetTimestamp(),
@@ -854,7 +854,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 #ifdef DEBUG
       fprintf(
         stdout,
-        "[%03d:%02d %lld] Closing Block %03d (%s)\n",
+        "[%03d:%02d %lld] Closing Block %03lld (%s)\n",
         CurrentEvent->GetTaskId(),
         CurrentEvent->GetThreadId(),
         CurrentEvent->GetTimestamp(),
@@ -1362,7 +1362,7 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
       GlobalOpFields++;
 
 #ifdef DEBUG
-      fprintf(stdout, "SEND SIZE = %d\n",CurrentEvent->GetFirstValue());
+      fprintf(stdout, "SEND SIZE = %lld\n",CurrentEvent->GetFirstValue());
 #endif
       break;
     case MPI_GLOBAL_OP_RECVSIZE:
@@ -1370,7 +1370,7 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
       GlobalOpFields++;
 
 #ifdef DEBUG
-      fprintf(stdout, "RECEIVE SIZE = %d\n",CurrentEvent->GetFirstValue());
+      fprintf(stdout, "RECEIVE SIZE = %lld\n",CurrentEvent->GetFirstValue());
 #endif
       break;
     case MPI_GLOBAL_OP_ROOT:
@@ -1392,7 +1392,7 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
       GlobalOpFields++;
 
 #ifdef DEBUG
-      fprintf(stdout, "COMMUNICATOR = %d\n",CurrentEvent->GetFirstValue());
+      fprintf(stdout, "COMMUNICATOR = %lld\n",CurrentEvent->GetFirstValue());
 #endif
       break;
     default:

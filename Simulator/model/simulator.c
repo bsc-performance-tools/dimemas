@@ -33,7 +33,7 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 
 #include "simulator.h"
 #include "machine.h"
@@ -108,7 +108,7 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
 
   /* Flight times matrix */
   Simulator.wan.flight_times =
-    (double**) MALLOC_get_memory( number_of_machines*number_of_machines*sizeof(double));
+    (double**) malloc( number_of_machines*number_of_machines*sizeof(double));
 
   if (Simulator.wan.flight_times == NULL)
   {
@@ -116,7 +116,7 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
   }
 
   /* Initialize the machines container */
-  Machines = MALLOC_get_memory(number_of_machines*sizeof(struct t_machine));
+  Machines = (struct t_machine*) malloc(number_of_machines*sizeof(struct t_machine));
 
   /* And each container */
   for (i = 0; i < Simulator.number_machines; i++)
@@ -207,14 +207,16 @@ t_boolean SIMULATOR_set_machine_definition(int    machine_id,
                               network_bandwidth,
                               number_of_buses,
                               global_operation_model);
+
+  return TRUE;
 }
 
 t_boolean SIMULATOR_node_exists(int node_id)
 {
 #ifdef USE_EQUEUE
-  if ( query_prio_Equeue(&Node_queue, (t_priority) node_id) == NULL)
+  if ( (struct t_node*) query_prio_Equeue(&Node_queue, (t_priority) node_id) == N_NIL)
 #else
-  if ( query_prio_queue(&Node_queue, (t_priority) node_id ) == NULL)
+  if ( (struct t_node*) query_prio_queue(&Node_queue, (t_priority) node_id ) == N_NIL)
 #endif
   {
     return FALSE;
@@ -309,7 +311,7 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
   d_con->bandwidth               = bandwidth;
   d_con->number_of_tags          = tags_size;
 
-  d_con->tags                    = malloc(tags_size*sizeof(int));
+  d_con->tags                    = (int*) malloc(tags_size*sizeof(int));
   memcpy(d_con->tags, tags, tags_size*sizeof(int));
 
   d_con->first_message_size      = first_message_size;
@@ -319,7 +321,7 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
   d_con->second_size_condition   = second_size_cond;
 
   d_con->number_of_communicators = comms_size;
-  d_con->communicators           = malloc(comms_size*sizeof(int));
+  d_con->communicators           = (int*) malloc(comms_size*sizeof(int));
   memcpy(d_con->communicators, comm_ids, comms_size*sizeof(int));
 
   d_con->startup                 = startup;
@@ -399,7 +401,7 @@ void Initialize_Empty_Dedicated_Connection(void)
     create_queue (&(d_con->th_for_out));
 
     /* Input link */
-    link = (struct t_link *) MALLOC_get_memory (sizeof (struct t_link));
+    link = (struct t_link *) malloc (sizeof (struct t_link));
     link->linkid          = 0;
     link->info.connection = d_con;
     link->kind            = CONNECTION_LINK;
@@ -409,7 +411,7 @@ void Initialize_Empty_Dedicated_Connection(void)
     insert_queue (&(d_con->free_in_links), (char *)link, (t_priority)(link->linkid));
 
     /* Output link */
-    link = (struct t_link *) MALLOC_get_memory (sizeof (struct t_link));
+    link = (struct t_link *) malloc (sizeof (struct t_link));
     link->linkid          = 1;
     link->info.connection = d_con;
     link->kind            = CONNECTION_LINK;

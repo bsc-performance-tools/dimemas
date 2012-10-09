@@ -37,6 +37,8 @@
 #include "define.h"
 #include "types.h"
 
+#include <dimemas_io.h>
+
 /* Include propio */
 #include "SCH_svr4.h"
 
@@ -44,7 +46,6 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "paraver.h"
 #include "schedule.h"
 #include "subr.h"
@@ -246,7 +247,7 @@ svr4_get_execution_time(struct t_thread *thread)
   if (action->desc.compute.cpu_time == 0)
   {
     thread->action = action->next;
-    MALLOC_free_memory ((char*) action);
+    READ_free_action(action);
   }
   return (ex_time);
 }
@@ -264,7 +265,7 @@ svr4_init_scheduler_parameters(struct t_thread *thread)
   struct t_node *node = get_node_of_thread (thread);
   struct t_cpu *cpu;
 
-  sch_par = (tsproc_t *) MALLOC_get_memory (sizeof(tsproc_t));
+  sch_par = (tsproc_t *) malloc (sizeof(tsproc_t));
   sch_par->ts_umdpri = BEST_PRIO;
   sch_par->ts_timeleft = 0;
   sch_par->ts_dispwait = 0;
@@ -426,5 +427,5 @@ svr4_free_parameters (struct t_thread *thread)
   tsproc_t *sch_par;
 
   sch_par = (tsproc_t *)thread->sch_parameters;
-  MALLOC_free_memory ((char*)sch_par);
+  free (sch_par);
 }

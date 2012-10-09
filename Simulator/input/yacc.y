@@ -40,7 +40,6 @@
 #include "extern.h"
 #include "list.h"
 #include "modules_map.h"
-#include "mallocame.h"
 #include "subr.h"
 
 #include "ts.h"
@@ -121,7 +120,7 @@ declaracion: IDENTIFICADOR STRING OPEN_K componentes CLOSE_K SEPARADOR
   }
   else
   {
-    new_entry = (struct t_entry *) MALLOC_get_memory(sizeof(struct t_entry));
+    new_entry = (struct t_entry *) malloc(sizeof(struct t_entry));
 
     new_entry->entryid = $1;
     new_entry->name    = (char *) $2;
@@ -143,7 +142,7 @@ componentes: tipo componentes
 {
   struct t_queue* types;
 
-  types = (struct t_queue *) MALLOC_get_memory(sizeof(struct t_queue));
+  types = (struct t_queue *) malloc(sizeof(struct t_queue));
   create_queue(types);
   inFIFO_queue(types, (char *) $1);
   $$ = (YYSTYPE) types;
@@ -153,7 +152,7 @@ tipo: NUMTYPE string_a PUNTO_I_COMA
 {
   struct t_element* elem;
 
-  elem = (struct t_element *) MALLOC_get_memory(sizeof(struct t_element));
+  elem = (struct t_element *) malloc(sizeof(struct t_element));
 
   elem->i3   = (struct t_array *) $2;
   elem->type = $1;
@@ -171,7 +170,7 @@ string_a: STRING ARRAY ARRAY
 {
   struct t_array* a;
 
-  a = (struct t_array *) MALLOC_get_memory(sizeof(struct t_array));
+  a = (struct t_array *) malloc(sizeof(struct t_array));
 
   a->i1        = (char *) $1;
   a->dimension = 2;
@@ -183,7 +182,7 @@ string_a: STRING ARRAY ARRAY
 {
   struct t_array* a;
 
-  a = (struct t_array *) MALLOC_get_memory(sizeof(struct t_array));
+  a = (struct t_array *) malloc(sizeof(struct t_array));
 
   a->i1        = (char *) $1;
   a->dimension = 1;
@@ -195,7 +194,7 @@ string_a: STRING ARRAY ARRAY
 {
   struct t_array* a;
 
-  a = (struct t_array *) MALLOC_get_memory(sizeof(struct t_array));
+  a = (struct t_array *) malloc(sizeof(struct t_array));
 
   a->i1        = (char *) $1;
   a->dimension = 0;
@@ -221,7 +220,7 @@ registro: STRING OPEN_K campos CLOSE_K SEPARADOR
   }
   else
   {
-    die("Unknow register name: %s\n", (char *) $1);
+    die("Unknown register name: %s\n", (char *) $1);
     near_line();
     definition_error = TRUE;
   }
@@ -244,7 +243,7 @@ campos: campo COMA campos
 {
   struct t_queue *campos;
 
-  campos = (struct t_queue *) MALLOC_get_memory(sizeof(struct t_queue));
+  campos = (struct t_queue *) malloc(sizeof(struct t_queue));
   create_queue(campos);
   inFIFO_queue(campos, (char *) $1);
   $$ = (YYSTYPE) campos;
@@ -254,7 +253,7 @@ campo:DECIMAL
 {
   struct t_field *f;
 
-  f = (struct t_field *) MALLOC_get_memory(sizeof(struct t_field));
+  f = (struct t_field *) malloc(sizeof(struct t_field));
   f->tipo = 0;
   f->value.dec = $$;
   $$ = (YYSTYPE) f;
@@ -264,10 +263,10 @@ campo:DECIMAL
 {
   struct t_field *f;
 
-  f = (struct t_field *) MALLOC_get_memory(sizeof(struct t_field));
+  f = (struct t_field *) malloc(sizeof(struct t_field));
   f->tipo = 1;
   f->value.real = * (double*) $$;
-  MALLOC_free_memory((char *) $$);
+  free($$);
   $$ = (YYSTYPE) f;
 }
 
@@ -275,7 +274,7 @@ campo:DECIMAL
 {
   struct t_field *f;
 
-  f = (struct t_field *) MALLOC_get_memory(sizeof(struct t_field));
+  f = (struct t_field *) malloc(sizeof(struct t_field));
   f->tipo = 2;
   f->value.string = (char *) $$;
   $$ = (YYSTYPE) f;
@@ -285,7 +284,7 @@ campo:DECIMAL
 {
   struct t_field *f;
 
-  f = (struct t_field *) MALLOC_get_memory(sizeof(struct t_field));
+  f = (struct t_field *) malloc(sizeof(struct t_field));
 
   f->tipo           = 3;
   f->value.arr.q    = (struct t_queue *) $8;
@@ -299,7 +298,7 @@ campo:DECIMAL
 {
   struct t_field* f;
 
-  f = (struct t_field *) MALLOC_get_memory(sizeof(struct t_field));
+  f = (struct t_field *) malloc(sizeof(struct t_field));
 
   f->tipo           = 3;
   f->value.arr.q    = (struct t_queue *) $5;

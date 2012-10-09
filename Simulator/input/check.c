@@ -33,6 +33,7 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <define.h>
 #include <types.h>
@@ -154,19 +155,19 @@ int free_memory (void)
          el  = (struct t_element *) outFIFO_queue (entry->types) )
     {
       ar = el->i3;
-      MALLOC_free_memory ( (char *) ar);
-      MALLOC_free_memory ( (char *) el);
+      free (ar);
+      free (el);
     }
-    MALLOC_free_memory ( (char *) entry->types);
-    MALLOC_free_memory ( (char *) entry);
+    free (entry->types);
+    free (entry);
   }
 
   str = first_str;
-  while (str != (struct Str *) 0)
+  while (str != (struct Str *) NULL)
   {
     n = str->next_str;
-    MALLOC_free_memory (str->str);
-    MALLOC_free_memory ( (char *) str);
+    free (str->str);
+    free (str);
     str = n;
   }
 

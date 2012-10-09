@@ -48,7 +48,6 @@
 #include "listE.h"
 #endif
 
-#include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
 #include "ports.h"
@@ -76,6 +75,9 @@
 #include <sys/types.h>
 #include <float.h>
 
+#include <sys/time.h>
+#include <sys/resource.h>
+
 // Compute time differences
 double ddiff(struct timespec start, struct timespec end)
 {
@@ -88,6 +90,7 @@ void print_backtrace (int a) {
   // prevent infinite recursion if print_backtrace() causes another segfault
   signal(SIGSEGV, SIG_DFL);
   signal(SIGABRT, SIG_DFL);
+
   void *array[100];
   int size;
   char **strings;
@@ -96,7 +99,7 @@ void print_backtrace (int a) {
   size = backtrace (array, 100);
   strings = backtrace_symbols (array, size);
 
-  printf ("%d\n", a);
+  printf("Signal type = %d\n", a);
   printf("Stack frames (%d):\n", size);
 
   for (i = 0; i < size; i++)
@@ -106,8 +109,7 @@ void print_backtrace (int a) {
 };
 
 /// Segmentation fault signal handler.
-void
-segfaultHandler(int sigtype)
+void segfaultHandler(int sigtype)
 {
     printf("Segmentation fault \n");
     print_backtrace(sigtype);
@@ -533,8 +535,7 @@ static int read_size(char *c)
   return(mida);
 }
 
-int
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 
   int             i;
@@ -552,7 +553,6 @@ main (int argc, char *argv[])
   char *            venusconn = "";
 
   // signal(SIGSEGV, segfaultHandler);
-
 
   ASS_TIMER (current_time, 0);
   ASS_TIMER (final_statistical_time, 0);
@@ -629,7 +629,7 @@ main (int argc, char *argv[])
 
   /* Initial routines */
 
-  MALLOC_Init();
+  // MALLOC_Init();
 
   /* Modules Initial routines */
   SIMULATOR_Init();
@@ -759,8 +759,9 @@ main (int argc, char *argv[])
     printf (": END SIMULATION\n\n");
   }
 
+
+
   /* Modules final routines */
-  TASK_end ();
   FS_End ();
   PORT_end ();
   EVENT_end ();
@@ -772,6 +773,7 @@ main (int argc, char *argv[])
 #ifdef VENUS_ENABLED
   VC_End();
 #endif
+
 
   /* Es calcula el temps final de la simulacio */
   calculate_execution_end_time();
@@ -790,6 +792,22 @@ main (int argc, char *argv[])
   }
 
   PARAVER_end();
+  TASK_end ();
+
+  struct rusage usage;
+
+  if (getrusage(RUSAGE_SELF, &usage) == -1)
+  {
+    printf("Unable to get memory usage statistics\n");
+  }
+  else
+  {
+    printf("Maximum memory used: %ld\n", usage.ru_maxrss);
+  }
+
+  // printf("Possible living actions: %ld\n", READ_get_living_actions());
+
+  // exit(0);
 
   strcpy (message_buffer, "");
   for (i = 0; i < argc; i++)
@@ -801,7 +819,7 @@ main (int argc, char *argv[])
   /* Free reserved pointers
   free_all_reserved_pointers(); */
 
-  MALLOC_End();
+  // MALLOC_End();
 
   IO_fclose (salida_datos);
 

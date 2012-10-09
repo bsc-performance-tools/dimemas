@@ -32,8 +32,9 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <stdlib.h>
+
 #include "thread_states.h"
-#include "mallocame.h"
 
 t_boolean
 init_thread_state (struct t_thread* thread, int state)
@@ -50,7 +51,7 @@ init_thread_state (struct t_thread* thread, int state)
   }
   else
   {
-    new_state = (t_thread_state) MALLOC_get_memory(sizeof(struct thread_state));
+    new_state = (t_thread_state) malloc(sizeof(struct thread_state));
 
     new_state->state      = state;
     new_state->init_time  = current_time;
@@ -79,7 +80,7 @@ end_thread_state (struct t_thread* thread, int state)
     /* JGG (02/05/2005) */
     SUB_TIMER (current_time, thread->current_state->init_time, last_state_time);
 
-    MALLOC_free_memory( (char*) thread->current_state);
+    free( thread->current_state);
     thread->current_state = STATE_NIL;
   }
   return result;

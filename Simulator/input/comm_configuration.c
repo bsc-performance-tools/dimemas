@@ -37,8 +37,9 @@
 
 #include <types.h>
 
-
-#include "comm_configuration.h"
+#include <list.h>
+#include <comm_configuration.h>
+#include "dimemas_io.h"
 #include "communic.h"           // To configure the communications
 #include "task.h"               // To configure the preemptions
 #include "sched_vars.h"         // To access to COMMUNIC table
@@ -362,7 +363,7 @@ void COMM_CONFIGURATION_Load_External_Network_Parameters(void)
     return;
   }
 
-  if ( (fd = IO_fopen("traffic_parameters.cfg","r")) == NULL)
+  if ( (fd = (FILE*) IO_fopen("traffic_parameters.cfg","r")) == NULL)
   {
     die ("Unable to open 'traffic_parameters.cfg' file: %s\n", IO_get_error());
   }
@@ -641,7 +642,7 @@ t_boolean load_machine_flight_times(int   machine_id,
   flight_value_str = strtok(flight_times_str, " ");
   while(flight_value_str != NULL)
   {
-    flight_value = strtod(flight_value_str);
+    flight_value = strtod(flight_value_str, NULL);
 
     if (current_dest_machine == Simulator.number_machines)
     {
@@ -692,8 +693,8 @@ t_boolean load_global_op_parameters (t_boolean external_network,
   struct t_queue *cua;
 
 
-  glop = (struct t_global_op_definition *) query_prio_queue(&Global_op,
-                                                            (t_priority) global_op_id);
+  glop = (struct t_global_op_definition*) query_prio_queue(&Global_op,
+                                                           (t_priority) global_op_id);
   if (glop == NULL)
   {
     sprintf(comm_conf_error_message,
@@ -762,8 +763,8 @@ t_boolean load_global_op_parameters (t_boolean external_network,
   }
 
   /* S'obte l'estructura amb la informació d'aquesta operació global */
-  glop_info = (struct t_global_op_information *) query_prio_queue(cua,
-                                                                  (t_priority)global_op_id);
+  glop_info = (struct t_global_op_information*) query_prio_queue(cua,
+                                                                 (t_priority) global_op_id);
 
   if (glop_info == NULL)
   {
@@ -780,6 +781,7 @@ t_boolean load_global_op_parameters (t_boolean external_network,
   glop_info->FOUT_model = FOUT_model_value;
   glop_info->FOUT_size  = FOUT_size_value;
 
+  return TRUE;
 }
 
 int get_global_op_model (char *model)

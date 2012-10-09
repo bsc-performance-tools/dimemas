@@ -104,8 +104,8 @@ dimemas_timer  stop_paraver;
 t_boolean      paraver_initial_timer = FALSE;
 t_boolean      paraver_final_timer   = FALSE;
 
-string    paraver_trace_filename;
-string    pcf_insert_filename;         // PCF portion to be added to output PCF
+static string    paraver_trace_filename;
+static string    pcf_insert_filename;         // PCF portion to be added to output PCF
 
 int       PARAVER_cpu;
 int       paraver_line_number    = 1;
@@ -341,7 +341,7 @@ void PARAVER_end(void)
   TraceMerger.GenerateFinalTrace(ParaverTraceFile);
 
   IO_fclose(ParaverTraceFile);
-
+  
   /* Generate the output trace PCF */
   /* BAD TRICK! */
   if (pcf_insert_filename.compare("") == 0)
@@ -352,6 +352,9 @@ void PARAVER_end(void)
   {
     pcf_insert_c_str = (char*) pcf_insert_filename.c_str();
   }
+
+  printf("paraver_trace_filename.c_str() = %s\n", paraver_trace_filename.c_str());
+  printf("pcf_insert_c_str = %s\n", pcf_insert_c_str);
 
   MakeParaverPCF(paraver_trace_filename.c_str(), pcf_insert_c_str);
 }

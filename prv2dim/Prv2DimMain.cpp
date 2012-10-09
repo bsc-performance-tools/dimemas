@@ -180,7 +180,10 @@ int main(int argc, char *argv[])
   }
 
   if (!Translator->InitTranslator())
+  {
     cerr << Translator->GetLastError() << endl;
+    exit(EXIT_FAILURE);
+  }
 
   if (!Translator->SplitCommunications())
   {

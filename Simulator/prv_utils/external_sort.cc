@@ -59,19 +59,35 @@ using std::stable_sort;
 
 #include "external_sort.h"
 
-const string ExternalSort::TmpFilesPrefix         = "prv_states_comms_tmp";
-const string ExternalSort::EventsFileName         = "prv_events_tmp";
-const string ExternalSort::StatesAndCommsFileName = "prv_states_comms_tmp";
+string ExternalSort::TmpDir                 = "/tmp";
+string ExternalSort::TmpFilesPrefix         = "prv_states_comms_tmp";
+string ExternalSort::EventsFileName         = "";
+string ExternalSort::StatesAndCommsFileName = "";
 
 void ExternalSort::Init()
 {
+  char* TmpDirChar;
+
+  if ( (TmpDirChar = getenv("TMPDIR")) != NULL)
+  {
+    ExternalSort::TmpDir = string(TmpDirChar);
+  }
+
+  ExternalSort::EventsFileName = ExternalSort::TmpDir + "/prv_events_tmp";
+
   if ( (EventsFile = IO_fopen(ExternalSort::EventsFileName.c_str(), "w")) == NULL)
   {
     die("Unable to open a temporal Paraver events file: %s\n", IO_get_error());
   }
 
+  ExternalSort::StatesAndCommsFileName = ExternalSort::TmpDir + "/prv_states_comms_tmp";
+
   /* This open is to guarantee the availability of file pointers */
   NumFiles = 0;
+
+  ExternalSort::TmpFilesPrefix = ExternalSort::TmpDir+"/prv_states_comms_tmp";
+
+
 
   TemporalFileNames.str("");
   TemporalFileNames << ExternalSort::TmpFilesPrefix << "." << NumFiles;
@@ -90,6 +106,11 @@ void ExternalSort::Init()
   Records       = vector<SimpleParaverRecord> (MAX_IN_FLIGHT_RECORDS);
   TotalEvents   = 0;
 
+}
+
+void ExternalSort::End()
+{
+  Records.clear();
 }
 
 void ExternalSort::NewRecord(int        TYPE,

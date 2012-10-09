@@ -49,15 +49,13 @@
 #ifdef USE_EQUEUE
 #include "listE.h"
 #endif
-#include "mallocame.h"
 #include "paraver.h"
 #include "ports.h"
 #include "schedule.h"
 #include "subr.h"
 
 
-static struct t_port *
-locate_port (int portid)
+static struct t_port *locate_port (int portid)
 {
   struct t_port  *port;
 
@@ -74,8 +72,7 @@ locate_port (int portid)
   return (PO_NIL);
 }
 
-static void
-port_to_next_module (struct t_thread *thread)
+static void port_to_next_module (struct t_thread *thread)
 {
   int             value;
   struct t_action *action;
@@ -111,8 +108,7 @@ port_to_next_module (struct t_thread *thread)
   }
 }
 
-void
-PORT_general (int value, struct t_thread *thread)
+void PORT_general (int value, struct t_thread *thread)
 {
   switch (value)
   {
@@ -168,8 +164,7 @@ PORT_general (int value, struct t_thread *thread)
   }
 }
 
-void
-PORT_init()
+void PORT_init()
 {
   struct t_node  *node;
 
@@ -195,11 +190,10 @@ PORT_init()
   }
 }
 
-void
-PORT_end()
+void PORT_end()
 {
-  struct t_port  *port;
-  struct t_node  *node;
+  struct t_port   *port;
+  struct t_node   *node;
   struct t_thread *thread;
 
   if (debug & D_PORT)
@@ -264,10 +258,17 @@ PORT_end()
       }
     }
   }
+
+  /* JGG (2012/10/02): free ports allocated memory */
+  for (port  = (struct t_port *) head_queue (&Port_queue);
+       port != PO_NIL;
+       port  = (struct t_port *) next_queue (&Port_queue) )
+  {
+    free(port);
+  }
 }
 
-t_boolean
-PORT_create (int portid, struct t_thread *thread)
+t_boolean PORT_create (int portid, struct t_thread *thread)
 {
   struct t_port  *port;
 
@@ -302,7 +303,7 @@ PORT_create (int portid, struct t_thread *thread)
     return (FALSE);
   }
 
-  port = (struct t_port *) MALLOC_get_memory (sizeof (struct t_port) );
+  port = (struct t_port *) malloc (sizeof (struct t_port) );
   port->portid = portid;
   port->thread = thread;
   create_queue (& (port->send) );
@@ -314,8 +315,7 @@ PORT_create (int portid, struct t_thread *thread)
   return (TRUE);
 }
 
-t_boolean
-PORT_delete (int portid)
+t_boolean PORT_delete (int portid)
 {
   struct t_port  *port;
 
@@ -377,12 +377,11 @@ PORT_delete (int portid)
   }
 
   extract_from_queue (&Port_queue, (char *) port);
-  MALLOC_free_memory ( (char*) port);
+  free (port);
   return (TRUE);
 }
 
-t_boolean
-PORT_send (int module, int portid, struct t_thread *thread, int siz)
+t_boolean PORT_send (int module, int portid, struct t_thread *thread, int siz)
 {
   struct t_port   *port;
   struct t_thread *receiver;
@@ -429,7 +428,10 @@ PORT_send (int module, int portid, struct t_thread *thread, int siz)
               IDENTIFIERS (thread) );
     }
 
-    action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action) );
+    // action = (struct t_action *) malloc (sizeof (struct t_action) );
+
+    READ_create_action(&action);
+
     action->next = thread->action;
     action->action = PORT_SEND;
     action->desc.port.portid = portid;
@@ -532,7 +534,10 @@ PORT_receive (int module, int portid, struct t_thread *thread, int siz)
               IDENTIFIERS (thread) );
     }
 
-    action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action) );
+    // action = (struct t_action *) malloc (sizeof (struct t_action) );
+
+    READ_create_action(&action);
+
     action->next = thread->action;
     action->action = PORT_RECV;
     action->desc.port.portid = portid;
@@ -629,7 +634,7 @@ really_port_send (struct t_port *port, struct t_thread *thread_s,
     /*
      * Must wait for links
      */
-    both = (struct t_both *) MALLOC_get_memory (sizeof (struct t_both) );
+    both = (struct t_both *) malloc (sizeof (struct t_both) );
     both->port = port;
     both->thread_s = thread_s;
     both->thread_r = thread_r;

@@ -46,7 +46,6 @@
 #ifdef USE_EQUEUE
 #include "listE.h"
 #endif
-#include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
 #include "random.h"
@@ -162,7 +161,10 @@ MEMORY_copy_segment (int              module,
       PRINT_TIMER (current_time);
       printf (": MEMORY startup for P%d T%d t%d\n", IDENTIFIERS (thread) );
     }
-    action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action) );
+    // action = (struct t_action *) malloc (sizeof (struct t_action) );
+
+    READ_create_action(&action);
+
     action->next = thread->action;
     action->action = MEMORY_COPY;
     action->desc.memory.size = si;
@@ -229,7 +231,7 @@ really_copy_segment (struct t_thread *thread, struct t_node *node_s,
               IDENTIFIERS (thread),
               node_s->nodeid, node_d->nodeid);
     }
-    copyseg = (struct t_copyseg *) MALLOC_get_memory (sizeof (struct t_copyseg) );
+    copyseg = (struct t_copyseg *) malloc (sizeof (struct t_copyseg) );
 
     copyseg->thread = thread;
     copyseg->node_s = node_s;
@@ -328,7 +330,7 @@ really_RMA (register struct t_thread *thread)
 
         /* Annotate this thread is using the bus */
         machine->network.curr_on_network++;
-        bus_utilization = (struct t_bus_utilization *) MALLOC_get_memory (sizeof (struct t_bus_utilization) );
+        bus_utilization = (struct t_bus_utilization *) malloc (sizeof (struct t_bus_utilization) );
         bus_utilization->sender = thread;
         ASS_ALL_TIMER (bus_utilization->initial_time, current_time);
         inFIFO_queue (&machine->network.threads_on_network, (char *) bus_utilization);
@@ -375,7 +377,7 @@ os_fence (register struct t_thread *thread, register struct t_mpi_os *mpi_os,
                    PARAVER_OS, PARAVER_OS_FENCE_END);
     action = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -397,7 +399,7 @@ os_fence (register struct t_thread *thread, register struct t_mpi_os *mpi_os,
       others->last_paraver = current_time;
       action = others->action;
       others->action = action->next;
-      MALLOC_free_memory ( (char*) action);
+      READ_free_action(action);
       if (more_actions (others) )
       {
         thread->loose_cpu = FALSE;
@@ -500,7 +502,7 @@ os_getput (register struct t_thread *thread, register struct t_mpi_os *mpi_os,
 
   action = thread->action;
   thread->action = action->next;
-  MALLOC_free_memory ( (char*) action);
+  READ_free_action(action);
   if (more_actions (thread) )
   {
     thread->loose_cpu = FALSE;
@@ -558,7 +560,7 @@ os_lock (struct t_thread *thread, struct t_mpi_os *mpi_os,  struct t_window *win
 
     action = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -613,7 +615,7 @@ os_unlock (struct t_thread *thread, struct t_mpi_os *mpi_os,  struct t_window *w
 
     action = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -874,7 +876,7 @@ os_post (struct t_thread *thread, struct t_mpi_os *mpi_os, struct t_window *win)
 
     action = thread->action;
     thread->action = action->next;
-    MALLOC_free_memory ( (char*) action);
+    READ_free_action(action);
     if (more_actions (thread) )
     {
       thread->loose_cpu = FALSE;
@@ -904,7 +906,7 @@ os_post (struct t_thread *thread, struct t_mpi_os *mpi_os, struct t_window *win)
 
       action = thread->action;
       thread->action = action->next;
-      MALLOC_free_memory ( (char*) action);
+      READ_free_action(action);
       if (more_actions (thread) )
       {
         thread->loose_cpu = FALSE;
@@ -961,7 +963,7 @@ os_post (struct t_thread *thread, struct t_mpi_os *mpi_os, struct t_window *win)
 
       action = thread->action;
       thread->action = action->next;
-      MALLOC_free_memory ( (char*) action);
+      READ_free_action(action);
       if (more_actions (thread) )
       {
         thread->loose_cpu = FALSE;
@@ -1006,13 +1008,13 @@ os_post (struct t_thread *thread, struct t_mpi_os *mpi_os, struct t_window *win)
              copy_thread != TH_NIL;
              copy_thread = (struct t_thread *) outFIFO_queue (&win->complete_done) )
         {
-          MALLOC_free_memory ( (char*) copy_thread);
+          free ( (char*) copy_thread);
         }
         win->mode = WINDOW_MODE_NONE;
       }
       action = thread->action;
       thread->action = action->next;
-      MALLOC_free_memory ( (char*) action);
+      READ_free_action(action);
       if (more_actions (thread) )
       {
         thread->loose_cpu = FALSE;

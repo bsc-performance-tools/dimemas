@@ -343,8 +343,8 @@ int print_event (struct t_event *event) {
         case MEMORY_COPY:
           printf ("MEMORY_COPY ");
           break;
-        case EVEN:
-          printf ("EVEN ");
+        case EVENT:
+          printf ("EVENT ");
           break;
         case WORK:
           printf ("WORK ");

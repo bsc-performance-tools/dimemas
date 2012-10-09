@@ -46,7 +46,6 @@
 #ifdef USE_EQUEUE
 #include "listE.h"
 #endif
-#include "mallocame.h"
 #include "memory.h"
 #include "paraver.h"
 #include "ports.h"
@@ -783,7 +782,7 @@ next_op:
                               current_time);
 
             thread->action = action->next;
-            MALLOC_free_memory ((char*) action);
+            READ_free_action(action);
 
             if (more_actions (thread))
             {
@@ -852,7 +851,7 @@ next_op:
             SCHEDULER_thread_to_ready (thread);
             break;
           }
-          case EVEN:
+          case EVENT:
           {
             if (debug&D_SCH)
             {
@@ -944,7 +943,7 @@ next_op:
                            action->desc.even.value);
 
             thread->action = action->next;
-            MALLOC_free_memory ((char*) action);
+            READ_free_action(action);
 
             if (more_actions (thread))
             {
@@ -981,12 +980,12 @@ next_op:
               case SEM_WAIT:
                 thread->action = action->next;
                 SEMAPHORE_wait (action->desc.sem_op.sem_id, thread);
-                MALLOC_free_memory ((char*) action);
+                READ_free_action(action);
                 break;
               case SEM_SIGNAL:
                 SEMAPHORE_signal (action->desc.sem_op.sem_id, thread);
                 thread->action = action->next;
-                MALLOC_free_memory ((char*) action);
+                READ_free_action(action);
                 if (more_actions (thread))
                 {
                    thread->loose_cpu = FALSE;
@@ -998,7 +997,7 @@ next_op:
                         action->desc.sem_op.n,
                         thread);
                 thread->action = action->next;
-                MALLOC_free_memory ((char*) action);
+                READ_free_action(action);
                 if (more_actions (thread))
                 {
                    thread->loose_cpu = FALSE;
@@ -1021,7 +1020,7 @@ next_op:
                        thread,
                        action->desc.port.size);
             thread->action = action->next;
-            MALLOC_free_memory ((char*) action);
+            READ_free_action(action);
             break;
           }
           case PORT_RECV:
@@ -1034,7 +1033,7 @@ next_op:
                            action->desc.port.portid,
                            thread, action->desc.port.size);
             thread->action = action->next;
-            MALLOC_free_memory ((char*) action);
+            READ_free_action(action);
             break;
           }
           case MEMORY_COPY:
@@ -1050,7 +1049,7 @@ next_op:
                                  action->desc.memory.size);
 
             thread->action = action->next;
-            MALLOC_free_memory ((char*) action);
+            READ_free_action(action);
             break;
           }
           case GLOBAL_OP:
@@ -1201,7 +1200,8 @@ SCHEDULER_thread_to_ready_return(int              module,
   switch (module)
   {
     case M_FS:
-      action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+      // action = (struct t_action *) malloc (sizeof (struct t_action));
+      READ_create_action(&action);
 
       action->next                             = cur_action;
       action->action                           = FS;
@@ -1223,7 +1223,8 @@ SCHEDULER_thread_to_ready_return(int              module,
       panic ("Invalid module identifier %d\n", module);
   }
 
-  action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+  // action = (struct t_action *) malloc (sizeof (struct t_action));
+  READ_create_action(&action);
 
   action->next                  = cur_action;
   action->action                = WORK;
@@ -1296,7 +1297,9 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
         }
         else
         {
-          action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+          // action = (struct t_action *) malloc (sizeof (struct t_action));
+          READ_create_action(&action);
+
           action->next = thread_current->action;
           action->action = WORK;
           action->desc.compute.cpu_time = ti;
@@ -1313,7 +1316,7 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
 //                               current_time,
 //                               USER_EVENT_TYPE_TASKID_START_TASK, 0);
 //         /* and that it will start again when it gets cpu (PREEMPTED) - TASK_ID*/
-//           action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+//           action = (struct t_action *) malloc (sizeof (struct t_action));
 //           action->next = thread_current->action;
 //           action->action = EVEN;
 //           action->desc.even.type  = USER_EVENT_TYPE_TASKID_START_TASK;
@@ -1329,7 +1332,7 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
 //                               current_time,
 //                               USER_EVENT_TYPE_TASKTYPE_START_TASK, 0);
 //         /* and that it will start again when it gets cpu (PREEMPTED) - TASK_TYPE*/
-//           action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+//           action = (struct t_action *) malloc (sizeof (struct t_action));
 //           action->next = thread_current->action;
 //           action->action = EVEN;
 //           action->desc.even.type  = USER_EVENT_TYPE_TASKTYPE_START_TASK;
@@ -1376,7 +1379,9 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
   {
     EVENT_extract_timer (M_SCH, thread_current, &when);
 
-    action         = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+    // action         = (struct t_action *) malloc (sizeof (struct t_action));
+    READ_create_action(&action);
+
     action->next   = thread_current->action;
     action->action = WORK;
 
@@ -1412,9 +1417,11 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
                         current_time,
                         USER_EVENT_TYPE_TASKID_START_TASK, 0);
    /* and that it will start again when it gets cpu (PREEMPTED) - TASK_ID*/
-      action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+      // action = (struct t_action *) malloc (sizeof (struct t_action));
+      READ_create_action(&action);
+
       action->next = thread_current->action;
-      action->action = EVEN;
+      action->action = EVENT;
       action->desc.even.type  = USER_EVENT_TYPE_TASKID_START_TASK;
       action->desc.even.value = thread_current->sstask_id;
       thread_current->action  = action;
@@ -1427,9 +1434,12 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
                         current_time,
                         USER_EVENT_TYPE_TASKTYPE_START_TASK, 0);
    /* and that it will start again when it gets cpu (PREEMPTED) - TASK_TYPE*/
-      action = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+      // action = (struct t_action *) malloc (sizeof (struct t_action));
+
+      READ_create_action(&action);
+
       action->next = thread_current->action;
-      action->action = EVEN;
+      action->action = EVENT;
       action->desc.even.type  = USER_EVENT_TYPE_TASKTYPE_START_TASK;
       action->desc.even.value = thread_current->sstask_type;
       thread_current->action  = action;
@@ -1438,7 +1448,10 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
 // Add one empty burst so It could work fine
    if ((thread_current->sstask_id > 0) ||
        (thread_current->sstask_type > 0)) {
-      action         = (struct t_action *) MALLOC_get_memory (sizeof (struct t_action));
+      // action         = (struct t_action *) malloc (sizeof (struct t_action));
+
+      READ_create_action(&action);
+
       action->next   = thread_current->action;
       action->action = WORK;
 

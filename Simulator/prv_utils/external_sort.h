@@ -52,9 +52,10 @@ using std::ostringstream;
 class ExternalSort
 {
   private:
-    static const string         TmpFilesPrefix;
-    static const string         EventsFileName;
-    static const string         StatesAndCommsFileName;
+    static string         TmpDir;
+    static string         TmpFilesPrefix;
+    static string         EventsFileName;
+    static string         StatesAndCommsFileName;
 
     FILE                       *EventsFile;
     FILE                       *StatesAndCommsFile;
@@ -75,6 +76,8 @@ class ExternalSort
     ExternalSort() {};
 
     void Init();
+    
+    void End();
 
     void NewRecord(int        TYPE,
                    int        CPU,

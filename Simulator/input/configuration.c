@@ -36,7 +36,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "list.h"
+#include <list.h>
 
 #include "configuration.h"
 #include "check.h"
@@ -277,7 +277,7 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
            IO_get_error());
     }
 
-    policy_str = (char*) malloc (strlen(current_line));
+    policy_str = (char*) malloc(strlen(current_line));
 
     matches = sscanf (current_line, "Policy: %s\n", policy_str);
     if (matches != 1)
@@ -763,8 +763,10 @@ void new_env_info (struct t_queue *q, struct t_entry* en)
                                    number_of_buses,
                                    global_operation_model);
 
+
   free(machine_name);
   free(instrumented_architecture);
+
   // Initialize_empty_node (&Node_queue, machine);
 }
 
@@ -848,6 +850,7 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   {
     BAD_TYPES(f->tipo, el->type);
   }
+
   node_name = strdup(f->value.string);
 
   /*
@@ -1184,6 +1187,7 @@ void new_map_info  (struct t_queue *q, struct t_entry* en)
   }
 
   trace_name = strdup(f->value.string);
+
 
   /*
    * Number of tasks
@@ -1853,7 +1857,7 @@ void new_d_conn    (struct t_queue *q, struct t_entry* en)
   }
 
   comms_size = f->value.arr.dim1;
-  comm_ids   = (int*) MALLOC_get_memory (comms_size*sizeof(int));
+  comm_ids   = (int*) malloc (comms_size*sizeof(int));
 
   for (i = 0, f2 = (struct t_field *) head_queue (f->value.arr.q);
        i  < comms_size;

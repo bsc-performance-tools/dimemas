@@ -45,7 +45,6 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "mallocame.h"
 #include "schedule.h"
 #include "subr.h"
 
@@ -138,7 +137,7 @@ t_nano PRIO_FIFO_get_execution_time(struct t_thread *thread)
       panic ("Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
    ex_time = action->desc.compute.cpu_time;
    thread->action = action->next;
-   MALLOC_free_memory ((char*) action);
+   READ_free_action(action);
    return (ex_time);
 }
 
@@ -152,7 +151,7 @@ PRIO_FIFO_init_scheduler_parameters(struct t_thread *thread)
 {
    struct t_SCH_prio_fifo *sch_prio_fifo;
 
-   sch_prio_fifo = (struct t_SCH_prio_fifo *) MALLOC_get_memory (sizeof(struct t_SCH_prio_fifo));
+   sch_prio_fifo = (struct t_SCH_prio_fifo *) malloc (sizeof(struct t_SCH_prio_fifo));
    sch_prio_fifo->priority = thread->base_priority;
    thread->sch_parameters = (char *) sch_prio_fifo;
 }
@@ -196,5 +195,5 @@ PRIO_FIFO_free_parameters(struct t_thread *thread)
    struct t_SCH_prio_fifo *sch_prio_fifo;
 
    sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
-   MALLOC_free_memory ((char*) sch_prio_fifo);
+   free (sch_prio_fifo);
 }

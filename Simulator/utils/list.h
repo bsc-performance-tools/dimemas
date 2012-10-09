@@ -69,11 +69,13 @@ void  insert_queue( struct t_queue *queue,
                     char           *content,
                     t_priority      prio);
 
-void insert_queue_from_back(struct t_queue *queue, char *content, t_priority prio);
+void insert_queue_from_back(struct t_queue *queue,
+                            char           *content,
+                            t_priority      prio);
 
 void insert_first_queue( struct t_queue *queue,
-                                char           *content,
-                                t_priority      prio);
+                         char           *content,
+                         t_priority      prio);
 
 char* query_prio_queue(struct t_queue *queue, t_priority prio);
 

@@ -57,7 +57,7 @@ DimemasSDDFTraceParser::DimemasSDDFTraceParser(string TraceName,
   char Buffer[15];
 
   this->TraceName = TraceName;
-  
+
   if (TraceFile != NULL)
   {
     this->TraceFile = TraceFile;
@@ -68,41 +68,41 @@ DimemasSDDFTraceParser::DimemasSDDFTraceParser(string TraceName,
     SetErrorMessage("Unable to open Dimemas trace", strerror(errno));
     return;
   }
-  
+
   fscanf (this->TraceFile, "%5s", Buffer);
-  
+
   if (strcmp ("SDDFA", Buffer) != 0)
   {
     SetError(true);
     LastError = "wrong format (not SDDF)";
     return;
   }
-  
+
   if (!GetTaskCount())
     return;
-  
+
   if (VerboseMode)
     cout << "-> " << TraceName << " has " << TaskCount << " tasks" << endl;
 
   /* Default ApplicationId (PtaskId) is 0 */
   this->ApplicationStructure = new ApplicationDescription(0);
-  
+
   if (VerboseMode)
   {
     fprintf(stdout, "\r-> Creating control structure for task 0/%d", TaskCount);
     fflush(stdout);
   }
-            
+
   for (int i = 0; i < TaskCount; i++)
   {
     TaskDescription_t NewTaskDescription = new TaskDescription(i, 1);
     ApplicationStructure->AddTaskDescription(NewTaskDescription);
-    
+
     TaskFile.push_back(NULL);
     OriginalOffset.push_back((off_t) 0);
     CurrentOffset.push_back((off_t) 0);
     SharingDescriptors.push_back(false);
-    
+
     if (VerboseMode)
     {
       fprintf(stdout,
@@ -112,10 +112,10 @@ DimemasSDDFTraceParser::DimemasSDDFTraceParser(string TraceName,
       fflush(stdout);
     }
   }
-  
+
   if (VerboseMode)
       fprintf(stdout, "\n");
-  
+
   return;
 }
 
@@ -126,13 +126,13 @@ DimemasSDDFTraceParser::InitTraceParsing(void)
   struct stat FileStat;
   INT32 HeaderLength;
   vector<ApplicationDescription_t> AppsDescription;
-  
+
   if (ParsingInitialized)
   {
     Reload();
     return true;
   }
-  
+
   if (fstat(fileno(TraceFile), &FileStat) < 0)
   {
     SetErrorMessage("unable to read SDDF trace statistics",
@@ -140,7 +140,7 @@ DimemasSDDFTraceParser::InitTraceParsing(void)
     return false;
   }
   this->TraceSize = FileStat.st_size;
-  
+
   /* PROGRESS MESSAGES */
   if (VerboseMode)
   {
@@ -158,16 +158,16 @@ DimemasSDDFTraceParser::InitTraceParsing(void)
               TaskCount);
       fflush(stdout);
     }
-    
+
     if (!FastLocateInitialOffset(CurrentTaskId))
       return false;
   }
-  
+
   if (VerboseMode)
     fprintf(stdout, "\n");
-  
+
   ParsingInitialized = true;
-  
+
   return true;
 }
 
@@ -180,7 +180,7 @@ DimemasSDDFTraceParser::GetApplicationsDescription(void)
     LastError = "Parsing not initialized";
     return NULL;
   }
-  
+
   return ApplicationStructure;
 }
 
@@ -192,18 +192,18 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
   char           *Buffer;
   INT32           CurrentLineLength;
   INT32           Matches;
-  
+
   INT32           ReadTaskId, ReadThreadId, DstTaskId, SrcTaskId, Size, Tag;
   INT32           CommId, Synchronism, RecvType;
   INT64           BlockId;
   double          BurstDuration;
-  
+
   INT32           GlobalOpId, RootTaskId, RootThreadId;
   INT64           SendSize, RecvSize;
-  
+
   INT32           EvtType;
   INT64           EvtValue;
-  
+
   /* Set correct offset */
   if (SharingDescriptors[TaskId])
   {
@@ -212,23 +212,23 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
                 SEEK_SET) == -1)
     {
       char CurrentError[128];
-      
+
       sprintf(CurrentError,
               "error reading records for task %02d",
               TaskId);
-      
+
       SetErrorMessage(CurrentError,
                       strerror(errno));
       return false;
     }
-    
+
     EffectiveFile = TraceFile;
   }
   else
   {
     EffectiveFile = TaskFile[TaskId];
   }
-  
+
   if ( (CurrentLineLength = GetLongLine(EffectiveFile, &Buffer)) < 0)
   {
     return NULL;
@@ -241,7 +241,7 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
   {
     CurrentOffset[TaskId] += CurrentLineLength;
   }
-  
+
   Matches = sscanf(Buffer,
                    "\"CPU burst\" { %d, %d, %le };;\n",
                    &ReadTaskId, &ReadThreadId, &BurstDuration);
@@ -249,10 +249,10 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
   {
     if (ReadTaskId > TaskId)
       return NULL;
-    
+
     Record = new CPUBurst(ReadTaskId, ReadThreadId, BurstDuration);
   }
-  
+
   /* NX send */
   Matches = sscanf(Buffer,
                    "\"NX send\" { %d, %d, %d, %d, %d, %d, %d };;\n",
@@ -262,36 +262,36 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
   {
     if (ReadTaskId > TaskId)
       return NULL;
-    
+
     Record = new Send(ReadTaskId, ReadThreadId,
                       DstTaskId, Size, Tag, CommId, Synchronism);
   }
-  
+
   /* NX recv */
   Matches = sscanf(Buffer,
                    "\"NX recv\" { %d, %d, %d, %d, %d, %d, %d};;\n",
                    &ReadTaskId, &ReadThreadId,
                    &SrcTaskId, &Size, &Tag, &CommId, &RecvType );
-  
+
   if (Matches == 7)
   {
     if (ReadTaskId < TaskId)
       return NULL;
-    
+
     Record = new Receive(ReadTaskId, ReadThreadId,
                          SrcTaskId, Size, Tag, CommId, RecvType);
   }
-  
+
   /* block begin */
   Matches = sscanf(Buffer,
                    "\"block begin\" { %d, %d, %lld};;\n",
                    &ReadTaskId, &ReadThreadId, &BlockId );
-  
+
   if (Matches == 3)
   {
     INT64 ParaverType, ParaverValue;
 
-  
+
     if (ReadTaskId < TaskId)
       return NULL;
 
@@ -300,24 +300,24 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
                                         (long long*) &ParaverValue);
 
     PCFGeneration.SetUsedBlockUsed(ParaverType, ParaverValue);
-    
+
     Record = new Event(ReadTaskId, ReadThreadId, BlockId, true);
-    
+
   }
-  
+
   /* block end */
   Matches = sscanf(Buffer,
                    "\"block end\" { %d, %d, %lld};;\n",
                    &ReadTaskId, &ReadThreadId, &BlockId );
-  
+
   if (Matches == 3)
   {
     if (ReadTaskId < TaskId)
       return NULL;
-    
+
     Record = new Event(ReadTaskId, ReadThreadId, BlockId, false);
   }
-  
+
   /* user event */
   Matches = sscanf(Buffer,
                    "\"user event\" { %d, %d, %d, %lld};;\n",
@@ -332,7 +332,7 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
       Record = EventRecord;
     // dynamic_cast<Event_t>(Record)->AddTypeValue(EvtType, EvtValue);
   }
-  
+
   /* global OP */
   Matches = sscanf(Buffer,
                   "\"global OP\" { %d, %d, %d, %d, %d, %d, %lld, %lld};;\n",
@@ -344,16 +344,16 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
   {
     if (ReadTaskId < TaskId)
       return NULL;
-    
+
     Record = new GlobalOp(ReadTaskId, ReadThreadId,
                           GlobalOpId,
                           CommId, RootTaskId, RootThreadId,
                           SendSize, RecvSize);
   }
-  
+
   /* Free input buffer */
   free(Buffer);
-  
+
   if (Record == NULL)
   {
     SetError(true);
@@ -372,11 +372,11 @@ DimemasSDDFTraceParser::Reload(void)
     LastError = "parsing not initialized";
     return false;
   }
-  
+
   for (INT32 CurrentTaskId = 0; CurrentTaskId < TaskCount; CurrentTaskId++)
   {
     CurrentOffset[CurrentTaskId] = OriginalOffset[CurrentTaskId];
-    
+
     if (!SharingDescriptors[CurrentTaskId])
     {
       if (fseeko (TaskFile[CurrentTaskId],
@@ -405,7 +405,7 @@ DimemasSDDFTraceParser::GetTaskCount()
   INT32 LastTaskId;
   INT32 Matches, TaskId, ThreadId;
   char  Buffer[PARSER_BUFFER];
-  
+
   if (fseek(TraceFile, -(2*PARSER_BUFFER), SEEK_END) == -1)
   {
     if (fseek(TraceFile, -(PARSER_BUFFER), SEEK_END) == -1)
@@ -416,7 +416,7 @@ DimemasSDDFTraceParser::GetTaskCount()
       return false;
     }
   }
-  
+
   while (fgets(Buffer, PARSER_BUFFER-1, TraceFile) != NULL)
   {
     Matches = sscanf (Buffer, "\"CPU burst\" { %d, %d,", &TaskId, &ThreadId);
@@ -424,7 +424,7 @@ DimemasSDDFTraceParser::GetTaskCount()
     if (Matches == 2)
       LastTaskId = TaskId;
   }
-  
+
   if (ferror(TraceFile))
   {
     SetError(true);
@@ -432,7 +432,7 @@ DimemasSDDFTraceParser::GetTaskCount()
                     strerror(errno));
     return false;
   }
-  
+
   if (fseek(TraceFile, 0, SEEK_SET) == -1)
   {
     SetError(true);
@@ -440,7 +440,7 @@ DimemasSDDFTraceParser::GetTaskCount()
                     strerror(errno));
     return false;
   }
-  
+
   TaskCount = LastTaskId+1;
   return true;
 }
@@ -458,42 +458,42 @@ DimemasSDDFTraceParser::LocateFirstCPUBurst(INT32 TaskId)
   INT32 CurrentLineLength, Matches;
 
   char *DefinitionName;
-  
+
   while(true)
   {
     if ( (CurrentLineLength = GetLongLine(TraceFile, &Buffer)) < 0)
     {
       return false;
     }
-    
+
     Matches = sscanf (Buffer,
                       "\"CPU burst\" { %d, %d,",
                       &ReadTaskId,
                       &ReadThreadId);
-    
+
     if (Matches == 2)
     {
       if (ReadTaskId == TaskId)
       {
         off_t CurrentTaskOffset;
-        
+
         if ( (CurrentTaskOffset = ftello(TraceFile)) == -1)
         {
           char CurrentError[128];
-          
+
           sprintf(CurrentError,
-                  "unable to get file position while looking for task %02 location",
+                  "unable to get file position while looking for task %02d location",
                   TaskId);
-          
+
           SetError(true);
           SetErrorMessage(CurrentError,
                           strerror(errno));
           return false;
         }
-        
+
         OriginalOffset[TaskId] = CurrentTaskOffset - CurrentLineLength;
         CurrentOffset[TaskId]  = CurrentTaskOffset - CurrentLineLength;
-        
+
         if ( (TaskFile[TaskId] = fopen(TraceName.c_str(), "r")) == NULL)
         {
           SharingDescriptors[TaskId] = true;
@@ -503,11 +503,11 @@ DimemasSDDFTraceParser::LocateFirstCPUBurst(INT32 TaskId)
           if ( fseeko(TaskFile[TaskId], CurrentOffset[TaskId], SEEK_CUR) == -1)
           {
             char CurrentError[128];
-            
+
             sprintf(CurrentError,
-                    "unable to set file position while looking for task %02 location",
+                    "unable to set file position while looking for task %02d location",
                     TaskId);
-            
+
             SetError(true);
             SetErrorMessage(CurrentError,
                             strerror(errno));
@@ -520,17 +520,17 @@ DimemasSDDFTraceParser::LocateFirstCPUBurst(INT32 TaskId)
       {
         char CurrentError[128];
         SetError(true);
-        
+
         sprintf(CurrentError,
                 "trace not correctly sorted, found task %02d before task %02d",
                 ReadTaskId,
                 TaskId);
-        
+
         this->LastError = CurrentError;
         return false;
       }
     }
-    
+
     Matches = sscanf (Buffer,
                       "\"communicator definition\" { %d, %d,",
                       &CommunicatorId,
@@ -542,13 +542,13 @@ DimemasSDDFTraceParser::LocateFirstCPUBurst(INT32 TaskId)
     }
 
     /* Here, we should also deal the definitions to generate the PCF */
-    DefinitionName = (char*) malloc(CurrentLineLength*sizeof(char));
-    
+    DefinitionName = (char*) malloc (CurrentLineLength*sizeof(char));
+
     Matches = sscanf (Buffer,
                       "\"block definition\" { %d, \"%[^\"]\",",
                       &BlockId,
                       DefinitionName);
-    
+
     if (Matches == 2)
     {
       INT64 ParaverType, ParaverValue;
@@ -560,9 +560,9 @@ DimemasSDDFTraceParser::LocateFirstCPUBurst(INT32 TaskId)
       PCFGeneration.AddBlockDefinition(ParaverType,
                                        ParaverValue,
                                        string(DefinitionName));
-      
+
       // BLOCK_TRF2PRV (BlockId, ParaverType, ParaverValue);
-      
+
       /* DEBUG
       printf ("Block definition: %d -> %lld:%lld (%s)\n",
               BlockId,
@@ -572,11 +572,11 @@ DimemasSDDFTraceParser::LocateFirstCPUBurst(INT32 TaskId)
       */
 
     }
-    
+
     /* Free Buffer */
     free(Buffer);
   }
-  
+
   /* Free Buffer */
   free(Buffer);
   return true;
@@ -589,69 +589,70 @@ DimemasSDDFTraceParser::FastLocateInitialOffset(INT32 TaskId)
   INT32 Matches, ReadTaskId, ReadThreadId;
   off_t LowBound, UppBound, CurrPosition, InitialPosition;
 #define STEP_BY_STEP (off_t)(2*PARSER_BUFFER)
-  
-/* 
+
+/*
 #define DEBUGA_CERCA_PRIMER_CPUBURST 1 */
-  
+
 #ifdef DEBUGA_CERCA_PRIMER_CPUBURST
   fprintf(stderr,"\tBuscant cpu burst de la task %d\n",TaskId);
 #endif
-  
+
   if (TaskId == 0)
   {
     return LocateFirstCPUBurst(TaskId);
   }
-  
+
   InitialPosition = OriginalOffset[TaskId-1]; /* Initial position */
   LowBound        = InitialPosition; /* Aquesta sera la cota inferior */
   CurrPosition    = InitialPosition;
   UppBound        = TraceSize;
-  
+
   if ( fseeko(TraceFile, InitialPosition, SEEK_SET) == -1)
   {
     char CurrentError[128];
-    
+
     sprintf(CurrentError,
-            "unable to set file position while looking for task %02 location",
+            "unable to set file position while looking for task %02d location",
             TaskId);
-    
+
     SetError(true);
     SetErrorMessage(CurrentError,
                     strerror(errno));
     return false;
   }
-  
+
 #ifdef DEBUGA_CERCA_PRIMER_CPUBURST
   fprintf(stderr,"\t\tp_ini %llu, p_sup %llu\n",InitialPosition, UppBound);
 #endif
-  
+
   while (true)
   {
-    /* 
+    /*
     fprintf(stderr,"Abans de llegir, la posicio es %llu\n",FTELL(file));
      */
     Matches = fscanf (TraceFile, "%[^\n]\n", Buffer);
-    
+
     if (Matches == -1)
     {
       char CurrentError[128];
       sprintf(CurrentError,
-              "can't locate actions for task %02d");
+              "can't locate actions for task %02d",
+              TaskId);
       SetError(true);
       this->LastError = CurrentError;
       return false;
     }
-    
+
     if (Matches == 0)
     {
       if ( fseeko(TraceFile, 1, SEEK_CUR) == -1)
       {
         char CurrentError[128];
-           
+
         sprintf(CurrentError,
-                "unable to set file position while looking for task %02 location",
+                "unable to set file position while looking for task %02d location",
                 TaskId);
-           
+
         SetError(true);
         SetErrorMessage(CurrentError,
                         strerror(errno));
@@ -664,11 +665,11 @@ DimemasSDDFTraceParser::FastLocateInitialOffset(INT32 TaskId)
     /*
      fprintf(stderr,"Despres de llegir, la posicio es %llu\n",FTELL(file));
      */
-    Matches = sscanf (Buffer, 
+    Matches = sscanf (Buffer,
                       "\"CPU burst\" { %d, %d,",
-                      &ReadTaskId, 
+                      &ReadTaskId,
                       &ReadThreadId);
-    if (Matches == 2) 
+    if (Matches == 2)
     {
       if (TaskId <= ReadTaskId)
       {
@@ -684,16 +685,16 @@ DimemasSDDFTraceParser::FastLocateInitialOffset(INT32 TaskId)
         if ((UppBound - LowBound) <= STEP_BY_STEP)
           break;
       }
-      
+
       CurrPosition = LowBound + (UppBound - LowBound)/2;
       if ( fseeko(TraceFile, CurrPosition, SEEK_SET) == -1)
       {
         char CurrentError[128];
-        
+
         sprintf(CurrentError,
-                "unable to set file position while looking for task %02 location",
+                "unable to set file position while looking for task %02d location",
                 TaskId);
-        
+
         SetError(true);
         SetErrorMessage(CurrentError,
                         strerror(errno));
@@ -714,7 +715,7 @@ DimemasSDDFTraceParser::FastLocateInitialOffset(INT32 TaskId)
         break;
     }
   }
-  
+
 #ifdef DEBUGA_CERCA_PRIMER_CPUBURST
   /*
    fprintf(stderr,"\t\tp_inf %llu, p_sup %llu\n",p_inf, p_sup);
@@ -730,17 +731,17 @@ DimemasSDDFTraceParser::FastLocateInitialOffset(INT32 TaskId)
   if ( fseeko(TraceFile, LowBound, SEEK_SET) == -1)
   {
     char CurrentError[128];
-    
+
     sprintf(CurrentError,
-            "unable to set file position while looking for task %02 location",
+            "unable to set file position while looking for task %02d location",
             TaskId);
-    
+
     SetError(true);
     SetErrorMessage(CurrentError,
                     strerror(errno));
     return false;
   }
-  
+
   return LocateFirstCPUBurst(TaskId);
 }
 
@@ -749,12 +750,12 @@ INT32 DimemasSDDFTraceParser::GetLongLine(FILE* File, char** Line)
   INT32 LineLength = 0;
   off_t InitialPosition;
   int   CharRead;
-  
+
   InitialPosition = ftello(File);
-  
+
   if (feof(File))
     return 0;
-  
+
   /* To avoid initial position on CR */
   if (fgetc(File) == '\n')
     InitialPosition++;
@@ -768,19 +769,19 @@ INT32 DimemasSDDFTraceParser::GetLongLine(FILE* File, char** Line)
       return -1;
     }
   }
-  
+
   if (feof(File))
     return 0;
-  
+
   while ( (CharRead = fgetc(File)) != '\n' )
   {
     if (CharRead == EOF && LineLength < 1)
       return 0;
     LineLength++;
   }
-  
+
   *Line = (char*) calloc(sizeof(char), LineLength+2);
-  
+
   if ( fseeko(File, InitialPosition, SEEK_SET) < 0)
   {
     SetError(true);
@@ -788,9 +789,9 @@ INT32 DimemasSDDFTraceParser::GetLongLine(FILE* File, char** Line)
                     strerror(errno));
     return -1;;
   }
-  
+
   fgets(*Line, LineLength+1, File);
-  
+
   return LineLength;
 }
 
@@ -798,7 +799,7 @@ bool DimemasSDDFTraceParser::GetTraceLine(FILE* File, char* Line, int LineSize)
 {
   if (feof(File))
     return false;
-  
+
   if (fgets (Line, LineSize, File) == NULL)
   {
     SetError(true);
@@ -849,21 +850,21 @@ DimemasSDDFTraceParser::ParseState(char* ASCIIState)
   INT32   CPU, AppId, TaskId, ThreadId;
   UINT64  BeginTime, EndTime;
   INT32   StateValue;
-  
+
   if (sscanf(ASCIIState,
              "%d:%d:%d:%d:%llu:%llu:%d",
              &CPU, &AppId, &TaskId, &ThreadId,
              &BeginTime, &EndTime,
              &StateValue) == 7)
   {
-    NewState = new State(CPU, AppId, TaskId, ThreadId, 
+    NewState = new State(CPU, AppId, TaskId, ThreadId,
                          BeginTime, EndTime,
                          StateValue);
   }
   else
   {
-    char CurrentError[128]; 
-    
+    char CurrentError[128];
+
     SetError(true);
     sprintf(CurrentError,
             "Wrong state record on line %d",

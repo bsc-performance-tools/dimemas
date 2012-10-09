@@ -36,16 +36,17 @@
 #include <types.h>
 #include <assert.h>
 
+#include <dimemas_io.h>
+
 #include "read.h"
 
 // #include "file_data_access.h"
 
 #include "node.h"
 
-// #include "cpu.h"
+#include "cpu.h"
 // #include "extern.h"
 #include "list.h"
-// #include "mallocame.h"
 // #include "random.h"
 //
 // #include "schedule.h"
@@ -132,6 +133,8 @@ t_boolean check_new_trace_format()
     }
     IO_fclose(trace_file);
   }
+
+  return TRUE;
 }
 
 static void Ptask_reload (struct t_Ptask *Ptask,
@@ -690,7 +693,7 @@ static void show_individual_statistics_pallas (struct t_Ptask *Ptask)
   /* Initialization of accounters per reload */
   /* We have (n_rerun + 1) iterations */
   acc_Ptask_rerun =
-    (struct t_account **)MALLOC_get_memory(sizeof(struct t_account *) * (Ptask->n_rerun + 1));
+    (struct t_account **)malloc(sizeof(struct t_account *) * (Ptask->n_rerun + 1));
   for(i = 0; i <= Ptask->n_rerun; i++)
   {
     acc_Ptask_rerun[i] = new_accounter();
@@ -960,6 +963,8 @@ void MAIN_TEST_print_communicator(struct t_communicator* comm)
   printf("\n");
 }
 
+static long living_actions = 0;
+
 void READ_get_next_action(struct t_thread *thread)
 {
   int Ptask_id, task_id, thread_id;
@@ -974,7 +979,12 @@ void READ_get_next_action(struct t_thread *thread)
   { // When app (re)starts, it could be NULL
     assert(thread->action != NULL);
     new_action_aux = thread->action->next;
-    MALLOC_free_memory(thread->action);
+
+    READ_free_action(thread->action);
+
+    // free(thread->action);
+
+
     thread->action = new_action_aux;
   }
 
@@ -986,12 +996,14 @@ void READ_get_next_action(struct t_thread *thread)
     panic(DATA_ACCESS_get_error());
   }
 
-  if (new_action == NULL)
+  living_actions++;
+
+  if (new_action == AC_NIL)
   {
     /* DEBUG
     fprintf(stdout,"NULL ACTION on %d %d %d\n", Ptask_id, task_id, thread_id); */
     assert(thread->action == NULL);
-    thread->action = NULL;
+    thread->action = AC_NIL;
     return;
   }
 
@@ -1027,7 +1039,7 @@ void READ_get_next_action(struct t_thread *thread)
 
     if (mod == M_NIL)
     {
-      mod = (struct t_module*) MALLOC_get_memory (sizeof(struct t_module));
+      mod = (struct t_module*) malloc (sizeof(struct t_module));
 
       mod->identificator = identificator;
       mod->ratio         = 1.0;
@@ -1072,6 +1084,8 @@ void READ_get_next_action(struct t_thread *thread)
       panic(DATA_ACCESS_get_error());
     }
 
+    living_actions++;
+
     new_action->next = thread->action;
     thread->action = new_action_aux;
   }
@@ -1079,3 +1093,43 @@ void READ_get_next_action(struct t_thread *thread)
   return;
 }
 
+void READ_create_action(struct t_action **action)
+{
+  if ( action == NULL )
+  {
+    panic("Wrong parameter when creating a new action");
+  }
+
+  (*action) = (struct t_action*) malloc(sizeof(struct t_action));
+
+  if ( (*action) == NULL )
+  {
+    panic("Unable to get memory for new actions!");
+  }
+
+  living_actions++;
+
+  return;
+}
+
+void READ_copy_action(struct t_action *src_action,
+                      struct t_action *dst_action)
+{
+  memcpy (dst_action, src_action, sizeof(struct t_action));
+
+  return;
+}
+
+void READ_free_action(struct t_action *action)
+{
+  if (action != NULL)
+  {
+    free(action);
+    living_actions--;
+  }
+}
+
+long READ_get_living_actions(void)
+{
+  return living_actions;
+}

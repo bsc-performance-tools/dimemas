@@ -22,7 +22,6 @@ char SCH_ss_mpi_cp_c_rcsid[]="$Id: SCH_ss_mpi_cp.c,v 1.3 2010/12/21 16:46:31 par
 /* Dependencias con otros fuentes */
 #include "cpu.h"
 #include "list.h"
-#include "mallocame.h"
 #include "schedule.h"
 #include "subr.h"
 
@@ -133,7 +132,7 @@ SS_MPI_CP_get_execution_time(struct t_thread *thread)
       panic ("Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
    ex_time = action->desc.compute.cpu_time;
    thread->action = action->next;
-   MALLOC_free_memory ((char*) action);
+   READ_free_action(action);
    return (ex_time);
 }
 
@@ -148,7 +147,7 @@ SS_MPI_CP_init_scheduler_parameters(struct t_thread *thread)
 {
    struct t_SCH_ss_mpi_cp *sch_ss_mpi_cp;
 
-   sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) MALLOC_get_memory (sizeof(struct t_SCH_ss_mpi_cp));
+   sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) malloc (sizeof(struct t_SCH_ss_mpi_cp));
 //    sch_ss_mpi_cp->priority          = thread->base_priority;
 
    /* this is the highest priority that the thread can have
@@ -199,7 +198,7 @@ SS_MPI_CP_free_parameters(struct t_thread *thread)
    struct t_SCH_ss_mpi_cp *sch_ss_mpi_cp;
 
    sch_ss_mpi_cp = (struct t_SCH_ss_mpi_cp *) thread->sch_parameters;
-   MALLOC_free_memory ((char*) sch_ss_mpi_cp);
+   free (sch_ss_mpi_cp);
 }
 
 /* priority by which the thread is scheduled is

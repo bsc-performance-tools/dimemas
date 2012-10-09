@@ -829,8 +829,8 @@ struct t_thread
     dimemas_timer conclude_communication;
   } collective_timers;
 
-  int    IO_blocking_point;
-  int    marked_for_deletion; /* Indica que s'ha d'eliminar quan es pugui */
+  int       IO_blocking_point;
+  t_boolean marked_for_deletion; /* Indica que s'ha d'eliminar quan es pugui */
   /* JGG IDENTIFICADOR */
   long int       th_copy_id;
   t_boolean      locked; /* INDICA SI EL THREAD SE HA BLOQUEADO */
@@ -966,11 +966,12 @@ struct t_copyseg
   int             size;
 };
 
-#define E_NIL    (struct t_event *)0
+#define E_NIL    (struct t_event*) 0
 #define QU_NIL   (struct t_queue *)0
 #define ITEM_NIL (struct t_item *)0
 #define Q_NIL    (struct t_time *)0
 #define A_NIL    (void *)0
+#define AC_NIL   (struct t_action *)0
 #define TH_NIL   (struct t_thread *)0
 #define C_NIL    (struct t_cpu *)0
 #define N_NIL    (struct t_node *)0
@@ -978,7 +979,6 @@ struct t_copyseg
 #define DC_NIL   (struct t_dedicated_connection *)0
 #define COM_NIL  (struct t_communicator *) 0
 #define GOPD_NIL (struct t_global_op_definition *) 0
-#define AC_NIL   (struct t_action *)0
 #define T_NIL    (struct t_task *)0
 #define P_NIL    (struct t_Ptask *)0
 #define L_NUL    (struct t_link *)-1
