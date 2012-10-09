@@ -443,6 +443,5 @@ echo "
   Java Compiler..................: ${JAVAC:-none} $JAVACFLAGS
   Jar Utility....................: ${JAR:-none} $JARFLAGS
   Boost Includes.................: ${have_boost:-default} $BOOST_CPPFLAGS
-  BSC 'common-files' Directory...: ${common_filesdir:-default}
 "
 

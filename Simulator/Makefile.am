@@ -1,4 +1,3 @@
-common_filesdir = @common_filesdir@
 simulator_dir = $(top_srcdir)/Simulator
 
 SUBDIRS = io input model prv_utils sched utils

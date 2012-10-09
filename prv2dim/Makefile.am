@@ -35,10 +35,3 @@ prv2dim_SOURCES = \
 prv2dim_LDADD = \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la
 
-# 'common-files' regular dependencies
-# COMMON_FILES_SRCS = \
-#	$(common_filesdir)/Dimemas_Generation.c\
-#    $(common_filesdir)/EventEncoding.c\
-#    $(common_filesdir)/Dimemas2Prv.c \
-#	$(common_filesdir)/Error.hpp \
-#	$(common_filesdir)/Error.cpp 

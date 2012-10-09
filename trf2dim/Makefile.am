@@ -27,9 +27,3 @@ trf2dim_SOURCES = \
 trf2dim_LDADD = \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la
 
-#nodist_trf2dim_SOURCES = \
-#	$(common_filesdir)/Dimemas_Generation.c\
-#    $(common_filesdir)/EventEncoding.c\
-#    $(common_filesdir)/Dimemas2Prv.c \
-#    $(common_filesdir)/Error.hpp \
-#    $(common_filesdir)/Error.cpp
