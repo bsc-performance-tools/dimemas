@@ -40,7 +40,6 @@ char lex_l_rcsid[]="$Id$";
 #include <strings.h>
 /*#include "y.tab.h"*/
 #include "ts.h"
-#include "mallocame.h"
 
 
 /* A les Itanium(al menys les 2)  aixo ha d'estar abans del y.tab.h */
