@@ -16,6 +16,8 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:	Version updated to '4.2.1'.
 
+	CHNAGES:	Updated README file.
+
 2012/10/09 - jgonzale - Simulator
 	BUGFIX:		Solved a massive leak in 'file_data_access.c' when
 				reading actions. 'op_fields' variable was never free'd
