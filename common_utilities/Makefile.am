@@ -2,9 +2,9 @@ noinst_LTLIBRARIES = libCommonUtilities.la
 
 simulator_dir = $(top_srcdir)/Simulator
 
-libCommonUtilities_CFLAGS=-DNEW_DIMEMAS_TRACE
+libCommonUtilities_la_CFLAGS=-DNEW_DIMEMAS_TRACE
 
-libCommonUtilities_CXXFLAGS=-DNEW_DIMEMAS_TRACE
+libCommonUtilities_la_CXXFLAGS=-DNEW_DIMEMAS_TRACE
 
 libCommonUtilities_la_SOURCES = \
 	CommonMacros.h \
