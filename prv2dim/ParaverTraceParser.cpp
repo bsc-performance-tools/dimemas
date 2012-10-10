@@ -327,8 +327,6 @@ INT32 ParaverTraceParser::GetLongLine(char** Line)
 
   if ((LineLength = getline(&LineRead, &BytesAllocated, ParaverTraceFile)) == -1)
   {
-    printf("Wrong line! (%d) -> %s\n", LineLength, strerror(errno));
-
     if (!feof(ParaverTraceFile))
     {
       return -1;

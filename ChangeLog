@@ -10,13 +10,19 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/10/10 - jgonzale - prv2dim
+	CHANGES:	Removed a wrong information message in the
+				'ParaverTraceParser'.
+
+	CHANGES: 	Version updated to '4.2.2'.
+
 2012/10/10 - jgonzale - Other
 	BUGFIX:		Solved the missing definition 'DIMEMAS_NEW_TRACE' on
 				'common_utilities' commodity library.	
 
 	CHANGES:	Version updated to '4.2.1'.
 
-	CHNAGES:	Updated README file.
+	CHANGES:	Updated README file.
 
 2012/10/09 - jgonzale - Simulator
 	BUGFIX:		Solved a massive leak in 'file_data_access.c' when
