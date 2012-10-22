@@ -340,8 +340,14 @@ void PARAVER_end(void)
   /* Proceed to merge the trace */
   TraceMerger.GenerateFinalTrace(ParaverTraceFile);
 
+  printf("\n");
+  printf("Output Paraver trace \"%s\" generated\n",
+         paraver_trace_filename.c_str());
+  printf("\n");
+
+
   IO_fclose(ParaverTraceFile);
-  
+
   /* Generate the output trace PCF */
   /* BAD TRICK! */
   if (pcf_insert_filename.compare("") == 0)
@@ -352,9 +358,6 @@ void PARAVER_end(void)
   {
     pcf_insert_c_str = (char*) pcf_insert_filename.c_str();
   }
-
-  printf("paraver_trace_filename.c_str() = %s\n", paraver_trace_filename.c_str());
-  printf("pcf_insert_c_str = %s\n", pcf_insert_c_str);
 
   MakeParaverPCF(paraver_trace_filename.c_str(), pcf_insert_c_str);
 }

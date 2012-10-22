@@ -1009,13 +1009,14 @@ void READ_get_next_action(struct t_thread *thread)
 
   if (new_action->action == WORK)
   {
+    //Vladimir added to multiply with the relative cpu speed
+    struct t_node *node;
+
     // JGG: NOW, time is ALWAYS in NANOSECONDS!!
     new_action->desc.compute.cpu_time *= 1e9;
 
-    //Vladimir added to multiply with the relative cpu speed
-
-    struct t_node *node;
     node = get_node_of_thread(thread);
+
     if (node->relative <= 0)
     {
       new_action->desc.compute.cpu_time = 0;
@@ -1024,7 +1025,6 @@ void READ_get_next_action(struct t_thread *thread)
     {
       new_action->desc.compute.cpu_time /= node->relative;
     }
-
 
     if (PREEMP_enabled)
     {

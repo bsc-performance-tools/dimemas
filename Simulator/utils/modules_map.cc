@@ -20,12 +20,12 @@ using std::make_pair;
 class ModuleMap
 {
   private:
-    map<pair<long, long>, void*> Map;
+    map<pair<unsigned long int , unsigned long int >, void*> Map;
 
-    map<pair<long, long>, void*>::iterator curr;
-    map<pair<long, long>, void*>::iterator curr_end; // invalidated if "head" changes
+    map<pair<unsigned long int , unsigned long int >, void*>::iterator curr;
+    map<pair<unsigned long int , unsigned long int >, void*>::iterator curr_end; // invalidated if "head" changes
 
-    map<pair<long, long>, void*>::iterator it;
+    map<pair<unsigned long int , unsigned long int >, void*>::iterator it;
 
     t_count _count;
 
@@ -37,7 +37,7 @@ class ModuleMap
       _count = 0;
     }
 
-    inline void* FindModule(long long type, long long value)
+    inline void* FindModule(unsigned long int type, unsigned long int value)
     {
       if (Map.size() == 0)
       {
@@ -54,7 +54,9 @@ class ModuleMap
       }
     }
 
-    inline void InsertModule(long long type, long long value, void* module)
+    inline void InsertModule(unsigned long int type,
+                             unsigned long int value,
+                             void             *module)
     {
       Map[make_pair(type, value)] = module;
       _count++;
@@ -108,17 +110,17 @@ void create_modules_map(modules_map *mm)
   return ;
 }
 
-void* find_module(modules_map* mm,
-                  long long    type,
-                  long long    value)
+void* find_module(modules_map      *mm,
+                  unsigned long int type,
+                  unsigned long int value)
 {
   return ModuleMaps[*mm].FindModule(type, value);
 }
 
-void insert_module(modules_map *mm,
-                   long long    type,
-                   long long    value,
-                   void        *new_module)
+void insert_module(modules_map      *mm,
+                   unsigned long int type,
+                   unsigned long int value,
+                   void             *new_module)
 {
   ModuleMaps[*mm].InsertModule(type, value, new_module);
 }

@@ -108,6 +108,11 @@ void new_task_in_Ptask(struct t_Ptask *Ptask, int taskid, int nodeid);
 void TASK_add_thread_to_task (struct t_task *task, int threadid);
 void TASK_Delete_Task (struct t_task *task);
 
+void TASK_module_new_general (unsigned long int module_type,
+                              unsigned long int module_value,
+                              double        ratio,
+                              double        const_burst_duration);
+
 /*****************************************************************************
 * Public functions implementation
 *****************************************************************************/
@@ -1081,7 +1086,10 @@ void new_action_to_thread (struct t_Ptask *Ptask,
   else
   {
     if (action->action == WORK)
+    {
       recompute_work_upon_modules(thread, action);
+    }
+
     if ((action->action == WORK) && (last_action->action == WORK))
     {
       last_action->desc.compute.cpu_time += action->desc.compute.cpu_time;
@@ -1090,6 +1098,7 @@ void new_action_to_thread (struct t_Ptask *Ptask,
     }
     last_action->next = action;
   }
+
   thread->last_action = action;
 }
 
@@ -1727,11 +1736,34 @@ struct t_node *get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid)
   return (node);
 }
 
-void TASK_module_new (long long int module_type,
-                      long long int module_value,
-                      double ratio)
+void TASK_module_new_ratio (unsigned long int module_type,
+                            unsigned long int module_value,
+                            double ratio)
 {
-  long long int module_type_ll, module_value_ll;
+  TASK_module_new_general(module_type,
+                          module_value,
+                          ratio,
+                          (double) -1);
+}
+
+void TASK_module_new_duration (unsigned long int module_type,
+                               unsigned long int module_value,
+                               double const_burst_duration)
+{
+  TASK_module_new_general(module_type,
+                          module_value,
+                          (double) -1,
+                          const_burst_duration);
+
+  return;
+}
+
+void TASK_module_new_general (unsigned long int module_type,
+                              unsigned long int module_value,
+                              double            ratio,
+                              double            const_burst_duration)
+{
+  unsigned long int module_type_ll, module_value_ll;
 
   struct t_Ptask  *current_Ptask;
   struct t_module *mod;
@@ -1742,7 +1774,7 @@ void TASK_module_new (long long int module_type,
   if (Ptask_ids == 0)
   {
     fprintf(stderr,
-            "   * Warning: No applications defined when adding module [%lld:%lld]. Module not added\n",
+            "   * Warning: No applications defined when adding module [%lu:%lu]. Module not added\n",
             module_value_ll,
             module_type_ll);
 
@@ -1759,7 +1791,7 @@ void TASK_module_new (long long int module_type,
   if (current_Ptask == NULL)
   {
     fprintf(stderr,
-            "   * Warning: No applications defined when adding module [%lld:%lld]. Module not added\n",
+            "   * Warning: No applications defined when adding module [%lu:%lu]. Module not added\n",
             module_value_ll,
             module_type_ll);
     fprintf(stderr, "   * Please guarantee order ('mapping_information' -> 'modules information') in configuration file\n");
@@ -1769,18 +1801,26 @@ void TASK_module_new (long long int module_type,
   if (module_value == 0)
   {
     fprintf(stderr,
-            "   * Unable to add new module [%lld] with value 0\n",
+            "   * Unable to add new module [%lu] with value 0\n",
             module_type_ll);
     return;
   }
 
-  if (debug&D_TASK)
+  if (ratio == -1)
   {
-    printf ("   * New module: [%lld:%lld] with ratio %f\n",
+    printf ("   * New module: [%lu:%lu] with constant duration %f\n",
+            module_type_ll,
+            module_value_ll,
+            const_burst_duration);
+  }
+  else
+  {
+    printf ("   * New module: [%lu:%lu] with ratio %f\n",
             module_type_ll,
             module_value_ll,
             ratio);
   }
+
 
   // mod = (struct t_module *) query_prio_queue (&Ptask->Modules, (t_priority)identificator);
 
@@ -1791,14 +1831,15 @@ void TASK_module_new (long long int module_type,
   if (mod == M_NIL)
   {
     mod = (struct t_module*) malloc (sizeof(struct t_module));
-    mod->type          = module_type_ll;
-    mod->value         = module_value_ll;
-    mod->ratio         = ratio;
-    mod->module_name   = (char *)0;
-    mod->activity_name = (char *)0;
-    mod->src_file      = -1;
-    mod->src_line      = -1;
-    mod->used          =  0; /* De moment no ha estat utilitzat */
+    mod->type                 = module_type_ll;
+    mod->value                = module_value_ll;
+    mod->ratio                = ratio;
+    mod->const_burst_duration = const_burst_duration * 1e9;
+    mod->module_name          = (char*) 0;
+    mod->activity_name        = (char*) 0;
+    mod->src_file             = -1;
+    mod->src_line             = -1;
+    mod->used                 =  0; /* De moment no ha estat utilitzat */
 
     insert_module (&current_Ptask->Modules,
                    module_type_ll,
@@ -1807,18 +1848,21 @@ void TASK_module_new (long long int module_type,
   }
   else
   {
-    fprintf (stdout, "   * Module [%lld:%lld] already exists. Old ratio %f, new one %f\n",
+    fprintf (stdout, "   * Module [%lu:%lu] already exists. Overwriting!\n",
              module_type,
              module_value,
              mod->ratio, ratio);
 
     mod->ratio = ratio;
   }
+
+  return;
+  return;
 }
 
-void module_entrance(struct t_thread *thread,
-                     long long        module_type,
-                     long long        module_value)
+void module_entrance(struct t_thread  *thread,
+                     unsigned long int module_type,
+                     unsigned long int module_value)
 {
   register struct t_module *mod;
   register struct t_Ptask  *Ptask = thread->task->Ptask;
@@ -1857,7 +1901,7 @@ void module_entrance(struct t_thread *thread,
     if (debug&D_TASK)
     {
       PRINT_TIMER (current_time);
-      printf (": Going into module [%lld:%lld] (%s) for P%d T%d th%d\n",
+      printf (": Going into module [%lu:%lu] (%s) for P%02d T%02d th%02d\n",
               mod->type,
               mod->value,
               mod->module_name,
@@ -1866,8 +1910,8 @@ void module_entrance(struct t_thread *thread,
   }
 }
 
-int module_exit (struct t_thread* thread,
-                 long long        module_type)
+int module_exit (struct t_thread  *thread,
+                 unsigned long int module_type)
 {
   register struct t_Ptask  *Ptask = thread->task->Ptask;
   register struct t_module *mod;
@@ -1969,7 +2013,7 @@ int module_exit (struct t_thread* thread,
       if (debug&D_TASK)
       {
         PRINT_TIMER (current_time);
-        printf (": Going out module: [%lld] (Unknown) for P%02d T%02d th%02d\n",
+        printf (": Going out module: [%lu] (Unknown) for P%02d T%02d th%02d\n",
                 module_type,
                 IDENTIFIERS(thread));
       }
@@ -2020,7 +2064,11 @@ void recompute_work_upon_modules(struct t_thread *thread,
 
   if (mod != M_NIL)
   {
-    if (mod->ratio == 0.0)
+    if (mod->ratio == (double) -1)
+    {
+      action->desc.compute.cpu_time = mod->const_burst_duration;
+    }
+    else if (mod->ratio == 0.0)
     {
       action->desc.compute.cpu_time = 0.0;
     }

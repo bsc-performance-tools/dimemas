@@ -856,7 +856,7 @@ next_op:
             if (debug&D_SCH)
             {
               PRINT_TIMER (current_time);
-              printf (": SCHEDULER general P%02d T%02d (t%02d) User Event %lld (%lld)\n",
+              printf (": SCHEDULER general P%02d T%02d (t%02d) User Event %lu (%lu)\n",
                       IDENTIFIERS (thread),
                       action->desc.even.type,
                       action->desc.even.value);
@@ -877,16 +877,23 @@ next_op:
             }
 
             /* JGG (2012/01/10): New module management */
-            if (action->desc.even.value != (long long) 0)
+            if (action->desc.even.value != (unsigned long int) 0)
             {
+              /* DEBUG
+              PRINT_TIMER(current_time);
+              printf(": Checking 'module_entrance [%lld:%lld] for P%d T%d th%d\n",
+                    action->desc.even.type,
+                    action->desc.even.value,
+                    IDENTIFIERS(thread));
+              */
               module_entrance(thread,
-                              action->desc.even.type,
-                              action->desc.even.value);
+                              (unsigned long int) action->desc.even.type,
+                              (unsigned long int) action->desc.even.value);
             }
             else
             {
               module_exit(thread,
-                          action->desc.even.type);
+                          (unsigned long int) action->desc.even.type);
             }
 
             if (action->desc.even.type == PRIORITY_SET_EVENT)

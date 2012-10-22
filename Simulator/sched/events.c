@@ -271,11 +271,9 @@ void event_manager (struct t_event *event)
 {
   if GT_TIMER (current_time, event->event_time)
   {
-    panic (
-      "Time is going backwards old (%le) new(%le)\n",
-      current_time,
-      event->event_time
-    );
+    die ("Time is going backwards [Previous: %le New: %le]\n",
+         current_time,
+         event->event_time);
   }
 
   if (debug & D_EV)

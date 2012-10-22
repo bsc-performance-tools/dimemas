@@ -10,6 +10,22 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/10/19 - jgonzale - Other
+	CHANGES:	Version update to '4.3.0'
+
+	CHANGES:	Minor cosmetic changes in the output
+
+2012/10/19 - jgonzale - Other
+	BUGFIX:		Solved a bug in the compilation system of the 'common_utilities'
+				that prevent the Dimemas trace to create nanosecond traces.
+
+2012/10/19 - jgonzale - Simulator
+	CHANGES:	Using negative values in the 'modules information' field
+				of the CFG file now indicated the simulator that all
+				CPU bursts inside this module will change its duration to
+				absoulte value of the number indicated. Required to
+				perform 'forced balancing' simulations.
+
 2012/10/10 - jgonzale - prv2dim
 	CHANGES:	Removed a wrong information message in the
 				'ParaverTraceParser'.

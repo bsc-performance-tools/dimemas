@@ -266,7 +266,7 @@ campo:DECIMAL
   f = (struct t_field *) malloc(sizeof(struct t_field));
   f->tipo = 1;
   f->value.real = * (double*) $$;
-  free($$);
+  free((void*) $$);
   $$ = (YYSTYPE) f;
 }
 

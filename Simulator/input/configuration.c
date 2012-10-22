@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 
 #include <list.h>
 
@@ -304,6 +305,7 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
   else
   {
     printf ("-> Loading default scheduler configuration\n");
+
   }
 
   /* Load the scheduler for each machine */
@@ -317,6 +319,9 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
 
     /* Initialize the scheduler using the 'SCH' function table */
     (*SCH[Machines[machine_it].scheduler.policy].scheduler_init) (sch_conf_filename, &Machines[machine_it]);
+    printf ("   * Machine %d. Policy: %s\n",
+            machine_it,
+            SCH[Machines[machine_it].scheduler.policy].name);
   }
 
   return;
@@ -1376,8 +1381,8 @@ void new_mod_info  (struct t_queue *q, struct t_entry* en)
   struct t_field   *f;
   struct t_element *el;
 
-  int    module_type, module_value;
-  double ratio;
+  unsigned long int module_type, module_value;
+  double            const_burst_duration, ratio;
 
   f  = (struct t_field *) head_queue (q);
   el = (struct t_element *) head_queue (en->types);
@@ -1393,7 +1398,7 @@ void new_mod_info  (struct t_queue *q, struct t_entry* en)
     die ("Invalid module type: %d \n", f->value.dec);
     return;
   }
-  module_type = f->value.dec;
+  module_type = (unsigned long int) f->value.dec;
 
   f  = (struct t_field *)   next_queue (q);
   el = (struct t_element *) next_queue (en->types);
@@ -1409,7 +1414,7 @@ void new_mod_info  (struct t_queue *q, struct t_entry* en)
     die ("Invalid module value: %d \n", f->value.dec);
     return;
   }
-  module_value = f->value.dec;
+  module_value = (unsigned long int) f->value.dec;
 
   f  = (struct t_field *)   next_queue (q);
   el = (struct t_element *) next_queue (en->types);
@@ -1419,18 +1424,34 @@ void new_mod_info  (struct t_queue *q, struct t_entry* en)
     BAD_TYPES(f->tipo, el->type);
   }
 
+  /* JGG (2012/10/19) New behavior: negative values indicate that bursts in
+     the module will be susbtitued by the absolute value of the number
+     indicated */
   if (f->value.real < 0)
   {
+    const_burst_duration = fabs(f->value.real);
+    TASK_module_new_duration (module_type,
+                              module_value,
+                              const_burst_duration);
+
+    /* DEBUG
+    printf("New Const Burst Duration Module");
+    printf("(%d:%d): %le\n", module_type, module_value, const_burst_duration);
+    */
+    /*
     near_line ();
     die ("Invalid ratio for module (%d:%d): %le\n",
                       module_type,
                       module_value,
                       f->value.real);
     return;
+    */
   }
-  ratio = f->value.real;
-
-  TASK_module_new (module_type, module_value, ratio);
+  else
+  {
+    ratio = f->value.real;
+    TASK_module_new_ratio (module_type, module_value, ratio);
+  }
 
   return;
 }

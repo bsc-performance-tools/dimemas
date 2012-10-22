@@ -119,9 +119,13 @@ t_boolean more_actions_to_sintetic (struct t_thread *thread);
 
 struct t_node *get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid);
 
-void TASK_module_new (long long int type,
-                      long long int value,
-                      double        ratio);
+void TASK_module_new_ratio (unsigned long int type,
+                            unsigned long int value,
+                            double            ratio);
+
+void TASK_module_new_duration (unsigned long int type,
+                               unsigned long int value,
+                               double            const_burst_duration);
 
 void file_name (struct t_Ptask *Ptask, int file_id, char *location);
 
@@ -135,12 +139,12 @@ void module_name(struct t_Ptask *Ptask,
                  int             src_line);
 */
 
-void module_entrance(struct t_thread *thread,
-                     long long        module_type,
-                     long long        module_value);
+void module_entrance(struct t_thread  *thread,
+                     unsigned long int module_type,
+                     unsigned long int module_value);
 
-int module_exit(struct t_thread *thread,
-                long long        module_type);
+int module_exit(struct t_thread  *thread,
+                unsigned long int module_type);
 
 void user_event_type_name(struct t_Ptask *Ptask,
                           int   type,

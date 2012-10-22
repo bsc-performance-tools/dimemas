@@ -101,6 +101,7 @@ real				{decimal}\.({decimal})?
 {decimal}			{yylval=(YYSTYPE)deci(yytext);return (DECIMAL);};
 -{decimal}			{yylval=(YYSTYPE)deci(yytext);return (DECIMAL);};
 {real}				{yylval=(YYSTYPE)rela(); return (REAL);};
+-{real}				{yylval=(YYSTYPE)rela(); return (REAL);};
 ";;"				return (SEPARADOR);
 "//"				{
 				   while (input()!='\n');
@@ -142,10 +143,22 @@ rela()
   int i,j;
   double k,l;
   double *r;
+  double negative=1;
+
 
   r = (double*) malloc(sizeof (double));
   v = (char*) yytext;
   j = 0;
+
+
+
+  j = 0;
+  if (v[0]=='-')
+  {
+     v++;
+     negative = -1;
+  }
+
   for (i=0;i<yyleng && v[i]!='.'; j=j*10+v[i++]-'0');
   k = (double)j;
   j = 10;
@@ -155,7 +168,8 @@ rela()
     l=l+(double)(v[i]-'0')/j;
     j *= 10;
   }
-  *r = k+l;
+  *r = (k+l)*negative;
+
   return ((YYSTYPE)r);
 }
 
@@ -167,7 +181,7 @@ YYSTYPE insert_string()
   char *new;
 
   i = yyleng-1;
-  
+
   new      = (char*) malloc(i);
   strncpy (new, &yytext[1],i);
   new[i-1] = (char)0;

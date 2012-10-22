@@ -752,14 +752,9 @@ int main (int argc, char *argv[])
     event_manager(current_event);
   }
 
-  if (debug)
-  {
-    printf ("\n");
-    PRINT_TIMER (current_time);
-    printf (": END SIMULATION\n\n");
-  }
-
-
+  printf ("\n");
+  PRINT_TIMER (current_time);
+  printf (": END SIMULATION\n\n");
 
   /* Modules final routines */
   FS_End ();
@@ -796,13 +791,16 @@ int main (int argc, char *argv[])
 
   struct rusage usage;
 
-  if (getrusage(RUSAGE_SELF, &usage) == -1)
+  if (debug)
   {
-    printf("Unable to get memory usage statistics\n");
-  }
-  else
-  {
-    printf("Maximum memory used: %ld\n", usage.ru_maxrss);
+    if (getrusage(RUSAGE_SELF, &usage) == -1)
+    {
+      printf("Unable to get memory usage statistics\n");
+    }
+    else
+    {
+      printf("Maximum memory used: %ld\n", usage.ru_maxrss);
+    }
   }
 
   // printf("Possible living actions: %ld\n", READ_get_living_actions());

@@ -114,14 +114,15 @@ struct t_list
 
 struct t_module
 {
-  long long type;
-  long long value;
-  double    ratio;
-  int       src_file;
-  int       src_line;
-  int       used;     /* Indica si el bloc ha estat utilitzat (a part de definit) */
-  char     *module_name;
-  char     *activity_name;
+  unsigned long int type;
+  unsigned long int value;
+  double            ratio;
+  double            const_burst_duration; /* JGG (2012/10/19): to substitute bursts durations */
+  int               src_file;
+  int               src_line;
+  int               used;     /* Indica si el bloc ha estat utilitzat (a part de definit) */
+  char             *module_name;
+  char             *activity_name;
 };
 
 struct t_filed
@@ -347,8 +348,8 @@ struct t_recv
 
 struct t_even
 {
-  long long type;  /* Event type user or compiler */
-  long long value; /* Value for this event */
+  unsigned long int type;  /* Event type user or compiler */
+  unsigned long int value; /* Value for this event */
 };
 
 struct t_prio

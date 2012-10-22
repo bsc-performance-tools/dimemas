@@ -130,8 +130,10 @@ t_boolean MakeParaverPCF(const char *output_trace_name,
   {
     strncpy(&input_pcf_name[strlen(input_pcf_name)-3],"pcf", 3);
 
+    /*
     printf("PCF to be copied = %s\n",
            input_pcf_name);
+    */
 
     if ( ( input_pcf_file = IO_fopen(input_pcf_name, "r")) == NULL)
     {
