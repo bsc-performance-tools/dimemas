@@ -10,6 +10,11 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/11/23 - jgonzale - Other
+	CHANGES: 	Version update to '4.3.1'
+
+	CHANGES:	Modifications to adapt to the build farm
+
 2012/10/19 - jgonzale - Other
 	CHANGES:	Version update to '4.3.0'
 

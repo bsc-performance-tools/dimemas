@@ -33,10 +33,6 @@ Specific Compilation Options
    There is a wide range of compilation options, to fine tune the simulation.
 Check 'configure --help' for specific compilation options.
 
-   Most common configuration line is:
-
-   * ./configure --enable-large-traces --with-time-limit=<simulation_limit_in_seconds>
-
    In order to adjust the compiler in terms of optimization or debugging options, 
 you must provide specific compiler parameters using the CFLAGS and CXXFLAGS 
 environment variables.
