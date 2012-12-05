@@ -10,6 +10,10 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/12/03 - jgonzale - Simulator - 4.3.2
+	BUGFIX:		TASK_end was called after PARAVER_end causing a resource lock
+				regarding the total number of files opened.
+
 2012/11/23 - jgonzale - Other
 	CHANGES: 	Version update to '4.3.1'
 

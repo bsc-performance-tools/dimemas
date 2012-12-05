@@ -70,11 +70,11 @@ void IO_Init(void)
     exit(EXIT_FAILURE);
   }
 
-  /* DEBUG
+#ifdef DEBUG_IO
   printf("No. Files. Hard limit %d. Sof Limit %d\n",
-         nofile_limits.rlim_max,
-         nofile_limits.rlim_cur);
-  */
+         (int) nofile_limits.rlim_max,
+         (int) nofile_limits.rlim_cur);
+#endif
 
   IO_MaximumFileDescriptors = nofile_limits.rlim_cur;
   IO_OpenedFileDescriptors  = 0;

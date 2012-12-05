@@ -315,7 +315,7 @@ void PARAVER_end(void)
     // TODO: TraceMerger.CleanTemporalFiles();
     die("Unable to open output paraver trace %s: %s\n",
         paraver_trace_filename.c_str(),
-        strerror(errno));
+        IO_get_error());
   }
 
   /* Flush last collapsed events */
