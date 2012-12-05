@@ -545,6 +545,7 @@ t_boolean DATA_ACCESS_reload_ptask (int ptask_id)
         app->threads_offsets[tasks_it][threads_it];
     }
   }
+
   DAP_reset_app_stream_fps (app);
 
   return TRUE;
@@ -1414,7 +1415,8 @@ t_boolean DAP_io_init(void)
   }
 
   /* Get the total available streams from the I/O manager */
-  total_available_streams = IO_available_streams();
+  // Two file pointers are required in case we need to produce a Paraver trace
+  total_available_streams = IO_available_streams() - 2;
 
   for (apps_it = 0; apps_it < main_struct.num_apps; apps_it++)
   {

@@ -786,8 +786,8 @@ int main (int argc, char *argv[])
     show_CP_graph();
   }
 
-  TASK_end ();
   PARAVER_end();
+  TASK_end ();
 
 
   struct rusage usage;
