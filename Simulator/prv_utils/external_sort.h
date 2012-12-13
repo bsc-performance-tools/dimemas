@@ -40,9 +40,6 @@
 #include <vector>
 using std::vector;
 
-#include <sstream>
-using std::ostringstream;
-
 
 /*
  * That could be changed for actual memory usage
@@ -76,7 +73,7 @@ class ExternalSort
     ExternalSort() {};
 
     void Init();
-    
+
     void End();
 
     void NewRecord(int        TYPE,

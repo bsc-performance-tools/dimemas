@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 #include <unistd.h>
+#include <sys/types.h>
 
 #include "dimemas_io.h"
 #include "subr.h"
@@ -54,6 +55,9 @@ extern "C" {
 using std::cout;
 using std::endl;
 
+#include <sstream>
+using std::ostringstream;
+
 #include <algorithm>
 using std::stable_sort;
 
@@ -67,27 +71,27 @@ string ExternalSort::StatesAndCommsFileName = "";
 void ExternalSort::Init()
 {
   char* TmpDirChar;
+  ostringstream PID;
+  PID << getpid();
 
   if ( (TmpDirChar = getenv("TMPDIR")) != NULL)
   {
     ExternalSort::TmpDir = string(TmpDirChar);
   }
 
-  ExternalSort::EventsFileName = ExternalSort::TmpDir + "/prv_events_tmp";
+  ExternalSort::EventsFileName = ExternalSort::TmpDir + "/prv_events_tmp." + PID.str();
 
   if ( (EventsFile = IO_fopen(ExternalSort::EventsFileName.c_str(), "w")) == NULL)
   {
     die("Unable to open a temporal Paraver events file: %s\n", IO_get_error());
   }
 
-  ExternalSort::StatesAndCommsFileName = ExternalSort::TmpDir + "/prv_states_comms_tmp";
+  ExternalSort::StatesAndCommsFileName = ExternalSort::TmpDir + "/prv_states_comms_tmp." + PID.str();
 
   /* This open is to guarantee the availability of file pointers */
   NumFiles = 0;
 
-  ExternalSort::TmpFilesPrefix = ExternalSort::TmpDir+"/prv_states_comms_tmp";
-
-
+  ExternalSort::TmpFilesPrefix = ExternalSort::TmpDir + "/prv_states_comms_tmp." + PID.str();
 
   TemporalFileNames.str("");
   TemporalFileNames << ExternalSort::TmpFilesPrefix << "." << NumFiles;

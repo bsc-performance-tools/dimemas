@@ -46,7 +46,8 @@
 #include "check.h"
 
 #define YYSTYPE long
-#define YYMAXDEPTH 30000
+/* 20121213 (jgonzale): Bigger grammar stack */
+#define YYMAXDEPTH 60000
 
   static void      yyerror(char *);
 

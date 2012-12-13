@@ -10,6 +10,12 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/12/13 - jgonzale - Simulator - 4.3.4
+	CHANGES:	Added the PID to Paraver temporal files to allow multiple
+				simultaneos executions.
+
+	CHANGES:	Increased the bison stack size.
+
 2012/12/03 - jgonzale - Simulator - 4.3.3
 	BUGFIX:		TASK_end / PARAVER_end order reversed. On file_data_access
 				total number of file pointers reserved minus 2, so as to 
