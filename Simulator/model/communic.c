@@ -5219,6 +5219,7 @@ calcula_fan (t_nano bandw,   /* MBytes per segon */
     exit (1);
     break;
   }
+
   switch (model)
   {
   case GOP_MODEL_0:
@@ -5239,6 +5240,7 @@ calcula_fan (t_nano bandw,   /* MBytes per segon */
     fo        = compute_contention_stage (num_tasks, num_busos);
     *temps    = (startup + mes_si * bandw) * fo;
     *latencia = startup * fo;
+
     break;
   default:
     panic ("Invalid model FIN/OUT %d for global operation\n", model);
@@ -5419,10 +5421,12 @@ calcula_temps_operacio_global (struct t_thread *thread,
   t_nano tfin_node, lfin_node, tfout_node, lfout_node;
   t_nano tfin_int,  lfin_int,  tfout_int,  lfout_int;
   t_nano tfin_ext,  lfin_ext,  tfout_ext,  lfout_ext;
-  t_nano flightin_ext, flightout_ext;
-  t_nano temps, latencia, t_recursos; /* Temps totals */
   t_nano taux_in, laux_in, taux_out, laux_out;
   t_nano tauxn_in, lauxn_in, tauxn_out, lauxn_out;
+
+  t_nano flightin_ext, flightout_ext;
+  t_nano temps, latencia, t_recursos; /* Temps totals */
+
   t_nano bandw_externa;
   double  suma_aux, suma_maxim;
 
@@ -5455,8 +5459,11 @@ calcula_temps_operacio_global (struct t_thread *thread,
 
   /* S'inicialitzen els temps */
   tfin_node    = lfin_node = tfout_node = lfout_node = 0;
+  taux_in      = laux_in   = taux_out   = laux_out   = 0;
   tfin_int     = lfin_int  = tfout_int  = lfout_int  = 0;
+  tauxn_in     = lauxn_in  = tauxn_out  = lauxn_out  = 0;
   tfin_ext     = lfin_ext  = tfout_ext  = lfout_ext  = 0;
+
   flightin_ext = flightout_ext = 0;
   suma_maxim   = 0;
 
@@ -5485,29 +5492,45 @@ calcula_temps_operacio_global (struct t_thread *thread,
     }
 
     /* Es calculen els temps entre nodes d'aquesta maquina */
-    calcula_fan (machine->communication.remote_bandwidth,
-                 num_tasks,
-                 machine->communication.num_messages_on_network,
-                 FAN_IN,
-                 glop_info->FIN_model,
-                 glop_info->FIN_size,
-                 action->desc.global_op.bytes_send,
-                 action->desc.global_op.bytes_recvd,
-                 node->remote_startup,
-                 &taux_in,
-                 &laux_in);
+    if (machine->number_of_nodes > 1)
+    {
+      calcula_fan (machine->communication.remote_bandwidth,
+                   num_tasks,
+                   machine->communication.num_messages_on_network,
+                   FAN_IN,
+                   glop_info->FIN_model,
+                   glop_info->FIN_size,
+                   action->desc.global_op.bytes_send,
+                   action->desc.global_op.bytes_recvd,
+                   node->remote_startup,
+                   &taux_in,
+                   &laux_in);
 
-    calcula_fan (machine->communication.remote_bandwidth,
-                 num_tasks,
-                 machine->communication.num_messages_on_network,
-                 FAN_OUT,
-                 glop_info->FOUT_model,
-                 glop_info->FOUT_size,
-                 action->desc.global_op.bytes_send,
-                 action->desc.global_op.bytes_recvd,
-                 node->remote_startup,
-                 &taux_out,
-                 &laux_out);
+      calcula_fan (machine->communication.remote_bandwidth,
+                   num_tasks,
+                   machine->communication.num_messages_on_network,
+                   FAN_OUT,
+                   glop_info->FOUT_model,
+                   glop_info->FOUT_size,
+                   action->desc.global_op.bytes_send,
+                   action->desc.global_op.bytes_recvd,
+                   node->remote_startup,
+                   &taux_out,
+                   &laux_out);
+    }
+
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": Machine %d (between nodes): tfin=%f lfin=%f tfout=%f lfout=%f\n",
+        machine->id,
+        taux_in,
+        laux_in,
+        taux_out,
+        laux_out
+      );
+    }
 
     /* Es calculen els temps dins de cada node de la maquina i
        s'agafen els maxims. */
@@ -5520,6 +5543,19 @@ calcula_temps_operacio_global (struct t_thread *thread,
                                      &tauxn_out,
                                      &lauxn_out,
                                      num_tasks);
+
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": Machine %d (intra nodes): tfin=%f lfin=%f tfout=%f lfout=%f\n",
+        machine->id,
+        tauxn_in,
+        lauxn_in,
+        tauxn_out,
+        lauxn_out
+      );
+    }
 
     /* Es calcula la suma total de temps entre nodes d'aquesta maquina
        mes els temps del node d'aquesta maquina de mes durada */

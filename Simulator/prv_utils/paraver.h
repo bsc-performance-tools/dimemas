@@ -221,9 +221,9 @@ extern void PARAVER_P2P_Comm (int cpu_s,  int ptask_s, int task_s, int thread_s,
                               int size, int tag);
 
 extern void PARAVER_Event (int cpu, int ptask, int task, int thread,
-                           dimemas_timer time,
-                           long int      type,
-                           long int      value);
+                           dimemas_timer     time,
+                           unsigned long long type,
+                           unsigned long long value);
 
 #ifdef __cplusplus
 }

@@ -123,9 +123,9 @@ void NewState(int cpu, int ptask, int task, int thread,
               int           state);
 
 void NewEvent(int cpu, int ptask, int task, int thread,
-              prv_time_t time,
-              long int   type,
-              long int   value);
+              prv_time_t        time,
+              unsigned long long type,
+              unsigned long long value);
 
 void NewCommunication(int cpu_s, int ptask_s, int task_s, int thread_s,
                       prv_time_t log_s,
@@ -146,12 +146,12 @@ void GenerateParaverHeader(FILE* ParaverTraceFile);
 class _EventCollapser
 {
   private:
-    int                               CPU;
-    int                               Ptask;
-    int                               Task;
-    int                               Thread;
-    prv_time_t                        Timestamp;
-    vector<pair<long int, long int> > Events;
+    int                                                   CPU;
+    int                                                   Ptask;
+    int                                                   Task;
+    int                                                   Thread;
+    prv_time_t                                            Timestamp;
+    vector<pair<unsigned long long, unsigned long long> > Events;
 
   public:
 
@@ -201,7 +201,7 @@ class _EventCollapser
 
     bool voidEvent(void) { return (Events.size() == 0); }
 
-    void addEvent(long int type, long int value)
+    void addEvent(unsigned long long type, unsigned long long value)
     {
       Events.push_back(make_pair(type, value));
     }
@@ -821,11 +821,11 @@ void PARAVER_P2P_Comm (int cpu_s,  int ptask_s, int task_s, int thread_s,
 
 void PARAVER_Event (int cpu, int ptask, int task, int thread,
                     dimemas_timer time,
-                    long int      type,
-                    long int      value)
+                    unsigned long long type,
+                    unsigned long long value)
 {
   prv_time_t time_prv;
-  long int   tipus_final, valor_final;
+  unsigned long long   tipus_final, valor_final;
 
   VERIFICA_GENERACIO_PARAVER;
 
@@ -866,7 +866,7 @@ void PARAVER_Event (int cpu, int ptask, int task, int thread,
     printf (": Paraver Event Printed\n\tOBJECT   CPU %d P%02d T%02d (t%02d)\n",
            cpu, ptask, task, thread);
 
-    printf("\tTime: %llu Final Type: %ld Final Value: %ld\n",
+    printf("\tTime: %llu Final Type: %llu Final Value: %llu\n",
            time_prv,
            type,
            value);
@@ -952,7 +952,7 @@ void NewState(int cpu, int ptask, int task, int thread,
 
 void NewEvent(int        cpu, int ptask, int task, int thread,
               prv_time_t time,
-              long int   type, long int value)
+              unsigned long long type, unsigned long long value)
 {
   if (!EventCollapser.isLastEvent(cpu, ptask, task, thread, time))
   {

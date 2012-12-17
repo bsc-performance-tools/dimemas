@@ -348,8 +348,8 @@ struct t_recv
 
 struct t_even
 {
-  unsigned long int type;  /* Event type user or compiler */
-  unsigned long int value; /* Value for this event */
+  unsigned long long type;  /* Event type user or compiler */
+  unsigned long long value; /* Value for this event */
 };
 
 struct t_prio

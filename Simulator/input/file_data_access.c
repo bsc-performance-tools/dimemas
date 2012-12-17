@@ -97,7 +97,7 @@
 #define GLOBAL_OP_REGEXP    "%d:%d:%d:%d:%ld:%ld" // global_op_id:comm_id:root_task:root_th:bytes_send:bytes_recv
 
 #define RECORD_EVENT     20
-#define EVENT_REGEXP     "%lu:%lu" // event_type:event_value
+#define EVENT_REGEXP     "%llu:%llu" // event_type:event_value
 
 #define RECVTYPE_RECV  0
 #define RECVTYPE_IRECV 1
@@ -2031,8 +2031,8 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
 t_boolean DAP_read_event     (const char      *event_str,
                               struct t_action *action)
 {
-  unsigned long int type;
-  unsigned long int value;
+  unsigned long long type;
+  unsigned long long value;
 
   if (sscanf(event_str,
              EVENT_REGEXP,

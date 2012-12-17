@@ -856,7 +856,7 @@ next_op:
             if (debug&D_SCH)
             {
               PRINT_TIMER (current_time);
-              printf (": SCHEDULER general P%02d T%02d (t%02d) User Event %lu (%lu)\n",
+              printf (": SCHEDULER general P%02d T%02d (t%02d) User Event %llu (%llu)\n",
                       IDENTIFIERS (thread),
                       action->desc.even.type,
                       action->desc.even.value);

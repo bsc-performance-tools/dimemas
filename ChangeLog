@@ -10,6 +10,15 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2012/12/17 - jgonzale - Simulator - 4.3.5
+	BUGFIX:		Collective operations compute the inter-node 'fans' when
+				just one node involved
+
+	BUGFIX:		Event type/values are now managed using 'unsigned long long'
+				variables
+
+	FEATURES:	Added 'TODO' file
+
 2012/12/13 - jgonzale - Simulator - 4.3.4
 	CHANGES:	Added the PID to Paraver temporal files to allow multiple
 				simultaneos executions.
