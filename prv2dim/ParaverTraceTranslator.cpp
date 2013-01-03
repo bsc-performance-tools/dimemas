@@ -425,9 +425,14 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   INT32  PercentageRead    = 0;
 
   vector<INT32> TasksWithOutsideComms;
-  bool          OutsideCommsPresent      = false;
+  bool          OutsideCommsPresent = false;
+
   vector<INT32> TasksWithWrongComms;
-  bool          WrongCommsPresent        = false;
+  bool          WrongCommsPresent = false;
+
+  vector<INT32> TasksWithNonDeterministicComms;
+  bool          NonDeterministicCommsPresent = false;
+
   vector<INT32> TasksWithDisorderedRecords;
   bool          DisorderedRecordsPresent = false;
 
@@ -435,7 +440,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   off_t                    OffsetsOffset;
   vector<off_t>            OutputOffsets;
 
-  /* For obtaining cluster labels from .pcf 
+  /* For obtaining cluster labels from .pcf
   using namespace libparaver;
   UIParaverTraceConfig *pcfTrace;
   string               InputPCFName;
@@ -801,6 +806,12 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
       TasksWithWrongComms.push_back(TranslationInfo[i]->GetTaskId());
     }
 
+    if (TranslationInfo[i]->GetNonDeterministicComms())
+    {
+      NonDeterministicCommsPresent = true;
+      TasksWithNonDeterministicComms.push_back(TranslationInfo[i]->GetTaskId());
+    }
+
     if (TranslationInfo[i]->GetDisorderedRecords())
     {
       DisorderedRecordsPresent = true;
@@ -815,12 +826,15 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     cout << "********************************************************************************" << endl;
     cout << "*                               WARNING                                        *" << endl;
     cout << "********************************************************************************" << endl;
+    cout << TasksWithOutsideComms.size() << " ";
+    /*
     cout << "Tasks ";
     cout << TasksWithOutsideComms[0];
     for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
       cout << ", " << TasksWithOutsideComms[i];
     cout << endl;
-    cout << "have communications outside a block" << endl;
+    */
+    cout << "tasks have communications records outside a communication block" << endl;
     cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
     cout << "NOTE: If the Paraver trace comes from a trace clock, check the cut limtis" << endl;
     cout << "********************************************************************************" << endl;
@@ -833,14 +847,37 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     cout << "********************************************************************************" << endl;
     cout << "*                               WARNING                                        *" << endl;
     cout << "********************************************************************************" << endl;
+    cout << TasksWithWrongComms.size() << " ";
+    /*
     cout << "Tasks ";
     cout << TasksWithWrongComms[0];
     for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
       cout << ", " << TasksWithOutsideComms[i];
-    cout << endl;
-    cout << "have communications wrapped with not matching blocks" << endl;
+    cout << endl; */
+    cout << "tasks have communications records wrapped with not matching blocks" << endl;
     cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
     cout << "NOTE: Pleasy check the Paraver trace time resolution" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << endl;
+  }
+
+  if (NonDeterministicCommsPresent)
+  {
+    cout << endl;
+    cout << "********************************************************************************" << endl;
+    cout << "*                               WARNING                                        *" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << TasksWithNonDeterministicComms.size() << " ";
+    /*
+    cout << "Tasks ";
+    cout << TasksWithWrongComms[0];
+    for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
+      cout << ", " << TasksWithOutsideComms[i];
+    cout << endl; */
+    cout << "tasks execute non-deterministic communications primitives" << endl;
+    cout << " (MPI_Test[*] | MPI_Waitany | MPI_Waitall | MPI_Waitsome)" << endl;
+    cout << "The simulation of this trace will not capture the " << endl;
+    // cout << "NOTE: Pleasy check the Paraver trace time resolution" << endl;
     cout << "********************************************************************************" << endl;
     cout << endl;
   }
@@ -850,13 +887,16 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     cout << "********************************************************************************" << endl;
     cout << "*                               WARNING                                        *" << endl;
     cout << "********************************************************************************" << endl;
+    cout << TasksWithDisorderedRecords.size() << " ";
+    /*
     cout << "Tasks ";
     cout << TasksWithDisorderedRecords[0];
     for (size_t i = 1; i < TasksWithDisorderedRecords.size(); i++)
       cout << ", " << TasksWithDisorderedRecords[i];
-    cout << endl;
-    cout << "have disordered records" << endl;
+    cout << endl; */
+    cout << "tasks have disordered records" << endl;
     cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
+    cout << "NOTE: Contact tools@bsc.es to check how to solve this problem" << endl;
     cout << "********************************************************************************" << endl;
     cout << endl;
   }

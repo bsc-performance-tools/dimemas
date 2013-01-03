@@ -777,7 +777,7 @@ t_boolean DAP_read_header (app_struct *ptask,
 
   // Header format: #DIMEMAS:trace_name:offsets[,offsets_offset]:ptask_info
   if (sscanf(header,
-             "#DIMEMAS:%[^:]:%[^:]:%s",
+             "#DIMEMAS:\"%[^\"]\":%[^:]:%s",
              app_name_str,
              offsets_str,
              ptask_info_str) != 3)

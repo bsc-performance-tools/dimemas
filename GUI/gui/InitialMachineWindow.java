@@ -48,6 +48,8 @@ import javax.swing.*;
 import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /*
 * Esta clase crea la ventana de configuración correspondiente a la arquitectura
@@ -179,27 +181,68 @@ public class InitialMachineWindow extends GUIWindow
 
         } while(line.equals(""));
 
+        // Pattern p = Pattern.compile("#DIMEMAS:\"(\\d+)\"-(\\p{Alpha}+)-(\\d+) (\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)")
+
         if (line.startsWith("#DIMEMAS"))
         {
           /* line contains the header! */
-          String[] tokens = line.split("[:,()]+");
+          Pattern header_pattern = Pattern.compile("#DIMEMAS:\"(.*)\":(.*):(\\d+)\\((.*)$");
+          Matcher header_matcher = header_pattern.matcher(line);
 
-          /* 0: Magic!
-           * 1: Trace Name
-           * 2: Offsets Presence
-           */
-          if (tokens[2].equals("0"))
-          {
-            tf_tasks.setText(tokens[3]);
-          }
-          else if (tokens[2].equals("1"))
-          {
-            tf_tasks.setText(tokens[4]);
-          }
-          else
+          // String[] tokens = line.split("#DIMEMAS:\"([^\"]+)\":([^:]+):([^\n]+)");
+          // String[] tokens = line.split("#DIMEMAS:\"[^\"]+\":[^:]+:[^\n]+$");
+          // String[] tokens = line.split("#DIMEMAS:\"([^\"]+)\":([^:]+):([.]+)$");
+          // String[] tokens = line.split("#DIMEMAS:\"(.*)\":(.*):(.*)");
+         //
+
+
+          if (!header_matcher.matches())
           {
             Tools.showErrorDialog("Wrong header in tracefile");
           }
+          else
+          {
+          /* 1: Trace Name
+           * 2: Offsets
+           * 3: # Tasks
+           * 4: Rest of object definitions*/
+            String objects = header_matcher.group(3);
+
+            tf_tasks.setText(header_matcher.group(3));
+
+           // System.out.println("Objects = "+objects);
+          }
+
+
+          /*
+          if (tokens.length > 0)
+          {
+            System.out.println("Token_0 = "+tokens[0]+"\n");
+          }
+          */
+
+          /* 0: Trace Name
+           * 1: Offsets
+           * 2: Trace objects
+
+          if (tokens.length != 3)
+          {
+            Tools.showErrorDialog("Wrong header in tracefile. Tokens = " + tokens.length);
+          }
+          else
+          {
+            String[] objects = tokens[2].split(",");
+
+            if (objects.length == 0)
+            {
+              Tools.showErrorDialog("Wrong header in tracefile");
+            }
+            else
+            {
+              tf_tasks.setText(objects[0]);
+            }
+          }
+          */
         }
         else if (line.startsWith("SDDFA;;"))
         {

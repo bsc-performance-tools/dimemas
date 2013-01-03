@@ -10,6 +10,13 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/01/03 - jgonzale - prv2dim - 4.3.6
+	BUGFIX:		MPI_Test[*] primitives are translated as communicatio
+				wait records
+
+2013/01/02 - jgonzale - Simulator | GUI
+	BUGFIX:		Dimemas[GUI] not robust against ':' in trace name
+
 2012/12/17 - jgonzale - Simulator - 4.3.5
 	BUGFIX:		Collective operations compute the inter-node 'fans' when
 				just one node involved

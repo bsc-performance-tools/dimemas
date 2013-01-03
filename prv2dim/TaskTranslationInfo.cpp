@@ -226,11 +226,12 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
 
   this->IprobeMissesThreshold = IprobeMissesThreshold;
 
-  OngoingIprobe      = false;
-  IprobeBurstFlushed = false;
-  OutsideComms       = false;
-  WrongComms         = false;
-  DisorderedRecords  = false;
+  OngoingIprobe         = false;
+  IprobeBurstFlushed    = false;
+  OutsideComms          = false;
+  WrongComms            = false;
+  NonDeterministicComms = false;
+  DisorderedRecords     = false;
   // RecordStack.empty();
 }
 
@@ -1181,11 +1182,39 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         WrongComms = true;
       }
       break;
-    case BLOCK_ID_MPI_Waitany:
     case BLOCK_ID_MPI_Wait:
+      /* DEBUG
+      fprintf(stdout, "MPI_WAIT\n");
+      */
+      if (CurrentComm->GetType() == PHYSICAL_RECV)
+      {
+#ifdef DEBUG
+        cout << "Printing NX Wait " << *CurrentComm;
+#endif
+        CommunicationPrimitivePrinted = true;
+
+        if (Dimemas_NX_Wait(TemporaryFile,
+                            TaskId, ThreadId,
+                            PartnerTaskId,
+                            CommId, Size, (INT64) Tag) < 0)
+        {
+          SetError(true);
+          SetErrorMessage("error writing output trace", strerror(errno));
+          return false;
+        }
+
+      }
+      else if (CurrentComm->GetType() != LOGICAL_RECV)
+      {
+        WrongComms = true;
+      }
+      break;
+    case BLOCK_ID_MPI_Waitany:
     case BLOCK_ID_MPI_Waitall:
     case BLOCK_ID_MPI_Waitsome:
     case BLOCK_ID_MPI_Test:
+    case BLOCK_ID_MPI_Testany:
+    case BLOCK_ID_MPI_Testall:
 
       /* DEBUG
       fprintf(stdout, "MPI_WAIT\n");
@@ -1206,6 +1235,8 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+
+        NonDeterministicComms = true;
       }
       else if (CurrentComm->GetType() != LOGICAL_RECV)
       {

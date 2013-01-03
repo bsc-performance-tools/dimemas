@@ -64,6 +64,7 @@ class TaskTranslationInfo: public Error
     bool                    PendingGlobalOp;
     bool                    OutsideComms;
     bool                    WrongComms;
+    bool                    NonDeterministicComms;
     bool                    DisorderedRecords;
     bool                    FlushClusterStack;
 
@@ -112,11 +113,13 @@ class TaskTranslationInfo: public Error
 
     bool Merge(FILE* DimemasFile);
 
-    bool GetOutsideComms (void)     { return OutsideComms; };
+    bool GetOutsideComms (void)         { return OutsideComms; };
 
-    bool GetWrongComms (void)       { return WrongComms; };
+    bool GetWrongComms (void)           { return WrongComms; };
 
-    bool GetDisorderedRecords(void) { return DisorderedRecords; };
+    bool GetNonDeterministicComms(void) { return NonDeterministicComms; };
+
+    bool GetDisorderedRecords(void)     { return DisorderedRecords; };
 
   private:
     bool ReorderAndFlush(void);
