@@ -36,6 +36,7 @@
 #include "EventEncoding.h"
 #include "Dimemas_Generation.h"
 
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>

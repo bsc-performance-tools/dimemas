@@ -35,11 +35,13 @@
 #include "Dimemas_Generation.h"
 // #include "UIParaverTraceConfig.h"
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <iostream>
 #include <Macros.h>
+
+#include <iostream>
 using std::cout;
 using std::endl;
 using std::flush;
@@ -874,9 +876,9 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
       cout << ", " << TasksWithOutsideComms[i];
     cout << endl; */
-    cout << "tasks execute non-deterministic communications primitives" << endl;
+    cout << "This application execute 'non-deterministic' communications primitives" << endl;
     cout << " (MPI_Test[*] | MPI_Waitany | MPI_Waitall | MPI_Waitsome)" << endl;
-    cout << "The simulation of this trace will not capture the " << endl;
+    cout << "The simulation of this trace will not capture the possible indeterminism " << endl;
     // cout << "NOTE: Pleasy check the Paraver trace time resolution" << endl;
     cout << "********************************************************************************" << endl;
     cout << endl;

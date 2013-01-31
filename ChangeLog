@@ -10,6 +10,16 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/01/31 - jgonzale - prv2dim - 4.3.7
+	CHANGES:	Changed the message of the translator when detecting
+				non-deterministic MPI primitives in the translation
+
+2013/01/30 - jgonzale - GUI
+	BUGFIX:		Solved a problem when using 'chunked mapping'. Now each
+				node is saturated in terms of its number of processors and
+				the processes that not fall in any node, are mapped to
+				the last node
+
 2013/01/03 - jgonzale - prv2dim - 4.3.6
 	BUGFIX:		MPI_Test[*] primitives are translated as communication
 				wait records

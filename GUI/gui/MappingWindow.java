@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -55,7 +55,7 @@ import java.awt.event.*;
 public class MappingWindow extends GUIWindow
 {
   public static final long serialVersionUID = 14L;
-  
+
   private int nodes;
   private int tasks;
 
@@ -67,7 +67,7 @@ public class MappingWindow extends GUIWindow
   private ButtonGroup[]    group;
   private JScrollPane      scrollPanel;
   private JPanel           buttonPanel;
-  
+
   private JPanel infoLabelPanel;
   private JLabel mappingInfoLabel;
 
@@ -149,7 +149,7 @@ public class MappingWindow extends GUIWindow
     }
 
     InitializeMaps();
-    
+
     scrollPanel = new  JScrollPane(panel,
                             ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                             ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -164,7 +164,7 @@ public class MappingWindow extends GUIWindow
   {
     infoLabelPanel   = new JPanel();
     mappingInfoLabel = new JLabel();
-    
+
     switch(mapInfo)
     {
       case Data.NO_MAP:
@@ -189,9 +189,9 @@ public class MappingWindow extends GUIWindow
         break;
     }
     infoLabelPanel.add(mappingInfoLabel);
-    
+
     InitializeMaps();
-    
+
     buttonPanel = new JPanel(new GridLayout(1,3));
     buttonPanel.add(b_linear);
     buttonPanel.add(b_chunk);
@@ -212,16 +212,16 @@ public class MappingWindow extends GUIWindow
       int nTask  = 0;
       int first  = 0;
       int second = stz.indexOf(",",first);
-  
+
       while(second != -1)
       {
         number = Integer.parseInt(Tools.blanks(stz.substring(first,second)));
-  
+
         if((number < nodes) && (nTask < tasks))
         {
           // Updating all maps
           logical_map[number][nTask] = true;
-  
+
           if (showMap)
             map[number][nTask].setSelected(true);
 
@@ -234,11 +234,11 @@ public class MappingWindow extends GUIWindow
           break;
         }
       }
-  
+
       if(second == -1)
       {
         number = Integer.parseInt(Tools.blanks(stz.substring(first,stz.length())));
-  
+
         if((number < nodes) && (nTask < tasks))
         {
           logical_map[number][nTask] = true;
@@ -255,7 +255,7 @@ public class MappingWindow extends GUIWindow
   public MappingWindow(Data d)
   {
     super(d);
-    
+
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
     // Propiedades de la ventana.
@@ -265,7 +265,7 @@ public class MappingWindow extends GUIWindow
 
     // Anyadiendo los componentes a la ventana.
 
-    
+
     nodes = data.processor.getNumberOfNodes();
     tasks = data.map.getTasks();
     createPanel();
@@ -307,7 +307,7 @@ public class MappingWindow extends GUIWindow
   private void linear()
   {
     int it = tasks;
-    
+
     clearMaps();
 
     for( int pointer = 0; pointer < tasks; pointer++)
@@ -326,9 +326,9 @@ public class MappingWindow extends GUIWindow
           map[pointer][pointer].setSelected(true);
       }
     }
-    
+
     mapInfo = Data.LINEAR_MAP;
-    
+
     if (!showMap)
     {
       mappingInfoLabel.setText("LINEAR map");
@@ -344,26 +344,61 @@ public class MappingWindow extends GUIWindow
     int currentTask;
     int currentNode;
     int tasksMapped;
-    
+
+    NodeData machineNodes = data.processor;
+
     clearMaps();
-    
+
+    currentNode = 0;
+    currentTask = 0;
+    while (currentNode < nodes)
+    {
+      int currentNodeProcessors = Integer.parseInt(machineNodes.node[currentNode].getProcessors());
+
+      for (int nodeProcessors = 0; nodeProcessors < currentNodeProcessors; nodeProcessors++)
+      {
+        logical_map[currentNode][currentTask] = true;
+
+        if (showMap)
+          map[currentNode][currentTask].setSelected(true);
+
+        currentTask++;
+      }
+
+      currentNode++;
+    }
+
+
+
+    while (currentTask < tasks)
+    {
+      logical_map[currentNode-1][currentTask] = true;
+
+      if (showMap)
+        map[currentNode-1][currentTask].setSelected(true);
+
+      currentTask++;
+    }
+
+    /*
     for (currentTask = 0, tasksMapped = 0, currentNode = 0;
          currentTask < tasks;
          currentTask++)
     {
       logical_map[currentNode][currentTask] = true;
-      
+
       if (showMap)
         map[currentNode][currentTask].setSelected(true);
-      
+
       tasksMapped++;
-      
+
       if ( tasksMapped == chunkSize)
       {
         tasksMapped = 0;
         currentNode++;
       }
     }
+    */
 
     /*
     for(int pointer = 0; pointer < logical_map.length; pointer++)
@@ -390,7 +425,7 @@ public class MappingWindow extends GUIWindow
         map[tasks*nodes-i].setSelected(true);
     }
     */
-    
+
     mapInfo = Data.CHUNK_MAP;
     if (!showMap)
     {
@@ -405,13 +440,13 @@ public class MappingWindow extends GUIWindow
   {
     int it = 0;
     int currentTask;
-    
+
     clearMaps();
-    
+
     for ( currentTask = 0; currentTask < tasks; currentTask++)
     {
       logical_map[currentTask%nodes][currentTask] = true;
-      
+
       if (showMap)
         map[currentTask%nodes][currentTask].setSelected(true);
     }
@@ -430,7 +465,7 @@ public class MappingWindow extends GUIWindow
       it++;
     }
     */
-    
+
     mapInfo = Data.INTERLEAVE_MAP;
     if (!showMap)
     {
@@ -453,7 +488,7 @@ public class MappingWindow extends GUIWindow
       if(nodes >= tasks)
       {
         linear();
-        
+
         if (!showMap)
           mappingInfoLabel.setText(mappingInfoLabel.getText()+
                                    "(CHUNK not applicable)");
@@ -472,7 +507,7 @@ public class MappingWindow extends GUIWindow
     else if(e.getSource() == b_close)
     {
       generateMapString();
-      
+
       try
       {
         data.map.setMap(stz);
@@ -492,8 +527,8 @@ public class MappingWindow extends GUIWindow
       }
     }
   }
-  
-  
+
+
   private void clearMaps()
   {
     for (int i = 0; i < nodes; i++)
@@ -504,11 +539,11 @@ public class MappingWindow extends GUIWindow
           map[i][j].setSelected(false);
       }
   }
-  
+
   private void generateMapString()
   {
     stz = new String();
-    
+
     for(int j = 0; j < tasks; j++)
     {
       boolean nodeFound = false;
@@ -517,7 +552,7 @@ public class MappingWindow extends GUIWindow
           pointer++)
       {
         /* JGG: Now, the mapping is based on logical_map, not on (visual)map*/
-        
+
         if(logical_map[pointer][j])
         {
           if(stz.equalsIgnoreCase(""))
