@@ -35,7 +35,7 @@ $(jarfile): $(dist_noinst_JAVA) manifest.mf
 	sleep 5 && $(JAR) cvfm $(jarfile) manifest.mf $(srcdir)/data/*.class $(srcdir)/gui/*.class $(srcdir)/tools/*.class *.class
 
 install-data-hook: $(jarfile) $(runscript)
-	chmod u+x $(runscript)
+	chmod a+x $(runscript)
 	cp $(runscript) $(bindir)
 	cp $(jarfile) $(bindir)
 
