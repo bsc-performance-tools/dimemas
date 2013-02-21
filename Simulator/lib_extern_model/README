@@ -24,5 +24,3 @@ it. In the initialization, the simulator will check if all the required
 symbols have been declared, and then it will the different functions as
 explained below.
 
-
-

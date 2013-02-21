@@ -47,6 +47,23 @@
 #define EXTERNAL_GLOBAL_OP 1
 #endif
 
+/* Identifiers of the global operations simulated */
+#define MPI_BARRIER_ID        0
+#define MPI_BCAST_ID          1
+#define MPI_GATHER_ID         2
+#define MPI_GATHERV_ID        3
+#define MPI_SCATTER_ID        4
+#define MPI_SCATTERV_ID       5
+#define MPI_ALLGATHER_ID      6
+#define MPI_ALLGATHERV_ID     7
+#define MPI_ALLTOALL_ID       8
+#define MPI_ALLTOALLV_ID      9
+#define MPI_REDUCE_ID         10
+#define MPI_ALLREDUCE_ID      11
+#define MPI_REDUCE_SCATTER_ID 12
+#define MPI_SCAN_ID           13
+
+
 #ifndef __types_h
 /* Time resolution, microseconds */
 typedef double t_nano;
@@ -122,8 +139,8 @@ t_nano get_bandwidth_value(int sender_nodeid,
  *   - 'comm_id': identifier of the communicator used in the collective
  *                communication
  * 
- *   - 'global_op_id': identifier of collective communication (see
- *                     documentation)
+ *   - 'global_op_id': identifier of collective communication (see definitions
+ *                     at the beginning of this file)
  *
  *   - 'bytes_send': total bytes to be scattered in the collective operation
  *
@@ -149,8 +166,8 @@ int external_get_global_op_type(int comm_id,
  *   - 'comm_id': identifier of the communicator used in the collective
  *                communication
  * 
- *   - 'global_op_id': identifier of collective communication (see
- *                     documentation)
+ *   - 'global_op_id': identifier of collective communication (see definitions
+ *                     at the beginning of this file)
  *
  *   - 'bytes_send': total bytes to be scattered in the collective operation
  *
@@ -164,10 +181,10 @@ int external_get_global_op_type(int comm_id,
  *              *nanoseconds*
  */
 void external_compute_global_operation_time(int     comm_id,
-                                             int     global_op_id,
-                                             int     bytes_send,
-                                             int     bytes_recv,
-                                             t_nano *latency_time,
-                                             t_nano *op_time);
+                                            int     global_op_id,
+                                            int     bytes_send,
+                                            int     bytes_recv,
+                                            t_nano *latency_time,
+                                            t_nano *op_time);
 
 #endif
