@@ -1,5 +1,7 @@
-This package contains the source code of Dimemas simulator and also the 
-graphical user interface.
+This package contains the source code of Dimemas simulator, its graphical 
+user interface, the Paraver to Dimemas trace translator, 'prv2dim', and
+the old Dimemas trace format (.trf) to new format (.dim) translator,
+'trf2dim'.
 
 Dependencies
 ============
@@ -12,6 +14,12 @@ Free source versions of this tools can be obtained at:
         
    * Bison (open source Yacc implementation)
         http://www.gnu.org/software/bison/
+
+   
+   To compile the 'trf2dim' translator you will also need the Boost libraries.
+Version 1.36 or later are required. You can obtain this set of libraries at:
+   * Boost C++ Libraries
+        http://www.boost.org
 
 
    The graphical user interface is codified using Java and packaged as a JAR
@@ -41,5 +49,14 @@ environment variables.
 hesitate to contact us to solve any doubts regarding the specific Dimemas 
 tune.
 
-   Dimemas contact e-mail: tools@bsc.es
+Dimemas external communications model support
+=============================================
+   
+   To extend the Dimemas simulator by using an external communication library,
+please refer to the README file include in the Simulator/lib_extern_model in
+the source code packae, or $DIMEMAS_HOME/share/lib_extern_model_example in the
+installation directory.
+
+   ******* Dimemas contact e-mail: tools@bsc.es ********
+
 

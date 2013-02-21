@@ -10,6 +10,10 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/02/20 - jgonzale - Simulator - 4.4.0
+	FEATURES:	Backport of the 'lib_extern_model' support to compute some
+				communications parameters externally to the simulator core.
+
 2013/01/31 - jgonzale - GUI - 4.3.7
 	CHANGES:	Added execution permission for all users to the 'DimemasGUI'
 				script

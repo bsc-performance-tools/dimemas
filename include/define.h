@@ -239,6 +239,11 @@
 #define INTERNAL_NETWORK_COM_TYPE      1
 #define EXTERNAL_NETWORK_COM_TYPE      2
 #define DEDICATED_CONNECTION_COM_TYPE  3
+#define EXTERNAL_MODEL_COM_TYPE        4 // Used by the external communications model
+
+/* Type of global Ops used by the external communications models */
+#define DIMEMAS_GLOBAL_OP_MODEL  0
+#define EXTERNAL_GLOBAL_OP_MODEL 1
 
 /* Communication kinds */
 #define NORD_SYNC  0 /* 0 IMMD / 0 RENDEZVOUS */

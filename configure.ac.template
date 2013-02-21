@@ -207,6 +207,7 @@ CXXFLAGS="$CXXFLAGS $Z_FLAGS"
 LIBS="$LIBS $Z_LIBS"
 
 AC_CHECK_LIB([m],[sqrt])
+AC_CHECK_LIB([dl],[dlopen])
 
 dnl ========================================================================
 dnl BOOST

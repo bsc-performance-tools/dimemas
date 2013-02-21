@@ -2,6 +2,8 @@ simulator_dir = $(top_srcdir)/Simulator
 
 SUBDIRS = io input model prv_utils sched utils
 
+EXTRA_DIST = lib_extern_model
+
 if VENUS_ENABLED
   SUBDIRS += venusclient
 endif
@@ -41,3 +43,14 @@ Dimemas_LDADD += $(simulator_dir)/venusclient/libDimemasVenusClient.la
 endif
 
 DimemasUpdateCFG_SOURCES = Dimemas_updateCFGs.cpp
+
+LIB_EXTERN_MODEL_SRCS=lib_extern_model/Makefile \
+	lib_extern_model/extern_comm_model.c \
+	lib_extern_model/README
+
+install-data-hook:
+	$(mkdir_p) $(includedir)/
+	$(mkdir_p) $(datadir)/lib_extern_model_example
+	cp -f $(LIB_EXTERN_MODEL_SRCS) $(datadir)/lib_extern_model_example
+	cp -f lib_extern_model/extern_comm_model.h $(includedir)/
+

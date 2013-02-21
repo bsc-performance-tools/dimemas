@@ -1,0 +1,28 @@
+Dimemas external communications model support
+=============================================
+
+Dimemas offers a simple interface to compute the duration of the p2p and
+collective communications externally.
+
+*** Implementation of the external communications model library ***
+
+In brief, you have to implement the 5 functions declared in the file
+'external_comm_model.h', located in $DIMEMAS_HOME/include directory, and
+compile this source code as a shared object (.so file in Linux kind systems).
+In this header file there is a detailed description of the semantics of each
+of the functions.
+
+To implement your own version of the external communication library you can
+follow the example given in the present directory.
+
+*** Using the external communications model library ***
+
+To indicate the Dimemas simulator that a external communications model
+library can be used, you have to set an environment variable named 
+DIMEMAS_EXTERNAL_COMM_LIBRARY, that points to the shared object that contains
+it. In the initialization, the simulator will check if all the required
+symbols have been declared, and then it will the different functions as
+explained below.
+
+
+

@@ -36,6 +36,7 @@
 #include <types.h>
 #include <extern.h>
 #include <assert.h>
+#include <dlfcn.h>
 
 #if defined(OS_MACOSX) || defined(OS_CYGWIN)
 #include <macosx_limits.h>
@@ -98,6 +99,47 @@ double param_external_net_beta    = 0.0; /* Coeficients que determinen */
 double param_external_net_gamma   = 1.0; /* la influencia dels traffics*/
 
 /******************************************************************************
+ * External communications library management
+ *****************************************************************************/
+
+t_boolean external_comm_library_loaded = FALSE;
+void     *external_comm_library = NULL;
+
+int (* external_get_communication_type) (int sender_nodeid,
+                                         int receiver_nodeid,
+                                         int sender_taskid,
+                                         int receiver_taskid,
+                                         int mess_tag,
+                                         int mess_size);
+
+t_nano (* get_startup_value) (int sender_nodeid,
+                              int receiver_nodeid,
+                              int sender_taskid,
+                              int receiver_taskid,
+                              int mess_tag,
+                              int mess_size);
+
+t_nano (* get_bandwidth_value) (int sender_nodeid,
+                                int receiver_nodeid,
+                                int sender_taskid,
+                                int receiver_taskid,
+                                int mess_tag,
+                                int mess_size);
+
+int (* external_get_global_op_type) (int comm_id,
+                                     int global_op_id,
+                                     int bytes_send,
+                                     int bytes_recv);
+
+void (* external_compute_global_operation_time) (int     comm_id,
+                                                 int     global_op_id,
+                                                 int     bytes_send,
+                                                 int     bytes_recv,
+                                                 t_nano *latency_time,
+                                                 t_nano *op_time);
+
+
+/******************************************************************************
  * MACROS per accounting del temps esperant busos                             *
  *****************************************************************************/
 #include "task.h"
@@ -156,7 +198,7 @@ static void global_op_get_all_in_links (struct t_thread *thread);
 /* void
 close_global_communication(struct t_thread *thread); */
 
-static void start_global_op (struct t_thread *thread);
+static void start_global_op (struct t_thread *thread, int kind);
 
 static void free_global_communication_resources (struct t_thread *thread);
 
@@ -172,10 +214,22 @@ static int from_rank_to_taskid (struct t_communicator *comm, int root_rank);
 
 // struct t_queue Global_op;
 
+/*
 static t_nano compute_startup (struct t_thread               *thread,
                                 int                            kind,
                                 struct t_node                 *node,
                                 struct t_dedicated_connection *connection);
+*/
+
+t_nano compute_startup (struct t_thread                 *thread,
+                        int                              send_taskid,
+                        int                              recv_taskid,
+                        struct t_node                   *send_node,
+                        struct t_node                   *recv_node,
+                        int                              mess_tag,
+                        int                              mess_size,
+                        int                              kind,
+                        struct t_dedicated_connection   *connection);
 
 static t_nano compute_copy_latency (struct t_thread *thread,
                                      struct t_node   *node,
@@ -189,7 +243,10 @@ static t_nano compute_copy_latency (struct t_thread *thread,
 void COMMUNIC_init (void)
 {
   struct t_machine *machine;
-  size_t           machines_it;
+  size_t            machines_it;
+
+  char             *external_comm_library_name, *dlsym_error;
+
 
   if (debug & D_COMM)
   {
@@ -240,7 +297,73 @@ void COMMUNIC_init (void)
   */
 
   /* S'inicialitza el calcul del traffic de la xarxa externa */
+
   periodic_external_network_traffic_init();
+
+  /* Initialization of the possible external library */
+
+  if ((external_comm_library_name = getenv("DIMEMAS_EXTERNAL_COMM_LIBRARY")) != NULL)
+  {
+    external_comm_library = dlopen(external_comm_library_name, RTLD_LAZY);
+
+    if (!external_comm_library)
+    {
+      warning("-> WARN: Unable to open external communication library %s %s\n",
+              external_comm_library_name,
+              dlerror());
+    }
+    else
+    { /* Check for all symbols required in the external comms library */
+      external_get_communication_type = dlsym(external_comm_library, "external_get_communication_type");
+      if ((dlsym_error = dlerror()) != NULL)
+      {
+        warning("-> WARN: Unable to load function \"external_get_communication_type\" from library \"%s\": %s\n",
+                external_comm_library_name,
+                dlsym_error);
+        return;
+      }
+
+      get_startup_value = dlsym(external_comm_library, "get_startup_value");
+      if ((dlsym_error = dlerror()) != NULL)
+      {
+        warning("-> WARN: Unable to load function \"get_startup_value\" from library \"%s\": %s\n",
+                external_comm_library_name,
+                dlsym_error);
+        return;
+      }
+
+      get_bandwidth_value = dlsym(external_comm_library, "get_bandwidth_value");
+      if ((dlsym_error = dlerror()) != NULL)
+      {
+        warning("-> WARN: Unable to load function \"get_bandwidth_value\" from library \"%s\": %s\n",
+                external_comm_library_name,
+                dlsym_error);
+        return;
+      }
+
+      external_get_global_op_type = dlsym(external_comm_library, "external_get_global_op_type");
+      if ((dlsym_error = dlerror()) != NULL)
+      {
+        warning("-> WARN: Unable to load function \"external_get_global_op_type\" from library \"%s\": %s\n",
+                external_comm_library_name,
+                dlsym_error);
+        return;
+      }
+
+      external_compute_global_operation_time = dlsym(external_comm_library, "external_compute_global_operation_time");
+      if ((dlsym_error = dlerror()) != NULL)
+      {
+        warning("-> WARN: Unable to load function \"external_compute_global_operation_time\" from library \"%s\": %s\n",
+                external_comm_library_name,
+                dlsym_error);
+        return;
+      }
+
+      external_comm_library_loaded = TRUE;
+
+      printf ("-> External communications modelling library loaded\n");
+    }
+  }
 }
 
 void COMMUNIC_end()
@@ -489,10 +612,15 @@ void COMMUNIC_end()
 /******************************************************************************
  * FUNCIÓ 'compute_startup'                                                   *
  *****************************************************************************/
-t_nano compute_startup (struct t_thread                *thread,
-                         int                             kind,
-                         struct t_node                  *node,
-                         struct t_dedicated_connection  *connection)
+t_nano compute_startup (struct t_thread                 *thread,
+                        int                              send_taskid,
+                        int                              recv_taskid,
+                        struct t_node                   *send_node,
+                        struct t_node                   *recv_node,
+                        int                              mess_tag,
+                        int                              mess_size,
+                        int                              kind,
+                        struct t_dedicated_connection   *connection)
 {
   t_nano startup = (t_nano) 0;
 
@@ -500,17 +628,17 @@ t_nano compute_startup (struct t_thread                *thread,
   {
   case LOCAL_COMMUNICATION_TYPE:
     /* Es un missatge local al node */
-    startup  = node->local_startup;
+    startup  = send_node->local_startup;
     startup += RANDOM_GenerateRandom (&randomness.memory_latency);
     break;
   case INTERNAL_NETWORK_COM_TYPE:
     /* Es un missatge de la xarxa interna a la maquina */
-    startup  = node->remote_startup;
+    startup  = send_node->remote_startup;
     startup += RANDOM_GenerateRandom (&randomness.network_latency);
     break;
   case EXTERNAL_NETWORK_COM_TYPE:
     /* Es un missatge entre dues maquines diferents per la xarxa externa. */
-    startup  = node->external_net_startup;
+    startup  = send_node->external_net_startup;
     startup += RANDOM_GenerateRandom (&randomness.external_network_latency);
     break;
   case DEDICATED_CONNECTION_COM_TYPE:
@@ -519,10 +647,25 @@ t_nano compute_startup (struct t_thread                *thread,
     if (connection == NULL)
     {
       panic ("Error computing startup (P%02 T%02d t%02d) : void connection \n",
-             IDENTIFIERS (thread) );
+             IDENTIFIERS (thread));
+
     }
     startup = connection->startup;
     break;
+  case EXTERNAL_MODEL_COM_TYPE:
+    /* This message will use an external modelling */
+    if (external_comm_library_loaded == FALSE)
+    {
+      panic("Error computing startup through the external library (not loaded)\n");
+    }
+    startup = get_startup_value(send_node->nodeid,
+                                recv_node->nodeid,
+                                send_taskid,
+                                recv_taskid,
+                                mess_tag,
+                                mess_size);
+    break;
+
   default:
     panic ("Error computing startup (P%02 T%02d t%02d): unknown comm type %d\n",
            IDENTIFIERS (thread),
@@ -2857,8 +3000,7 @@ int COMMUNIC_send_reached_dependency_synchronization (struct t_thread *thread, s
  * recursos, llamando a 'really_send'.
  */
 
-void
-COMMUNIC_send (struct t_thread *thread)
+void COMMUNIC_send (struct t_thread *thread)
 {
   struct t_action  *action;
   struct t_send    *mess;         /* Message */
@@ -2887,8 +3029,6 @@ COMMUNIC_send (struct t_thread *thread)
   }
 
   mess = & (action->desc.send);
-
-
 
   /* DEBUG */
    if (debug&D_COMM)
@@ -2932,12 +3072,37 @@ COMMUNIC_send (struct t_thread *thread)
                                  mess->mess_size,
                                  &connection);
 
+  if ( kind == INTERNAL_NETWORK_COM_TYPE &&
+      external_comm_library_loaded == TRUE)
+  {
+    /* JGG (28/10/2004): if the communication occurs between nodes and
+    the external library is loaded, we check which model is going to be
+    used, a regular Dimemas model or an external model defined in the library
+    (EXTERNAL_MODEL_COM_TYPE).*/
+
+    kind = external_get_communication_type(node_s->nodeid,
+                                           node_r->nodeid,
+                                           task->taskid,
+                                           task_partner->taskid,
+                                           mess->mess_tag,
+                                           mess->mess_size);
+  }
+
   mess->comm_type = kind;
 
   /* Compute startup duration and re-schedule thread if needed */
   if (thread->startup_done == FALSE)
   {
-    startup = compute_startup (thread, kind, node_s, connection);
+    // startup = compute_startup (thread, kind, node_s, connection);
+    startup = compute_startup (thread,
+                               thread->task->taskid,  /* Sender */
+                               task_partner->taskid,  /* Receiver */
+                               node_s,
+                               node_r,
+                               mess->mess_tag,
+                               mess->mess_size,
+                               kind,
+                               connection);
 
     if (startup != (t_nano) 0)
     {
@@ -3219,8 +3384,7 @@ COMMUNIC_send (struct t_thread *thread)
  * ÚLTIMA MODIFICACIÓN: 29/10/2004 (Juan González García)                     *
  *****************************************************************************/
 
-void
-COMMUNIC_recv (struct t_thread *thread)
+void COMMUNIC_recv (struct t_thread *thread)
 {
   struct t_action  *action;
   struct t_recv    *mess;
@@ -3270,11 +3434,37 @@ COMMUNIC_recv (struct t_thread *thread)
                                  mess->mess_tag,
                                  mess->mess_size,
                                  &connection);
+
+  if (kind == INTERNAL_NETWORK_COM_TYPE &&
+      external_comm_library_loaded == TRUE)
+  {
+    /* JGG (28/10/2004): if the communication occurs between nodes and
+    the external library is loaded, we check which model is going to be
+    used, a regular Dimemas model or an external model defined in the library
+    (EXTERNAL_MODEL_COM_TYPE).*/
+    kind = external_get_communication_type(node_s->nodeid,
+                                           node_r->nodeid,
+                                           mess->ori,
+                                           task->taskid,
+                                           mess->mess_tag,
+                                           mess->mess_size);
+  }
+
   mess->comm_type = kind;
 
   if (thread->startup_done == FALSE)
   { /* Compute startup duration and re-schedule thread if needed */
-    startup = compute_startup (thread, kind, node_s, connection);
+    // startup = compute_startup (thread, kind, node_s, connection);
+    startup = compute_startup (thread,
+                               mess->ori,            /* Sender */
+                               thread->task->taskid, /* Receiver */
+                               node_s,
+                               node_r,
+                               mess->mess_tag,
+                               mess->mess_size,
+                               kind,
+                               connection);
+
 
     if (startup > (t_nano) 0)
     {
@@ -3502,11 +3692,37 @@ void COMMUNIC_Irecv (struct t_thread *thread)
                                  mess->mess_tag,
                                  mess->mess_size,
                                  &connection);
+
+  if (kind == EXTERNAL_NETWORK_COM_TYPE &&
+      external_comm_library_loaded == TRUE)
+  {
+    /* JGG (28/10/2004): if the communication occurs between nodes and
+    the external library is loaded, we check which model is going to be
+    used, a regular Dimemas model or an external model defined in the library
+    (EXTERNAL_MODEL_COM_TYPE).*/
+    kind = external_get_communication_type(node_s->nodeid,
+                                           node_r->nodeid,
+                                           mess->ori,
+                                           task->taskid,
+                                           mess->mess_tag,
+                                           mess->mess_size);
+  }
+
   mess->comm_type = kind;
 
   if (thread->startup_done == FALSE)
   { /* Compute startup duration and re-schedule thread if needed */
-    startup = compute_startup (thread, kind, node_s, connection);
+    // startup = compute_startup (thread, kind, node_s, connection);
+
+    startup = compute_startup (thread,
+                               mess->ori,            /* Sender */
+                               thread->task->taskid, /* Receiver */
+                               node_s,
+                               node_r,
+                               mess->mess_tag,
+                               mess->mess_size,
+                               kind,
+                               connection);
 
     if (startup > (t_nano) 0) /* Change != with > */
     { /* Positive startup time. Thread must be re-scheduled */
@@ -3647,8 +3863,7 @@ void COMMUNIC_Irecv (struct t_thread *thread)
  * Es el tractament que cal aplicar a un Wait. Consisteix en
  * esperar fins que s'hagi rebut el missatge.
  */
-void
-COMMUNIC_wait (struct t_thread *thread)
+void COMMUNIC_wait (struct t_thread *thread)
 {
   struct t_action               *action;
   struct t_recv                 *mess;
@@ -3695,11 +3910,36 @@ COMMUNIC_wait (struct t_thread *thread)
                                  mess->mess_tag,
                                  mess->mess_size,
                                  &connection);
+
+  if (kind == EXTERNAL_NETWORK_COM_TYPE &&
+      external_comm_library_loaded == TRUE)
+  {
+    /* JGG (28/10/2004): if the communication occurs between nodes and
+    the external library is loaded, we check which model is going to be
+    used, a regular Dimemas model or an external model defined in the library
+    (EXTERNAL_MODEL_COM_TYPE).*/
+    kind = external_get_communication_type(node_s->nodeid,
+                                           node_r->nodeid,
+                                           mess->ori,
+                                           task->taskid,
+                                           mess->mess_tag,
+                                           mess->mess_size);
+  }
+
   mess->comm_type = kind;
 
   if (thread->startup_done == FALSE)
   {
-    startup = compute_startup (thread, kind, node_s, connection);
+    // startup = compute_startup (thread, kind, node_s, connection);
+    startup = compute_startup (thread,
+                               mess->ori,            /* Sender */
+                               thread->task->taskid, /* Receiver */
+                               node_s,
+                               node_r,
+                               mess->mess_tag,
+                               mess->mess_size,
+                               kind,
+                               connection);
 
     if (startup != (t_nano) 0)
     {
@@ -4023,15 +4263,12 @@ void new_global_op (int identificator, const char *name)
  * Transfer message time function
  */
 /*t_nano */
-void
-transferencia (
-  int                            size,
-  int                            communication_type,
-  struct t_thread               *thread,
-  struct t_dedicated_connection *connection,
-  t_nano                       *temps_total,
-  t_nano                       *temps_recursos
-)
+void transferencia (int                            size,
+                    int                            communication_type,
+                    struct t_thread               *thread,
+                    struct t_dedicated_connection *connection,
+                    t_nano                       *temps_total,
+                    t_nano                       *temps_recursos)
 {
   struct t_node    *node, *node_partner;
   struct t_machine *machine;
@@ -4140,6 +4377,30 @@ transferencia (
       t_recursos = (bandw * size);
     }
     break;
+
+  case EXTERNAL_MODEL_COM_TYPE:
+      /* Logica para cálcular el tiempo de ocupación de la red NO Dimemas */
+      if (external_comm_library_loaded == FALSE)
+      {
+        panic("Computing transfer time through external model not defined\n");
+      }
+
+      node_partner = get_node_of_task (task_partner);
+
+      bandw = get_bandwidth_value(node->nodeid,
+                                  node_partner->nodeid,
+                                  thread->task->taskid,
+                                  task_partner->taskid,
+                                  thread->action->desc.send.mess_tag,
+                                  size);
+
+      if (bandw != 0)
+      {
+        bandw = (t_nano) ((t_nano) (1e9) / (1 << 20) / bandw);
+      }
+      temps = (bandw * size);
+      t_recursos = (bandw * size);
+      break;
   default:
     panic ("Unknown communication type!\n");
     break;
@@ -4290,8 +4551,7 @@ get_communication_type (
   return result_type;
 }
 
-void
-really_send_single_machine (struct t_thread *thread)
+void really_send_single_machine (struct t_thread *thread)
 {
   struct t_node            *node, *node_partner;
   struct t_task            *task, *task_partner;
@@ -4478,8 +4738,7 @@ really_send_single_machine (struct t_thread *thread)
   }
 }
 
-void
-really_send_external_network (struct t_thread *thread)
+void really_send_external_network (struct t_thread *thread)
 {
   struct t_node    *node, *node_partner;
   struct t_task    *task, *task_partner;
@@ -4664,6 +4923,67 @@ really_send_dedicated_connection (
   }
 }
 
+void really_send_external_model_comm_type (struct t_thread *thread)
+{
+  struct t_action  *action;
+  struct t_account *account;
+  struct t_send    *mess;
+  t_nano            ti, t_recursos;
+  dimemas_timer     tmp_timer;
+
+  action = thread->action;
+  mess   = &(action->desc.send);
+
+  account = current_account(thread);
+  SUB_TIMER(current_time, thread->initial_communication_time, tmp_timer);
+  ADD_TIMER (
+    tmp_timer,
+    account->block_due_resources,
+    account->block_due_resources
+  );
+  thread->physical_send = current_time;
+  thread->last_paraver = current_time;
+
+  transferencia(mess->mess_size,
+                EXTERNAL_MODEL_COM_TYPE,
+                thread,
+                NULL,
+                &ti,
+                &t_recursos);
+
+  if (t_recursos>ti)
+  {
+    panic("resources > transmission time!\n");
+  }
+  /* Abans de programar la fi de la comunicacio, es programa la fi de la
+     utilització dels recursos reservats. Però, de moment, ho deixo al
+     mateix instant de temps. */
+  FLOAT_TO_TIMER (t_recursos, tmp_timer);
+  ADD_TIMER (current_time, tmp_timer, tmp_timer);
+  EVENT_timer (
+    tmp_timer,
+    NOT_DAEMON,
+    M_COM, thread,
+    COM_TIMER_OUT_RESOURCES
+  );
+  /* Es programa el final de la comunicació punt a punt. */
+  FLOAT_TO_TIMER (ti, tmp_timer);
+  ADD_TIMER (current_time, tmp_timer, tmp_timer);
+  thread->event =
+    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
+
+  if (debug&D_COMM)
+  {
+    PRINT_TIMER (current_time);
+    printf (
+      ": COMMUNIC_send P%d T%d (t%d) -> T%d Tag(%d) SEND (OTHER) message\n",
+      IDENTIFIERS (thread),
+      mess->dest,
+      mess->mess_tag
+    );
+  }
+}
+
 void
 really_send (struct t_thread *thread)
 {
@@ -4684,10 +5004,10 @@ really_send (struct t_thread *thread)
     panic ("Task partner not found!\n");
   }
 
-  /* JGG: Ahora obtenemos el 'kind' por a partir del mensaje  */
+  /* JGG: Ahora obtenemos el 'kind' por a partir del mensaje
   kind2 = get_communication_type (task, task_partner, mess->mess_tag,
                                   mess->mess_size, &connection);
-
+  */
 
   kind = mess->comm_type;
 
@@ -4704,7 +5024,8 @@ really_send (struct t_thread *thread)
   }
 
 
-  switch (kind2)
+  // switch (kind2)
+  switch (kind)
   {
   case LOCAL_COMMUNICATION_TYPE:
   case INTERNAL_NETWORK_COM_TYPE:
@@ -4715,6 +5036,9 @@ really_send (struct t_thread *thread)
     break;
   case DEDICATED_CONNECTION_COM_TYPE:
     really_send_dedicated_connection (thread, connection);
+    break;
+  case EXTERNAL_MODEL_COM_TYPE:
+    really_send_external_model_comm_type(thread);
     break;
   default:
     panic ("Incorrect communication type! kind = %d, kind2 %d", kind, kind2);
@@ -5159,7 +5483,7 @@ static void global_op_get_all_in_links (struct t_thread *thread)
   /* NO ES TREU el thread de root de la cua. Els tracto tots igual! */
 
   /* S'inicia l'operacio col.lectiva !! */
-  start_global_op (others);
+  start_global_op (others, DIMEMAS_GLOBAL_OP_MODEL);
 }
 
 
@@ -5715,7 +6039,7 @@ calcula_temps_operacio_global (struct t_thread *thread,
  ** Aquesta funcio no reserva res. Dona per suposat que ja s'ha reservat
  ** tot el que calia. Simplement engega l'operacio col.lectiva.
  **************************************************************************/
-static void start_global_op (struct t_thread *thread)
+static void start_global_op (struct t_thread *thread, int kind)
 {
   struct t_Ptask *Ptask;
   struct t_communicator *communicator;
@@ -5726,7 +6050,7 @@ static void start_global_op (struct t_thread *thread)
   dimemas_timer tmp_timer;
   dimemas_timer tmp_timer2;
   struct t_cpu *cpu;
-  dimemas_timer temps_latencia, temps_recursos, temps_final;
+  dimemas_timer temps_latencia, temps_recursos, temps_final, temps_operacio;
 
   Ptask        = thread->task->Ptask;
   action       = thread->action;
@@ -5766,20 +6090,59 @@ static void start_global_op (struct t_thread *thread)
     );
   }
 
-  calcula_temps_operacio_global (thread,
-                                 &temps_latencia,
-                                 &temps_recursos,
-                                 &temps_final);
+  /* Calcula els temps estimats per realitzar l'operació col.lectiva */
+  /* JGG (09/11/2004): En función al tipo de la operación, se calcula interna
+   * o externamente */
+  switch (kind)
+  {
+    case DIMEMAS_GLOBAL_OP_MODEL:
 
-  /* Es programa l'event de final de la reserva dels recursos */
-  ADD_TIMER (current_time, temps_recursos, tmp_timer);
-  EVENT_timer (
-    tmp_timer,
-    NOT_DAEMON,
-    M_COM,
-    thread,
-    COM_TIMER_GROUP_RESOURCES
-  );
+      calcula_temps_operacio_global (thread,
+                                     &temps_latencia,
+                                     &temps_recursos,
+                                     &temps_final);
+
+      /* Es programa l'event de final de la reserva dels recursos */
+      ADD_TIMER (current_time, temps_recursos, tmp_timer);
+      EVENT_timer (
+        tmp_timer,
+        NOT_DAEMON,
+        M_COM,
+        thread,
+        COM_TIMER_GROUP_RESOURCES
+      );
+      break;
+
+    case EXTERNAL_GLOBAL_OP_MODEL:
+      if (external_comm_library_loaded == FALSE)
+      {
+        panic ("Executing global operation through external model library not loaded\n");
+      }
+
+      external_compute_global_operation_time(comm_id,
+                                             glop_id,
+                                             action->desc.global_op.bytes_send,
+                                             action->desc.global_op.bytes_recvd,
+                                             (t_nano*) &temps_latencia,
+                                             (t_nano*) &temps_operacio);
+
+      temps_final = temps_latencia + temps_operacio;
+
+      if (debug&D_COMM)
+      {
+        PRINT_TIMER (current_time);
+        printf (
+          ": GLOBAL_operation P%d T%d (t%d) '%s' USING EXTERNAL GLOBAL OPERATIONS MODEL\n",
+          IDENTIFIERS (thread),
+          glop->name
+        );
+      }
+
+      /* JGG: There is no need to free the resources, because we use an external
+       * model */
+      break;
+
+  }
 
 
 
@@ -6383,6 +6746,25 @@ void GLOBAL_operation (struct t_thread *thread,
     others  = communicator->current_root;
   }
 
+  if (external_comm_library_loaded == TRUE)
+  {
+    /* JGG (08/11/2004): Check 'external_get_global_op_type' to decide if
+    its simulation will follow an external model */
+    kind = external_get_global_op_type (root_th->action->desc.global_op.comm_id,
+                                        root_th->action->desc.global_op.glop_id,
+                                        root_th->action->desc.global_op.bytes_send,
+                                        root_th->action->desc.global_op.bytes_recvd);
+
+    if (kind == EXTERNAL_GLOBAL_OP_MODEL)
+    {
+      /* Aquí hay que iniciar el tratamiento del caso de una operación global
+       * que sigue un modelo externo */
+      /* SE DEBERÍA LLAMAR A UNA MODIFICACIÓN SOBRE EL 'start_global_op' PARA
+       * EVITAR EL TIEMPO DE RESERVA DE RECURSOS */
+      start_global_op(root_th, EXTERNAL_GLOBAL_OP_MODEL);
+      return;
+    }
+  }
 
   /* JGG (08/11/2004): Comportamiento de una operación global según el
    * modelo Dimemas */
