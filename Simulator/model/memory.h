@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -40,12 +40,16 @@
 extern void MEMORY_general (int value, struct t_thread *thread);
 extern void MEMORY_init(void);
 extern void MEMORY_end(void);
-extern void MEMORY_copy_segment(int module, struct t_thread *thread, 
-				struct t_node *node_s, struct t_node *node_d,
-				int si);
-extern void really_copy_segment(struct t_thread *thread, 
-				struct t_node *node_s, 
-				struct t_node *node_d, int si);
+extern void MEMORY_copy_segment(int module,
+                                struct t_thread *thread,
+                                struct t_node   *node_s,
+                                struct t_node   *node_d,
+                                int              si);
+
+extern void really_copy_segment(struct t_thread *thread,
+                                struct t_node   *node_s,
+                                struct t_node   *node_d,
+                                int              si);
 
 extern void RMA_general (int value, struct t_thread *thread);
 extern void ONE_SIDED_operation (struct t_thread *thread);
@@ -57,7 +61,7 @@ extern void really_RMA (register struct t_thread *thread);
 /* Different window modes */
 #define WINDOW_MODE_NONE  0
 #define WINDOW_MODE_FENCE 1
-#define WINDOW_MODE_LOCK  2 
+#define WINDOW_MODE_LOCK  2
 #define WINDOW_MODE_POST  3
 
 #endif

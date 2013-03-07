@@ -250,8 +250,8 @@ void COMMUNIC_init (void)
 
   if (debug & D_COMM)
   {
-    PRINT_TIMER (current_time);
-    printf ("-> COMMUNICATIONS initialization");
+    // PRINT_TIMER (current_time);
+    printf ("-> COMMUNICATIONS initialization\n");
   }
 
   /* JGG (2012/01/17): new ways to navigate through machines
@@ -1045,15 +1045,14 @@ external_network_bandwidth_ratio (double traffic)
 
 
 /******************************************************************************
- * FUNCIÓ 'bandwidth_2_ms_per_byte'                                           *
+ * FUNCIÓ 'bw_ns_per_byte'                                           *
  *****************************************************************************/
 /*
  * Aquesta funció passa de Mbytes a bytes, de segons a microsegons i calcula la
  * inversa. Aixi nomes cal multiplicar per la mida del missatge per obtenir el
  * temps estimat de transferencia. El resultat sera microsegons/byte.
  */
-static t_nano
-bandwidth_2_ms_per_byte (t_nano bandw)
+static t_nano bw_ns_per_byte (t_nano bandw)
 {
   t_nano bandw_ms_per_byte = 0;
 
@@ -1120,7 +1119,7 @@ recompute_external_network_bandwidth (struct t_thread *thread)
     panic ("External network ratio equals 0\n");
   }
 
-  bandw_ms_per_byte = bandwidth_2_ms_per_byte (bandw);
+  bandw_ms_per_byte = bw_ns_per_byte (bandw);
 
   if (debug & D_COMM)
   {
@@ -4093,8 +4092,7 @@ void COMMUNIC_wait (struct t_thread *thread)
   }
 }
 
-void
-COMMUNIC_block_after_busy_wait (struct t_thread *thread)
+void COMMUNIC_block_after_busy_wait (struct t_thread *thread)
 {
   struct t_task    *task;
   struct t_account *account;
@@ -4131,8 +4129,7 @@ COMMUNIC_block_after_busy_wait (struct t_thread *thread)
   }
 }
 
-int
-get_global_op_id_by_name (char *name)
+int get_global_op_id_by_name (char *name)
 {
   struct t_global_op_definition * glop;
 
@@ -4156,30 +4153,27 @@ void add_global_ops (void)
   }
 }
 
-static void inicialitza_info_nova_globalop (int model,
-    struct t_global_op_definition *glop,
-    struct t_queue *cua)
+static void inicialitza_info_nova_globalop (int                            model,
+                                            struct t_global_op_definition *glop,
+                                            struct t_queue                *cua)
 {
   struct t_global_op_information *glop_info;
 
   switch (model) /* Aixo és absurd */
   {
-  case GOP_MODEL_CTE:
-    model = GOP_MODEL_CTE;
-    break;
-  case GOP_MODEL_LIN:
-    model = GOP_MODEL_LIN;
-    break;
-  case GOP_MODEL_LOG:
-    model = GOP_MODEL_LOG;
-    break;
-  default:
-    panic ("Unexpected Global operation model\n");
-    break;
+    case GOP_MODEL_0:
+    case GOP_MODEL_CTE:
+    case GOP_MODEL_LIN:
+    case GOP_MODEL_LOG:
+      break;
+    default:
+      panic ("Unexpected Global operation model\n");
+      break;
   }
 
-  glop_info = (struct t_global_op_information *) query_prio_queue (cua,
-              (t_priority) glop->identificator);
+  glop_info = (struct t_global_op_information *)
+                query_prio_queue (cua,
+                                  (t_priority) glop->identificator);
 
   if (glop_info != (struct t_global_op_information *) 0)
   { /* Aixo no hauria de passar mai! */
@@ -4206,7 +4200,8 @@ static void inicialitza_info_nova_globalop (int model,
   insert_queue (cua, (char *) glop_info, (t_priority) glop->identificator);
 }
 
-void new_global_op (int identificator, const char *name)
+void new_global_op (int         identificator,
+                    const char *name)
 {
   struct t_global_op_definition  *glop;
   struct t_machine  *machine;
@@ -4267,8 +4262,8 @@ void transferencia (int                            size,
                     int                            communication_type,
                     struct t_thread               *thread,
                     struct t_dedicated_connection *connection,
-                    t_nano                       *temps_total,
-                    t_nano                       *temps_recursos)
+                    t_nano                        *temps_total,
+                    t_nano                        *temps_recursos)
 {
   struct t_node    *node, *node_partner;
   struct t_machine *machine;
@@ -4333,7 +4328,7 @@ void transferencia (int                            size,
       recompute_external_network_traffic (size);
       bandw = recompute_external_network_bandwidth (thread);
       /* Aqui es passa de Mbytes/sec a microsegons/byte. */
-      bandw = bandwidth_2_ms_per_byte (bandw);
+      bandw = bw_ns_per_byte (bandw);
       thread->last_comm.bandwith = bandw;
       thread->last_comm.bytes    = size;
       ASS_ALL_TIMER (thread->last_comm.ti, current_time);
@@ -4984,8 +4979,7 @@ void really_send_external_model_comm_type (struct t_thread *thread)
   }
 }
 
-void
-really_send (struct t_thread *thread)
+void really_send (struct t_thread *thread)
 {
   struct t_task   *task,
       *task_partner;
@@ -5064,20 +5058,23 @@ locate_communicator (struct t_queue *communicator_queue, int commid)
   return (communicator);
 }
 
-static int
-provide_log (int n)
+static int provide_log (int n)
 {
   int i;
 
   for (i = 0; i < n; i++)
+  {
     if ( (1 << i) >= n)
+    {
       return (i);
+    }
+  }
+
   return (0);
 }
 
 
-static int
-compute_contention_stage (int ntasks, int num_busos)
+static int compute_contention_stage (int ntasks, int num_busos)
 {
   int i;
   int j;
@@ -5110,6 +5107,7 @@ compute_contention_stage (int ntasks, int num_busos)
 #endif /* DEBUG */
       parallel_comm ++;
     }
+
     if (parallel_comm % num_busos == 0)
     {
       total = total + parallel_comm / num_busos;
@@ -5122,6 +5120,9 @@ compute_contention_stage (int ntasks, int num_busos)
     printf ("Stage %d parallel communications %d\n", i + 1, parallel_comm);
 #endif /* DEBUG */
   }
+
+  printf("Contention stages = %d\n", total);
+
   return (total);
 }
 
@@ -5257,8 +5258,7 @@ void global_op_get_all_buses (struct t_thread *thread)
 /**************************************************************************
  ** Reserva els links necessaris i despres crida a global_op_get_all_links.
  **************************************************************************/
-void
-global_op_reserva_links (struct t_thread *thread)
+void global_op_reserva_links (struct t_thread *thread)
 {
   struct t_node *node;
   struct t_machine *machine;
@@ -5441,8 +5441,9 @@ static void global_op_get_all_in_links (struct t_thread *thread)
   /* S'afegeix el thread a la cua de threads del communicador */
   inFIFO_queue (&communicator->threads, (char *) thread);
 
-  if (count_queue (&communicator->threads) !=
-      count_queue (&communicator->global_ranks) )
+  // if (count_queue (&communicator->threads) !=
+  //    count_queue (&communicator->global_ranks) )
+  if (count_queue(&communicator->threads) != communicator->size)
   {
     /* Encara falten alguns threads per acabar d'obtenir tot el que
        es necessita. */
@@ -5491,24 +5492,23 @@ static void global_op_get_all_in_links (struct t_thread *thread)
  ** Aquesta funcio calcula els temps estimats de latenica i temps total
  ** per una etapa d'una operacio col.lectiva.
  **************************************************************************/
-void
-calcula_fan (t_nano bandw,   /* MBytes per segon */
-             int num_tasks,    /* Numero de tasks d'aquesta etapa */
-             int num_busos,    /* Numero de busos disponibles */
-             int tipus_de_fan, /* 0 = IN / 1 = OUT */
-             int model,        /* 0, CONSTANT, LINEAL, LOGARITHMIC */
-             int size_type,    /* MIN, MAX, average, 2*MAX, send+recv */
-             int bytes_send,   /* Number of bytes send */
-             int bytes_recvd,  /* Number of bytes received */
-             t_nano startup,
-             t_nano *temps,
-             t_nano *latencia)
+void calcula_fan (t_nano bandw,     /* MB/s */
+                  int num_partners, /* End-points of the current stage */
+                  int num_busos,    /* Numero de busos disponibles */
+                  int tipus_de_fan, /* 0 = IN / 1 = OUT */
+                  int model,        /* 0, CONSTANT, LINEAL, LOGARITHMIC */
+                  int size_type,    /* MIN, MAX, average, 2*MAX, send+recv */
+                  int bytes_send,   /* Number of bytes send */
+                  int bytes_recvd,  /* Number of bytes received */
+                  t_nano startup,
+                  t_nano *temps,
+                  t_nano *latencia)
 {
-  int mes_si;
-  float fo;
+  int   mess_size;
+  float factor;
 
-  /* Aqui es passa de Mbytes/sec a microsegons/byte. */
-  bandw = bandwidth_2_ms_per_byte (bandw);
+  /* From MB/sec to ns/byte. */
+  bandw = bw_ns_per_byte (bandw);
 
   /* Computation of global communication model */
   switch (size_type)
@@ -5516,27 +5516,27 @@ calcula_fan (t_nano bandw,   /* MBytes per segon */
   case GOP_SIZE_CURR:
     if (tipus_de_fan == FAN_IN)
     {
-      mes_si = bytes_send;
+      mess_size = bytes_send;
     }
     else if (tipus_de_fan == FAN_OUT)
     {
-      mes_si = bytes_recvd;
+      mess_size = bytes_recvd;
     }
     break;
   case GOP_SIZE_MIN:
-    mes_si = MIN (bytes_send, bytes_recvd);
+    mess_size = MIN (bytes_send, bytes_recvd);
     break;
   case GOP_SIZE_MAX:
-    mes_si = MAX (bytes_send, bytes_recvd);
+    mess_size = MAX (bytes_send, bytes_recvd);
     break;
   case GOP_SIZE_MEAN:
-    mes_si = (bytes_send + bytes_recvd) / 2;
+    mess_size = (bytes_send + bytes_recvd) / 2;
     break;
   case GOP_SIZE_2MAX:
-    mes_si = 2 * MAX (bytes_send, bytes_recvd);
+    mess_size = 2 * MAX (bytes_send, bytes_recvd);
     break;
   case GOP_SIZE_SIR:
-    mes_si = (bytes_send + bytes_recvd);
+    mess_size = (bytes_send + bytes_recvd);
     break;
   default:
     panic ("Invalid size FIN/OUT %d for global operation\n", size_type);
@@ -5546,31 +5546,30 @@ calcula_fan (t_nano bandw,   /* MBytes per segon */
 
   switch (model)
   {
-  case GOP_MODEL_0:
-    *temps    = 0;
-    *latencia = 0;
-    break;
-  case GOP_MODEL_CTE:
-    fo        = 1.0;
-    *temps    = startup + mes_si * bandw;
-    *latencia = startup;
-    break;
-  case GOP_MODEL_LIN:
-    fo        = (t_nano) num_tasks;
-    *temps    = (startup + mes_si * bandw) * fo;
-    *latencia = startup * fo;
-    break;
-  case GOP_MODEL_LOG:
-    fo        = compute_contention_stage (num_tasks, num_busos);
-    *temps    = (startup + mes_si * bandw) * fo;
-    *latencia = startup * fo;
+    case GOP_MODEL_0:
+      *temps    = 0;
+      *latencia = 0;
+      break;
+    case GOP_MODEL_CTE:
+      factor    = 1.0;
+      *temps    = startup + mess_size * bandw;
+      *latencia = startup;
+      break;
+    case GOP_MODEL_LIN:
+      factor    = (t_nano) num_partners;
+      *temps    = (startup + mess_size * bandw) * factor;
+      *latencia = startup * factor;
+      break;
+    case GOP_MODEL_LOG:
+      factor    = compute_contention_stage (num_partners, num_busos);
+      *temps    = (startup + mess_size * bandw) * factor;
+      *latencia = startup * factor;
+      break;
 
-    break;
-  default:
-    panic ("Invalid model FIN/OUT %d for global operation\n", model);
-    exit (1);
+    default:
+      panic ("Invalid model FIN/OUT %d for global operation\n", model);
+      exit (1);
   }
-
 }
 
 
@@ -5579,20 +5578,18 @@ calcula_fan (t_nano bandw,   /* MBytes per segon */
  ** Es calculen els temps dins de cada node de la maquina i
  ** s'agafen els maxims.
  **************************************************************************/
-static void
-calcula_temps_maxim_intra_nodes (
-  struct t_machine *machine,
-  struct t_global_op_information *glop_info,
-  int bytes_send,   /* Number of bytes send */
-  int bytes_recvd,  /* Number of bytes received */
-  t_nano *max_tnode_in,
-  t_nano *max_lnode_in,
-  t_nano *max_tnode_out,
-  t_nano *max_lnode_out,
-  int      num_tasks
-)
+static void calcula_temps_maxim_intra_nodes (struct t_machine      *machine,
+                                             struct t_communicator *communicator,
+                                             struct t_global_op_information *glop_info,
+                                             int bytes_send,   /* Number of bytes send */
+                                             int bytes_recvd,  /* Number of bytes received */
+                                             t_nano *max_tnode_in,
+                                             t_nano *max_lnode_in,
+                                             t_nano *max_tnode_out,
+                                             t_nano *max_lnode_out)
 {
   struct t_node  *node;
+  int*    nodeid;
   t_nano tauxn_in, lauxn_in, tauxn_out, lauxn_out;
   int num_cpus;
   double suma_aux, suma_maxim;
@@ -5601,7 +5598,7 @@ calcula_temps_maxim_intra_nodes (
   *max_tnode_in = *max_lnode_in = *max_tnode_out = *max_lnode_out = 0;
   suma_maxim = 0;
 
-  /* Es calcula a tots els nodes de la maquina */
+  /* Es calcula a tots els nodes de la maquina
 #ifdef USE_EQUEUE
   for (node  = (struct t_node *) head_Equeue (&Node_queue);
        node != (struct t_node *) 0;
@@ -5611,51 +5608,90 @@ calcula_temps_maxim_intra_nodes (
        node != (struct t_node *) 0;
        node  = (struct t_node *) next_queue (&Node_queue) )
 #endif
+  */
+  for ( nodeid  = (int*) head_queue(&communicator->nodes_per_machine[machine->id]);
+        nodeid != NULL;
+        nodeid  = (int*) next_queue(&communicator->nodes_per_machine[machine->id]))
   {
-    /* Nomes s'agafen els nodes d'aquesta maquina. */
+    /* Nomes s'agafen els nodes d'aquesta maquina.
     if (node->machine != machine) continue;
+    */
+    node = get_node_by_id(*nodeid);
 
-    num_cpus = count_queue (& (node->Cpus) );
+    int *tasks_per_node = (int*) query_prio_queue(&communicator->tasks_per_node,
+                                                  (t_priority) *nodeid);
+
+    /*
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": Machine %d Node: %d: Tasks involved = %d\n",
+        machine->id,
+        (*nodeid),
+        (*tasks_per_node)
+      );
+    }
+    */
+
+    // num_cpus = count_queue (& (node->Cpus) );
 
     /* Cal calcular els temps dins d'aquest node */
-    calcula_fan (
-      node->bandwith,
-      num_tasks,
-      0, /* Infinits busos */
-      0, /* FAN IN */
-      glop_info->FIN_model,
-      glop_info->FIN_size,
-      bytes_send,
-      bytes_recvd,
-      node->local_startup,
-      &tauxn_in,
-      &lauxn_in
-    );
+    calcula_fan (node->bandwith,
+                 // num_tasks,
+                 (*tasks_per_node),
+                 0, /* Infinits busos */
+                 FAN_IN,
+                 glop_info->FIN_model,
+                 glop_info->FIN_size,
+                 bytes_send,
+                 bytes_recvd,
+                 node->local_startup,
+                 &tauxn_in,
+                 &lauxn_in);
 
-    calcula_fan (
-      node->bandwith,
-      num_tasks,
-      0, /* Infinits busos */
-      1, /* FAN OUT */
-      glop_info->FOUT_model, glop_info->FOUT_size,
-      bytes_send,
-      bytes_recvd,
-      node->local_startup,
-      &tauxn_out,
-      &lauxn_out
-    );
+    calcula_fan (node->bandwith,
+                 // num_tasks,
+                 (*tasks_per_node),
+                 0, /* Infinits busos */
+                 FAN_OUT,
+                 glop_info->FOUT_model,
+                 glop_info->FOUT_size,
+                 bytes_send,
+                 bytes_recvd,
+                 node->local_startup,
+                 &tauxn_out,
+                 &lauxn_out);
+
+    /*
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": Machine %d Node: %d: tfin_int=%.9f lfin_int=%.9f tfout_int=%.9f lfout_int=%.9f\n",
+        machine->id,
+        (*nodeid),
+        tauxn_in/1e9,
+        lauxn_in/1e9,
+        tauxn_out/1e9,
+        lauxn_out/1e9
+      );
+    }
+    */
 
     /* S'agafen els del node amb la suma mes gran */
     suma_aux = (double) (tauxn_in + lauxn_in + tauxn_out + lauxn_out);
     if (suma_aux > suma_maxim)
     {
       /* S'agafa aquest node com a node de temps maxim d'aquesta maquina */
-      suma_maxim = suma_aux;
-      *max_tnode_in = tauxn_in;
-      *max_lnode_in = lauxn_in;
+      suma_maxim     = suma_aux;
+      *max_tnode_in  = tauxn_in;
+      *max_lnode_in  = lauxn_in;
       *max_tnode_out = tauxn_out;
       *max_lnode_out = lauxn_out;
     }
+
+
   }
 
   /* Es retornen els temps del node de temps total maxim */
@@ -5666,11 +5702,10 @@ calcula_temps_maxim_intra_nodes (
  ** Es calcula el flight time maxims d'entrada i el maxim de sortida
  ** del thread donat.
  **************************************************************************/
-static void
-calcula_maxim_flight_times (struct t_thread *thread,
-                            struct t_communicator *communicator,
-                            t_nano *maxflight_in,
-                            t_nano *maxflight_out)
+static void calcula_maxim_flight_times (struct t_thread *thread,
+                                        struct t_communicator *communicator,
+                                        t_nano *maxflight_in,
+                                        t_nano *maxflight_out)
 {
   t_nano max_flight_in, max_flight_out;
   struct t_node  *node;
@@ -5741,6 +5776,7 @@ calcula_temps_operacio_global (struct t_thread *thread,
   struct t_machine               *machine;
   struct t_global_op_information *glop_info;
   int                             comm_id, glop_id, num_maquines, num_tasks;
+  int                             nodes_involved;
 
   t_nano tfin_node, lfin_node, tfout_node, lfout_node;
   t_nano tfin_int,  lfin_int,  tfout_int,  lfout_int;
@@ -5779,7 +5815,7 @@ calcula_temps_operacio_global (struct t_thread *thread,
   }
 
   /* Communicator size */
-  num_tasks = count_queue (&communicator->threads);
+  num_tasks = communicator->size;
 
   /* S'inicialitzen els temps */
   tfin_node    = lfin_node = tfout_node = lfout_node = 0;
@@ -5791,7 +5827,8 @@ calcula_temps_operacio_global (struct t_thread *thread,
   flightin_ext = flightout_ext = 0;
   suma_maxim   = 0;
 
-  /* Es calcula el temps de cada maquina */
+  /* For each machine used we compute the inter-node communication time and
+    the intra-node communication time */
   for (others  = (struct t_thread*) head_queue (&communicator->machines_threads);
        others != TH_NIL;
        others  = (struct t_thread*) next_queue (&communicator->machines_threads) )
@@ -5815,69 +5852,97 @@ calcula_temps_operacio_global (struct t_thread *thread,
       );
     }
 
-    /* Es calculen els temps entre nodes d'aquesta maquina */
-    if (machine->number_of_nodes > 1)
-    {
-      calcula_fan (machine->communication.remote_bandwidth,
-                   num_tasks,
-                   machine->communication.num_messages_on_network,
-                   FAN_IN,
-                   glop_info->FIN_model,
-                   glop_info->FIN_size,
-                   action->desc.global_op.bytes_send,
-                   action->desc.global_op.bytes_recvd,
-                   node->remote_startup,
-                   &taux_in,
-                   &laux_in);
-
-      calcula_fan (machine->communication.remote_bandwidth,
-                   num_tasks,
-                   machine->communication.num_messages_on_network,
-                   FAN_OUT,
-                   glop_info->FOUT_model,
-                   glop_info->FOUT_size,
-                   action->desc.global_op.bytes_send,
-                   action->desc.global_op.bytes_recvd,
-                   node->remote_startup,
-                   &taux_out,
-                   &laux_out);
-    }
-
+    /*
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
       printf (
-        ": Machine %d (between nodes): tfin=%f lfin=%f tfout=%f lfout=%f\n",
+        ": Machine %d: GlobalOp = %d FIN_model = %d FIN_size = %d FOUT_model = %d FOUT_size = %d\n",
         machine->id,
-        taux_in,
-        laux_in,
-        taux_out,
-        laux_out
+        glop_info->identificator,
+        glop_info->FIN_model,
+        glop_info->FIN_size,
+        glop_info->FOUT_model,
+        glop_info->FOUT_size
       );
     }
+    */
 
-    /* Es calculen els temps dins de cada node de la maquina i
-       s'agafen els maxims. */
+    /* Inter-node communication times */
+    if (machine->number_of_nodes > 1)
+    {
+      // printf("machine->number_of_nodes = %d\n", machine->number_of_nodes);
+
+      if (count_queue(&communicator->nodes_per_machine[machine->id]) > 0)
+      {
+        calcula_fan (machine->communication.remote_bandwidth,
+                     count_queue(&communicator->nodes_per_machine[machine->id]),
+                     machine->communication.num_messages_on_network,
+                     FAN_IN,
+                     glop_info->FIN_model,
+                     glop_info->FIN_size,
+                     action->desc.global_op.bytes_send,
+                     action->desc.global_op.bytes_recvd,
+                     node->remote_startup,
+                     &taux_in,
+                     &laux_in);
+
+        calcula_fan (machine->communication.remote_bandwidth,
+                     count_queue(&communicator->nodes_per_machine[machine->id]),
+                     machine->communication.num_messages_on_network,
+                     FAN_OUT,
+                     glop_info->FOUT_model,
+                     glop_info->FOUT_size,
+                     action->desc.global_op.bytes_send,
+                     action->desc.global_op.bytes_recvd,
+                     node->remote_startup,
+                     &taux_out,
+                     &laux_out);
+
+        if (debug & D_COMM)
+        {
+          PRINT_TIMER (current_time);
+          printf (
+            ": Machine %d (inter-nodes): tfin=%.9f lfin=%.9f tfout=%.9f lfout=%.9f\n",
+            machine->id,
+            taux_in/1e9,
+            laux_in/1e9,
+            taux_out/1e9,
+            laux_out/1e9
+          );
+
+          /*
+          PRINT_TIMER (current_time);
+          printf (": Send_Size = %d, Recv_Size = %d, Nodes involved = %d\n",
+                  action->desc.global_op.bytes_send,
+                  action->desc.global_op.bytes_recvd,
+                  count_queue(&communicator->nodes_per_machine[machine->id]));
+          */
+        }
+      }
+    }
+
+    /* Intra-nodes communication times */
     calcula_temps_maxim_intra_nodes (machine,
+                                     communicator,
                                      glop_info,
                                      action->desc.global_op.bytes_send,
                                      action->desc.global_op.bytes_recvd,
                                      &tauxn_in,
                                      &lauxn_in,
                                      &tauxn_out,
-                                     &lauxn_out,
-                                     num_tasks);
+                                     &lauxn_out);
 
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
       printf (
-        ": Machine %d (intra nodes): tfin=%f lfin=%f tfout=%f lfout=%f\n",
+        ": Machine %d (intra nodes): tfin=%.9f lfin=%.9f tfout=%.9f lfout=%.9f\n",
         machine->id,
-        tauxn_in,
-        lauxn_in,
-        tauxn_out,
-        lauxn_out
+        tauxn_in/1e9,
+        lauxn_in/1e9,
+        tauxn_out/1e9,
+        lauxn_out/1e9
       );
     }
 
@@ -5908,26 +5973,27 @@ calcula_temps_operacio_global (struct t_thread *thread,
         if (laux_in > lfin_int) lfin_int=laux_in;
         if (taux_out > tfout_int) tfout_int=taux_out;
         if (laux_out > lfout_int) lfout_int=laux_out;
-    */
 
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
       printf (
-        ": Machine %d: tfin_int=%f lfin_int=%f tfout_int=%f lfout_int=%f\n",
+        ": Machine %d (Maximum):     tfin=%.9f lfin=%.9f tfout=%.9f lfout=%.9f\n",
         machine->id,
-        taux_in,
-        laux_in,
-        taux_out,
-        laux_out
+        taux_in/1e9,
+        laux_in/1e9,
+        taux_out/1e9,
+        laux_out/1e9
       );
     }
+    */
   }
 
   /* Cal contar el temps a la xarxa externa */
   num_maquines = count_queue (& (communicator->machines_threads) );
   if (num_maquines > 1)
   {
+
     /* S'obte la informacio de les operacions col.lectives a la
        xarxa externa. */
     glop_info = (struct t_global_op_information *)
@@ -5989,17 +6055,18 @@ calcula_temps_operacio_global (struct t_thread *thread,
     {
       PRINT_TIMER (current_time);
       printf (
-        ": External net: tfin_ext=%f lfin_ext=%f tfout_ext=%f lfout_ext=%f\n",
-        tfin_ext,
-        lfin_ext,
-        tfout_ext,
-        lfout_ext
+        ": External net: tfin_ext=%.9f lfin_ext=%.9f tfout_ext=%.9f lfout_ext=%.9f\n",
+        tfin_ext/1e9,
+        lfin_ext/1e9,
+        tfout_ext/1e9,
+        lfout_ext/1e9
       );
+
       PRINT_TIMER (current_time);
       printf (
-        ": Num maquines %d startup xarxa externa %f\n",
+        ": Num maquines %d startup xarxa externa %.9f\n",
         num_maquines,
-        node->external_net_startup
+        node->external_net_startup/1e9
       );
     }
   }
@@ -6025,13 +6092,13 @@ calcula_temps_operacio_global (struct t_thread *thread,
   if (debug & D_COMM)
   {
     PRINT_TIMER (current_time);
-    printf (": COMMUNIC calcula_temps_operacio_global temps ");
+    printf (": GLOBAL_operation Total time=");
     PRINT_TIMER (*temps_final);
-    printf (" recursos ");
+    printf (" ( Resources=");
     PRINT_TIMER (*temps_recursos);
-    printf (" latencia ");
+    printf (" Startup=");
     PRINT_TIMER (*temps_latencia);
-    printf ("\n");
+    printf (" ) \n");
   }
 }
 
@@ -6378,6 +6445,8 @@ static void close_global_communication (struct t_thread *thread)
   struct t_cpu                  *cpu;
   dimemas_timer                  tmp_timer;
   int comm_id, glop_id;
+  int  machines;
+  int *tasks_per_node;
 
   Ptask        = thread->task->Ptask;
   action       = thread->action;
@@ -6393,6 +6462,27 @@ static void close_global_communication (struct t_thread *thread)
 
   communicator->current_root = TH_NIL;
   communicator->in_flight_op = FALSE;
+
+  /* Clean communicator queues */
+  for (machines = 0; machines < Simulator.number_machines; machines++)
+  {
+    int *nodeid;
+
+    for (nodeid  = (int*) outFIFO_queue (&communicator->nodes_per_machine[machines]);
+         nodeid != NULL;
+         nodeid  = (int*) outFIFO_queue (&communicator->nodes_per_machine[machines]))
+    {
+      free(nodeid);
+    }
+
+  }
+
+  for (tasks_per_node  = (int*) outFIFO_queue(&communicator->tasks_per_node);
+       tasks_per_node != NULL;
+       tasks_per_node  =(int*) outFIFO_queue(&communicator->tasks_per_node))
+  {
+    free(tasks_per_node);
+  }
 
   glop_id = action->desc.global_op.glop_id;
   glop    = (struct t_global_op_definition *)
@@ -6484,15 +6574,19 @@ static void close_global_communication (struct t_thread *thread)
 static t_boolean thread_in_communicator (struct t_communicator *comm,
                                          struct t_thread       *thread)
 {
-  int *taskid;
+  int  i;
 
+  /*
   for (
     taskid  = (int *) head_queue (&comm->global_ranks);
     taskid != (int *) 0;
     taskid  = (int *) next_queue (&comm->global_ranks)
   )
+  */
+  for (i = 0; i < comm->size; i++)
   {
-    if (*taskid == (thread->task->taskid) )
+    // if (*taskid == (thread->task->taskid) )
+    if ( thread->task->taskid == comm->global_ranks[i] )
     {
       return (TRUE);
     }
@@ -6545,11 +6639,14 @@ void GLOBAL_operation (struct t_thread *thread,
   struct t_node                 *node_usat;
   struct t_machine              *maquina_usada;
 
-  int Total_threads_involved;
+  struct t_queue                *nodes_per_machine;
+  int                           *tasks_per_node;
+
   int root_task;
   int i, kind;
 
-  /*  not very clever mostly to eliminate warnings     */
+
+  /* not very clever mostly to eliminate warnings */
   assert (root_thid >= 0);
   assert (bytes_send >= 0);
   assert (bytes_recv >= 0);
@@ -6599,6 +6696,59 @@ void GLOBAL_operation (struct t_thread *thread,
     communicator->in_flight_op = TRUE;
   }
 
+  /* Update the number of used nodes per machine and tasks per node */
+  node_usat     = get_node_of_thread (thread);
+  maquina_usada = node_usat->machine;
+  // communicator->nodes_per_machine[maquina_usada->id]++;
+
+  nodes_per_machine  = (struct t_queue*)
+          query_prio_queue(&communicator->nodes_per_machine[maquina_usada->id],
+                           (t_priority) node_usat->nodeid);
+
+  if (nodes_per_machine == QU_NIL)
+  {
+    int* new_node     = (int*)            malloc(sizeof(int));
+
+    (*new_node) = node_usat->nodeid;
+
+    insert_queue(&communicator->nodes_per_machine[maquina_usada->id],
+                 (char*) new_node,
+                 (t_priority) node_usat->nodeid);
+  }
+
+  tasks_per_node = (int*) query_prio_queue(&communicator->tasks_per_node,
+                                          (t_priority) node_usat->nodeid);
+  if (tasks_per_node == NULL)
+  {
+    int* new_tasks_per_node = (int*) malloc(sizeof(int));
+
+    (*new_tasks_per_node) = 1;
+    insert_queue(&communicator->tasks_per_node,
+                 (char*) new_tasks_per_node,
+                 (t_priority) node_usat->nodeid);
+  }
+  else
+  {
+    (*tasks_per_node) += 1;
+  }
+
+
+  /*
+  node_tasks = (int*) query_prio_queue (&communicator->node_tasks,
+                                        (t_priority) node_usat->nodeid);
+
+  if (node_tasks == NULL)
+  {
+    node_tasks  = malloc(sizeof(int));
+    *node_tasks = 1;
+    insert_queue(&communicator->node_tasks, node_tasks, node_usat->nodeid);
+  }
+  else
+  {
+    (*node_tasks) += 1;
+  }
+  */
+
   /* JGG (07/07/2010): New way to choose the root */
   if (root_rank == 1)
   {
@@ -6612,7 +6762,7 @@ void GLOBAL_operation (struct t_thread *thread,
     }
   }
 
-  Total_threads_involved = count_queue (&communicator->global_ranks);
+  // Total_threads_involved = count_queue (&communicator->global_ranks);
 
   /* FEC: Debugant!
 
@@ -6626,7 +6776,8 @@ void GLOBAL_operation (struct t_thread *thread,
 
   ASS_ALL_TIMER (thread->collective_timers.arrive_to_collective, current_time);
 
-  if (Total_threads_involved != count_queue (&communicator->threads) + 1)
+  // if (Total_threads_involved != count_queue (&communicator->threads) + 1)
+  if ( communicator->size != count_queue (&communicator->threads) + 1)
   {
     /* This is not the last thread arriving to the communication point,
      * simply block */
@@ -6650,14 +6801,16 @@ void GLOBAL_operation (struct t_thread *thread,
         glop->name,
         comm_id,
         count_queue (&communicator->threads),
-        Total_threads_involved
+        communicator->size
       );
     }
+
+    /* Add the current thread node */
 
     return;
   }
 
-  /* Ja jan arribat tots els threads a aquest punt */
+  /* All partners arrived. Start the contention stage */
   if (debug & D_COMM)
   {
     PRINT_TIMER (current_time);
@@ -6666,7 +6819,7 @@ void GLOBAL_operation (struct t_thread *thread,
       IDENTIFIERS (thread),
       glop->name,
       comm_id,
-      Total_threads_involved
+      communicator->size
     );
   }
 
@@ -6802,7 +6955,7 @@ void GLOBAL_operation (struct t_thread *thread,
    */
   others = (struct t_thread*) head_queue (&communicator->threads);
 
-  for (i = 0; i < (Total_threads_involved - 1); i++)
+  for (i = 0; i < (communicator->size - 1); i++)
   {
     /* S'obte la maquina corresponent a aquest thread */
     node_usat     = get_node_of_thread (others);
@@ -6821,7 +6974,7 @@ void GLOBAL_operation (struct t_thread *thread,
     }
     others = (struct t_thread*) next_queue (&communicator->threads);
 
-    if ( (others == NULL) && (i < (Total_threads_involved - 2) ) )
+    if ( (others == NULL) && (i < (communicator->size - 2) ) )
     {
       /* En aquest cas es deu haver extret el primer element de la llista,
        * pero encara hauria de quedar algun thread. Per tant, agafo el

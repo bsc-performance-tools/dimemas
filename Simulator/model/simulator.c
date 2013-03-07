@@ -35,6 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <list.h>
+
 #include "simulator.h"
 #include "machine.h"
 #include "node.h"
@@ -408,7 +410,9 @@ void Initialize_Empty_Dedicated_Connection(void)
     link->type            = IN_LINK;
     link->thread          = TH_NIL;
     ASS_ALL_TIMER (link->assigned_on, current_time);
-    insert_queue (&(d_con->free_in_links), (char *)link, (t_priority)(link->linkid));
+    insert_queue (&(d_con->free_in_links),
+                  (char *)link,
+                  (t_priority)(link->linkid));
 
     /* Output link */
     link = (struct t_link *) malloc (sizeof (struct t_link));

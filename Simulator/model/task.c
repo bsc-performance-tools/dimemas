@@ -525,7 +525,9 @@ void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
   comm = (struct t_communicator *)malloc(sizeof(struct t_communicator));
 
   comm->communicator_id = communicator_id;
-  create_queue (&comm->global_ranks);
+  comm->size            = 0;
+  comm->global_ranks    = NULL;
+  // create_queue (&comm->global_ranks);
   create_queue (&comm->threads);
   create_queue (&comm->machines_threads);
   create_queue (&comm->m_threads_with_links);
@@ -535,7 +537,7 @@ void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
   insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);
 }
 
-/* JGG: DEPRECATED, NOW ONLY DIM FORMAT */
+/* JGG: DEPRECATED, NOW ONLY DIM FORMAT
 void add_identificator_to_communicator(struct t_Ptask *Ptask,
                                        int             communicator_id,
                                        int             taskid)
@@ -609,6 +611,7 @@ void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
   }
   free (trips);
 }
+*/
 
 void
 new_window_definition (struct t_Ptask *Ptask, int window_id)

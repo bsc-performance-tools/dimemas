@@ -537,11 +537,20 @@ struct t_global_op_information
 struct t_communicator
 {
   int            communicator_id;
-  struct t_queue global_ranks;         /* Queue of integers, rank of tasks */
+  int            size;
+  int*           global_ranks;
+  // struct t_queue global_ranks;         /* Queue of integers, rank of tasks */
+
   struct t_queue threads;              /* Threads block until syncronization */
   struct t_queue machines_threads;     /* One thread from each machine used */
   struct t_queue m_threads_with_links; /* Els anteriors que ja tenen links
                                         * reservats */
+
+  // struct t_queue machines_nodes;
+  struct t_queue* nodes_per_machine;    /* Nodes involved on each machine */
+  struct t_queue  tasks_per_node;
+  // struct t_queue nodes_used;           /* List of nodes used */
+  // struct t_queue tasks_per_node;       /* Number of tasks on each node */
 
   struct t_thread* current_root;       /* Root thread of the 'in-flight'
                                           operation */

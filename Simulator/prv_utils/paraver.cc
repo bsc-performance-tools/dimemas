@@ -1116,10 +1116,18 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
         communicator != NULL;
         communicator  = (struct t_communicator*) next_queue(&ptask->Communicator))
     {
-      int* global_ranks;
+      int i;
 
       Header << "c:" << ptask->Ptaskid+1 << ":";                         // Ptask
       Header << (unsigned int) communicator->communicator_id+1 << ":";   // Communicator ID
+      Header << (unsigned int) communicator->size;
+
+      for (i = 0; i < communicator->size; i++)
+      {
+        Header << ":" << communicator->global_ranks[i]+1; // Tasks ID (Note the ":" before each ID)
+      }
+
+      /*
       Header << (unsigned int) count_queue(&communicator->global_ranks); // Total tasks
 
       for(global_ranks  = (int*) head_queue(&communicator->global_ranks);
@@ -1128,6 +1136,7 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
       {
         Header << ":" << (*global_ranks)+1; // Tasks ID (Note the ":" before each ID)
       }
+      */
       Header << std::endl;
     }
   }

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -40,13 +40,22 @@
 extern void PORT_general (int value, struct t_thread *thread);
 extern void PORT_init(void);
 extern void PORT_end(void);
+
 extern t_boolean PORT_create(int portid, struct t_thread *thread);
 extern t_boolean PORT_delete(int portid);
-extern t_boolean PORT_send (int module, int portid, struct t_thread *thread,
-			    int siz);
-extern t_boolean PORT_receive(int module, int portid, struct t_thread *thread,
-			      int siz);
-extern void really_port_send(struct t_port *port, struct t_thread *thread_s,
-			     struct t_thread *thread_r);
+
+extern t_boolean PORT_send (int              module,
+                            int              portid,
+                            struct t_thread *thread,
+                            int              siz);
+
+extern t_boolean PORT_receive(int              module,
+                              int              portid,
+                              struct t_thread *thread,
+                              int              siz);
+
+extern void really_port_send(struct t_port   *port,
+                             struct t_thread *thread_s,
+                             struct t_thread *thread_r);
 
 #endif

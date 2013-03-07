@@ -54,7 +54,7 @@ using std::cout;
 #include <sstream>
 using std::ostringstream;
 
-// #define DEBUG 1
+#define DEBUG 1
 
 /*****************************************************************************
  * Public functions

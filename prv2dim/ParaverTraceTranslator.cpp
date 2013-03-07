@@ -85,8 +85,9 @@ ParaverTraceTranslator::ParaverTraceTranslator(string ParaverTraceName,
 
   this->DimemasTraceName = DimemasTraceName;
 
-  DescriptorShared = false;
-  MultiThreadTrace = false;
+  DescriptorShared  = false;
+  MultiThreadTrace  = false;
+  WrongRecordsFound = 0;
 }
 
 ParaverTraceTranslator::ParaverTraceTranslator(FILE* ParaverTraceFile,
@@ -94,6 +95,8 @@ ParaverTraceTranslator::ParaverTraceTranslator(FILE* ParaverTraceFile,
 {
   this->ParaverTraceFile = ParaverTraceFile;
   this->DimemasTraceFile = DimemasTraceFile;
+
+  WrongRecordsFound = 0;
 }
 
 bool
@@ -661,62 +664,81 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     Event_t  CurrentEvent;
     INT32    CurrentTaskId = CurrentRecord->GetTaskId()-1;
 
+    if (CurrentTaskId < 0 || CurrentTaskId >= TranslationInfo.size())
+    {
+      /* Wrong record on the trace! */
+      WrongRecordsFound ++;
+      delete CurrentRecord;
+    }
+    else
+    {
+
 #ifdef DEBUG
-    // cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
+     // cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
 #endif
 
-    /* GlobalOp_t CurrentGlobalOp; */
-    /* Record translation */
+      /* GlobalOp_t CurrentGlobalOp; */
+      /* Record translation */
 
-    /* DEBUG
-    cout << *CurrentRecord;
-    */
+      /* DEBUG
+      cout << *CurrentRecord;
+      */
 
-    if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
-    { /* Current Record is an event. We split it, if needed */
-      if (CurrentEvent->GetTypeValueCount() > 1)
-      {
-        /* DEBUG
-        fprintf(stdout, "Adding an Event with %d type/values\n",
-                CurrentEvent->GetTypeValueCount());
-        */
-
-        for (unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++)
+      if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
+      { /* Current Record is an event. We split it, if needed */
+        if (CurrentEvent->GetTypeValueCount() > 1)
         {
-          Event_t SubEvent;
+          /* DEBUG
+          fprintf(stdout, "Adding an Event with %d type/values\n",
+                  CurrentEvent->GetTypeValueCount());
+          */
 
-          SubEvent = new Event( CurrentEvent->GetTimestamp(),
-                                CurrentEvent->GetCPU(),
-                                CurrentEvent->GetAppId(),
-                                CurrentEvent->GetTaskId(),
-                                CurrentEvent->GetThreadId());
+          for (unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++)
+          {
+            Event_t SubEvent;
 
-          SubEvent->AddTypeValue(CurrentEvent->GetType(i),
-                                 CurrentEvent->GetValue(i));
+            SubEvent = new Event( CurrentEvent->GetTimestamp(),
+                                  CurrentEvent->GetCPU(),
+                                  CurrentEvent->GetAppId(),
+                                  CurrentEvent->GetTaskId(),
+                                  CurrentEvent->GetThreadId());
 
-#ifdef DEBUG
-          // cout << "Pushing SubEvent: " << *SubEvent;
-#endif
+            SubEvent->AddTypeValue(CurrentEvent->GetType(i),
+                                   CurrentEvent->GetValue(i));
 
-          if (!TranslationInfo[CurrentTaskId]->PushRecord(SubEvent))
+  #ifdef DEBUG
+            // cout << "Pushing SubEvent: " << *SubEvent;
+  #endif
+
+            if (!TranslationInfo[CurrentTaskId]->PushRecord(SubEvent))
+            {
+              SetError(true);
+              this->LastError = TranslationInfo[CurrentTaskId]->GetLastError();
+
+              return false;
+            }
+          }
+
+          /*
+          CurrentGlobalOp = Event2GlobalOp(CurrentEvent);
+          if (CurrentGlobalOp != NULL)
+          {
+            CurrentRecord = static_cast<ParaverRecord_t> (CurrentGlobalOp);
+            continue;
+          }
+          */
+
+          delete CurrentRecord;
+        }
+        else
+        {
+          if (!TranslationInfo[CurrentTaskId]->PushRecord(CurrentRecord))
           {
             SetError(true);
             this->LastError = TranslationInfo[CurrentTaskId]->GetLastError();
-
             return false;
           }
         }
-
-        /*
-        CurrentGlobalOp = Event2GlobalOp(CurrentEvent);
-        if (CurrentGlobalOp != NULL)
-        {
-          CurrentRecord = static_cast<ParaverRecord_t> (CurrentGlobalOp);
-          continue;
-        }
-        */
-
-        delete CurrentRecord;
       }
       else
       {
@@ -726,15 +748,6 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
           this->LastError = TranslationInfo[CurrentTaskId]->GetLastError();
           return false;
         }
-      }
-    }
-    else
-    {
-      if (!TranslationInfo[CurrentTaskId]->PushRecord(CurrentRecord))
-      {
-        SetError(true);
-        this->LastError = TranslationInfo[CurrentTaskId]->GetLastError();
-        return false;
       }
     }
 
@@ -897,6 +910,18 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
       cout << ", " << TasksWithDisorderedRecords[i];
     cout << endl; */
     cout << "tasks have disordered records" << endl;
+    cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
+    cout << "NOTE: Contact tools@bsc.es to check how to solve this problem" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << endl;
+  }
+
+  if (WrongRecordsFound > 0)
+  {
+    cout << "********************************************************************************" << endl;
+    cout << "*                               WARNING                                        *" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << WrongRecordsFound << " wrong records found in the input trace.  " << endl;
     cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
     cout << "NOTE: Contact tools@bsc.es to check how to solve this problem" << endl;
     cout << "********************************************************************************" << endl;
@@ -1193,7 +1218,7 @@ ParaverTraceTranslator::TranslateCommunicators(
 ParaverRecord_t
 ParaverTraceTranslator::SelectNextRecord(void)
 {
-  static ParaverRecord_t CurrentTraceRecord;
+  static ParaverRecord_t CurrentTraceRecord = NULL;
   static UINT32          CurrentCommunicationIndex = 0;
   static bool            LastRecordTrace = true;
 
@@ -1205,7 +1230,6 @@ ParaverTraceTranslator::SelectNextRecord(void)
     /* Only events or global ops are needed */
     CurrentTraceRecord = Parser->GetNextRecord(EVENT_REC | GLOBOP_REC);
   }
-
 
   if (CurrentTraceRecord == NULL && Parser->GetError())
   {

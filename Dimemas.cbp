@@ -221,10 +221,6 @@
 		<Unit filename="Simulator/utils/list.h" />
 		<Unit filename="Simulator/utils/listE.cc" />
 		<Unit filename="Simulator/utils/listE.h" />
-		<Unit filename="Simulator/utils/mallocame.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Simulator/utils/mallocame.h" />
 		<Unit filename="Simulator/utils/modules_map.cc" />
 		<Unit filename="Simulator/utils/modules_map.h" />
 		<Unit filename="Simulator/utils/random.c">
@@ -271,7 +267,6 @@
 		<Unit filename="include/types.h" />
 		<Unit filename="prv2dim/PCFGeneration.cpp" />
 		<Unit filename="prv2dim/PCFGeneration.hpp" />
-		<Unit filename="prv2dim/PCFdefines.h" />
 		<Unit filename="prv2dim/ParaverApplicationDescription.cpp" />
 		<Unit filename="prv2dim/ParaverApplicationDescription.hpp" />
 		<Unit filename="prv2dim/ParaverCommunicator.cpp" />

@@ -47,6 +47,8 @@
 #include <errno.h>
 
 #include "file_data_access.h"
+
+#include <simulator.h>
 #include <dimemas_io.h>
 #include <list.h>
 
@@ -963,6 +965,8 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
   char* current_task_str;
   int   actual_comm_tasks_count;
 
+  int   i;
+
   comm_tasks_str = malloc(strlen(comm_fields)+1);
 
   if (comm_tasks_str == NULL)
@@ -993,26 +997,47 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
   new_communicator->communicator_id = comm_id;
   new_communicator->current_root    = NULL;
 
-  create_queue (&new_communicator->global_ranks);
+  // create_queue (&new_communicator->global_ranks);
+  new_communicator->size         = comm_tasks_count;
+  new_communicator->global_ranks = malloc(comm_tasks_count*sizeof(int));
+
   create_queue (&new_communicator->threads);
   create_queue (&new_communicator->machines_threads);
   create_queue (&new_communicator->m_threads_with_links);
+
+  // new_communicator->nodes_per_machine = malloc(Simulator.number_machines);
+  new_communicator->nodes_per_machine =
+    (struct t_queue*) malloc(Simulator.number_machines*sizeof(struct t_queue));
+
+  for (i = 0; i < Simulator.number_machines; i++)
+  {
+    create_queue(&new_communicator->nodes_per_machine[i]);
+  }
+
+  create_queue(&new_communicator->tasks_per_node);
+
 
   actual_comm_tasks_count = 0;
 
   current_task_str = strtok(comm_tasks_str, ":");
   while (current_task_str != NULL)
   {
-    count_t* current_task_ptr = (count_t *) malloc(sizeof(count_t));
+    int current_task_ptr = atoi(current_task_str);
+    //  = (int*) malloc(sizeof(int));
 
+    /*
     if (current_task_ptr == NULL)
     {
       DAP_report_error("unable to allocate memory for communicator ranks");
     }
+    */
 
-    (*current_task_ptr) = atoi(current_task_str);
+    // (*current_task_ptr) = atoi(current_task_str);
 
-    inFIFO_queue(&new_communicator->global_ranks, (char*) current_task_ptr);
+
+    // inFIFO_queue(&new_communicator->global_ranks, (char*) current_task_ptr);
+    new_communicator->global_ranks[actual_comm_tasks_count] = current_task_ptr;
+
     actual_comm_tasks_count++;
     current_task_str = strtok(NULL, ":");
   }

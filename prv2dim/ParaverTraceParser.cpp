@@ -472,12 +472,23 @@ ParaverRecord_t ParaverTraceParser::NextTraceRecord(UINT32 RecordTypeMask)
         continue;
       }
     }
+    else if (LineLength == 1 && Line[0] == '\n')
+    {
+      /* Empty line */
+      continue;
+    }
+    else if (LineLength == 2 && Line[0] == '\r' && Line[1] == '\n')
+    {
+      /* Empty line Windows */
+      continue;
+    }
+
 
     if ( sscanf(Line, "%d:", &CurrentRecordType) != 1 )
     {
-      if (Line[0] == '#' || Line[0] == '\n')
+      if (Line[0] == '#')
       {
-        /* Comment line or empty */
+        /* Comment line */
         continue;
       }
       else

@@ -407,7 +407,9 @@ t_boolean PORT_send (int module, int portid, struct t_thread *thread, int siz)
   node = get_node_of_thread (thread);
 
   if (empty_queue (& (port->recv) ) )
+  {
     startup = node->remote_port_startup;
+  }
   else
   {
     receiver = (struct t_thread *) head_queue (& (port->recv) );
@@ -486,14 +488,13 @@ t_boolean PORT_send (int module, int portid, struct t_thread *thread, int siz)
   }
 }
 
-t_boolean
-PORT_receive (int module, int portid, struct t_thread *thread, int siz)
+t_boolean PORT_receive (int module, int portid, struct t_thread *thread, int siz)
 {
   struct t_port   *port;
   struct t_thread *sender;
   struct t_action *action;
   struct t_node   *node;
-  t_nano          startup;
+  t_nano           startup;
 
   port = locate_port (portid);
 

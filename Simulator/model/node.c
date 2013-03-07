@@ -48,10 +48,15 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
 
   create_queue (&(node->Cpus));
   create_queue (&(node->ready));
+
   create_queue (&(node->free_out_links));
   create_queue (&(node->free_in_links));
   create_queue (&(node->busy_out_links));
   create_queue (&(node->busy_in_links));
+
+  create_queue (&(node->free_mem_links));
+  create_queue (&(node->busy_mem_links));
+
   create_queue (&(node->th_for_in));
   create_queue (&(node->th_for_out));
   create_queue (&(node->wait_outlink_port));
@@ -150,6 +155,21 @@ void NODE_Fill_Node_Fields(struct t_node *node,
 
     ASS_ALL_TIMER (link->assigned_on, current_time);
     inFIFO_queue (&(node->free_out_links), (char *) link);
+  }
+
+
+  for (j = 0; j < 2; j++)
+  {
+    link = (struct t_link*) malloc (sizeof(struct t_link));
+
+    link->linkid    = j + 1;
+    link->info.node = node;
+    link->kind      = NODE_LINK;
+    link->type      = OUT_LINK;
+    link->thread    = TH_NIL;
+
+    ASS_ALL_TIMER (link->assigned_on, current_time);
+    inFIFO_queue (&(node->free_mem_links), (char *) link);
   }
 
   node->arch                  = strdup(node_name);

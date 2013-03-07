@@ -42,22 +42,29 @@ struct t_node
   char             *arch;
   int               nodeid;
   struct t_queue    Cpus;
-  t_nano           relative;
-  t_nano           bandwith;
-  t_nano           local_startup;
-  t_nano           remote_startup;
-  t_nano           external_net_startup; /* Latencia de la xarxa externa */
-  t_nano           local_port_startup;
-  t_nano           remote_port_startup;
-  t_nano           local_memory_startup;
-  t_nano           remote_memory_startup;
+  t_nano            relative;
+  t_nano            bandwith;
+  t_nano            local_startup;
+  t_nano            remote_startup;
+  t_nano            external_net_startup; /* Latencia de la xarxa externa */
+  t_nano            local_port_startup;
+  t_nano            remote_port_startup;
+  t_nano            local_memory_startup;
+  t_nano            remote_memory_startup;
   struct t_queue    ready;
+
+  /* Network links */
   t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
 
   struct t_queue    free_in_links;        /* Free input links */
   struct t_queue    free_out_links;       /* Free output link */
   struct t_queue    busy_in_links;        /* Busy input links */
   struct t_queue    busy_out_links;       /* Busy output links */
+
+  /* Memory links */
+  struct t_queue    free_mem_links;
+  struct t_queue    busy_mem_links;
+
   struct t_queue    th_for_in;            /* Awaiting for input link */
   struct t_queue    th_for_out;           /* Awaiting for output link */
   struct t_queue    wait_outlink_port;

@@ -942,16 +942,22 @@ void show_statistics (int pallas_output)
 
 void MAIN_TEST_print_communicator(struct t_communicator* comm)
 {
-  char*           item = NULL;
-  int*            task = NULL;
-  struct t_queue* rank = NULL;
+  // char*           item = NULL;
+  int i;
+  // int            task = NULL;
+  // struct t_queue* rank = NULL;
 
-  rank = &comm->global_ranks;
+  // rank = &comm->global_ranks;
 
   printf("Comunicator [%02d]: ", comm->communicator_id);
 
   // Print prcedure of global ranks
-  item = head_queue(rank);
+  // item = head_queue(rank);
+  for (i = 0; i < comm->size; i++)
+  {
+    printf("%02d ", comm->global_ranks[i]);
+  }
+  /*
   while(item != NULL) {
     task = (int*)item;
 
@@ -959,6 +965,7 @@ void MAIN_TEST_print_communicator(struct t_communicator* comm)
 
     item = next_queue(rank);
   }
+  */
 
   printf("\n");
 }

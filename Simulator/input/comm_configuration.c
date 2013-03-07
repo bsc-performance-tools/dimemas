@@ -123,7 +123,7 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition(char* comm_conf_filename,
   double contention;  /* Per motius historics. Actualment no s'utilitza. */
 
   // PRINT_TIMER (current_time);
-  printf ("-> Loading communications configuration from file %s\n",
+  printf ("   * Loading communications configuration from file %s\n",
           comm_conf_filename);
 
 
@@ -725,7 +725,7 @@ t_boolean load_global_op_parameters (t_boolean external_network,
   if ( (FOUT_model_value = get_global_op_model (FOUT_model)) == -1)
   {
     sprintf(comm_conf_error_message,
-            "undefined Fan Out mode (%s)",
+            "undefined Fan Out model (%s)",
             FOUT_model);
 
     return FALSE;
@@ -742,7 +742,7 @@ t_boolean load_global_op_parameters (t_boolean external_network,
 
 
   /* Es determina de quina cua cal modificar les dades */
-  if (external_network == FALSE)
+  if (external_network == TRUE)
   {
     /* Es tracta de la xarxa externa */
     cua = &Simulator.wan.global_ops_info;

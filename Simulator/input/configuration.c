@@ -244,7 +244,7 @@ void CONFIGURATION_Load_Communications_Configuration(void)
   }
   else
   {
-    printf ("-> Loading default communications configuration\n");
+    printf ("   * Loading default communications configuration\n");
   }
 
   /*

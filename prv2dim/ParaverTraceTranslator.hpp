@@ -73,6 +73,8 @@ class ParaverTraceTranslator: public Error
 
     bool MultiThreadTrace;
 
+    INT32 WrongRecordsFound;
+
   public:
 
     ParaverTraceTranslator(){};

@@ -10,6 +10,28 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/03/07 - jgonzale - Simulator
+	CHANGES:	New way to compute the collective FANs, taking into
+				account the number of partners at different stages:
+					- Number of tasks per node
+					- Number of nodes per machine
+					- Number of machines in WAN
+	
+	BUGFIX:		Solved a bug when loading the collectives fine tuning
+				using an external file. It loaded the values mixing the
+				internal network and the WAN.
+
+2013/02/26 - jgonzale - prv2dim - 4.4.1pre
+	BUGFIX:		Solved a bug when reading blank lines of a trace with
+				CRLF line terminators
+
+	FEATURES:	Added a warning when wrong records (TaskIds out of bounds
+				found in the trace
+
+2013/02/21 - jgonzale - Simulator
+	BUGFIX:		Add missing include of 'list.h' to 'simulator.c' file that
+				caused a segmentation fault in linux-ia64 machines.
+
 2013/02/21 - jgonzale - Simulator
 	BUGFIX:		Add missing information about collective communications ids
 				to the 'extern_comm_model.h' header file
