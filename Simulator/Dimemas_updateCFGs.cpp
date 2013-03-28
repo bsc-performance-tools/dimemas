@@ -49,27 +49,27 @@ using std::string;
 
 
 #define NEW_NODE_INFO_RECORD_BODY \
-"\t\/\/ \"speed_ratio_instrumented_vs_simulated\" \"Relative processor speed\"\n" \
+"\t// \"speed_ratio_instrumented_vs_simulated\" \"Relative processor speed\"\n" \
 "\tdouble  \"speed_ratio_instrumented_vs_simulated\";\n" \
-"\t\/\/ \"intra_node_startup\" \"Startup time (s) of intra-node communications model\"\n" \
+"\t// \"intra_node_startup\" \"Startup time (s) of intra-node communications model\"\n" \
 "\tdouble  \"intra_node_startup\";\n" \
-"\t\/\/ \"intra_node_bandwidth\" \"Bandwidth (MB/s) of intra-node communications model\"\n" \
-"\t\/\/ \"0 means instantaneous communication\"\n" \
+"\t// \"intra_node_bandwidth\" \"Bandwidth (MB/s) of intra-node communications model\"\n" \
+"\t// \"0 means instantaneous communication\"\n" \
 "\tdouble  \"intra_node_bandwidth\";\n" \
-"\t\/\/ \"intra_node_buses\" \"Number of buses of intra-node communications model\"\n" \
-"\t\/\/ \"0 means infinite buses\"\n" \
+"\t// \"intra_node_buses\" \"Number of buses of intra-node communications model\"\n" \
+"\t// \"0 means infinite buses\"\n" \
 "\tint     \"intra_node_buses\";\n" \
-"\t\/\/ \"intra_node_input_links\" \"Input links of intra-node communications model\"\n" \
+"\t// \"intra_node_input_links\" \"Input links of intra-node communications model\"\n" \
 "\tint     \"intra_node_input_links\";\n" \
-"\t\/\/ \"intra_node_input_links\" \"Output links of intra-node communications model\"\n" \
+"\t// \"intra_node_input_links\" \"Output links of intra-node communications model\"\n" \
 "\tint     \"intra_node_output_links\";\n" \
-"\t\/\/ \"intra_node_startup\" \"Startup time (s) of inter-node communications model\"\n" \
+"\t// \"intra_node_startup\" \"Startup time (s) of inter-node communications model\"\n" \
 "\tdouble  \"inter_node_startup\";\n" \
-"\t\/\/ \"inter_node_input_links\" \"Input links of inter-node communications model\"\n" \
+"\t// \"inter_node_input_links\" \"Input links of inter-node communications model\"\n" \
 "\tint     \"inter_node_input_links\";\n" \
-"\t\/\/ \"inter_node_output_links\" \"Input links of intra-node communications model\"\n" \
+"\t// \"inter_node_output_links\" \"Input links of intra-node communications model\"\n" \
 "\tint     \"inter_node_output_links\";\n" \
-"\t\/\/ \"wan_startup\" \"Startup time (s) of inter-machines (WAN) communications model\"\n" \
+"\t// \"wan_startup\" \"Startup time (s) of inter-machines (WAN) communications model\"\n" \
 "\tdouble  \"wan_startup\";\n"
 
 
