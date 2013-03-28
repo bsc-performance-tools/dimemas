@@ -580,6 +580,16 @@ void check_node_info_definition (char *c, struct t_queue *q)
     return;
   }
 
+  if (count_queue(q) != SDDFA_2C_FIELD_COUNT)
+  {
+    warning ("Wrong number of fields in #2\n");
+    warning ("It is %d and must be %d\n", count_queue(q), SDDFA_2C_FIELD_COUNT);
+
+    return;
+  }
+
+
+  // #define SDDFA_2C_1A   "machine_id"
   el = (struct t_element *) head_queue (q);
   if (strcmp (el->i3->i1, SDDFA_2C_1A) != 0)
   {
@@ -590,6 +600,7 @@ void check_node_info_definition (char *c, struct t_queue *q)
     Invalid_type (1, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
   }
 
+  // #define SDDFA_2C_2A   "node_id"
   el = (struct t_element *) next_queue (q);
   if (strcmp (el->i3->i1, SDDFA_2C_2A) != 0)
   {
@@ -601,6 +612,7 @@ void check_node_info_definition (char *c, struct t_queue *q)
 
   }
 
+  // #define SDDFA_2C_3A   "simulated_architecture"
   el = (struct t_element *) next_queue (q);
   if (strcmp (el->i3->i1, SDDFA_2C_3A) != 0)
   {
@@ -613,6 +625,7 @@ void check_node_info_definition (char *c, struct t_queue *q)
 
   }
 
+  // #define SDDFA_2C_4A   "number_of_processors"
   el = (struct t_element *) next_queue (q);
   if (strcmp (el->i3->i1, SDDFA_2C_4A) != 0)
   {
@@ -625,10 +638,50 @@ void check_node_info_definition (char *c, struct t_queue *q)
 
   }
 
+  // #define SDDFA_2C_5A   "speed_ratio_instrumented_vs_simulated"
   el = (struct t_element *) next_queue (q);
   if (strcmp (el->i3->i1, SDDFA_2C_5A) != 0)
   {
     Invalid_attribute (5, 2, c, el->i3->i1, SDDFA_2C_5A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (5, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+
+  }
+
+  // #define SDDFA_2C_6A   "intra_node_startup"
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_6A) != 0)
+  {
+    Invalid_attribute (5, 2, c, el->i3->i1, SDDFA_2C_6A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (5, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+
+  }
+
+  // #define SDDFA_2C_7A   "intra_node_bandwidth"
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_7A) != 0)
+  {
+    Invalid_attribute (5, 2, c, el->i3->i1, SDDFA_2C_7A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (5, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+
+  }
+
+  // #define SDDFA_2C_8A   "intra_node_buses"
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_8A) != 0)
+  {
+    Invalid_attribute (5, 2, c, el->i3->i1, SDDFA_2C_8A);
 
   }
   if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
@@ -637,10 +690,11 @@ void check_node_info_definition (char *c, struct t_queue *q)
 
   }
 
+  // #define SDDFA_2C_9A   "intra_node_input_links"
   el = (struct t_element *) next_queue (q);
-  if (strcmp (el->i3->i1, SDDFA_2C_6A) != 0)
+  if (strcmp (el->i3->i1, SDDFA_2C_9A) != 0)
   {
-    Invalid_attribute (6, 2, c, el->i3->i1, SDDFA_2C_6A);
+    Invalid_attribute (6, 2, c, el->i3->i1, SDDFA_2C_9A);
 
   }
   if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
@@ -649,46 +703,24 @@ void check_node_info_definition (char *c, struct t_queue *q)
 
   }
 
-  el = (struct t_element *) next_queue (q);
-  if (strcmp (el->i3->i1, SDDFA_2C_7A) != 0)
-  {
-    Invalid_attribute (7, 2, c, el->i3->i1, SDDFA_2C_7A);
-
-  }
-  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
-  {
-    Invalid_type (7, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
-
-  }
-
-  el = (struct t_element *) next_queue (q);
-  if (strcmp (el->i3->i1, SDDFA_2C_8A) != 0)
-  {
-    Invalid_attribute (8, 2, c, el->i3->i1, SDDFA_2C_8A);
-
-  }
-  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
-  {
-    Invalid_type (8, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
-
-  }
-
-  el = (struct t_element *) next_queue (q);
-  if (strcmp (el->i3->i1, SDDFA_2C_9A) != 0)
-  {
-    Invalid_attribute (9, 2, c, el->i3->i1, SDDFA_2C_9A);
-
-  }
-  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
-  {
-    Invalid_type (9, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
-
-  }
-
+  // #define SDDFA_2C_10A  "intra_node_output_links"
   el = (struct t_element *) next_queue (q);
   if (strcmp (el->i3->i1, SDDFA_2C_10A) != 0)
   {
-    Invalid_attribute (10, 2, c, el->i3->i1, SDDFA_2C_10A);
+    Invalid_attribute (7, 2, c, el->i3->i1, SDDFA_2C_10A);
+
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (7, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+
+  }
+
+  // #define SDDFA_2C_11A  "inter_node_startup"
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_11A) != 0)
+  {
+    Invalid_attribute (10, 2, c, el->i3->i1, SDDFA_2C_11A);
 
   }
   if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
@@ -696,10 +728,38 @@ void check_node_info_definition (char *c, struct t_queue *q)
     Invalid_type (10, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
   }
 
+  // #define SDDFA_2C_12A  "inter_node_input_links"
   el = (struct t_element *) next_queue (q);
-  if (strcmp (el->i3->i1, SDDFA_2C_11A) != 0)
+  if (strcmp (el->i3->i1, SDDFA_2C_12A) != 0)
   {
-    Invalid_attribute (11, 2, c, el->i3->i1, SDDFA_2C_11A);
+    Invalid_attribute (8, 2, c, el->i3->i1, SDDFA_2C_12A);
+
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (8, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+
+  }
+
+  // #define SDDFA_2C_13A  "inter_node_output_links"
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_13A) != 0)
+  {
+    Invalid_attribute (9, 2, c, el->i3->i1, SDDFA_2C_13A);
+
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (9, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+
+  }
+
+
+  // #define SDDFA_2C_14A  "wan_startup"
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_14A) != 0)
+  {
+    Invalid_attribute (11, 2, c, el->i3->i1, SDDFA_2C_14A);
 
   }
   if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
@@ -708,12 +768,12 @@ void check_node_info_definition (char *c, struct t_queue *q)
 
   }
 
-  if (count_queue (q) == 15)
+  if (count_queue (q) == 18)
   {
     el = (struct t_element *) next_queue (q);
-    if (strcmp (el->i3->i1, SDDFA_2C_12A) != 0)
+    if (strcmp (el->i3->i1, SDDFA_2C_15A) != 0)
     {
-      Invalid_attribute (12, 2, c, el->i3->i1, SDDFA_2C_12A);
+      Invalid_attribute (12, 2, c, el->i3->i1, SDDFA_2C_15A);
 
     }
     if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
@@ -723,9 +783,9 @@ void check_node_info_definition (char *c, struct t_queue *q)
     }
 
     el = (struct t_element *) next_queue (q);
-    if (strcmp (el->i3->i1, SDDFA_2C_13A) != 0)
+    if (strcmp (el->i3->i1, SDDFA_2C_16A) != 0)
     {
-      Invalid_attribute (13, 2, c, el->i3->i1, SDDFA_2C_13A);
+      Invalid_attribute (13, 2, c, el->i3->i1, SDDFA_2C_16A);
 
     }
     if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
@@ -735,9 +795,9 @@ void check_node_info_definition (char *c, struct t_queue *q)
     }
 
     el = (struct t_element *) next_queue (q);
-    if (strcmp (el->i3->i1, SDDFA_2C_14A) != 0)
+    if (strcmp (el->i3->i1, SDDFA_2C_17A) != 0)
     {
-      Invalid_attribute (14, 2, c, el->i3->i1, SDDFA_2C_14A);
+      Invalid_attribute (14, 2, c, el->i3->i1, SDDFA_2C_17A);
 
     }
     if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
@@ -747,9 +807,9 @@ void check_node_info_definition (char *c, struct t_queue *q)
     }
 
     el = (struct t_element *) next_queue (q);
-    if (strcmp (el->i3->i1, SDDFA_2C_15A) != 0)
+    if (strcmp (el->i3->i1, SDDFA_2C_18A) != 0)
     {
-      Invalid_attribute (15, 2, c, el->i3->i1, SDDFA_2C_15A);
+      Invalid_attribute (15, 2, c, el->i3->i1, SDDFA_2C_18A);
 
     }
     if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )

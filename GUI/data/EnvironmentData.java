@@ -588,7 +588,7 @@ public class EnvironmentData
     *
     * @exc: Valor numérico no válido.
     */
-    public void loadData(String line, boolean oldFile) throws Exception
+    public boolean loadData(String line, boolean oldFile, int lineCount) throws Exception
     {
       int first = Data.ENVIRONMENT.length();
       int second = line.indexOf(",",first);
@@ -616,6 +616,8 @@ public class EnvironmentData
       first = second + 1;
       second = line.indexOf("}",first);
       setCommunication(Tools.blanks(line.substring(first,second)));
+
+      return true;
     }
 
     /*

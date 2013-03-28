@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -45,37 +45,51 @@ package data;
 import data.Data.*;
 import tools.*;
 import java.io.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /*
 * La clase Node provee la informaciÃ³n de un nodo.
 */
 public class Node
 {
-  // Valores por defecto.
-  static public final String DEFAULT_ARCHITECTURE = "";
-  static public final String DEFAULT_PROCESSORS   = "1";
-  static public final String DEFAULT_INPUT        = "1";
-  static public final String DEFAULT_OUTPUT       = "1";
-  static public final String DEFAULT_LOCAL        = "0.0";
-  static public final String DEFAULT_REMOTE       = "0.0";
-  static public final String DEFAULT_SPEED        = "1.0";
-  static public final String DEFAULT_BANDWIDTH    = "0.0";
-  static public final String DEFAULT_LATENCY      = "0.0";
-
-  private String DEFAULT_NODE_ID;
   private String DEFAULT_MACHINE_ID;
+  private String DEFAULT_NODE_ID;
 
-  private String machine_id;   // Machine to which belongs the node.
-  private String node_id;      // Node identificator.
-  private String architecture; // Architecture name.
-  private String processors;   // Number of processors within node.
-  private String input;        // Number of input links.
-  private String output;       // Number of output links.
-  private String local;        // Startup on local communication.
-  private String remote;       // Startup on remote communication.
-  private String speed;        // Relative processor speed.
-  private String bandwidth;    // Memory bandwidth.
-  private String latency;      // External net startup.
+  // Valores por defecto.
+  static public final String DEFAULT_ARCHITECTURE         = "";
+  static public final String DEFAULT_PROCESSORS           = "1";
+  static public final String DEFAULT_CPU_RATIO            = "1.0";
+  static public final String DEFAULT_INTRA_NODE_STARTUP   = "0.0";
+  static public final String DEFAULT_INTRA_NODE_BANDWIDTH = "0.0";
+  static public final String DEFAULT_INTRA_NODE_BUSES     = DEFAULT_PROCESSORS;
+  static public final String DEFAULT_INTRA_NODE_IN_LINKS  = "1";
+  static public final String DEFAULT_INTRA_NODE_OUT_LINKS = "0";
+  static public final String DEFAULT_INTER_NODE_STARTUP   = "0.0";
+  static public final String DEFAULT_INTER_NODE_IN_LINKS  = "1";
+  static public final String DEFAULT_INTER_NODE_OUT_LINKS = "1";
+  static public final String DEFAULT_WAN_STARTUP          = "0.0";
+
+
+  static public final int    NODE_RECORD_FIELD_COUNT   = 14;
+
+  private String machine_id;           // Machine to which belongs the node.
+  private String node_id;              // Node identificator.
+  private String architecture;         // Architecture name.
+  private String processors;           // Number of processors within node.
+  private String cpu_ratio;            // Relative processor speed.
+
+  private String intra_node_startup;   // Startup on local communication.
+  private String intra_node_bandwidth; // Node bandwidth.
+  private String intra_node_buses;     // Number of memory buses
+  private String intra_node_in_links;  // Number of memory input links
+  private String intra_node_out_links; // Number of memory output links
+
+  private String inter_node_startup;   // Startup on remote communication.
+  private String inter_node_in_links;  // Number of input links.
+  private String inter_node_out_links; // Number of output links.
+
+  private String wan_startup;          // External net startup.
 
   // Constructor de la clase Node.
   public Node(String identificator, String machineId)
@@ -88,17 +102,23 @@ public class Node
   // MÃ©todo que inicializa los datos con los valores por defecto.
   public void initialValues()
   {
-    machine_id   = DEFAULT_MACHINE_ID;
-    node_id      = DEFAULT_NODE_ID;
-    architecture = DEFAULT_ARCHITECTURE;
-    processors   = DEFAULT_PROCESSORS;
-    input        = DEFAULT_INPUT;
-    output       = DEFAULT_OUTPUT;
-    local        = DEFAULT_LOCAL;
-    remote       = DEFAULT_REMOTE;
-    speed        = DEFAULT_SPEED;
-    bandwidth    = DEFAULT_BANDWIDTH;
-    latency      = DEFAULT_LATENCY;
+    machine_id    = DEFAULT_MACHINE_ID;
+    node_id       = DEFAULT_NODE_ID;
+    architecture  = DEFAULT_ARCHITECTURE;
+    processors    = DEFAULT_PROCESSORS;
+    cpu_ratio     = DEFAULT_CPU_RATIO;
+
+    intra_node_startup   = DEFAULT_INTRA_NODE_STARTUP;
+    intra_node_bandwidth = DEFAULT_INTRA_NODE_BANDWIDTH;
+    intra_node_buses     = DEFAULT_INTRA_NODE_BUSES;
+    intra_node_in_links  = DEFAULT_INTRA_NODE_IN_LINKS;
+    intra_node_out_links = DEFAULT_INTRA_NODE_OUT_LINKS;
+
+    inter_node_startup   = DEFAULT_INTER_NODE_STARTUP;
+    inter_node_in_links  = DEFAULT_INTER_NODE_IN_LINKS;
+    inter_node_out_links = DEFAULT_INTER_NODE_OUT_LINKS;
+
+    wan_startup          = DEFAULT_WAN_STARTUP;
   }
 
   /*
@@ -114,13 +134,16 @@ public class Node
        node_id.equalsIgnoreCase(DEFAULT_NODE_ID) &&
        architecture.equalsIgnoreCase(DEFAULT_ARCHITECTURE) &&
        processors.equalsIgnoreCase(DEFAULT_PROCESSORS) &&
-       input.equalsIgnoreCase(DEFAULT_INPUT) &&
-       output.equalsIgnoreCase(DEFAULT_OUTPUT) &&
-       local.equalsIgnoreCase(DEFAULT_LOCAL) &&
-       remote.equalsIgnoreCase(DEFAULT_REMOTE) &&
-       speed.equalsIgnoreCase(DEFAULT_SPEED) &&
-       bandwidth.equalsIgnoreCase(DEFAULT_BANDWIDTH) &&
-       latency.equalsIgnoreCase(DEFAULT_LATENCY))
+       cpu_ratio.equalsIgnoreCase(DEFAULT_CPU_RATIO) &&
+       intra_node_startup.equalsIgnoreCase(DEFAULT_INTRA_NODE_STARTUP) &&
+       intra_node_bandwidth.equalsIgnoreCase(DEFAULT_INTRA_NODE_BANDWIDTH) &&
+       intra_node_buses.equalsIgnoreCase(DEFAULT_INTRA_NODE_BUSES) &&
+       intra_node_in_links.equalsIgnoreCase(DEFAULT_INTRA_NODE_IN_LINKS) &&
+       intra_node_out_links.equalsIgnoreCase(DEFAULT_INTRA_NODE_OUT_LINKS) &&
+       inter_node_startup.equalsIgnoreCase(DEFAULT_INTER_NODE_STARTUP) &&
+       inter_node_in_links.equalsIgnoreCase(DEFAULT_INTER_NODE_IN_LINKS) &&
+       inter_node_out_links.equalsIgnoreCase(DEFAULT_INTER_NODE_OUT_LINKS) &&
+       wan_startup.equalsIgnoreCase(DEFAULT_WAN_STARTUP))
     {
       return true;
     }
@@ -141,10 +164,49 @@ public class Node
   *
   * @exc: Valor numÃ©rico no vÃ¡lido.
   */
-  public void loadData(String line, boolean oldFile) throws Exception
+  public boolean loadData(String line, boolean oldFile, int lineCount) throws Exception
   {
+    Pattern pattern = Pattern.compile("\"node information\" \\{(.*)\\};;$");
+    Matcher matcher = pattern.matcher(line);
+
+    if (!matcher.matches())
+    {
+      Tools.showErrorDialog("Wrong node information record");
+      return false;
+    }
+
+    String fields = matcher.group(1);
+
     int first = Data.NODE.length();
     int second = line.indexOf(",",first);
+
+    String[] nodeFields = fields.split(",");
+
+    if (nodeFields.length != NODE_RECORD_FIELD_COUNT)
+    {
+      Tools.showErrorDialog("Wrong number of fields of node information record (line "+lineCount+").\nTry to update the CFG file");
+      return false;
+    }
+
+    setMachine_id(Tools.blanks(nodeFields[0]));
+    setNode_id(Tools.blanks(nodeFields[1]));
+    setArchitecture(Tools.blanks(nodeFields[2]));
+    setProcessors(Tools.blanks(nodeFields[3]));
+    setCPURatio(Tools.blanks(nodeFields[4]));
+    setIntraNodeStartup(Tools.blanks(nodeFields[5]));
+    setIntraNodeBandwidth(Tools.blanks(nodeFields[6]));
+    setIntraNodeBuses(Tools.blanks(nodeFields[7]));
+    setIntraNodeInLinks(Tools.blanks(nodeFields[8]));
+    setIntraNodeOutLinks(Tools.blanks(nodeFields[9]));
+    setInterNodeStartup(Tools.blanks(nodeFields[10]));
+    setInterNodeInLinks(Tools.blanks(nodeFields[11]));
+    setInterNodeOutLinks(Tools.blanks(nodeFields[12]));
+    setWANStartup(Tools.blanks(nodeFields[13]));
+
+    /*
+    System.out.println("Number of node fields = "+nodeFields.length);
+    System.out.println("First field = "+nodeFields[0]);
+
 
     if(!oldFile)
     {
@@ -154,27 +216,47 @@ public class Node
     }
 
     setNode_id(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setArchitecture(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setProcessors(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setMemBuses(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setMemInLinks(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setMemOutLinks(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setInput(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setOutput(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setLocal(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setRemote(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
     second = line.indexOf(",",first);
     setSpeed(Tools.blanks(line.substring(first,second)));
+
     first = second + 1;
 
     if(!oldFile)
@@ -190,6 +272,9 @@ public class Node
       second = line.indexOf("}",first);
       setBandwidth(Tools.blanks(line.substring(first,second)));
     }
+    */
+
+    return true;
   }
 
   /*
@@ -207,13 +292,16 @@ public class Node
     target.writeBytes(getNode_id() + ", ");
     target.writeBytes(getArchitecture(true) + ", ");
     target.writeBytes(getProcessors() + ", ");
-    target.writeBytes(getInput() + ", ");
-    target.writeBytes(getOutput() + ", ");
-    target.writeBytes(getLocal() + ", ");
-    target.writeBytes(getRemote() + ", ");
-    target.writeBytes(getSpeed() + ", ");
-    target.writeBytes(getBandwidth() + ", ");
-    target.writeBytes(getLatency() + "};;\n");
+    target.writeBytes(getCPURatio() + ", ");
+    target.writeBytes(getIntraNodeStartup() + ", ");
+    target.writeBytes(getIntraNodeBandwidth() + ", ");
+    target.writeBytes(getIntraNodeBuses() + ", ");
+    target.writeBytes(getIntraNodeInLinks() + ", ");
+    target.writeBytes(getIntraNodeOutLinks() + ", ");
+    target.writeBytes(getInterNodeStartup() + ", ");
+    target.writeBytes(getInterNodeInLinks() + ", ");
+    target.writeBytes(getInterNodeOutLinks() + ", ");
+    target.writeBytes(getWANStartup() + "};;\n");
   }
 
   // MÃ©todos GET: permiten el acceso externo a los datos de un nodo.
@@ -242,39 +330,54 @@ public class Node
     return processors;
   }
 
-  public String getInput()
+  public String getCPURatio()
   {
-    return input;
+    return cpu_ratio;
   }
 
-  public String getOutput()
+  public String getIntraNodeStartup()
   {
-    return output;
+    return intra_node_startup;
   }
 
-  public String getLocal()
+  public String getIntraNodeBandwidth()
   {
-    return local;
+    return intra_node_bandwidth;
   }
 
-  public String getRemote()
+  public String getIntraNodeBuses()
   {
-    return remote;
+    return intra_node_buses;
   }
 
-  public String getSpeed()
+  public String getIntraNodeInLinks()
   {
-    return speed;
+    return intra_node_in_links;
   }
 
-  public String getBandwidth()
+  public String getIntraNodeOutLinks()
   {
-    return bandwidth;
+    return intra_node_out_links;
   }
 
-  public String getLatency()
+  public String getInterNodeStartup()
   {
-    return latency;
+    return inter_node_startup;
+  }
+
+  public String getInterNodeInLinks()
+  {
+    return inter_node_in_links;
+  }
+
+  public String getInterNodeOutLinks()
+  {
+    return inter_node_out_links;
+  }
+
+  public String getWANStartup()
+  {
+    return wan_startup;
   }
 
   // MÃ©todos SET: permiten la modificaciÃ³n, de forma externa, de los datos de
@@ -330,64 +433,12 @@ public class Node
       }
   }
 
-  public void setInput(String value) throws Exception
-  {
-    try
-    {
-      Integer.parseInt(value);
-      input = value;
-    } catch(NumberFormatException e)
-      {
-        Tools.showErrorMessage("NUMBER OF INPUT LINKS");
-        throw e;
-      }
-  }
-
-  public void setOutput(String value) throws Exception
-  {
-    try
-    {
-      Integer.parseInt(value);
-      output = value;
-    } catch(NumberFormatException e)
-      {
-        Tools.showErrorMessage("NUMBER OF OUTPUT LINKS");
-        throw e;
-      }
-  }
-
-  public void setLocal(String value) throws Exception
+  public void setCPURatio(String value) throws Exception
   {
     try
     {
       Double.parseDouble(value);
-      local = Tools.filterForDouble(value);
-    } catch(NumberFormatException e)
-      {
-        Tools.showErrorMessage("LOCAL STARTUP");
-        throw e;
-      }
-  }
-
-  public void setRemote(String value) throws Exception
-  {
-    try
-    {
-      Double.parseDouble(value);
-      remote = Tools.filterForDouble(value);
-    } catch(NumberFormatException e)
-      {
-        Tools.showErrorMessage("REMOTE STARTUP");
-        throw e;
-      }
-  }
-
-  public void setSpeed(String value) throws Exception
-  {
-    try
-    {
-      Double.parseDouble(value);
-      speed = Tools.filterForDouble(value);
+      cpu_ratio = Tools.filterForDouble(value);
     } catch(NumberFormatException e)
       {
         Tools.showErrorMessage("RELATIVE PROCESSOR SPEED");
@@ -395,28 +446,122 @@ public class Node
       }
   }
 
-  public void setBandwidth(String value) throws Exception
+  public void setIntraNodeStartup(String value) throws Exception
   {
     try
     {
       Double.parseDouble(value);
-      bandwidth = Tools.filterForDouble(value);
+      intra_node_startup = Tools.filterForDouble(value);
     } catch(NumberFormatException e)
       {
-        Tools.showErrorMessage("MEMORY BANDWIDTH");
+        Tools.showErrorMessage("WRONG INTRA-NODE COMMUNICATIONS STARTUP VALUE");
         throw e;
       }
   }
 
-  public void setLatency(String value) throws Exception
+  public void setIntraNodeBandwidth(String value) throws Exception
   {
     try
     {
       Double.parseDouble(value);
-      latency = Tools.filterForDouble(value);
+      intra_node_bandwidth = Tools.filterForDouble(value);
     } catch(NumberFormatException e)
       {
-        Tools.showErrorMessage("EXTERNAL NET LATENCY");
+        Tools.showErrorMessage("WRONG INTRA-NODE COMMUNICATIONS BANDWIDTH VALUE");
+        throw e;
+      }
+  }
+
+  public void setIntraNodeBuses(String value) throws Exception
+  {
+    try
+    {
+      Integer.parseInt(value);
+      intra_node_buses = value;
+    }
+    catch(NumberFormatException e)
+    {
+      Tools.showErrorMessage("WRONG INTRA-NODE COMMUNICATIONS BUSES VALUE");
+      throw e;
+    }
+  }
+
+  public void setIntraNodeInLinks(String value) throws Exception
+  {
+    try
+    {
+      Integer.parseInt(value);
+      intra_node_in_links = value;
+    }
+    catch(NumberFormatException e)
+    {
+      Tools.showErrorMessage("WRONG INTRA-NODE COMMUNICATIONS INPUT LINKS VALUE");
+      throw e;
+    }
+  }
+
+  public void setIntraNodeOutLinks(String value) throws Exception
+  {
+    try
+    {
+      Integer.parseInt(value);
+      intra_node_out_links = value;
+    }
+    catch(NumberFormatException e)
+    {
+      Tools.showErrorMessage("WRONG INTRA-NODE COMMUNICATIONS OUTPUT LINKS VALUE");
+      throw e;
+    }
+  }
+
+  public void setInterNodeStartup(String value) throws Exception
+  {
+    try
+    {
+      Double.parseDouble(value);
+      inter_node_startup = Tools.filterForDouble(value);
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG INTER-NODE COMMUNICATIONS STARTUP VALUE");
+        throw e;
+      }
+  }
+
+  public void setInterNodeInLinks(String value) throws Exception
+  {
+    try
+    {
+      Integer.parseInt(value);
+      inter_node_in_links = value;
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG INTER-NODE COMMUNICATIONS INPUT LINKS VALUE");
+        throw e;
+      }
+  }
+
+  public void setInterNodeOutLinks(String value) throws Exception
+  {
+    try
+    {
+      Integer.parseInt(value);
+      inter_node_out_links = value;
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG INTER-NODE COMMUNICATIONS OUTPUT LINKS VALUE");
+        throw e;
+      }
+  }
+
+  public void setWANStartup(String value) throws Exception
+  {
+    try
+    {
+      Double.parseDouble(value);
+      wan_startup = Tools.filterForDouble(value);
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG INTER-MACHINES (WAN) COMMUNICATIONS STARTUP VALUE");
         throw e;
       }
   }

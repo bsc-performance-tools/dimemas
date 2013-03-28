@@ -328,7 +328,7 @@ void FS_general (int value, struct t_thread *thread)
       if (debug & D_FS)
       {
         PRINT_TIMER (current_time);
-        printf (": IO Metadata P%d T%d th%d\n", IDENTIFIERS (thread) );
+        printf (": IO Metadata P%02d T%02d (t%02d)\n", IDENTIFIERS (thread) );
       }
       cpu = get_cpu_of_thread (thread);
       PARAVER_Event (cpu->unique_number, IDENTIFIERS (thread),
@@ -354,7 +354,7 @@ void FS_general (int value, struct t_thread *thread)
       if (debug & D_FS)
       {
         PRINT_TIMER (current_time);
-        printf (": IO Block NonCollective P%d T%d th%d\n", IDENTIFIERS (thread) );
+        printf (": IO Block NonCollective P%02d T%02d (t%02d)\n", IDENTIFIERS (thread) );
       }
       switch (mpi_io->Oop)
       {
@@ -401,7 +401,7 @@ A:
         Next_Action_to_thread (thread);
         break;
       default:
-        panic ("Non valid operation %d for Blocking Non Collective P%d T%d th%d\n",
+        panic ("Non valid operation %d for Blocking Non Collective P%02d T%02d (t%02d)\n",
                mpi_io->Oop, IDENTIFIERS (thread) );
       }
       break;
@@ -409,7 +409,7 @@ A:
       if (debug & D_FS)
       {
         PRINT_TIMER (current_time);
-        printf (": IO Block Collective P%d T%d th%d Oop %d fh %d\n",
+        printf (": IO Block Collective P%02d T%02d (t%02d) Oop %d fh %d\n",
                 IDENTIFIERS (thread), mpi_io->Oop, mpi_io->fh);
       }
       switch (mpi_io->Oop)
@@ -433,7 +433,7 @@ A:
                        PARAVER_IO, PARAVER_IO_BLOCK_COLLECTIVE_WRITE_BEGIN);
         break;
       default:
-        panic ("Non valid operation %d for Blocking Collective P%d T%d th%d\n",
+        panic ("Non valid operation %d for Blocking Collective P%02d T%02d (t%02d)\n",
                mpi_io->Oop, IDENTIFIERS (thread) );
       }
       copy = duplicate_thread_fs (thread);
@@ -461,7 +461,7 @@ A:
       if (debug & D_FS)
       {
         PRINT_TIMER (current_time);
-        printf (": IO NonBlock NonCollective P%d T%d th%d\n", IDENTIFIERS (thread) );
+        printf (": IO NonBlock NonCollective P%02d T%02d (t%02d)\n", IDENTIFIERS (thread) );
       }
       switch (mpi_io->Oop)
       {
@@ -497,7 +497,7 @@ A:
                        PARAVER_IO, PARAVER_IO_NONBLOCK_NONCOLLECTIVE_WRITE_BEGIN);
         break;
       default:
-        panic ("Non valid operation %d for NonBlocking NonCollective beginP%d T%d th%d\n",
+        panic ("Non valid operation %d for NonBlocking NonCollective beginP%02d T%02d (t%02d)\n",
                mpi_io->Oop, IDENTIFIERS (thread) );
       }
 
@@ -570,7 +570,7 @@ B:
       if (debug & D_FS)
       {
         PRINT_TIMER (current_time);
-        printf (": IO NonBlock Collective P%d T%d th%d Oop %d fh %d\n",
+        printf (": IO NonBlock Collective P%02d T%02d (t%02d) Oop %d fh %d\n",
                 IDENTIFIERS (thread), mpi_io->Oop, mpi_io->fh);
       }
       switch (mpi_io->Oop)
@@ -593,7 +593,7 @@ B:
                        current_time,
                        PARAVER_IO, PARAVER_IO_NONBLOCK_COLLECTIVE_WRITE_BEGIN);
       default:
-        panic ("Non valid operation %d for NonBlocking Collective P%d T%d th%d\n",
+        panic ("Non valid operation %d for NonBlocking Collective P%02d T%02d (t%02d)\n",
                mpi_io->Oop, IDENTIFIERS (thread) );
       }
       copy = duplicate_thread_fs (thread);
@@ -658,7 +658,7 @@ B:
       Next_Action_to_thread (thread);
       break;
     default:
-      panic ("Invalid operation %d in FS module for P%d T%d th%d\n",
+      panic ("Invalid operation %d in FS module for P%02d T%02d (t%02d)\n",
              mpi_io->which_io, IDENTIFIERS (thread) );
       break;
     }
@@ -759,7 +759,7 @@ B:
                        PARAVER_IO, PARAVER_IO_BLOCK_COLLECTIVE_WRITE_END);
         break;
       default:
-        panic ("Non valid operation %d for Blocking Collective P%d T%d th%d\n",
+        panic ("Non valid operation %d for Blocking Collective P%02d T%02d (t%02d)\n",
                mpi_io->Oop, IDENTIFIERS (thread) );
       }
       delete_duplicate_thread_fs (copy);
@@ -768,7 +768,7 @@ B:
       if (debug & D_FS)
       {
         PRINT_TIMER (current_time);
-        printf (": IO Block Collective P%d T%d th%d End\n", IDENTIFIERS (thread) );
+        printf (": IO Block Collective P%02d T%02d (t%02d) End\n", IDENTIFIERS (thread) );
       }
       break;
     default:
@@ -942,7 +942,7 @@ B:
                        PARAVER_IO, PARAVER_IO_NONBLOCK_COLLECTIVE_END);
         break;
       default:
-        panic ("Non valid operation %d for NonBlocking Collective P%d T%d th%d\n",
+        panic ("Non valid operation %d for NonBlocking Collective P%02d T%02d (t%02d)\n",
                mpi_io->Oop, IDENTIFIERS (copy) );
       }
       FLOAT_TO_TIMER (1.0, tmp_timer);
@@ -994,7 +994,7 @@ B:
     break;
 
   default:
-    panic ("Unexpected operation %d in FS module for P%d T%d th%d\n",
+    panic ("Unexpected operation %d in FS module for P%02d T%02d (t%02d)\n",
            value, IDENTIFIERS (thread) );
     break;
   }
@@ -1189,7 +1189,7 @@ void FS_End()
            thread != TH_NIL;
            thread  = (struct t_thread *) next_queue (&node->IO_disks_threads) )
       {
-        printf (" P%d T%d th%d", IDENTIFIERS (thread) );
+        printf (" P%02d T%02d (t%02d)", IDENTIFIERS (thread) );
       }
       printf ("\n");
     }
@@ -1210,7 +1210,7 @@ void FS_End()
            thread != TH_NIL;
            thread  = (struct t_thread *) next_queue (&Ptask->MPI_IO_request_thread) )
       {
-        printf (" P%d T%d th%d", IDENTIFIERS (thread) );
+        printf (" P%02d T%02d (t%02d)", IDENTIFIERS (thread) );
       }
       printf ("\n");
     }

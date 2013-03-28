@@ -56,6 +56,7 @@
 #include "paraver.h"
 #include "random.h"
 #include "cpu.h"
+#include "links.h"
 
 #ifdef USE_EQUEUE
 #include "listE.h"
@@ -186,6 +187,8 @@ void (* external_compute_global_operation_time) (int     comm_id,
 /******************************************************************************
  * CAPÇALERES DE LES FUNCIONS INTERNES                                        *
  *****************************************************************************/
+
+static t_nano bw_ns_per_byte (t_nano bandw);
 
 static void periodic_external_network_traffic_init (void);
 
@@ -430,7 +433,7 @@ void COMMUNIC_end()
         /*
         if (debug&D_LINKS)
         {
-          printf ("             P%d T%d th%d\n", IDENTIFIERS (thread));
+          printf ("             P%02d T%02d (t%02d)\n", IDENTIFIERS (thread));
         }
         */
       }
@@ -460,7 +463,7 @@ void COMMUNIC_end()
         /*
         if (debug&D_LINKS)
         {
-          printf ("             P%d T%d th%d\n", IDENTIFIERS (thread));
+          printf ("             P%02d T%02d (t%02d)\n", IDENTIFIERS (thread));
         }
         */
       }
@@ -494,7 +497,7 @@ void COMMUNIC_end()
                               (t_priority)thread->action->desc.global_op.glop_id);
 
           /*
-          warning(": COMMUNIC_end: tasks P%d T%d th%d waiting for global operation %s\n",
+          warning(": COMMUNIC_end: tasks P%02d T%02d (t%02d) waiting for global operation %s\n",
                   IDENTIFIERS(thread),
                   glop->name);
           */
@@ -626,7 +629,7 @@ t_nano compute_startup (struct t_thread                 *thread,
 
   switch (kind)
   {
-  case LOCAL_COMMUNICATION_TYPE:
+  case MEMORY_COMMUNICATION_TYPE:
     /* Es un missatge local al node */
     startup  = send_node->local_startup;
     startup += RANDOM_GenerateRandom (&randomness.memory_latency);
@@ -692,9 +695,9 @@ t_nano compute_copy_latency (struct t_thread *thread,
     panic ("Error computing copy latency: void node descriptor\n");
   }
 
-  if (node->bandwith != (t_nano) 0)
+  if (node->bandwidth != (t_nano) 0)
   {
-    bw = (t_nano) ( (t_nano) (1e9) / (1 << 20) / node->bandwith);
+    bw = bw_ns_per_byte(node->bandwidth);
     copy_latency = bw * mess_size;
   }
 
@@ -702,9 +705,59 @@ t_nano compute_copy_latency (struct t_thread *thread,
 }
 
 /******************************************************************************
- * FUNCIÓ 'recompute_bandwith'                                                *
+ * FUNCIÓ 'recompute_memory_bandwidth'                                        *
  *****************************************************************************/
-static t_nano recompute_bandwith (struct t_thread *thread)
+static t_nano recompute_memory_bandwidth (struct t_thread *thread)
+{
+  t_nano         bandw;
+  t_nano         ratio;
+  struct t_node *node;
+
+  node = get_node_of_thread (thread);
+
+  bandw  = (t_nano) node->bandwidth;
+  bandw += RANDOM_GenerateRandom (&randomness.memory_bandwidth);
+
+  // printf("Recompute_memory_bandwidth bandw+random = %f\n", bandw);
+
+  if (bandw != 0)
+  {
+    bandw = bw_ns_per_byte(bandw);
+  }
+
+  if (node->cur_memory_messages <= node->max_memory_messages)
+  {
+    ratio = 1.0;
+  }
+  else
+  {
+    ratio = ( (t_nano) node->max_memory_messages) /
+            ( (t_nano) node->cur_memory_messages);
+  }
+
+  if (ratio != 0)
+  {
+    bandw = bandw / ratio;
+  }
+  else
+  {
+    panic ("bandw = 0 !\n");
+  }
+
+  /*
+  printf("Recompute_memory_bandwidth node->bandwidth = %f bandw = %f ratio = %f\n",
+         bw_ns_per_byte(node->bandwidth),
+         bandw,
+         ratio);
+  */
+  return bandw;
+}
+
+
+/******************************************************************************
+ * FUNCIÓ 'recompute_internal_network_bandwidth'                                                *
+ *****************************************************************************/
+static t_nano recompute_internal_network_bandwidth (struct t_thread *thread)
 {
   t_nano bandw;
   t_nano ratio;
@@ -768,9 +821,9 @@ static t_nano recompute_bandwith (struct t_thread *thread)
         SUB_TIMER (current_time, pending->last_comm.ti, inter);
         TIMER_TO_FLOAT (inter, interm);
         pending_bytes =
-          pending->last_comm.bytes - (interm/pending->last_comm.bandwith);
+          pending->last_comm.bytes - (interm/pending->last_comm.bandwidth);
 
-        pending->last_comm.bandwith = bandw;
+        pending->last_comm.bandwidth = bandw;
         pending->last_comm.bytes = pending_bytes;
         ASS_ALL_TIMER (pending->last_comm.ti, current_time);
 
@@ -982,8 +1035,7 @@ external_network_application_traffic()
  * Retorna el valor del ratio de l'ample de banda en funció del tràfic
  * existent, i la modelització del mateix
  */
-double
-external_network_bandwidth_ratio (double traffic)
+double external_network_bandwidth_ratio (double traffic)
 {
   double ratio;
 
@@ -1154,9 +1206,9 @@ recompute_external_network_bandwidth (struct t_thread *thread)
         SUB_TIMER (current_time, pending->last_comm.ti, inter);
         TIMER_TO_FLOAT (inter, interm);
         pending_bytes =
-          pending->last_comm.bytes -(interm/pending->last_comm.bandwith);
+          pending->last_comm.bytes -(interm/pending->last_comm.bandwidth);
 
-        pending->last_comm.bandwith = bandw_ms_per_byte;
+        pending->last_comm.bandwidth = bandw_ms_per_byte;
         pending->last_comm.bytes    = pending_bytes;
         ASS_ALL_TIMER (pending->last_comm.ti, current_time);
 
@@ -1226,15 +1278,12 @@ static struct t_thread* locate_receiver_real_MPI_transfer (
   return (TH_NIL);
 }
 
-static struct t_thread*
-locate_receiver_dependencies_synchronization (
-  struct t_queue *threads,
-  int taskid_ori,
-  int threadid_ori,
-  int dest_threadid,
-  int mess_tag,
-  int communic_id
-)
+static struct t_thread* locate_receiver_dependencies_synchronization (struct t_queue *threads,
+                                                                      int taskid_ori,
+                                                                      int threadid_ori,
+                                                                      int dest_threadid,
+                                                                      int mess_tag,
+                                                                      int communic_id)
 {
   struct t_thread *thread;
   struct t_action *action;
@@ -1510,11 +1559,9 @@ static void message_received (struct t_thread *thread)
 /******************************************************************************
  * FUNCTION  'is_message_awaiting'                                            *
  *****************************************************************************/
-static t_boolean is_message_awaiting_real_MPI_transfer (
-  struct t_task   *task,
-  struct t_recv   *mess,
-  struct t_thread *thread
-)
+static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
+                                                        struct t_recv   *mess,
+                                                        struct t_thread *thread)
 {
   struct t_thread  *thread_source;
   struct t_task    *task_source;
@@ -1615,8 +1662,7 @@ static t_boolean is_message_awaiting_real_MPI_transfer (
   return result;
 }
 
-static t_boolean
-is_message_awaiting_dependency_synchronization (
+static t_boolean is_message_awaiting_dependency_synchronization (
   struct t_task   *task,
   struct t_recv   *mess,
   struct t_thread *thread
@@ -1718,9 +1764,6 @@ is_message_awaiting_dependency_synchronization (
 
   return result;
 }
-
-
-
 
 /******************************************************************************
  * PROCEDURE 'Start_communication_if_partner_ready_for_rendez_vous'           *
@@ -1875,10 +1918,7 @@ Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (
   }
 }
 
-
-
-static void
-Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization (
+static void Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization (
   struct t_thread *thread,
   struct t_recv *mess
 )
@@ -1988,12 +2028,57 @@ Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization 
   }
 }
 
+/******************************************************************************
+ * FUNCTION 'COMMUNIC_memory_COM_TIMER_OUT'                                   *
+ *****************************************************************************/
+struct t_thread* COMMUNIC_memory_COM_TIMER_OUT (struct t_thread *thread)
+{
+  /* FEC: Es treu aixo per separar l'alliberació dels recursos utilitzats ******
+
+  register struct t_thread *wait_thread;
+  register struct t_bus_utilization *bus_utilization;
+  struct t_node *node;
+  struct t_machine *machine;
+  int aux;
+  *****************************************************************************/
+  struct t_thread *copy_thread;
+
+
+  if (thread->original_thread)
+  {
+    copy_thread = duplicate_thread (thread);
+  }
+  /* FEC: Jo crec que actualment mai no es dona aquest cas. Aixo nomes passaria
+   * si els send realment siguesin sincrons durant la transferencia del missatge
+   * i no simplement rendez vous. Es a dir, si estiguessin implementats els
+   * casos RD_SYNC i NORD_SYNC. En aquest cas, jo crec que al final d'aquesta
+   * funcio caldria posar el thread->local_link i el thread->partner_link a
+   * L_NIL. Actualment no cal perque com que sempre es treballa amb una copia
+   * del thread, s'acaba destruint. Es a dir, actualment el thread original mai
+   * no te cap link assignat. */
+  else
+  {
+    copy_thread = thread;
+  }
+
+  switch (thread->action->action)
+  {
+  case SEND:
+    message_received (copy_thread);
+    break;
+  case MPI_OS:
+    os_completed (copy_thread);
+    break;
+  }
+
+  return (copy_thread);
+}
+
 
 /******************************************************************************
  * FUNCTION 'COMMUNIC_internal_network_COM_TIMER_OUT'                         *
  *****************************************************************************/
-struct t_thread*
-COMMUNIC_internal_network_COM_TIMER_OUT (struct t_thread *thread)
+struct t_thread* COMMUNIC_internal_network_COM_TIMER_OUT (struct t_thread *thread)
 {
   /* FEC: Es treu aixo per separar l'alliberació dels recursos utilitzats ******
 
@@ -2041,8 +2126,6 @@ COMMUNIC_internal_network_COM_TIMER_OUT (struct t_thread *thread)
   return (copy_thread);
 }
 
-
-
 /******************************************************************************
  * FUNCTION 'COMMUNIC_external_network_COM_TIMER_OUT'                         *
  *****************************************************************************/
@@ -2056,8 +2139,7 @@ COMMUNIC_internal_network_COM_TIMER_OUT (struct t_thread *thread)
  * utilitzacions de bus i del recompute_external_network_bandwidth el recalcul
  * de temps.
  */
-struct t_thread*
-COMMUNIC_external_network_COM_TIMER_OUT (struct t_thread *thread)
+struct t_thread* COMMUNIC_external_network_COM_TIMER_OUT (struct t_thread *thread)
 {
   struct t_thread *copy_thread;
 
@@ -2161,8 +2243,7 @@ COMMUNIC_external_network_COM_TIMER_OUT (struct t_thread *thread)
 /******************************************************************************
  * FUNCTION 'COMMUNIC_dedicated_connection_COM_TIMER_OUT'                     *
  *****************************************************************************/
-struct t_thread*
-COMMUNIC_dedicated_connection_COM_TIMER_OUT (struct t_thread *thread)
+struct t_thread* COMMUNIC_dedicated_connection_COM_TIMER_OUT (struct t_thread *thread)
 {
   struct t_thread *copy_thread;
 
@@ -2228,22 +2309,19 @@ COMMUNIC_dedicated_connection_COM_TIMER_OUT (struct t_thread *thread)
 }
 
 
-
-
 /******************************************************************************
  * PROCEDURE 'COMMUNIC_COM_TIMER_OUT'                                         *
  *****************************************************************************/
-void
-COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
+void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
 {
   struct t_action *action;
 
-  /* JGG (12/11/2004): Creo que todas estas comparaciones se podrian ahorrar
-   * haciendo un switch, sobre el mensaje que que esta esperando o enviado
-   * el thread */
+  /* JGG (2013/03/27): it is a self-message! */
   if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NIL) )
   {
-    /* Es una comunicació local al node */
+    COMMUNIC_memory_COM_TIMER_OUT (thread);
+    return;
+    /* Es una comunicació local al node
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
@@ -2269,17 +2347,19 @@ COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
       }
     }
     /* FEC: Com que al message_received no es pot eliminar el thread, si cal,
-     * s'ha de fer aqui. */
+     * s'ha de fer aqui.
     if (thread->marked_for_deletion)
     {
       delete_duplicate_thread (thread);
     }
     return;
+    */
   }
 
+  /*
   if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NUL) )
   {
-    /* Es una comunicació amb PORTS */
+    /* Es una comunicació amb PORTS
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
@@ -2308,6 +2388,7 @@ COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
     }
     return;
   }
+  */
 
   /* Si estem aqui es que es una comunicacio entre nodes o entre maquines.
    * Per saber el tipus de comunicacio nomes cal que mirem el tipus de
@@ -2315,20 +2396,24 @@ COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
 
   switch (thread->local_link->kind)
   {
-  case NODE_LINK:
-    COMMUNIC_internal_network_COM_TIMER_OUT (thread);
-    /*if (VC_is_enabled()) {
-      venusmsgs_in_flight--;
-    }*/
-    break;
-  case MACHINE_LINK:
-    COMMUNIC_external_network_COM_TIMER_OUT (thread);
-    break;
-  case CONNECTION_LINK:
-    COMMUNIC_dedicated_connection_COM_TIMER_OUT (thread);
-    break;
-  default:
-    panic ("Unknown link type!\n");
+    case MEM_LINK:
+      COMMUNIC_memory_COM_TIMER_OUT (thread);
+      break;
+
+    case NODE_LINK:
+      COMMUNIC_internal_network_COM_TIMER_OUT (thread);
+      /*if (VC_is_enabled()) {
+        venusmsgs_in_flight--;
+      }*/
+      break;
+    case MACHINE_LINK:
+      COMMUNIC_external_network_COM_TIMER_OUT (thread);
+      break;
+    case CONNECTION_LINK:
+      COMMUNIC_dedicated_connection_COM_TIMER_OUT (thread);
+      break;
+    default:
+      panic ("Unknown link type!\n");
   }
 
   if (thread->original_thread)
@@ -2354,10 +2439,130 @@ COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
   }
 }
 
+/******************************************************************************
+ * PROCEDURE 'COMMUNIC_mem_resources_COM_TIMER_OUT'                           *
+ *****************************************************************************/
 
+static void COMMUNIC_mem_resources_COM_TIMER_OUT (struct t_thread *thread)
+{
+  register struct t_thread          *wait_thread;
+  register struct t_bus_utilization *bus_utilization;
+  struct t_node                     *node;
+  struct t_machine                  *machine;
 
+  int aux;
 
+  node    = get_node_of_thread (thread);
+  machine = node->machine;
 
+  if (node->max_memory_messages != 0)
+  {
+    for (
+      bus_utilization  = (struct t_bus_utilization *)
+                         head_queue (&node->threads_in_memory);
+      bus_utilization != BU_NIL;
+      bus_utilization  = (struct t_bus_utilization *)
+                         next_queue (&node->threads_in_memory)
+    )
+    {
+      if (bus_utilization->sender == thread) break;
+    }
+
+    if (bus_utilization == BU_NIL)
+    {
+      panic ("Unable to locate in bus utilization queue\n");
+    }
+
+    extract_from_queue (&node->threads_in_memory, (char*) bus_utilization);
+
+    free (bus_utilization);
+  }
+
+  if (thread->local_link != L_NIL && thread->partner_link != L_NIL)
+  {
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": COMMUNIC\tP%02d T%02d (t%02d) Free memory writing permissions (OUT)\n",
+        IDENTIFIERS (thread)
+      );
+    }
+
+    LINKS_free_mem_link(thread->local_link, thread);
+
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (": COMMUNIC\tP%02d T%02d (t%02d) Free memory writing permissions (IN)\n",
+              IDENTIFIERS (thread) );
+    }
+
+    LINKS_free_mem_link(thread->partner_link, thread);
+  }
+
+  if (node->cur_memory_messages > 0)
+  {
+    node->cur_memory_messages--;
+  }
+
+  recompute_memory_bandwidth (thread);
+
+  if ( (node->max_memory_messages != 0) && (count_queue (&node->wait_for_mem_bus) > 0)
+     )
+  {
+    wait_thread = (struct t_thread *) head_queue (&node->wait_for_mem_bus);
+
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": COMMUNIC\tP%02d T%02d (t%02d) Obtain Bus\n",
+        IDENTIFIERS (wait_thread)
+      );
+    }
+
+//    printf("\nResources are freed and now I should take the network for the pending transfer P%d, T%d t%d  action == %d\n\n", IDENTIFIERS (wait_thread), wait_thread->action->action);
+
+    switch (wait_thread->action->action)
+    {
+    case SEND:
+    case WAIT_FOR_SEND:
+      /* FEC: S'acumula el temps que ha estat esperant busos */
+      ACCUMULATE_BUS_WAIT_TIME (wait_thread);
+
+      extract_from_queue (&node->wait_for_mem_bus, (char *) wait_thread);
+//        printf("\nAGAIN THE REALLY_SEND FOR THE WAIT_THREAD   P%d, T%d t%d\n\n", IDENTIFIERS (wait_thread));
+      really_send (wait_thread);
+      break;
+
+    case MPI_OS:
+      /* FEC: S'acumula el temps que ha estat esperant busos */
+      ACCUMULATE_BUS_WAIT_TIME (wait_thread);
+
+      extract_from_queue (&node->wait_for_mem_bus, (char *) wait_thread);
+      really_RMA (wait_thread);
+      break;
+    case GLOBAL_OP:
+      /* aux sempre hauria de ser 1 */
+      aux = node->max_memory_messages - node->cur_memory_messages;
+      wait_thread->number_buses += aux;
+      node->cur_memory_messages += aux;
+
+      if (wait_thread->number_buses == node->max_memory_messages)
+      {
+        /* FEC: S'acumula el temps que ha estat esperant busos */
+        ACCUMULATE_BUS_WAIT_TIME (wait_thread);
+
+        extract_from_queue (&node->wait_for_mem_bus, (char *) wait_thread);
+        global_op_get_all_buses (wait_thread);
+      }
+      break;
+    }
+  }
+
+  return;
+}
 
 
 /******************************************************************************
@@ -2368,10 +2573,11 @@ COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
  */
 static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
 {
-  register struct t_thread *wait_thread;
+  register struct t_thread          *wait_thread;
   register struct t_bus_utilization *bus_utilization;
-  struct t_node *node;
-  struct t_machine *machine;
+  struct t_node                     *node;
+  struct t_machine                  *machine;
+
   int aux;
 
   node    = get_node_of_thread (thread);
@@ -2412,7 +2618,7 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
     );
   }
 
-  free_link (thread->local_link, thread);
+  LINKS_free_network_link(thread->local_link, thread);
 
   if (debug & D_COMM)
   {
@@ -2421,14 +2627,14 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
             IDENTIFIERS (thread) );
   }
 
-  free_link (thread->partner_link, thread);
+  LINKS_free_network_link(thread->partner_link, thread);
 
   if (machine->network.curr_on_network > 0)
   {
     machine->network.curr_on_network--;
   }
 
-  recompute_bandwith (thread);
+  recompute_internal_network_bandwidth (thread);
 
   if ( (machine->communication.num_messages_on_network) &&
        (count_queue (&machine->network.queue) > 0)
@@ -2458,6 +2664,7 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
 //        printf("\nAGAIN THE REALLY_SEND FOR THE WAIT_THREAD   P%d, T%d t%d\n\n", IDENTIFIERS (wait_thread));
       really_send (wait_thread);
       break;
+
     case MPI_OS:
       /* FEC: S'acumula el temps que ha estat esperant busos */
       ACCUMULATE_BUS_WAIT_TIME (wait_thread);
@@ -2488,13 +2695,10 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
   return;
 }
 
-
-
 /******************************************************************************
  * PROCEDURE 'COMMUNIC_internal_resources_COM_TIMER_OUT'                      *
  *****************************************************************************/
-static void
-COMMUNIC_external_resources_COM_TIMER_OUT (struct t_thread *thread)
+static void COMMUNIC_external_resources_COM_TIMER_OUT (struct t_thread *thread)
 {
   /* Aqui s'allibrerarien els busos reservats per poder recalcular els
    * temps estimats de totes les transferencies que s'estiguessin fent
@@ -2529,7 +2733,7 @@ COMMUNIC_external_resources_COM_TIMER_OUT (struct t_thread *thread)
   free (bus_utilization);
   *****************************************************************************/
 
-  free_machine_link (thread->local_link, thread);
+  LINKS_free_wan_link(thread->local_link, thread);
 
   if (debug & D_COMM)
   {
@@ -2540,7 +2744,7 @@ COMMUNIC_external_resources_COM_TIMER_OUT (struct t_thread *thread)
     );
   }
 
-  free_machine_link (thread->partner_link, thread);
+  LINKS_free_wan_link(thread->partner_link, thread);
 
   if (debug & D_COMM)
   {
@@ -2557,10 +2761,9 @@ COMMUNIC_external_resources_COM_TIMER_OUT (struct t_thread *thread)
 /******************************************************************************
  * PROCEDURE 'COMMUNIC_dedicated_resources_COM_TIMER_OUT'                     *
  *****************************************************************************/
-static void
-COMMUNIC_dedicated_resources_COM_TIMER_OUT (struct t_thread *thread)
+static void COMMUNIC_dedicated_resources_COM_TIMER_OUT (struct t_thread *thread)
 {
-  free_connection_link (thread->local_link, thread);
+  LINKS_free_dedicated_connection_link(thread->local_link, thread);
 
   if (debug & D_COMM)
   {
@@ -2571,7 +2774,7 @@ COMMUNIC_dedicated_resources_COM_TIMER_OUT (struct t_thread *thread)
     );
   }
 
-  free_connection_link (thread->partner_link, thread);
+  LINKS_free_dedicated_connection_link(thread->partner_link, thread);
 
   if (debug & D_COMM)
   {
@@ -2586,28 +2789,33 @@ COMMUNIC_dedicated_resources_COM_TIMER_OUT (struct t_thread *thread)
 /******************************************************************************
  * PROCEDURE 'COMMUNIC_resources_COM_TIMER_OUT'                               *
  *****************************************************************************/
-void
-COMMUNIC_resources_COM_TIMER_OUT (struct t_thread *thread)
+void COMMUNIC_resources_COM_TIMER_OUT (struct t_thread *thread)
 {
 
   if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NIL) )
   {
-    /* Es una comunicació local al node */
-    /* Es retorna directament perque no s'ha reservat res! */
+    /* It is a self-message! */
+    COMMUNIC_mem_resources_COM_TIMER_OUT (thread);
     return;
   }
 
+  /*
   if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NUL) )
   {
-    /* Es una comunicació amb PORTS */
+    /* Es una comunicació amb PORTS
     return;
   }
+  */
 
   /* Si estem aqui es que es una comunicacio entre nodes o entre maquines */
   /* Per saber el tipus de comunicacio nomes cal que mirem el tipus de
      qualsevol dels dos links: */
   switch (thread->local_link->kind)
   {
+  case MEM_LINK:
+    COMMUNIC_mem_resources_COM_TIMER_OUT (thread);
+    break;
+
   case NODE_LINK:
     COMMUNIC_internal_resources_COM_TIMER_OUT (thread);
     break;
@@ -2740,7 +2948,8 @@ int COMMUNIC_recv_reached_real_MPI_transfer (struct t_thread *thread,
 }
 
 
-int COMMUNIC_recv_reached_dependency_synchronization (struct t_thread *thread, struct t_recv *mess)
+int COMMUNIC_recv_reached_dependency_synchronization (struct t_thread *thread,
+                                                      struct t_recv   *mess)
 {
   struct t_task   *task, *source_task;
   struct t_thread *partner_send;
@@ -4277,17 +4486,30 @@ void transferencia (int                            size,
 
   switch (communication_type)
   {
-  case LOCAL_COMMUNICATION_TYPE:  /* Es un missatge local al node */
-    if (node->bandwith == (t_nano) 0)
+  case MEMORY_COMMUNICATION_TYPE:  /* Es un missatge local al node */
+    if (node->bandwidth == (t_nano) 0)
     {
       temps      = 0;
       t_recursos = 0;
     }
     else
     {
-      temps = ( (int) ( (t_nano) (1e9) / (1 << 20) * size /
-                        (t_nano) node->bandwith) );
-      t_recursos = temps;
+      /* Transmission time with available bandwidth (including bus contention) */
+      bandw = recompute_memory_bandwidth(thread);
+      thread->last_comm.bandwidth = bandw;
+      thread->last_comm.bytes     = size;
+      ASS_ALL_TIMER (thread->last_comm.ti, current_time);
+
+      // printf("Available mem. bandwidth = %f\n", bandw);
+
+      temps = (bandw * size);
+
+      /* Transmission time with full bandwidth (actual resource usage) */
+      bandw = bw_ns_per_byte(node->bandwidth);
+
+      // printf("Max. mem. bandwidth = %f\n", bandw);
+
+      t_recursos = (bandw * size);
     }
     break;
 
@@ -4299,8 +4521,8 @@ void transferencia (int                            size,
     }
     else
     {
-      bandw = recompute_bandwith (thread);
-      thread->last_comm.bandwith = bandw;
+      bandw = recompute_internal_network_bandwidth (thread);
+      thread->last_comm.bandwidth = bandw;
       thread->last_comm.bytes    = size;
       ASS_ALL_TIMER (thread->last_comm.ti, current_time);
       temps = (bandw * size);
@@ -4310,7 +4532,7 @@ void transferencia (int                            size,
 
       if (bandw != 0)
       {
-        bandw = (t_nano) ( (t_nano) (1e9) / (1 << 20) / bandw);
+        bandw = bw_ns_per_byte (bandw);
       }
 
       t_recursos = (bandw * size);
@@ -4329,7 +4551,7 @@ void transferencia (int                            size,
       bandw = recompute_external_network_bandwidth (thread);
       /* Aqui es passa de Mbytes/sec a microsegons/byte. */
       bandw = bw_ns_per_byte (bandw);
-      thread->last_comm.bandwith = bandw;
+      thread->last_comm.bandwidth = bandw;
       thread->last_comm.bytes    = size;
       ASS_ALL_TIMER (thread->last_comm.ti, current_time);
       temps = (bandw * size);
@@ -4343,7 +4565,7 @@ void transferencia (int                            size,
       bandw = (t_nano) Simulator.wan.bandwidth;
       if (bandw != 0)
       {
-        bandw = (t_nano) ( (t_nano) (1e9) / (1 << 20) / bandw);
+        bandw = bw_ns_per_byte (bandw);
       }
       t_recursos = (bandw * size);
     }
@@ -4360,9 +4582,8 @@ void transferencia (int                            size,
     {
       /* Se suposa que els "busos" de la connexio no seran mai compartits
          i, per tant, no caldra mai recalcular l'ample de banda */
-      bandw =
-        (t_nano) ( (t_nano) (1e9) / (1 << 20) / connection->bandwidth);
-      thread->last_comm.bandwith = bandw;
+      bandw = bw_ns_per_byte (connection->bandwidth);
+      thread->last_comm.bandwidth = bandw;
       thread->last_comm.bytes = size;
       ASS_ALL_TIMER (thread->last_comm.ti, current_time);
       temps = (bandw * size);
@@ -4391,7 +4612,7 @@ void transferencia (int                            size,
 
       if (bandw != 0)
       {
-        bandw = (t_nano) ((t_nano) (1e9) / (1 << 20) / bandw);
+        bandw = bw_ns_per_byte (bandw);
       }
       temps = (bandw * size);
       t_recursos = (bandw * size);
@@ -4418,7 +4639,7 @@ void transferencia (int                            size,
     PRINT_TIMER (current_time);
     printf
     (
-      ": TRANSFERENCIA\tP%02d T%02d (t%02d) -> T%d Size: %db Time: %f Rsrc_Time: %f\n",
+      ": TRANSFERENCIA\tP%02d T%02d (t%02d) -> T%d Size: %db Time: %.9f Rsrc_Time: %.9f\n",
       IDENTIFIERS (thread),
       task_partner->taskid,
       size,
@@ -4475,20 +4696,16 @@ int connection_can_be_used (struct t_dedicated_connection *connection,
 }
 
 
-int
-get_communication_type (
-  struct t_task  *task,
-  struct t_task  * task_partner,
-  int mess_tag, int mess_size,
-  struct t_dedicated_connection **connection
-)
+int get_communication_type (struct t_task *task,
+                            struct t_task *task_partner,
+                            int mess_tag,
+                            int mess_size,
+                            struct t_dedicated_connection **connection)
 {
   int result_type;
   struct t_node  *node, *node_partner;
   struct t_machine *s_machine, *d_machine;
   struct t_dedicated_connection *d_con;
-
-
 
   node         = get_node_of_task (task);
   node_partner = get_node_of_task (task_partner);
@@ -4496,7 +4713,7 @@ get_communication_type (
   if (node == node_partner)
   {
     /* Es un missatge local al node */
-    result_type = LOCAL_COMMUNICATION_TYPE;
+    result_type = MEMORY_COMMUNICATION_TYPE;
   }
   else if (node->machine == node_partner->machine)
   {
@@ -4546,7 +4763,117 @@ get_communication_type (
   return result_type;
 }
 
-void really_send_single_machine (struct t_thread *thread)
+void really_send_memory_message (struct t_thread *thread)
+{
+  struct t_node            *node;
+  struct t_machine         *machine;
+  struct t_task            *task, *task_partner;
+  struct t_action          *action;
+  struct t_account         *account;
+  struct t_send            *mess;
+  struct t_bus_utilization *bus_utilization;
+
+  t_nano                    ti, t_recursos;
+  dimemas_timer             tmp_timer, tmp_timer2;
+
+  node    = get_node_of_thread (thread);
+  machine = node->machine;
+  task    = thread->task;
+  action  = thread->action;
+  mess    = & (action->desc.send);
+
+  task_partner = locate_task (task->Ptask, mess->dest);
+
+  if (LINKS_get_mem_links(thread, task, task_partner) )
+  {
+    if (node->max_memory_messages != 0)
+    {
+      if (machine->communication.policy == COMMUNIC_FIFO)
+      {
+        if (node->cur_memory_messages >= node->max_memory_messages)
+        {
+          if (debug & D_COMM)
+          {
+            PRINT_TIMER (current_time);
+            printf (": COMMUNIC_send\tP%02d T%02d (t%02d) Blocked (Waiting intra-node)\n",
+                    IDENTIFIERS (thread));
+          }
+          inFIFO_queue (&node->wait_for_mem_bus, (char *) thread);
+          /* FEC: Comenc,a el temps que el thread passa esperant un bus */
+          START_BUS_WAIT_TIME (thread);
+          /**************************************************************/
+
+            return;
+        }
+
+        if (debug & D_COMM)
+        {
+          PRINT_TIMER (current_time);
+          printf (": COMMUNIC_send\tP%02d T%02d (t%02d) Obtains bus\n",
+                  IDENTIFIERS (thread) );
+          // printf ("\n\nNow I should proceed to transfering the message\n");
+        }
+      }
+      node->cur_memory_messages++;
+      bus_utilization = (struct t_bus_utilization *)
+                        malloc (sizeof (struct t_bus_utilization) );
+      bus_utilization->sender = thread;
+      ASS_ALL_TIMER (bus_utilization->initial_time, current_time);
+      inFIFO_queue (&node->threads_in_memory, (char*) bus_utilization);
+    }
+
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (MEMORY)\n",
+        IDENTIFIERS (thread),
+        mess->dest,
+        mess->mess_tag
+      );
+    }
+
+    account = current_account (thread);
+    SUB_TIMER (current_time, thread->initial_communication_time, tmp_timer);
+    ADD_TIMER (tmp_timer,
+               account->block_due_resources, account->block_due_resources);
+    thread->physical_send = current_time;
+    thread->last_paraver  = current_time;
+    /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
+    transferencia (mess->mess_size,
+                   MEMORY_COMMUNICATION_TYPE,
+                   thread,
+                   NULL,
+                   &ti,
+                   &t_recursos);
+
+    if (t_recursos > ti)
+    {
+      /* DEBUG */
+      printf ("Memory communication. Resources time = %f - Transfer Time = %f\n",
+              t_recursos,
+              ti);
+
+      panic ("resources > transmission time!\n");
+
+    }
+    /* Abans de programar la fi de la comunicacio, es programa la fi de la
+     * utilització dels recursos reservats. */
+    FLOAT_TO_TIMER (t_recursos, tmp_timer);
+    ADD_TIMER (current_time, tmp_timer, tmp_timer);
+
+        /* tmp_timer has the time for COM_TIMER_OUT_RESOURCES */
+    /* Es programa el final de la comunicació punt a punt. */
+    FLOAT_TO_TIMER (ti, tmp_timer2);
+    ADD_TIMER (current_time, tmp_timer2, tmp_timer2);
+
+    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
+    thread->event = EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
+
+  }
+}
+
+void really_send_internal_network(struct t_thread *thread)
 {
   struct t_node            *node, *node_partner;
   struct t_task            *task, *task_partner;
@@ -4570,61 +4897,51 @@ void really_send_single_machine (struct t_thread *thread)
   /* Tots dos nodes son de la mateixa maquina */
   machine = node->machine;
 
-  if (get_links (thread, node, node_partner) )
+  if (LINKS_get_network_links(thread, node, node_partner) )
   {
 
     /* JGG (05/11/2004): El 'comm_type' lo cogemos del mensaje, es más rápido
     comm_type =
-      (node == node_partner ? LOCAL_COMMUNICATION_TYPE : INTERNAL_NETWORK_COM_TYPE);
+      (node == node_partner ? MEMORY_COMMUNICATION_TYPE : INTERNAL_NETWORK_COM_TYPE);
     */
 
-    comm_type = mess->comm_type;
-
-    if (comm_type == INTERNAL_NETWORK_COM_TYPE)
+    if (machine->communication.num_messages_on_network != 0)
     {
-      if (machine->communication.num_messages_on_network)
+      if (machine->communication.policy == COMMUNIC_FIFO)
       {
-        if (machine->communication.policy == COMMUNIC_FIFO)
+        if (machine->network.curr_on_network >= machine->communication.num_messages_on_network)
         {
-          if (
-            machine->network.curr_on_network >=
-            machine->communication.num_messages_on_network
-          )
-          {
-            if (debug & D_COMM)
-            {
-              PRINT_TIMER (current_time);
-              printf (
-                ": COMMUNIC_send\tP%02d T%02d (t%02d) Blocked (Bus Waiting)\n",
-                IDENTIFIERS (thread)
-              );
-            }
-            inFIFO_queue (&machine->network.queue, (char *) thread);
-            /* FEC: Comenc,a el temps que el thread passa esperant un bus */
-            START_BUS_WAIT_TIME (thread);
-            /**************************************************************/
-
-            return;
-          }
-
           if (debug & D_COMM)
           {
             PRINT_TIMER (current_time);
-            printf (": COMMUNIC_send\tP%02d T%02d (t%02d) Obtains bus\n",
-                    IDENTIFIERS (thread) );
-            printf ("\n\nNow I should proceed to transfering the message\n");
+            printf (
+              ": COMMUNIC_send\tP%02d T%02d (t%02d) Blocked (Bus Waiting)\n",
+              IDENTIFIERS (thread)
+            );
           }
+          inFIFO_queue (&machine->network.queue, (char *) thread);
+          /* FEC: Comenc,a el temps que el thread passa esperant un bus */
+          START_BUS_WAIT_TIME (thread);
+          /**************************************************************/
+
+          return;
         }
-        machine->network.curr_on_network++;
-        bus_utilization = (struct t_bus_utilization *)
-                          malloc (sizeof (struct t_bus_utilization) );
-        bus_utilization->sender = thread;
-        ASS_ALL_TIMER (bus_utilization->initial_time, current_time);
-        inFIFO_queue (
-          &machine->network.threads_on_network,
-          (char *) bus_utilization
-        );
+
+        if (debug & D_COMM)
+        {
+          PRINT_TIMER (current_time);
+          printf (": COMMUNIC_send\tP%02d T%02d (t%02d) Obtains bus\n",
+                  IDENTIFIERS (thread) );
+          // printf ("\n\nNow I should proceed to transfering the message\n");
+        }
       }
+      machine->network.curr_on_network++;
+      bus_utilization = (struct t_bus_utilization*)
+                        malloc (sizeof (struct t_bus_utilization) );
+      bus_utilization->sender = thread;
+      ASS_ALL_TIMER (bus_utilization->initial_time, current_time);
+      inFIFO_queue (&machine->network.threads_on_network, (char*) bus_utilization
+      );
     }
 
 
@@ -4648,14 +4965,20 @@ void really_send_single_machine (struct t_thread *thread)
     thread->physical_send = current_time;
     thread->last_paraver = current_time;
     /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
-    transferencia (mess->mess_size, comm_type, thread, NULL, &ti, &t_recursos);
+    transferencia (mess->mess_size,
+                   INTERNAL_NETWORK_COM_TYPE,
+                   thread,
+                   NULL,
+                   &ti,
+                   &t_recursos);
 
     if (t_recursos > ti)
     {
-      /* DEBUG */
+      /* DEBUG
       printf ("Internal Network. Resources time = %f - Transfer Time = %f\n",
               t_recursos,
               ti);
+      */
 
       panic ("resources > transmission time!\n");
 
@@ -4754,7 +5077,7 @@ void really_send_external_network (struct t_thread *thread)
   task_partner = locate_task (task->Ptask, mess->dest);
   node_partner = get_node_of_task (task_partner);
 
-  if (get_machine_links (thread, node->machine, node_partner->machine) )
+  if (LINKS_get_wan_links(thread, node->machine, node_partner->machine) )
   {
     /* Aqui es guardaria l'utilitzacio del bus per despres poder recalcular els
      * temps estimats de totes les transferencies que s'estiguessin fent per la
@@ -4834,11 +5157,8 @@ void really_send_external_network (struct t_thread *thread)
   } /* endif (get_machine_links(...)) */
 }
 
-void
-really_send_dedicated_connection (
-  struct t_thread *thread,
-  struct t_dedicated_connection *connection
-)
+void really_send_dedicated_connection (struct t_thread               *thread,
+                                       struct t_dedicated_connection *connection)
 {
   struct t_action  *action;
   struct t_account *account;
@@ -4849,7 +5169,7 @@ really_send_dedicated_connection (
   action = thread->action;
   mess   = & (action->desc.send);
 
-  if (get_connection_links (thread, connection) )
+  if (LINKS_get_dedicated_connection_links(thread, connection) )
   {
     account = current_account (thread);
     SUB_TIMER (current_time, thread->initial_communication_time, tmp_timer);
@@ -4971,7 +5291,7 @@ void really_send_external_model_comm_type (struct t_thread *thread)
   {
     PRINT_TIMER (current_time);
     printf (
-      ": COMMUNIC_send P%d T%d (t%d) -> T%d Tag(%d) SEND (OTHER) message\n",
+      ": COMMUNIC_send P%02d T%02d (t%02d) -> T%d Tag(%d) SEND (OTHER) message\n",
       IDENTIFIERS (thread),
       mess->dest,
       mess->mess_tag
@@ -5021,9 +5341,11 @@ void really_send (struct t_thread *thread)
   // switch (kind2)
   switch (kind)
   {
-  case LOCAL_COMMUNICATION_TYPE:
+  case MEMORY_COMMUNICATION_TYPE:
+    really_send_memory_message(thread);
+    break;
   case INTERNAL_NETWORK_COM_TYPE:
-    really_send_single_machine (thread);
+    really_send_internal_network(thread);
     break;
   case EXTERNAL_NETWORK_COM_TYPE:
     really_send_external_network (thread);
@@ -5041,7 +5363,7 @@ void really_send (struct t_thread *thread)
   return;
 }
 
-struct t_communicator *
+struct t_communicator*
 locate_communicator (struct t_queue *communicator_queue, int commid)
 {
   register struct t_communicator *communicator;
@@ -5072,7 +5394,6 @@ static int provide_log (int n)
 
   return (0);
 }
-
 
 static int compute_contention_stage (int ntasks, int num_busos)
 {
@@ -5136,14 +5457,14 @@ static int compute_contention_stage (int ntasks, int num_busos)
  **************************************************************************/
 void global_op_get_all_buses (struct t_thread *thread)
 {
-  struct t_Ptask *Ptask;
-  struct t_communicator *communicator;
-  struct t_global_op_definition * glop;
-  struct t_bus_utilization *bus_utilization;
-  struct t_action *action;
-  int i, comm_id, glop_id;
-  struct t_node *node;
-  struct t_machine *machine;
+  struct t_Ptask                *Ptask;
+  struct t_communicator         *communicator;
+  struct t_global_op_definition *glop;
+  struct t_bus_utilization      *bus_utilization;
+  struct t_action               *action;
+  int                            i, comm_id, glop_id;
+  struct t_node                 *node;
+  struct t_machine              *machine;
 
   node    = get_node_of_thread (thread);
   machine = node->machine;
@@ -5170,6 +5491,7 @@ void global_op_get_all_buses (struct t_thread *thread)
       return;
     }
   }
+
   Ptask        = thread->task->Ptask;
   action       = thread->action;
   comm_id      = action->desc.global_op.comm_id;
@@ -5236,7 +5558,7 @@ void global_op_get_all_buses (struct t_thread *thread)
      * links half duplex. Despres (o potser paral.lelament) s'hauria de fer
      * l'altra fase (obtenir els in links de les full-duplex). */
 
-    if (get_one_machine_link (thread, machine, OUT_LINK) )
+    if (LINKS_get_single_wan_link(thread, machine, OUT_LINK) )
     {
       /* S'han pogut obtenir el link de sortida a la xarxa externa */
       /* A partir d'aqui aixo s'ha de fer en una funcio diferent perque
@@ -5270,20 +5592,23 @@ void global_op_reserva_links (struct t_thread *thread)
   node = get_node_of_thread (thread);
   machine = node->machine;
 
-  Ptask = thread->task->Ptask;
-  action = thread->action;
-  comm_id = action->desc.global_op.comm_id;
+  Ptask        = thread->task->Ptask;
+  action       = thread->action;
+  comm_id      = action->desc.global_op.comm_id;
   communicator = locate_communicator (&Ptask->Communicator, comm_id);
+
   if (communicator == (struct t_communicator *) 0)
+  {
     panic ("Global op get links trough an invalid communicator %d to P%02d T%02d (t%02d)\n",
            comm_id, IDENTIFIERS (thread) );
+  }
 
   /* Cal saber si s'estan reservant els links d'entrada o de sortida */
   if (count_queue (&communicator->machines_threads) !=
       count_queue (&communicator->m_threads_with_links) )
   {
     /* Encara falten algunes maquines per tenir tots els out_links */
-    if (get_one_machine_link (thread, machine, OUT_LINK) )
+    if (LINKS_get_single_wan_link(thread, machine, OUT_LINK) )
     {
       /* S'han pogut obtenir els links de sortida a la xarxa externa*/
       global_op_get_all_out_links (thread);
@@ -5292,7 +5617,7 @@ void global_op_reserva_links (struct t_thread *thread)
   else
   {
     /* Ja es tenen tots els links de sortida, es busquen els d'entrada */
-    if (get_one_machine_link (thread, machine, IN_LINK) )
+    if (LINKS_get_single_wan_link(thread, machine, IN_LINK) )
     {
       /* S'han pogut obtenir els links d'entrada de la xarxa externa*/
       global_op_get_all_in_links (thread);
@@ -5375,7 +5700,7 @@ static void global_op_get_all_out_links (struct t_thread *thread)
       node    = get_node_of_thread (others);
       machine = node->machine;
 
-      if (get_one_machine_link (others, machine, IN_LINK) )
+      if (LINKS_get_single_wan_link(others, machine, IN_LINK) )
       {
         /* S'han pogut obtenir els links d'entrada de la xarxa externa*/
         global_op_get_all_in_links (others);
@@ -5556,7 +5881,7 @@ void calcula_fan (t_nano bandw,     /* MB/s */
       *latencia = startup;
       break;
     case GOP_MODEL_LIN:
-      factor    = (t_nano) num_partners;
+      factor    = (t_nano) num_partners - 1;
       *temps    = (startup + mess_size * bandw) * factor;
       *latencia = startup * factor;
       break;
@@ -5637,7 +5962,7 @@ static void calcula_temps_maxim_intra_nodes (struct t_machine      *machine,
     // num_cpus = count_queue (& (node->Cpus) );
 
     /* Cal calcular els temps dins d'aquest node */
-    calcula_fan (node->bandwith,
+    calcula_fan (node->bandwidth,
                  // num_tasks,
                  (*tasks_per_node),
                  0, /* Infinits busos */
@@ -5650,7 +5975,7 @@ static void calcula_temps_maxim_intra_nodes (struct t_machine      *machine,
                  &tauxn_in,
                  &lauxn_in);
 
-    calcula_fan (node->bandwith,
+    calcula_fan (node->bandwidth,
                  // num_tasks,
                  (*tasks_per_node),
                  0, /* Infinits busos */
@@ -5755,17 +6080,14 @@ static void calcula_maxim_flight_times (struct t_thread *thread,
   *maxflight_out = max_flight_out;
 }
 
-
-
 /**************************************************************************
  ** Aquesta funcio calcula els temps estimats per realitzar l'operació
  ** col.lectiva.
  **************************************************************************/
-void
-calcula_temps_operacio_global (struct t_thread *thread,
-                               dimemas_timer   *temps_latencia,
-                               dimemas_timer   *temps_recursos,
-                               dimemas_timer   *temps_final)
+void calcula_temps_operacio_global (struct t_thread *thread,
+                                    dimemas_timer   *temps_latencia,
+                                    dimemas_timer   *temps_recursos,
+                                    dimemas_timer   *temps_final)
 {
   struct t_Ptask                 *Ptask;
   struct t_communicator          *communicator;
@@ -6199,7 +6521,7 @@ static void start_global_op (struct t_thread *thread, int kind)
       {
         PRINT_TIMER (current_time);
         printf (
-          ": GLOBAL_operation P%d T%d (t%d) '%s' USING EXTERNAL GLOBAL OPERATIONS MODEL\n",
+          ": GLOBAL_operation P%02d T%02d (t%02d) '%s' USING EXTERNAL GLOBAL OPERATIONS MODEL\n",
           IDENTIFIERS (thread),
           glop->name
         );
@@ -6352,8 +6674,8 @@ static void free_global_communication_resources (struct t_thread *thread)
        de la xarxa externa d'aquesta maquina. */
     if (num_maquines > 1)
     {
-      free_machine_link (others->local_link, others);
-      free_machine_link (others->partner_link, others);
+      LINKS_free_wan_link(others->local_link, others);
+      LINKS_free_wan_link(others->partner_link, others);
       /* En aquest cas cal posar explicitament els links a L_NIL perque
          en les operacions col.lectives no es treballa amb copies dels
          threads, sino amb els threads originals. */
@@ -6620,7 +6942,6 @@ int from_rank_to_taskid (struct t_communicator *comm, int root_rank)
   */
   return root_rank;
 }
-
 
 void GLOBAL_operation (struct t_thread *thread,
                        int glop_id,

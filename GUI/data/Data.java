@@ -84,15 +84,15 @@ public class Data
 
   // public MachineDataBase machineDB         = new MachineDataBase();
   // public NetworkDataBase netDB             = new NetworkDataBase();
-  public WideAreaNetworkData wan           = new WideAreaNetworkData();
-  public DedicatedConnectionData dedicated = new DedicatedConnectionData();
-  public EnvironmentData environment       = new EnvironmentData();
-  public NodeData processor                = new NodeData();
-  public MappingData map                   = new MappingData();
-  public ConfigurationData config          = new ConfigurationData();
-  public FileSystemData fileSys            = new FileSystemData();
-  public SimulatorCallData simOptions      = new SimulatorCallData();
-  public BlockData block                   = new BlockData();
+  public WideAreaNetworkData     wan               = new WideAreaNetworkData();
+  public DedicatedConnectionData dedicated         = new DedicatedConnectionData();
+  public EnvironmentData         environment       = new EnvironmentData();
+  public NodeData                nodes_information = new NodeData();
+  public MappingData             map               = new MappingData();
+  public ConfigurationData       config            = new ConfigurationData();
+  public FileSystemData          fileSys           = new FileSystemData();
+  public SimulatorCallData       simOptions        = new SimulatorCallData();
+  public BlockData               block             = new BlockData();
 
   /*
   * El método os genera una cadena con el path correcto para llegar a los
@@ -335,10 +335,10 @@ public class Data
   {
     int first;
     int second;
+    int lineCount = 0, lineSeek = 0;
     long seek         = 0;
     String line       = "";
-    boolean oldFile   = true;
-    boolean validFile = false;
+    boolean oldFile   = true, validFile = false, malformedFile = false;
     RandomAccessFile source;
 
     try
@@ -358,16 +358,21 @@ public class Data
             }
 
             seek = source.getFilePointer();
+            lineSeek  = lineCount;
+
             line = source.readLine();
+            lineCount++;
           }
           else                     // Módulo de configuración incompleto.
           {
             line += source.readLine();
+            lineCount++;
           }
         }
         else                       // Comprobar que sea un fichero SDDFA válido.
         {
           line = source.readLine();
+          lineCount++;
 
           if(!validFile)
           {
@@ -377,32 +382,39 @@ public class Data
               wan.initialValues();
               dedicated.destroyConnections();
               environment.destroyMachines();
-              processor.destroyNodes();
+              nodes_information.destroyNodes();
               map.initialValues();
               config.initialValues();
               fileSys.initialValues();
               block.destroyFactors();
-              currentConfigurationFile.setText(filename);
             }
             else if(!Tools.blanks(line).equalsIgnoreCase(""))
             {
-              Tools.showInformationMessage("The file you have selected is not a valid SDDFA file.");
-              break;
+              Tools.showInformationMessage("The file you have selected is not a valid SDDFA file.\n"+
+                                           "It won't be loaded");
+              return;
             }
           } // END if(!validFile)
         } // END if(SDDFA válido)
       } // END while()
 
       source.seek(seek);
+      lineCount = lineSeek;
+
+      malformedFile = false;
 
       // Recorrer el fichero obteniendo los datos de cada uno de los módulos.
-      while(validFile && (source.getFilePointer() != source.length()))
+      while(!malformedFile && (source.getFilePointer() != source.length()))
       {
         line = source.readLine();
+        lineCount++;
 
         if(line.startsWith(WAN))              // Datos de WAN.
         {
-          wan.loadData(splitLine(line,source));
+          if (!wan.loadData(splitLine(line,source), lineCount))
+          {
+            malformedFile = true;
+          }
         }
         else if(line.startsWith(CONNECTION))  // Datos de DEDICATED CONNECTION.
         {
@@ -411,8 +423,15 @@ public class Data
 
           for(int i = 0; i < dedicated.getNumberOfConnections(); i++)
           {
-            dedicated.connection[i].loadData(splitLine(line,source),oldFile);
-            line = source.readLine();
+            if (!dedicated.connection[i].loadData(splitLine(line,source),oldFile, lineCount))
+            {
+              malformedFile = true;
+              break;
+            }
+            else
+            {
+              line = source.readLine();
+            }
           }
         }
         else if(line.startsWith(ENVIRONMENT)) // Datos de MACHINES.
@@ -449,46 +468,82 @@ public class Data
 
           for(int i = 0; i < environment.getNumberOfMachines(); i++)
           {
-            environment.machine[i].loadData(splitLine(line,source),oldFile);
-            totalNodes += Integer.parseInt(environment.machine[i].getNodes());
-            line = source.readLine();
+            if (!environment.machine[i].loadData(splitLine(line,source), oldFile, lineCount))
+            {
+              malformedFile = true;
+              break;
+            }
+            else
+            {
+              totalNodes += Integer.parseInt(environment.machine[i].getNodes());
+              line = source.readLine();
+              lineCount++;
+            }
           }
 
-          processor.setNumberOfNodes(totalNodes);
-          instrumentedArchitecture = environment.machine[0].getArchitecture(false);
+          if (!malformedFile)
+          {
+            nodes_information.setNumberOfNodes(totalNodes);
+            instrumentedArchitecture = environment.machine[0].getArchitecture(false);
+          }
         }
         else if(line.startsWith(NODE))        // Datos de NODES.
         {
-          // processor.createNodes(environment,machineDB.machine);
-          processor.createNodes(environment);
+          // nodes_information.createNodes(environment,machineDB.machine);
+          nodes_information.createNodes(environment);
 
-          for(int i = 0; i < processor.getNumberOfNodes(); i++)
+          for(int i = 0; i < nodes_information.getNumberOfNodes(); i++)
           {
-            processor.node[i].loadData(splitLine(line,source), oldFile);
-            line = source.readLine();
+            if (!nodes_information.node[i].loadData(splitLine(line,source), oldFile, lineCount))
+            {
+              malformedFile = true;
+              break;
+            }
+            else
+            {
+              line = source.readLine();
+              lineCount++;
+            }
           }
         }
         else if(line.startsWith(MAPPING))     // Datos de MAPPING.
         {
-          map.loadData(splitLine(line,source));
-          map.setMapInfo(Data.UNKNOW_MAP);
+          if (!map.loadData(splitLine(line,source), lineCount))
+          {
+            malformedFile = true;
+          }
+          else
+          {
+            map.setMapInfo(Data.UNKNOW_MAP);
+          }
         }
         else if(line.startsWith(CONFIG))      // Datos de EXTRA CONFIG FILES.
         {
-          config.loadData(splitLine(line,source));
-
-          if(!config.getCommunication(false).equalsIgnoreCase(""))
+          if (!config.loadData(splitLine(line,source), lineCount))
           {
-            loadCommunicationData(config.getCommunication(false));
+            malformedFile = true;
+          }
+          else
+          {
+            if(!config.getCommunication(false).equalsIgnoreCase(""))
+            {
+              loadCommunicationData(config.getCommunication(false));
+            }
           }
         }
         else if(line.startsWith(MODULE))      // Datos de BLOCK FACTORS/MODULES.
         {
-          block.loadData(splitLine(line,source));
+          if (!block.loadData(splitLine(line,source), lineCount))
+          {
+            malformedFile = true;
+          }
         }
         else if(line.startsWith(FILE_SYS))    // Datos de FILE SYSTEM INFO.
         {
-          fileSys.loadData(splitLine(line,source));
+          if (!fileSys.loadData(splitLine(line,source), lineCount))
+          {
+            malformedFile = true;
+          }
         }
       } // END while()
 
@@ -500,30 +555,51 @@ public class Data
       exc.printStackTrace();
     }
 
-    for (int i = environment.getNumberOfMachines()-1; i >= 0; i--)
+    if (malformedFile)
     {
-      // Los nodos de una máquina tendrán su misma arquitectura.
-      for(int j = 0; j < processor.getNumberOfNodes(); j++)
+      // Reset all fields!
+      wan.initialValues();
+      dedicated.destroyConnections();
+      environment.destroyMachines();
+      nodes_information.destroyNodes();
+      map.initialValues();
+      config.initialValues();
+      fileSys.initialValues();
+      block.destroyFactors();
+      currentConfigurationFile.setText("");
+
+      Tools.showInformationMessage("Malformed configuration file. It won't be loaded");
+    }
+    else
+    {
+      for (int i = environment.getNumberOfMachines()-1; i >= 0; i--)
       {
-        if(processor.node[j].getMachine_id().equalsIgnoreCase(environment.machine[i].getId()))
+        // Los nodos de una máquina tendrán su misma arquitectura.
+        for(int j = 0; j < nodes_information.getNumberOfNodes(); j++)
         {
-          environment.machine[i].setNodeArchitecture(processor.node[j].getArchitecture(false));
-          break;
+          if(nodes_information.node[j].getMachine_id().equalsIgnoreCase(environment.machine[i].getId()))
+          {
+            environment.machine[i].setNodeArchitecture(nodes_information.node[j].getArchitecture(false));
+            break;
+          }
         }
+
+        // Fijar el índice que permitirá encontrar los datos de la arquitectura
+        // en MachineDB.
+        /*
+        for(int k = machineDB.getNumberOfMachinesInDB()-1; k >= 0; k--)
+        {
+          if(machineDB.machine[k].getLabel().equalsIgnoreCase(environment.machine[i].getNodeArchitecture()))
+          {
+            environment.machine[i].setIndex(k);
+            break;
+          }
+        }
+        */
       }
 
-      // Fijar el índice que permitirá encontrar los datos de la arquitectura
-      // en MachineDB.
-      /*
-      for(int k = machineDB.getNumberOfMachinesInDB()-1; k >= 0; k--)
-      {
-        if(machineDB.machine[k].getLabel().equalsIgnoreCase(environment.machine[i].getNodeArchitecture()))
-        {
-          environment.machine[i].setIndex(k);
-          break;
-        }
-      }
-      */
+      /* The file has been correctly loaded, set the name in the GUI window */
+      currentConfigurationFile.setText(filename);
     }
   }
 
@@ -584,16 +660,16 @@ public class Data
       target.writeBytes("\n");
 
       // Datos de NODES.
-      if(processor.getNumberOfNodes() == 0)
+      if(nodes_information.getNumberOfNodes() == 0)
       {
-        processor.setNumberOfNodes(environment.getNumberOfMachines());
-        //processor.createNodes(environment, machineDB.machine);
-        processor.createNodes(environment);
+        nodes_information.setNumberOfNodes(environment.getNumberOfMachines());
+        //nodes_information.createNodes(environment, machineDB.machine);
+        nodes_information.createNodes(environment);
       }
 
-      for(int i = 0; i < processor.getNumberOfNodes(); i++)
+      for(int i = 0; i < nodes_information.getNumberOfNodes(); i++)
       {
-        processor.node[i].saveData(target);
+        nodes_information.node[i].saveData(target);
       }
 
       target.writeBytes("\n");

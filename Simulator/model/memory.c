@@ -73,8 +73,7 @@ mem_to_next_module (struct t_thread *thread)
   }
 }
 
-void
-MEMORY_general (int value, struct t_thread *thread)
+void MEMORY_general (int value, struct t_thread *thread)
 {
   switch (value)
   {
@@ -90,8 +89,8 @@ MEMORY_general (int value, struct t_thread *thread)
                 thread->copy_segment_link_source->info.node->nodeid,
                 thread->copy_segment_link_dest->info.node->nodeid);
       }
-      free_link (thread->copy_segment_link_source, thread);
-      free_link (thread->copy_segment_link_dest, thread);
+      LINKS_free_network_link(thread->copy_segment_link_source, thread);
+      LINKS_free_network_link(thread->copy_segment_link_dest, thread);
     }
     else
     {
@@ -206,7 +205,7 @@ really_copy_segment (struct t_thread *thread, struct t_node *node_s,
   t_boolean       remote_comm;
   dimemas_timer   tmp_timer;
 
-  if (get_links_memory_copy (thread, node_s, node_d) )
+  if (LINKS_get_memory_copy_links(thread, node_s, node_d) )
   {
     if (debug)
     {
@@ -267,8 +266,7 @@ from_rank_to_task (struct t_window *win, int rank)
   return (*task);
 }
 
-void
-really_RMA (register struct t_thread *thread)
+void really_RMA (register struct t_thread *thread)
 {
   register struct t_action *action;
   register struct t_window *win;
@@ -298,7 +296,7 @@ really_RMA (register struct t_thread *thread)
      igual quin agafem. */
   machine = node_s->machine;
 
-  if (get_links (thread, node_s, node_d) )
+  if (LINKS_get_network_links(thread, node_s, node_d) )
   {
     remote_comm = (node_s == node_d ? FALSE : TRUE);
     if (remote_comm)
@@ -312,7 +310,7 @@ really_RMA (register struct t_thread *thread)
             if (debug & D_COMM)
             {
               PRINT_TIMER (current_time);
-              printf (": Really RMA for P%d T%d th%d block due bus contention\n",
+              printf (": Really RMA for P%02d T%02d (t%02d) block due bus contention\n",
                       IDENTIFIERS (thread) );
             }
             inFIFO_queue (&machine->network.queue, (char *) thread);
@@ -323,7 +321,7 @@ really_RMA (register struct t_thread *thread)
           if (debug & D_COMM)
           {
             PRINT_TIMER (current_time);
-            printf (": Really RMA for P%d T%d th%d obtain bus\n",
+            printf (": Really RMA for P%02d T%02d (t%02d) obtain bus\n",
                     IDENTIFIERS (thread) );
           }
         }
@@ -341,7 +339,7 @@ really_RMA (register struct t_thread *thread)
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
-      printf (": Really RMA for P%d T%d th%d start RMA operation size %d\n",
+      printf (": Really RMA for P%02d T%02d (t%02d) start RMA operation size %d\n",
               IDENTIFIERS (thread), mpi_os->size);
     }
     /* ti = transferencia (mpi_os->size, remote_comm, thread, NULL, NULL); */
@@ -826,7 +824,7 @@ there_are_all_completes_for_this_wait (struct t_thread *thread, struct t_window 
       break;
   }
   if (th == TH_NIL)
-    panic ("Unable to locate post for a given wait P%d T%d th%d\n", IDENTIFIERS (thread) );
+    panic ("Unable to locate post for a given wait P%02d T%02d (t%02d)\n", IDENTIFIERS (thread) );
 
   action = th->action;
   mpi_os = &action->desc.mpi_os;

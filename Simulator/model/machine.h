@@ -47,10 +47,10 @@ struct t_machine
   struct t_scheduler /* Informacio del scheduler */
   {
     int           policy;
-    t_nano       quantum;
+    t_nano        quantum;
     t_boolean     priority_preemptive;
     t_boolean     lost_cpu_on_send;
-    t_nano       context_switch;
+    t_nano        context_switch;
     t_boolean     busywait_before_block;
     dimemas_timer minimum_quantum;
   } scheduler;
@@ -59,10 +59,10 @@ struct t_machine
   {
     int            policy;
     int            quantum;
-    t_nano        remote_bandwidth;
-    int            num_messages_on_network;
-    t_nano        port_startup;
-    t_nano        memory_startup;
+    t_nano         remote_bandwidth;
+    int            num_messages_on_network; /* # of buses = maximum messages in the network */
+    t_nano         port_startup;
+    t_nano         memory_startup;
     int            global_op_model;
     struct t_queue global_ops_info;
   } communication;

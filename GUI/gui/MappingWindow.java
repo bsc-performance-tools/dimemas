@@ -266,7 +266,7 @@ public class MappingWindow extends GUIWindow
     // Anyadiendo los componentes a la ventana.
 
 
-    nodes = data.processor.getNumberOfNodes();
+    nodes = data.nodes_information.getNumberOfNodes();
     tasks = data.map.getTasks();
     createPanel();
 
@@ -294,6 +294,8 @@ public class MappingWindow extends GUIWindow
        new Double(screenSize.getWidth()*0.8).intValue(),
        new Double(screenSize.getHeight()*0.8).intValue()
       );
+
+      // setBounds(25,150,getWidth()+10,getHeight());
     }
     else
     {
@@ -345,7 +347,7 @@ public class MappingWindow extends GUIWindow
     int currentNode;
     int tasksMapped;
 
-    NodeData machineNodes = data.processor;
+    NodeData machineNodes = data.nodes_information;
 
     clearMaps();
 
@@ -517,7 +519,7 @@ public class MappingWindow extends GUIWindow
     }
     else
     {
-      for(int n = 0; n < data.processor.getNumberOfNodes(); n++)
+      for(int n = 0; n < data.nodes_information.getNumberOfNodes(); n++)
       {
         if(e.getSource() == node[n])
         {

@@ -123,7 +123,7 @@ public class BlockData
   *
   * @exc: Valor numérico no válido.
   */
-  public void loadData(String line) throws Exception
+  public boolean loadData(String line, int lineCount) throws Exception
   {
     String            type, value, ratio;
     int               first, second;
@@ -140,7 +140,7 @@ public class BlockData
     if (second == -1)
     {
       Tools.showInformationMessage("Old configuration file, modules information will not be extracted.");
-      return;
+      return true;
     }
 
     value  = Tools.blanks(line.substring(first,second));
@@ -161,8 +161,9 @@ public class BlockData
     else
     {
       Tools.showInformationMessage("Duplicated block "+NewModuleInformation+" not updated");
-      return;
     }
+
+    return true;
   }
 
   /*

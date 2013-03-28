@@ -881,7 +881,7 @@ next_op:
             {
               /* DEBUG
               PRINT_TIMER(current_time);
-              printf(": Checking 'module_entrance [%lld:%lld] for P%d T%d th%d\n",
+              printf(": Checking 'module_entrance [%lld:%lld] for P%02d T%02d (t%02d)\n",
                     action->desc.even.type,
                     action->desc.even.value,
                     IDENTIFIERS(thread));

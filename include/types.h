@@ -507,9 +507,11 @@ struct t_link
 {
   union
   {
-    struct t_node                 *node;       /* Belongs to processor */
-    struct t_machine              *machine;    /* Maquina d'aquest link */
-    struct t_dedicated_connection *connection; /* Connexio dedicada */
+    struct t_task                 *task;       /* Task of the link */
+    struct t_node                 *node;       /* Node of the link */
+    struct t_machine              *machine;    /* Machine link */
+    struct t_dedicated_connection *connection; /* Dedicated connection */
+
   } info;
 
   int              kind;        /* NODE_LINK/MACHINE_LINK/CONNECTION_LINK */
@@ -654,10 +656,10 @@ struct t_task
   struct t_thread **threads;
 
 
-  struct t_queue  mess_recv; /* Queue for received messages */
-  struct t_queue  recv;      /* Queue of threads waiting for message */
-  struct t_queue  send;      /* Queue of threads waiting for a partner
-                              * when sending a message */
+  struct t_queue  mess_recv;     /* Queue for received messages */
+  struct t_queue  recv;          /* Queue of threads waiting for message */
+  struct t_queue  send;          /* Queue of threads waiting for a partner
+                                  * when sending a message */
   struct t_thread *current_wait; /* Current WAIT operation, only for IRECV *
                                      * ES SOLO TEMPORAL, PORQUE SI HAY OpenMP *
                                      * PUEDE HABER + DE 1 WAIT */
@@ -686,7 +688,20 @@ struct t_task
                                        * corresponent, no quan es fa realment
                                        * la transmisio. */
   /****************************************************************************/
+
+
+
   struct t_queue  semaphores;
+
+  t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
+
+  struct t_queue    free_in_links;        /* Free input links */
+  struct t_queue    free_out_links;       /* Free output link */
+  struct t_queue    busy_in_links;        /* Busy input links */
+  struct t_queue    busy_out_links;       /* Busy output links */
+  struct t_queue    th_for_in;            /* Awaiting for input link */
+  struct t_queue    th_for_out;           /* Awaiting for output link */
+
   t_boolean       io_thread;
 };
 
@@ -762,6 +777,12 @@ struct t_thread
   struct t_link   *local_hd_link,
                   *partner_hd_link;   /* Pointers to non used links (HF-DPEX)*/
   struct t_node   *partner_node;   /* Cal guardar el node desti del missatge */
+
+  /*
+  struct t_link   *in_mem_link;
+  struct t_link   *out_mem_link;
+  */
+
   dimemas_timer    last_paraver;
   t_boolean        loose_cpu;
   int              to_module;
@@ -797,6 +818,7 @@ struct t_thread
   struct t_link   *port_send_link,
                   *port_recv_link;
   struct t_port   *port;
+
   struct t_link   *copy_segment_link_source,
                   *copy_segment_link_dest;
   int              copy_segment_size;
@@ -806,7 +828,7 @@ struct t_thread
   struct t_last_comm
   {
     dimemas_timer ti;
-    t_nano       bandwith;
+    t_nano       bandwidth;
     int           bytes;
   } last_comm;
 

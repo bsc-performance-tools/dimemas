@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -55,24 +55,31 @@
 #define SDDFA_1C_7A "communication_group_model"
 
 /* Record 2: Node information */
-#define SDDFA_2C_NAME  "node information"
-#define SDDFA_2C_1A  "machine_id"
-#define SDDFA_2C_2A  "node_id"
-#define SDDFA_2C_3A  "simulated_architecture"
-#define SDDFA_2C_4A  "number_of_processors"
-#define SDDFA_2C_5A  "number_of_input_links"
-#define SDDFA_2C_6A  "number_of_output_links"
-#define SDDFA_2C_7A  "startup_on_local_communication"
-#define SDDFA_2C_8A  "startup_on_remote_communication"
-#define SDDFA_2C_9A  "speed_ratio_instrumented_vs_simulated"
-#define SDDFA_2C_10A "memory_bandwidth"
-#define SDDFA_2C_11A "external_net_startup"
-#define SDDFA_2C_12A "local_port_startup"
-#define SDDFA_2C_13A "remote_port_startup"
-#define SDDFA_2C_14A "local_memory_startup"
-#define SDDFA_2C_15A "remote_memory_startup"
-  
-  
+#define SDDFA_2C_FIELD_COUNT 14
+
+#define SDDFA_2C_NAME "node information"
+#define SDDFA_2C_1A   "machine_id"
+#define SDDFA_2C_2A   "node_id"
+#define SDDFA_2C_3A   "simulated_architecture"
+#define SDDFA_2C_4A   "number_of_processors"
+#define SDDFA_2C_5A   "speed_ratio_instrumented_vs_simulated"
+#define SDDFA_2C_6A   "intra_node_startup"
+#define SDDFA_2C_7A   "intra_node_bandwidth"
+#define SDDFA_2C_8A   "intra_node_buses"
+#define SDDFA_2C_9A   "intra_node_input_links"
+#define SDDFA_2C_10A  "intra_node_output_links"
+#define SDDFA_2C_11A  "inter_node_startup"
+#define SDDFA_2C_12A  "inter_node_input_links"
+#define SDDFA_2C_13A  "inter_node_output_links"
+#define SDDFA_2C_14A  "wan_startup"
+
+/* Deprecated fields of Node #2 */
+#define SDDFA_2C_15A "local_port_startup"
+#define SDDFA_2C_16A "remote_port_startup"
+#define SDDFA_2C_17A "local_memory_startup"
+#define SDDFA_2C_18A "remote_memory_startup"
+
+
 /* Record 3 */
 #define SDDFA_3C_NAME "mapping information"
 #define SDDFA_3C_1A   "tracefile"

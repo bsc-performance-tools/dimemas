@@ -48,6 +48,31 @@ using std::string;
 #include <cstdlib>
 
 
+#define NEW_NODE_INFO_RECORD_BODY \
+"\t\/\/ \"speed_ratio_instrumented_vs_simulated\" \"Relative processor speed\"\n" \
+"\tdouble  \"speed_ratio_instrumented_vs_simulated\";\n" \
+"\t\/\/ \"intra_node_startup\" \"Startup time (s) of intra-node communications model\"\n" \
+"\tdouble  \"intra_node_startup\";\n" \
+"\t\/\/ \"intra_node_bandwidth\" \"Bandwidth (MB/s) of intra-node communications model\"\n" \
+"\t\/\/ \"0 means instantaneous communication\"\n" \
+"\tdouble  \"intra_node_bandwidth\";\n" \
+"\t\/\/ \"intra_node_buses\" \"Number of buses of intra-node communications model\"\n" \
+"\t\/\/ \"0 means infinite buses\"\n" \
+"\tint     \"intra_node_buses\";\n" \
+"\t\/\/ \"intra_node_input_links\" \"Input links of intra-node communications model\"\n" \
+"\tint     \"intra_node_input_links\";\n" \
+"\t\/\/ \"intra_node_input_links\" \"Output links of intra-node communications model\"\n" \
+"\tint     \"intra_node_output_links\";\n" \
+"\t\/\/ \"intra_node_startup\" \"Startup time (s) of inter-node communications model\"\n" \
+"\tdouble  \"inter_node_startup\";\n" \
+"\t\/\/ \"inter_node_input_links\" \"Input links of inter-node communications model\"\n" \
+"\tint     \"inter_node_input_links\";\n" \
+"\t\/\/ \"inter_node_output_links\" \"Input links of intra-node communications model\"\n" \
+"\tint     \"inter_node_output_links\";\n" \
+"\t\/\/ \"wan_startup\" \"Startup time (s) of inter-machines (WAN) communications model\"\n" \
+"\tdouble  \"wan_startup\";\n"
+
+
 /*
 #5:
 "modules information" {
@@ -107,10 +132,15 @@ bool ProcessModulesInformation(FILE  *CFGFile,
   else if (strcmp(line, "\t// Module type\n") == 0 ||
            strcmp(line, "   // Module type\n") == 0)
   {
+    fprintf(CFGModifiedFile, "%s", line);
     return false;
   }
-  else
+  else if (strcmp(line, "\tint     \"type\";\n") == 0)
   {
+    return false;
+  }
+  {
+    cout << "line = " << line << endl;
     cerr << "Wrong modules definition on input file. It won't be modified" << endl;
     fclose(CFGFile);
     fclose(CFGModifiedFile);
@@ -133,6 +163,7 @@ bool ProcessModulesInformation(FILE  *CFGFile,
   if (strcmp(line, "\tint     \"identificator\";\n") == 0 ||
       strcmp(line, "   int     \"identificator\";\n") == 0)
   {
+    fprintf(CFGModifiedFile, "\t// Module tpye\n");
     fprintf(CFGModifiedFile, "\tint     \"type\";\n");
     fprintf(CFGModifiedFile, "\t// Module value\n");
     fprintf(CFGModifiedFile, "\tint     \"value\";\n");
@@ -177,6 +208,118 @@ bool ProcessModulesInformation(FILE  *CFGFile,
   return true;
 }
 
+/*
+#2:
+"node information" {
+  int "machine_id";
+  // "node_id" "Node number"
+  int     "node_id";
+  // "simulated_architecture" "Architecture node name"
+  char    "simulated_architecture"[];
+  // "number_of_processors" "Number of processors within node"
+  int     "number_of_processors";
+  // "number_of_input_links" "Number of input links in node"
+  int     "number_of_input_links";
+  // "number_of_output_links" "Number of output links in node"
+  int     "number_of_output_links";
+  // "startup_on_local_communication" "Communication startup"
+  double  "startup_on_local_communication";
+  // "startup_on_remote_communication" "Communication startup"
+  double  "startup_on_remote_communication";
+  // "speed_ratio_instrumented_vs_simulated" "Relative processor speed"
+  double  "speed_ratio_instrumented_vs_simulated";
+  // "memory_bandwidth" "Data tranfer rate into node in Mbytes/s"
+  // "0 means instantaneous communication"
+  double  "memory_bandwidth";
+  double "external_net_startup";
+};;
+*/
+
+
+
+bool ProcessNodeInformation(FILE  *CFGFile,
+                            FILE  *CFGModifiedFile,
+                            string CFGModifiedFileName)
+{
+  char*   line        = NULL;
+  size_t  line_length = 0;
+  ssize_t bytes_read;
+  size_t  field_count = 0;
+
+  if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
+  {
+    cerr << "Error reading CFG file: " << strerror(errno) << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  if (strcmp(line, "\"node information\" {\n") == 0)
+  {
+    fprintf(CFGModifiedFile, "%s", line);
+  }
+  else
+  {
+    cerr << "Wrong node definition on input file. It won't be modified" << endl;
+    fclose(CFGFile);
+    fclose(CFGModifiedFile);
+
+    unlink(CFGModifiedFileName.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  /*
+   * Identificator
+   */
+
+  field_count = 0;
+  while (field_count < 7) // 4 seven lines before the new record order
+  {
+    free(line);
+    line = NULL;
+    if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
+    {
+      cerr << "Error reading CFG file: " << strerror(errno) << endl;
+      exit(EXIT_FAILURE);
+    }
+
+    fprintf(CFGModifiedFile, "%s", line);
+    field_count++;
+  }
+
+  free(line);
+  line = NULL;
+  if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
+  {
+    cerr << __FUNCTION__ <<  "Error reading CFG file: " << strerror(errno) << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // "number_of_input_links" "Number of input links in node"
+  if (strcmp(line, "// \"number_of_input_links\" \"Number of input links in node\"\n") == 0 ||
+      strcmp(line, "\t// \"number_of_input_links\" \"Number of input links in node\"\n") == 0)
+  {
+    fprintf(CFGModifiedFile, "%s", NEW_NODE_INFO_RECORD_BODY);
+
+    field_count = 0;
+    while (field_count < 13) // 13 lines of the previous record must be erased
+    {
+      free(line);
+      line = NULL;
+      if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
+      {
+        cerr << "Error reading CFG file: " << strerror(errno) << endl;
+        exit(EXIT_FAILURE);
+      }
+
+      // fprintf(CFGModifiedFile, "%s", line);
+      field_count++;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -187,11 +330,28 @@ int main(int argc, char *argv[])
   size_t  line_length = 0;
   ssize_t bytes_read;
 
-  bool    ModuleDefinitions = false;
-  bool    DefinedModules    = false;
+  bool    OldModulesDefinition = false;
+  bool    DefinedModules       = false;
+
+  bool    OldNodeDefinition    = false;
+  bool    DefinedNodes         = false;
 
   int    module_id;
   double module_ratio;
+
+  char  *simulated_architecture;
+
+  int       machine_id,
+            node_id,
+            no_processors,
+            number_of_input_links,
+            number_of_output_links;
+
+  double    startup_on_local_communication,
+            startup_on_remote_communication,
+            speed_ratio_instrumented_vs_simulated,
+            memory_bandwidth,
+            external_net_startup;
 
   if (argc != 2 )
   {
@@ -224,24 +384,13 @@ int main(int argc, char *argv[])
   {
     // printf("Current line: '%s'", line);
 
-    if ( strcmp(line, "#5:\n") == 0)
+    if ( strcmp(line, "#2:\n") == 0)
     {
       fprintf(CFGModifiedFile, "%s", line);
 
-      ModuleDefinitions = true;
-
-      if (!ProcessModulesInformation(CFGFile,
-                                     CFGModifiedFile,
-                                     CFGModifiedFileName))
-      {
-        cout << "CFG in new format. Not converted!" << endl;
-
-        fclose(CFGFile);
-        fclose(CFGModifiedFile);
-
-        unlink(CFGModifiedFileName.c_str());
-        exit(EXIT_SUCCESS);
-      }
+      OldNodeDefinition = ProcessNodeInformation(CFGFile,
+                                                 CFGModifiedFile,
+                                                 CFGModifiedFileName);
 
       free(line);
       line = NULL;
@@ -249,17 +398,90 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    if (sscanf(line, "\"modules information\" {%d, %lf }\n",
-               &module_id,
-               &module_ratio) == 2)
+    if ( strcmp(line, "#5:\n") == 0)
     {
-      // cout << "Your input file has defined modules information";
-      DefinedModules = true;
-      fprintf (CFGModifiedFile, "// %s", line);
+      fprintf(CFGModifiedFile, "%s", line);
+
+      OldModulesDefinition = ProcessModulesInformation(CFGFile,
+                                                       CFGModifiedFile,
+                                                       CFGModifiedFileName);
+
+      /*
+      {
+        // cout << "CFG in new format. Not converted!" << endl;
+
+        fclose(CFGFile);
+        fclose(CFGModifiedFile);
+
+        unlink(CFGModifiedFileName.c_str());
+        exit(EXIT_SUCCESS);
+      }
+      */
 
       free(line);
       line = NULL;
+
       continue;
+    }
+
+    if (OldNodeDefinition)
+    {
+      int subs;
+      /* To avoid overflows! */
+      simulated_architecture = (char*) malloc(strlen(line));
+
+      if (subs = sscanf(line,
+                 "\"node information\" {%d, %d, %[^,], %d, %d, %d, %lf, %lf, %lf, %lf, %lf };;\n",
+                 &machine_id,
+                 &node_id,
+                 simulated_architecture,
+                 &no_processors,
+                 &number_of_input_links,
+                 &number_of_output_links,
+                 &startup_on_local_communication,
+                 &startup_on_remote_communication,
+                 &speed_ratio_instrumented_vs_simulated,
+                 &memory_bandwidth,
+                 &external_net_startup) == 11)
+      {
+        fprintf(CFGModifiedFile,
+                "\"node information\" { %d, %d, %s, %d, %f, %f, %f, %d, 1, 0, %lf, %d, %d, %lf };;\n",
+                machine_id,
+                node_id,
+                simulated_architecture,
+                no_processors,
+                speed_ratio_instrumented_vs_simulated,
+                startup_on_local_communication,
+                memory_bandwidth,
+                no_processors, // The default translation considers as many buses as processors in the node
+                startup_on_remote_communication,
+                number_of_input_links,
+                number_of_output_links,
+                external_net_startup);
+
+        free(simulated_architecture);
+        free(line);
+        line = NULL;
+        continue;
+      }
+
+      free(simulated_architecture);
+    }
+
+    if (OldModulesDefinition)
+    {
+      if (sscanf(line, "\"modules information\" {%d, %lf };;\n",
+                 &module_id,
+                 &module_ratio) == 2)
+      {
+        // cout << "Your input file has defined modules information";
+        DefinedModules = true;
+        fprintf (CFGModifiedFile, "// %s", line);
+
+        free(line);
+        line = NULL;
+        continue;
+      }
     }
 
     fprintf(CFGModifiedFile, "%s", line);
@@ -277,12 +499,12 @@ int main(int argc, char *argv[])
   fclose(CFGFile);
   fclose(CFGModifiedFile);
 
-  if (!ModuleDefinitions)
+  if (!OldNodeDefinition && !OldModulesDefinition)
   {
-    cerr << "Wrong format in the input file. Not converted!" << endl;
-    unlink(CFGModifiedFileName.c_str());
+    cout << "CFG in new format. Not converted!" << endl;
 
-    exit(EXIT_FAILURE);
+    unlink(CFGModifiedFileName.c_str());
+    exit(EXIT_SUCCESS);
   }
 
   if (rename(CFGFileName.c_str(), (CFGFileName+".OLD").c_str()) == -1)
@@ -304,7 +526,7 @@ int main(int argc, char *argv[])
 
   if (DefinedModules)
   {
-    cout << "WARNING: please check your manually defined modules" << endl;
+    cout << "WARNING: please update your manually defined modules" << endl;
   }
 
   exit(EXIT_SUCCESS);

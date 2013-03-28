@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -281,7 +281,7 @@ public class DedicatedConnectionData
     *
     * @exc: Valor numérico no válido.
     */
-    public void loadData(String line, boolean oldFile) throws Exception
+    public boolean loadData(String line, boolean oldFile, int lineCount) throws Exception
     {
       int first = Data.CONNECTION.length();
       int second = line.indexOf(",",first);
@@ -332,6 +332,8 @@ public class DedicatedConnectionData
         second = line.indexOf("}",first);
         setFlightTime(Tools.blanks(line.substring(first,second)));
       }
+
+      return true;
     }
 
     /*

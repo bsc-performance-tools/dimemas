@@ -54,7 +54,7 @@ using std::cout;
 #include <sstream>
 using std::ostringstream;
 
-#define DEBUG 1
+// #define DEBUG 1
 
 /*****************************************************************************
  * Public functions
@@ -1102,6 +1102,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         WrongComms = true;
       }
       break;
+    case BLOCK_ID_MPI_Rsend:
     case BLOCK_ID_MPI_Send:
     case BLOCK_ID_MPI_Ssend:
       /* DEBUG

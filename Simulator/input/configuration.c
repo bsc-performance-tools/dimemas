@@ -777,7 +777,7 @@ void new_env_info (struct t_queue *q, struct t_entry* en)
 
 void new_node_info (struct t_queue *q, struct t_entry* en)
 {
-  struct t_field   *f;
+  struct t_field   *f, *f2, *f3, *f4;
   struct t_element *el;
   struct t_machine *machine;
 
@@ -785,12 +785,15 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   int               node_id;
   char             *node_name;
   int               no_processors;
+  int               no_mem_buses;
+  int               no_mem_in_links;
+  int               no_mem_out_links;
   int               no_input,
                     no_output;
   double            local_startup,
                     remote_startup;
   double            relative;
-  double            local_bandwith;
+  double            local_bandwidth;
   double            external_net_startup;
   double            local_port_startup,
                     remote_port_startup;
@@ -846,7 +849,7 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   }
 
   /*
-   * Node name
+   * Node name ("simulated_architecture")
    */
   f  = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
@@ -855,7 +858,6 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   {
     BAD_TYPES(f->tipo, el->type);
   }
-
   node_name = strdup(f->value.string);
 
   /*
@@ -880,7 +882,7 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   no_processors = f->value.dec;
 
   /*
-   * Input links
+   * CPU ratio
    */
   f  = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
@@ -890,45 +892,16 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
     BAD_TYPES(f->tipo, el->type);
   }
 
-  if (f->value.dec < 0)
+  if (f->value.real < 0)
   {
     near_line ();
-    die ("Invalid number of input links (%d) for node %d\n",
-                      f->value.dec,
+    die ("Invalid relative processor speed (%le) for node %d\n",
+                      f->value.real,
                       node_id);
     return;
   }
-  no_input = f->value.dec;
+  relative = f->value.real;
 
-  /*
-   * Output links
-   */
-  f  = (struct t_field *) next_queue (q);
-  el = (struct t_element *) next_queue (en->types);
-
-  if (f->tipo != el->type)
-  {
-    BAD_TYPES(f->tipo, el->type);
-  }
-
-  if (f->value.dec < 0)
-  {
-    near_line ();
-    die ("Invalid number of output links (%d) for node %d\n",
-                      f->value.dec,
-                      node_id);
-    return;
-  }
-  no_output = f->value.dec;
-
-  if ((no_input == 0) && (no_output == 0))
-  {
-    near_line ();
-    die ("Invalid number of half duplex  links (%d) for node %d\n",
-                      f->value.dec,
-                      node_id);
-    return;
-  }
 
   /*
    * Local startup
@@ -952,48 +925,6 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   local_startup = f->value.real * 1e9;
 
   /*
-   * Remote startup
-   */
-  f  = (struct t_field *) next_queue (q);
-  el = (struct t_element *) next_queue (en->types);
-
-  if (f->tipo != el->type)
-  {
-    BAD_TYPES(f->tipo, el->type);
-  }
-
-  if (f->value.real < 0)
-  {
-    near_line ();
-    die ("Invalid startup on remote communication (%le) for node %d\n",
-                      f->value.real,
-                      node_id);
-    return;
-  }
-  remote_startup = f->value.real * 1e9;
-
-  /*
-   * CPU ratio
-   */
-  f  = (struct t_field *) next_queue (q);
-  el = (struct t_element *) next_queue (en->types);
-
-  if (f->tipo != el->type)
-  {
-    BAD_TYPES(f->tipo, el->type);
-  }
-
-  if (f->value.real < 0)
-  {
-    near_line ();
-    die ("Invalid relative processor speed (%le) for node %d\n",
-                      f->value.real,
-                      node_id);
-    return;
-  }
-  relative = f->value.real;
-
-  /*
    * Internal network bandwidth
    */
   f  = (struct t_field *) next_queue (q);
@@ -1012,10 +943,109 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
                       node_id);
     return;
   }
-  local_bandwith = f->value.real;
+  local_bandwidth = f->value.real;
 
   /*
-   * Remote network startup
+   * Memory contention
+  f  = (struct t_field *)   next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+  // el = (struct t_element *) next_queue (en->types);
+
+  if (( f->value.arr.dim1 != 3) || (count_queue (f->value.arr.q) != 3 ))
+  {
+    near_line ();
+    die("Incorrect number of fields (%d) in memory contention definition of node %d. Should be 3\n",
+        node_id,
+        f->value.arr.dim1 );
+    return;
+  }
+
+  f2 = (struct t_field*) head_queue (f->value.arr.q);
+  no_mem_buses = f2->value.dec;
+
+  f2 = (struct t_field*) next_queue (f->value.arr.q);
+  no_mem_in_links = f2->value.dec;
+
+  f2 = (struct t_field*) next_queue (f->value.arr.q);
+  no_mem_out_links = f2->value.dec;
+
+  */
+
+  /*
+   * Number of node buses
+   */
+
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Invalid number of memory buses (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+  no_mem_buses = f->value.dec;
+
+  /*
+   * Number of intra-node INPUT links
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Invalid number of intra-node INPUT links (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+  no_mem_in_links = f->value.dec;
+
+  /*
+   * Number of intra-node OUTPUT links
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Invalid number of intra-node OUT links (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+  no_mem_out_links = f->value.dec;
+
+  if ((no_mem_in_links == 0) && (no_mem_out_links == 0))
+  {
+    near_line ();
+    die ("Invalid number of intra-node half duplex links (%d) for node %d\n",
+         f->value.dec,
+         node_id);
+    return;
+  }
+
+  /*
+   * Inter-node startup
    */
   f  = (struct t_field *) next_queue (q);
   el = (struct t_element *) next_queue (en->types);
@@ -1028,7 +1058,79 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   if (f->value.real < 0)
   {
     near_line ();
-    die ("Invalid external net startup (%le) for node %d\n",
+    die ("Invalid startup on inter-node startup (%le) for node %d\n",
+                      f->value.real,
+                      node_id);
+    return;
+  }
+  remote_startup = f->value.real * 1e9;
+
+  /*
+   * Inter-node Input links
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Invalid number of inter-node INPUT links (%d) for node %d\n",
+          f->value.dec,
+          node_id);
+    return;
+  }
+  no_input = f->value.dec;
+
+  /*
+   * Inter-node output links
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Invalid number of inter-node OUTPUT links (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+  no_output = f->value.dec;
+
+  if ((no_input == 0) && (no_output == 0))
+  {
+    near_line ();
+    die ("Invalid number of network half duplex links (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+
+  /*
+   * Inter-machines (WAN) startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.real < 0)
+  {
+    near_line ();
+    die ("Invalid inter-machines (WAN) startup (%le) for node %d\n",
                       f->value.real,
                       node_id);
     return;
@@ -1150,12 +1252,15 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   SIMULATOR_set_node_definition (node_id,
                                  node_name,
                                  no_processors,
+                                 no_mem_buses,
+                                 no_mem_in_links,
+                                 no_mem_out_links,
                                  no_input,
                                  no_output,
                                  local_startup,
                                  remote_startup,
                                  relative,
-                                 local_bandwith,
+                                 local_bandwidth,
                                  external_net_startup,
                                  local_port_startup,
                                  remote_port_startup,
@@ -1261,9 +1366,6 @@ void new_map_info  (struct t_queue *q, struct t_entry* en)
   // inFIFO_queue (&Ptask_queue, (char *) Ptask);
 }
 
-/* NOTE: initialization of 'configuration_files' is not defined, this function
- * is totally useless
- */
 void new_conf_files(struct t_queue *q, struct t_entry* en)
 {
   struct t_field   *f;

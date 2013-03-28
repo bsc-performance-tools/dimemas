@@ -139,7 +139,7 @@ void PORT_general (int value, struct t_thread *thread)
                   IDENTIFIERS (thread) );
         }
 
-        free_link (thread->port_send_link, thread);
+        LINKS_free_network_link(thread->port_send_link, thread);
         thread->port->sending--;
         thread->port = PO_NIL;
         port_to_next_module (thread);
@@ -154,7 +154,7 @@ void PORT_general (int value, struct t_thread *thread)
                   IDENTIFIERS (thread) );
         }
 
-        free_link (thread->port_recv_link, thread);
+        LINKS_free_network_link(thread->port_recv_link, thread);
         port_to_next_module (thread);
       }
 
@@ -593,9 +593,9 @@ t_boolean PORT_receive (int module, int portid, struct t_thread *thread, int siz
 }
 
 
-void
-really_port_send (struct t_port *port, struct t_thread *thread_s,
-                  struct t_thread *thread_r)
+void really_port_send (struct t_port   *port,
+                       struct t_thread *thread_s,
+                       struct t_thread *thread_r)
 {
   struct t_node  *node_s,
       *node_r;
@@ -607,7 +607,7 @@ really_port_send (struct t_port *port, struct t_thread *thread_s,
   node_s = get_node_of_thread (thread_s);
   node_r = get_node_of_thread (thread_r);
 
-  if (get_links_port (thread_s, node_s, thread_r, node_r) )
+  if (LINKS_get_port_links(thread_s, node_s, thread_r, node_r) )
 {
     remote_comm = (node_s == node_r ? FALSE : TRUE);
 

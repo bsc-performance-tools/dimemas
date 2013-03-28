@@ -230,12 +230,13 @@
 #define IN_LINK   2
 
 /* Three kinds of links */
-#define NODE_LINK       1
-#define MACHINE_LINK    2
-#define CONNECTION_LINK 3
+#define MEM_LINK        1
+#define NODE_LINK       2
+#define MACHINE_LINK    3
+#define CONNECTION_LINK 4
 
 /* Five communication types */
-#define LOCAL_COMMUNICATION_TYPE       0
+#define MEMORY_COMMUNICATION_TYPE       0
 #define INTERNAL_NETWORK_COM_TYPE      1
 #define EXTERNAL_NETWORK_COM_TYPE      2
 #define DEDICATED_CONNECTION_COM_TYPE  3

@@ -129,7 +129,7 @@ public class ConfigurationOptionsWindow extends GUIWindow
 
     if(b_node.isEnabled())
     {
-      if(!data.processor.defaultValues())
+      if(!data.nodes_information.defaultValues())
       {
         lbl_node.setText(STATUS_MODIFIED);
         lbl_node.setForeground(Color.blue);
@@ -307,44 +307,57 @@ public class ConfigurationOptionsWindow extends GUIWindow
     }
     else if(e.getSource() == b_environment)
     {
+
       if(data.environment.getNumberOfMachines() == 0)
       {
-        Tools.showInformationMessage("You must specify the number of machines before configure them.");
+        Tools.showInformationMessage("No machines defined. Using a single machine environment with default values\n"+
+                                     "Check the parameters in 'Environment Information' window");
+        data.wan.initialValues();
+        data.environment.setNumberOfMachines(1);
+        try
+        {
+          data.environment.changeAtMachines();
+        }
+        catch (Exception exc)
+        {
+          Tools.showErrorMessage("Error creating default machine");
+          return;
+        }
       }
-      else
-      {
-        new EnvironmentWindow(data).addWindowListener(
-          new WindowAdapter()
+
+
+
+      new EnvironmentWindow(data).addWindowListener(
+        new WindowAdapter()
+        {
+          public void windowOpened(WindowEvent we)
           {
-            public void windowOpened(WindowEvent we)
+            b_environment.setEnabled(false);
+            lbl_environment.setText(STATUS_OPEN);
+            lbl_environment.setForeground(Color.red);
+          }
+
+          public void windowClosed(WindowEvent we)
+          {
+            b_environment.setEnabled(true);
+            lbl_environment.setForeground(Color.black);
+
+            if(data.environment.defaultValues())
             {
-              b_environment.setEnabled(false);
-              lbl_environment.setText(STATUS_OPEN);
-              lbl_environment.setForeground(Color.red);
+              lbl_environment.setText(STATUS_DEFAULT);
             }
-
-            public void windowClosed(WindowEvent we)
+            else
             {
-              b_environment.setEnabled(true);
-              lbl_environment.setForeground(Color.black);
-
-              if(data.environment.defaultValues())
-              {
-                lbl_environment.setText(STATUS_DEFAULT);
-              }
-              else
-              {
-                lbl_environment.setText(STATUS_MODIFIED);
-                lbl_environment.setForeground(Color.blue);
-              }
+              lbl_environment.setText(STATUS_MODIFIED);
+              lbl_environment.setForeground(Color.blue);
             }
           }
-        );
-      }
+        }
+      );
     }
     else if(e.getSource() == b_node)
     {
-      if(data.processor.getNumberOfNodes() == 0)
+      if(data.nodes_information.getNumberOfNodes() == 0)
       {
         Tools.showInformationMessage("You must specify the number of nodes before configure them.");
       }
@@ -365,7 +378,7 @@ public class ConfigurationOptionsWindow extends GUIWindow
               b_node.setEnabled(true);
               lbl_node.setForeground(Color.black);
 
-              if(data.processor.defaultValues())
+              if(data.nodes_information.defaultValues())
               {
                 lbl_node.setText(STATUS_DEFAULT);
               }
@@ -381,7 +394,7 @@ public class ConfigurationOptionsWindow extends GUIWindow
     }
     else if(e.getSource() == b_mapping)
     {
-      if(data.processor.getNumberOfNodes() == 0)
+      if(data.nodes_information.getNumberOfNodes() == 0)
       {
         Tools.showInformationMessage("You must specify the number of nodes before configure task-mapping.");
       }

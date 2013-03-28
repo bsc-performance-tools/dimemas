@@ -10,12 +10,32 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/03/28 - jgonzale - Simulator | GUI | prv2dim - 5.0.0
+	FEATURES:	Added intra-node contention simulation. This contention
+				is modelled in the same way as the intra-node contention,
+				using # of buses, # of input links and # of output links.
+				It requires adding these three parameters to the configuration
+				file ('node information' has changed), the GUI and also
+				the DimemasUpdateCFG, to translate old CFG files no the
+				newer version.
+
+				Due to the introduction of these new feature and the
+				modificacion of the configuration file, the major version
+				has been increased.
+
+	BUGFIX:		'prv2dim' did not translate the MPI_Rsend primitives. Now
+				they are translated as regular MPI_Send.
+				
+
 2013/03/07 - jgonzale - Simulator
 	CHANGES:	New way to compute the collective FANs, taking into
 				account the number of partners at different stages:
 					- Number of tasks per node
 					- Number of nodes per machine
 					- Number of machines in WAN
+	
+	CHANGES:	LIN model now applies P = num_partners-1 (as the total
+				number of messages interchanged)
 	
 	BUGFIX:		Solved a bug when loading the collectives fine tuning
 				using an external file. It loaded the values mixing the

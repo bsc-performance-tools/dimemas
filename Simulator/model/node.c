@@ -49,16 +49,25 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
   create_queue (&(node->Cpus));
   create_queue (&(node->ready));
 
+  /* Internal network management queues */
   create_queue (&(node->free_out_links));
   create_queue (&(node->free_in_links));
   create_queue (&(node->busy_out_links));
   create_queue (&(node->busy_in_links));
-
-  create_queue (&(node->free_mem_links));
-  create_queue (&(node->busy_mem_links));
-
   create_queue (&(node->th_for_in));
   create_queue (&(node->th_for_out));
+
+  // create_queue (&(node->free_mem_links));
+  // create_queue (&(node->busy_mem_links));
+  // create_queue (&(node->wait_for_mem_link));
+  // create_queue (&(node->wait_for_mem_in));
+  // create_queue (&(node->wait_for_mem_out));
+
+  /* Memory message queue */
+  create_queue (&(node->wait_for_mem_bus));
+  create_queue (&(node->threads_in_memory));
+
+
   create_queue (&(node->wait_outlink_port));
   create_queue (&(node->wait_inlink_port));
   create_queue (&(node->wait_in_copy_segment));
@@ -81,12 +90,15 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
 void NODE_Fill_Node_Fields(struct t_node *node,
                            char          *node_name,
                            int            no_processors,
+                           int            no_mem_buses,
+                           int            no_mem_in_links,
+                           int            no_mem_out_links,
                            int            no_input,
                            int            no_output,
                            double         local_startup,
                            double         remote_startup,
                            double         relative,
-                           double         local_bandwith,
+                           double         local_bandwidth,
                            double         external_net_startup,
                            double         local_port_startup,
                            double         remote_port_startup,
@@ -157,27 +169,32 @@ void NODE_Fill_Node_Fields(struct t_node *node,
     inFIFO_queue (&(node->free_out_links), (char *) link);
   }
 
+  node->max_memory_messages = no_mem_buses;
+  node->in_mem_links        = no_mem_in_links;
+  node->out_mem_links       = no_mem_out_links;
 
-  for (j = 0; j < 2; j++)
+  /*
+  for (j = 0; j < no_mem_links; j++)
   {
     link = (struct t_link*) malloc (sizeof(struct t_link));
 
     link->linkid    = j + 1;
     link->info.node = node;
-    link->kind      = NODE_LINK;
-    link->type      = OUT_LINK;
+    link->kind      = MEM_LINK;
+    // link->type      = OUT_LINK;
     link->thread    = TH_NIL;
 
     ASS_ALL_TIMER (link->assigned_on, current_time);
     inFIFO_queue (&(node->free_mem_links), (char *) link);
   }
+  */
 
   node->arch                  = strdup(node_name);
 
   node->local_startup         = local_startup;
   node->remote_startup        = remote_startup;
   node->relative              = relative;
-  node->bandwith              = local_bandwith;
+  node->bandwidth             = local_bandwidth;
 
   node->external_net_startup  = external_net_startup;
   node->local_port_startup    = local_port_startup;

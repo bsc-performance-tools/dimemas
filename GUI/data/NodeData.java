@@ -229,13 +229,16 @@ public class NodeData
         {
           aux[i].setArchitecture(node[l].getArchitecture(false));
           aux[i].setProcessors(node[l].getProcessors());
-          aux[i].setInput(node[l].getInput());
-          aux[i].setOutput(node[l].getOutput());
-          aux[i].setLocal(node[l].getLocal());
-          aux[i].setRemote(node[l].getRemote());
-          aux[i].setSpeed(node[l].getSpeed());
-          aux[i].setBandwidth(node[l].getBandwidth());
-          aux[i].setLatency(node[l].getLatency());
+          aux[i].setCPURatio(node[l].getCPURatio());
+          aux[i].setIntraNodeStartup(node[l].getIntraNodeStartup());
+          aux[i].setIntraNodeBandwidth(node[l].getIntraNodeBandwidth());
+          aux[i].setIntraNodeInLinks(node[l].getIntraNodeInLinks());
+          aux[i].setIntraNodeOutLinks(node[l].getIntraNodeOutLinks());
+          aux[i].setInterNodeStartup(node[l].getInterNodeStartup());
+          aux[i].setInterNodeInLinks(node[l].getInterNodeInLinks());
+          aux[i].setInterNodeOutLinks(node[l].getInterNodeOutLinks());
+          aux[i].setWANStartup(node[l].getWANStartup());
+
           l++;
         }
         else // Nodo de máquina nuevo.
@@ -268,13 +271,15 @@ public class NodeData
         {
           aux[l].setArchitecture(node[i].getArchitecture(false));
           aux[l].setProcessors(node[i].getProcessors());
-          aux[l].setInput(node[i].getInput());
-          aux[l].setOutput(node[i].getOutput());
-          aux[l].setLocal(node[i].getLocal());
-          aux[l].setRemote(node[i].getRemote());
-          aux[l].setSpeed(node[i].getSpeed());
-          aux[l].setBandwidth(node[i].getBandwidth());
-          aux[l].setLatency(node[i].getLatency());
+          aux[l].setCPURatio(node[i].getCPURatio());
+          aux[l].setIntraNodeStartup(node[i].getIntraNodeStartup());
+          aux[l].setIntraNodeBandwidth(node[i].getIntraNodeBandwidth());
+          aux[l].setIntraNodeInLinks(node[i].getIntraNodeInLinks());
+          aux[l].setIntraNodeOutLinks(node[i].getIntraNodeOutLinks());
+          aux[l].setInterNodeStartup(node[i].getInterNodeStartup());
+          aux[l].setInterNodeInLinks(node[i].getInterNodeInLinks());
+          aux[l].setInterNodeOutLinks(node[i].getInterNodeOutLinks());
+          aux[l].setWANStartup(node[i].getWANStartup());
           l++;
         }
       }

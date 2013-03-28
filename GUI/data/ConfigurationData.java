@@ -69,7 +69,7 @@ public class ConfigurationData
   * @param: String line --> cadena de caracteres con los datos de la config.
   *                         extra.
   */
-  public void loadData(String line)
+  public boolean loadData(String line, int lineCount)
   {
     int first = Data.CONFIG.length();
     int second = line.indexOf(",",first);
@@ -84,6 +84,8 @@ public class ConfigurationData
     first = second + 2;
     second = line.indexOf("}",first);
     setSensitivity(Tools.blanks(line.substring(first,second)));
+
+    return true;
   }
 
   /*

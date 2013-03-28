@@ -278,7 +278,7 @@ void TASK_end()
             query_prio_queue (&Global_op,
                               (t_priority)thread->action->desc.
                               global_op.glop_id);
-          warning("Some task P%d T%d th%d waiting for global operation %s\n",
+          warning("Some task P%02d T%02d (t%02d) waiting for global operation %s\n",
                   IDENTIFIERS(thread),
                   glop->name);
         }
@@ -389,8 +389,13 @@ void TASK_New_Ptask(char *trace_name, int tasks_count, int *tasks_mapping)
 void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
 {
   struct t_task *task;
+  struct t_node *node;
+  int            in_mem_links, out_mem_links, i;
+  struct t_link *link;
 
   // assert(taskid < 0 || taskid >= Ptask->tasks_count);
+
+  node = get_node_by_id(nodeid);
 
   task = &(Ptask->tasks[taskid]);
 
@@ -408,6 +413,59 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
   create_queue (&(task->recv_without_send));
   create_queue (&(task->send_without_recv));
 
+  if (node->in_mem_links == 0 || node->out_mem_links == 0)
+  {
+    int links;
+
+    task->half_duplex_links  = TRUE;
+
+    links = MAX(node->in_mem_links, node->out_mem_links);
+
+    in_mem_links  = links;
+    out_mem_links = links;
+  }
+  else
+  {
+    in_mem_links  = node->in_mem_links;
+    out_mem_links = node->out_mem_links;
+  }
+
+  create_queue (&(task->free_in_links));
+  for (i = 0; i < in_mem_links; i++)
+  {
+    link = (struct t_link*) malloc (sizeof(struct t_link));
+
+    link->linkid    = i + 1;
+    link->info.task = task;
+    link->kind      = MEM_LINK;
+    link->type      = IN_LINK;
+    link->thread    = TH_NIL;
+
+    ASS_ALL_TIMER (link->assigned_on, current_time);
+    inFIFO_queue (&(task->free_in_links), (char*) link);
+  }
+
+  create_queue (&(task->free_out_links));
+  for (i = 0; i < out_mem_links; i++)
+  {
+    link = (struct t_link*) malloc (sizeof(struct t_link));
+
+    link->linkid    = i + 1;
+    link->info.task = task;
+    link->kind      = MEM_LINK;
+    link->type      = OUT_LINK;
+    link->thread    = TH_NIL;
+
+    ASS_ALL_TIMER (link->assigned_on, current_time);
+    inFIFO_queue (&(task->free_out_links), (char*) link);
+  }
+
+  create_queue (&(task->busy_in_links));
+  create_queue (&(node->busy_out_links));
+  create_queue (&(node->th_for_in));
+  create_queue (&(node->th_for_out));
+
+  return;
 }
 
 void TASK_Delete_Task(struct t_task *task)
@@ -955,6 +1013,8 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   thread->partner_link             = L_NIL;
   thread->local_hd_link            = L_NIL;
   thread->partner_hd_link          = L_NIL;
+  // thread->in_mem_link              = L_NIL;
+  // thread->out_mem_link             = L_NIL;
   thread->partner_node             = N_NIL;
   thread->doing_startup            = FALSE;
   thread->startup_done             = FALSE;
@@ -1210,6 +1270,10 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
   copy_thread->partner_link             = thread->partner_link;
   copy_thread->local_hd_link            = thread->local_hd_link;
   copy_thread->partner_hd_link          = thread->partner_hd_link;
+
+  // copy_thread->in_mem_link              = thread->in_mem_link;
+  // copy_thread->out_mem_link             = thread->out_mem_link;
+
   copy_thread->last_paraver             = thread->last_paraver;
   copy_thread->base_priority            = thread->base_priority;
   copy_thread->sch_parameters           = A_NIL;
@@ -1874,7 +1938,7 @@ void module_entrance(struct t_thread  *thread,
   if (debug&D_TASK)
   {
     PRINT_TIMER (current_time);
-    printf (": Going into module: %d for P%d T%d th%d\n",identificator,
+    printf (": Going into module: %d for P%02d T%02d (t%02d)\n",identificator,
             Ptask->Ptaskid, tid, thid);
   }
   */
@@ -1939,7 +2003,7 @@ int module_exit (struct t_thread  *thread,
       node = get_node_of_task (thread->task);
       machine = node->machine;
       ti = node->remote_startup;
-      bandw = (t_nano) machine->communication.remote_bandwith;
+      bandw = (t_nano) machine->communication.remote_bandwidth;
       if (bandw!=0)
       {
         bandw = (t_nano) ((t_nano) (1e9) / (1 << 20) / bandw);
@@ -1983,11 +2047,11 @@ int module_exit (struct t_thread  *thread,
        * obtingut a partir de tallar una trac,a paraver, es possible que comenci
        * amb alguns block end sense que hi haguin hagut els corresponents block
        * begin.
-      panic("Exiting module %d, but no information recorderd P%d T%d th%d\n",
+      panic("Exiting module %d, but no information recorderd P%02d T%02d (t%02d)\n",
             identificator,IDENTIFIERS(thread));
 
       fprintf(stderr,
-              "WARNING: Exiting module [%ld], but no information recorderd P%d T%d th%d\n",
+              "WARNING: Exiting module [%ld], but no information recorderd P%02d T%02d (t%02d)\n",
               module_type,
               IDENTIFIERS(thread));
 
@@ -2004,7 +2068,7 @@ int module_exit (struct t_thread  *thread,
       /*
       if (mod->type != module_type)
       {
-        panic("Exiting module [%ld], but this is not the current one [%ld:%ld] for P%d T%d th%d\n",
+        panic("Exiting module [%ld], but this is not the current one [%ld:%ld] for P%02d T%02d (t%02d)\n",
               module_type,
               mod->type,
               mod->value,

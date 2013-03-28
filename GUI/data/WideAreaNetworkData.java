@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -88,7 +88,7 @@ public class WideAreaNetworkData
   *
   * @exc: Valor numérico no válido.
   */
-  public void loadData(String line) throws Exception
+  public boolean loadData(String line, int lineCount) throws Exception
   {
     int first = Data.WAN.length();
     int second = line.indexOf(",",first);
@@ -112,6 +112,8 @@ public class WideAreaNetworkData
     first = second + 1;
     second = line.indexOf("}",first);
     setCommunication(Tools.blanks(line.substring(first,second)));
+
+    return true;
   }
 
   /*

@@ -69,7 +69,7 @@ extern void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_file);
 extern char* CONFIGURATION_Get_Configuration_FileName(void);
 
 extern void CONFIGURATION_New_Definition(struct t_queue *definition_fields,
-                                  struct t_entry *definition_structure);
+                                         struct t_entry *definition_structure);
 
 extern void CONFIGURATION_Load_Communications_Configuration(void);
 extern void CONFIGURATION_Load_Scheduler_Configuration(void);

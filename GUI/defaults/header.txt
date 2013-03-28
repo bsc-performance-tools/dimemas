@@ -55,20 +55,28 @@ SDDFA
 	char    "simulated_architecture"[];
 	// "number_of_processors" "Number of processors within node"
 	int     "number_of_processors";
-	// "number_of_input_links" "Number of input links in node"
-	int     "number_of_input_links";
-	// "number_of_output_links" "Number of output links in node"
-	int     "number_of_output_links";
-	// "startup_on_local_communication" "Communication startup"
-	double  "startup_on_local_communication";
-	// "startup_on_remote_communication" "Communication startup"
-	double  "startup_on_remote_communication";
 	// "speed_ratio_instrumented_vs_simulated" "Relative processor speed"
 	double  "speed_ratio_instrumented_vs_simulated";
-	// "memory_bandwidth" "Data tranfer rate into node in Mbytes/s"
+	// "intra_node_startup" "Startup time (s) of intra-node communications model"
+	double  "intra_node_startup";
+	// "intra_node_bandwidth" "Bandwidth (MB/s) of intra-node communications model"
 	// "0 means instantaneous communication"
-	double  "memory_bandwidth";
-	double "external_net_startup";
+	double  "intra_node_bandwidth";
+	// "intra_node_buses" "Number of buses of intra-node communications model"
+	// "0 means infinite buses"
+	int     "intra_node_buses";
+	// "intra_node_input_links" "Input links of intra-node communications model"
+	int     "intra_node_input_links";
+	// "intra_node_input_links" "Output links of intra-node communications model"
+	int     "intra_node_output_links";
+	// "intra_node_startup" "Startup time (s) of inter-node communications model"
+	double  "inter_node_startup";
+	// "inter_node_input_links" "Input links of inter-node communications model"
+	int     "inter_node_input_links";
+	// "inter_node_output_links" "Input links of intra-node communications model"
+	int     "inter_node_output_links";
+	// "wan_startup" "Startup time (s) of inter-machines (WAN) communications model"
+	double  "wan_startup";
 };;
 
 

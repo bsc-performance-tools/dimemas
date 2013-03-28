@@ -70,12 +70,12 @@ public class EnvironmentWindow extends GUIWindow
   // private JComboBox cb_architecture = createComboBox();
 
   private JTextField tf_architecture = new JTextField(10);
-  private JTextField tf_number = createTextField(2);
-  private JTextField tf_name = new JTextField(22);
-  private JTextField tf_id = new JTextField(22);
-  private JTextField tf_nodes = new JTextField(22);
-  private JTextField tf_bandwidth = new JTextField(22);
-  private JTextField tf_buses = new JTextField(22);
+  private JTextField tf_number       = createTextField(2);
+  private JTextField tf_name         = new JTextField(18);
+  private JTextField tf_id           = new JTextField(18);
+  private JTextField tf_nodes        = new JTextField(18);
+  private JTextField tf_bandwidth    = new JTextField(18);
+  private JTextField tf_buses        = new JTextField(18);
 
   /*
   * El método createComboBox genera un selector Swing que tiene como opciones
@@ -236,15 +236,15 @@ public class EnvironmentWindow extends GUIWindow
 
       if(reply)
       {
-        // data.processor.verifyArchitecture(oldId,String.valueOf(index), data.machineDB,data.environment,index);
-        data.processor.verifyArchitecture(oldId,String.valueOf(index), data.environment,index);
+        // data.nodes_information.verifyArchitecture(oldId,String.valueOf(index), data.machineDB,data.environment,index);
+        data.nodes_information.verifyArchitecture(oldId,String.valueOf(index), data.environment,index);
       }
       else
       {
         data.environment.machine[index].setId(tf_id.getText());
         data.environment.machine[index].setName(tf_name.getText());
-        // data.processor.verifyArchitecture(oldId,tf_id.getText(),data.machineDB, data.environment,index);
-        data.processor.verifyArchitecture(oldId,tf_id.getText(), data.environment,index);
+        // data.nodes_information.verifyArchitecture(oldId,tf_id.getText(),data.machineDB, data.environment,index);
+        data.nodes_information.verifyArchitecture(oldId,tf_id.getText(), data.environment,index);
       }
 
       if(ct.isSelected())
@@ -272,6 +272,17 @@ public class EnvironmentWindow extends GUIWindow
   {
     super(d);
 
+    JPanel interNodeCommunications = new JPanel();
+    interNodeCommunications.setLayout(new GridLayout(0,2,5,5));
+    // interNodeCommunications.setLayout(new GridLayout(0,2));
+    JPanel collectivesModel        = new JPanel();
+    collectivesModel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+
+
+    interNodeCommunications.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+                                                                      "Inter-node communications parameters"));
+
+
     // Propiedades de la ventana.
     setTitle("Environment information");
 
@@ -281,16 +292,34 @@ public class EnvironmentWindow extends GUIWindow
     // Añadiendo los componentes a la ventana.
     drawLine(new Component[] {new JLabel("Machine number"),b_left,tf_number,b_right});
     drawLine(new Component[] {new JLabel("Machine name"),tf_name});
-    drawLine(new Component[] {new JLabel("Machine id"),tf_id});
+    // drawLine(new Component[] {new JLabel("Machine id"),tf_id});
     // drawLine(new Component[] {new JLabel("Simulated architecture"),cb_architecture,tf_architecture});
-    drawLine(new Component[] {new JLabel("Number of nodes"),tf_nodes});
-    drawLine(new Component[] {new JLabel("Network bandwidth [MByte/s]"),tf_bandwidth});
-    drawLine(new Component[] {new JLabel("Number of buses"),tf_buses});
-    drawLine(new Component[] {new JLabel("Communication group model"),log,lin,ct});
+
+    interNodeCommunications.add(new JLabel("Number of nodes"));
+    interNodeCommunications.add(tf_nodes);
+    interNodeCommunications.add(new JLabel("Network bandwidth [MByte/s]"));
+    interNodeCommunications.add(tf_bandwidth);
+    interNodeCommunications.add(new JLabel("Number of buses"));
+    interNodeCommunications.add(tf_buses);
+
+    interNodeCommunications.add(new JLabel("Collective communications model"));
+    collectivesModel.add(log);
+    collectivesModel.add(lin);
+    collectivesModel.add(ct);
+
+    interNodeCommunications.add(collectivesModel);
+
+    super.addComponent(interNodeCommunications);
+
+    // drawLine(new Component[] {new JLabel("Number of nodes"),tf_nodes});
+    // drawLine(new Component[] {new JLabel("Network bandwidth [MByte/s]"),tf_bandwidth});
+    // drawLine(new Component[] {new JLabel("Number of buses"),tf_buses});
+    // drawLine(new Component[] {new JLabel("Communication group model"),log,lin,ct});
+
     drawButtons(new Component[] {b_save,b_same,b_close},25,5);
 
     // Más propiedades de ventana.
-    setBounds(25,150,getWidth()+25,getHeight());
+    setBounds(25,150,getWidth()+20,getHeight());
     pack();
     setVisible(true);
   }
@@ -391,17 +420,17 @@ public class EnvironmentWindow extends GUIWindow
 
         try
         {
-          data.processor.setNumberOfNodes(totalNodes);
+          data.nodes_information.setNumberOfNodes(totalNodes);
 
-          if(data.processor.node == null)
+          if(data.nodes_information.node == null)
           {
-            // data.processor.createNodes(data.environment,data.machineDB.machine);
-            data.processor.createNodes(data.environment);
+            // data.nodes_information.createNodes(data.environment,data.machineDB.machine);
+            data.nodes_information.createNodes(data.environment);
           }
           else
           {
-            // data.processor.changeAtNodes(data.environment,data.machineDB.machine);
-            data.processor.changeAtNodes(data.environment);
+            // data.nodes_information.changeAtNodes(data.environment,data.machineDB.machine);
+            data.nodes_information.changeAtNodes(data.environment);
           }
         } catch(Exception exc) {}
 

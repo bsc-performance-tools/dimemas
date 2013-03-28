@@ -109,6 +109,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Simulator/io/dimemas_io.h" />
+		<Unit filename="Simulator/lib_extern_model/extern_comm_model.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/lib_extern_model/extern_comm_model.h" />
 		<Unit filename="Simulator/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -132,6 +136,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Simulator/model/machine.h" />
+		<Unit filename="Simulator/model/mem_links.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/model/mem_links.h" />
 		<Unit filename="Simulator/model/memory.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -170,7 +178,6 @@
 		<Unit filename="Simulator/prv_utils/paraver_pcf.h" />
 		<Unit filename="Simulator/prv_utils/paraver_records.cc" />
 		<Unit filename="Simulator/prv_utils/paraver_records.h" />
-		<Unit filename="Simulator/prv_utils/pcf_defines.h" />
 		<Unit filename="Simulator/sched/SCH_boost.c">
 			<Option compilerVar="CC" />
 		</Unit>

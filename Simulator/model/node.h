@@ -43,7 +43,7 @@ struct t_node
   int               nodeid;
   struct t_queue    Cpus;
   t_nano            relative;
-  t_nano            bandwith;
+  t_nano            bandwidth;
   t_nano            local_startup;
   t_nano            remote_startup;
   t_nano            external_net_startup; /* Latencia de la xarxa externa */
@@ -55,18 +55,22 @@ struct t_node
 
   /* Network links */
   t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
-
   struct t_queue    free_in_links;        /* Free input links */
   struct t_queue    free_out_links;       /* Free output link */
   struct t_queue    busy_in_links;        /* Busy input links */
   struct t_queue    busy_out_links;       /* Busy output links */
-
-  /* Memory links */
-  struct t_queue    free_mem_links;
-  struct t_queue    busy_mem_links;
-
   struct t_queue    th_for_in;            /* Awaiting for input link */
   struct t_queue    th_for_out;           /* Awaiting for output link */
+
+  /* Memory buses */
+  int               max_memory_messages;
+  int               cur_memory_messages;
+  struct t_queue    wait_for_mem_bus;
+  struct t_queue    threads_in_memory;
+
+  int               in_mem_links;
+  int               out_mem_links;
+
   struct t_queue    wait_outlink_port;
   struct t_queue    wait_inlink_port;
   struct t_queue    wait_in_copy_segment;
@@ -86,12 +90,15 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
 void NODE_Fill_Node_Fields(struct t_node *node,
                            char          *node_name,
                            int            no_processors,
+                           int            no_mem_buses,
+                           int            no_mem_in_link,
+                           int            no_mem_out_links,
                            int            no_input,
                            int            no_output,
                            double         local_startup,
                            double         remote_startup,
                            double         relative,
-                           double         local_bandwith,
+                           double         local_bandwidth,
                            double         external_net_startup,
                            double         local_port_startup,
                            double         remote_port_startup,
