@@ -128,11 +128,11 @@ public class NodeWindow extends GUIWindow
     tf_intra_node_bandwidth.setText(data.nodes_information.node[index].getIntraNodeBandwidth());
     tf_intra_node_buses.setText(data.nodes_information.node[index].getIntraNodeBuses());
     tf_intra_node_in_links.setText(data.nodes_information.node[index].getIntraNodeInLinks());
-    tf_inter_node_out_links.setText(data.nodes_information.node[index].getIntraNodeOutLinks());
+    tf_intra_node_out_links.setText(data.nodes_information.node[index].getIntraNodeOutLinks());
 
     tf_inter_node_startup.setText(data.nodes_information.node[index].getInterNodeStartup());
     tf_inter_node_in_links.setText(data.nodes_information.node[index].getInterNodeInLinks());
-    tf_intra_node_out_links.setText(data.nodes_information.node[index].getInterNodeOutLinks());
+    tf_inter_node_out_links.setText(data.nodes_information.node[index].getInterNodeOutLinks());
 
     tf_wan_startup.setText(data.nodes_information.node[index].getWANStartup());
   }

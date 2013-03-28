@@ -10,6 +10,9 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/03/28 - jgonzale - GUI - 5.0.0
+	BUGFIX		Wrong order in 'Node information' labels
+
 2013/03/28 - jgonzale - Simulator
 	BUGFIX:		Correction in scape characters of 'DimemasUpdateCFG'
 

@@ -310,8 +310,8 @@ public class ConfigurationOptionsWindow extends GUIWindow
 
       if(data.environment.getNumberOfMachines() == 0)
       {
-        Tools.showInformationMessage("No machines defined. Using a single machine environment with default values\n"+
-                                     "Check the parameters in 'Environment Information' window");
+        Tools.showInformationMessage("No machines defined. Using a single machine environment with default values.\n"+
+                                     "To tune the number of machines use the 'WAN information' dialog.");
         data.wan.initialValues();
         data.environment.setNumberOfMachines(1);
         try
