@@ -5,7 +5,7 @@
 extern "C"
 {
 #endif
-  
+
 #include <stdio.h>
 
 #if !defined( LONG64_T )
@@ -94,7 +94,7 @@ typedef int MPIType;
 #define MPI_CALLER_LINE_EV     80000000
 #define MPI_CALLER_LINE_EV_END 89999999
 
-#define LAPI_EV                30000000 
+#define LAPI_EV                30000000
 
 #define CLUSTER_ID_EV          90000001
 #define CLUSTER_ID_LABEL       "Cluster ID"
@@ -116,12 +116,12 @@ typedef enum
   MPI_IRECV_VAL,                          /* 004 */
   MPI_WAIT_VAL,                           /* 005 */
   MPI_WAITALL_VAL,                        /* 006 */
- 
+
   MPI_BCAST_VAL,                          /* 007 */
   MPI_BARRIER_VAL,                        /* 008 */
   MPI_REDUCE_VAL,                         /* 009 */
   MPI_ALLREDUCE_VAL,                      /* 010 */
-  
+
   MPI_ALLTOALL_VAL,                       /* 011 */
   MPI_ALLTOALLV_VAL,                      /* 012 */
   MPI_GATHER_VAL,                         /* 013 */
@@ -142,9 +142,9 @@ typedef enum
   MPI_COMM_REMOTE_SIZE_VAL,               /* 027 */
   MPI_COMM_TEST_INTER_VAL,                /* 028 */
   MPI_COMM_COMPARE_VAL,                   /* 029 */
-               
+
   MPI_SCAN_VAL,                           /* 030 */
-  
+
   MPI_INIT_VAL,                           /* 031 */
   MPI_FINALIZE_VAL,                       /* 032 */
   MPI_BSEND_VAL,                          /* 033 */
@@ -173,12 +173,12 @@ typedef enum
   MPI_GRAPHDIMS_GET_VAL,                  /* 056 */
   MPI_GRAPH_NEIGHBORS_COUNT_VAL,          /* 057 */
   MPI_TOPO_TEST_VAL,                      /* 058 */
- 
+
   MPI_WAITANY_VAL,                        /* 059 */
   MPI_WAITSOME_VAL,                       /* 060 */
-  MPI_PROBE_VAL,                          /* 061 */  
+  MPI_PROBE_VAL,                          /* 061 */
   MPI_IPROBE_VAL,                         /* 062 */
-  
+
   MPI_WIN_CREATE_VAL,                     /* 063 */
   MPI_WIN_FREE_VAL,                       /* 064 */
   MPI_PUT_VAL,                            /* 065 */
@@ -195,11 +195,11 @@ typedef enum
 
   MPI_PACK_VAL,                           /* 076 */
   MPI_UNPACK_VAL,                         /* 077 */
-  
+
   MPI_OP_CREATE_VAL,                      /* 078 */
   MPI_OP_FREE_VAL,                        /* 079 */
   MPI_REDUCE_SCATTER_VAL,                 /* 080 */
-  
+
   MPI_ATTR_DELETE_VAL,                    /* 081 */
   MPI_ATTR_GET_VAL,                       /* 082 */
   MPI_ATTR_PUT_VAL,                       /* 083 */
@@ -311,7 +311,7 @@ typedef enum
 /* 017 */   BLOCK_ID_MPI_Attr_delete,
 /* 018 */   BLOCK_ID_MPI_Attr_get,
 /* 019 */   BLOCK_ID_MPI_Attr_put,
-  
+
 /* 020 */   BLOCK_ID_MPI_Comm_create,
 /* 021 */   BLOCK_ID_MPI_Comm_dup,
 /* 022 */   BLOCK_ID_MPI_Comm_free,
@@ -425,7 +425,7 @@ typedef enum
 /* 129 */   BLOCK_ID_IO_Read,
 /* 130 */   BLOCK_ID_IO_Write,
 /* 131 */   BLOCK_ID_IO,
-  
+
 /* 132 */   BLOCK_ID_MPI_Win_create,
 /* 133 */   BLOCK_ID_MPI_Win_free,
 /* 134 */   BLOCK_ID_MPI_Put,
@@ -452,7 +452,7 @@ typedef enum
 /* 153 */   BLOCK_ID_LAPI_Amsend,
 /* 154 */   BLOCK_ID_LAPI_Rmw,
 /* 155 */   BLOCK_ID_LAPI_Waitcntr
-  
+
 }DimBlock;
 
 /* ==========================================================================
@@ -490,12 +490,12 @@ typedef enum
 #define  MPI_IRECV_LABEL                   "MPI_Irecv"
 #define  MPI_WAIT_LABEL                    "MPI_Wait"
 #define  MPI_WAITALL_LABEL                 "MPI_Waitall"
-  
+
 #define  MPI_BCAST_LABEL                   "MPI_Bcast"
 #define  MPI_BARRIER_LABEL                 "MPI_Barrier"
 #define  MPI_REDUCE_LABEL                  "MPI_Reduce"
 #define  MPI_ALLREDUCE_LABEL               "MPI_Allreduce"
-  
+
 #define  MPI_ALLTOALL_LABEL                "MPI_Alltoall"
 #define  MPI_ALLTOALLV_LABEL               "MPI_Alltoallv"
 #define  MPI_GATHER_LABEL                  "MPI_Gather"
@@ -506,37 +506,37 @@ typedef enum
 #define  MPI_ALLGATHERV_LABEL              "MPI_Allgatherv"
 
 #define  MPI_SCAN_LABEL                    "MPI_Scan"
-  
-#define  MPI_INIT_LABEL                    "MPI_Init"                      
-#define  MPI_FINALIZE_LABEL                "MPI_Finalize"       
-#define  MPI_BSEND_LABEL                   "MPI_Bsend"         
-#define  MPI_SSEND_LABEL                   "MPI_Ssend"         
-#define  MPI_RSEND_LABEL                   "MPI_Rsend"         
-#define  MPI_IBSEND_LABEL                  "MPI_Ibsend"        
-#define  MPI_ISSEND_LABEL                  "MPI_Issend"        
-#define  MPI_IRSEND_LABEL                  "MPI_Irsend"        
-#define  MPI_TEST_LABEL                    "MPI_Test"          
-#define  MPI_CANCEL_LABEL                  "MPI_Cancel"        
-#define  MPI_SENDRECV_LABEL                "MPI_Sendrecv"      
-#define  MPI_SENDRECV_REPLACE_LABEL        "MPI_Sendrecv_replace"  
-#define  MPI_CART_CREATE_LABEL             "MPI_Cart_create"             
-#define  MPI_CART_SHIFT_LABEL              "MPI_Cart_shift"              
-#define  MPI_CART_COORDS_LABEL             "MPI_Cart_coords"              
-#define  MPI_CART_GET_LABEL                "MPI_Cart_get"              
-#define  MPI_CART_MAP_LABEL                "MPI_Cart_map"              
-#define  MPI_CART_RANK_LABEL               "MPI_Cart_rank"              
-#define  MPI_CART_SUB_LABEL                "MPI_Cart_sub"              
-#define  MPI_CARTDIM_GET_LABEL             "MPI_Cartdim_get"              
-#define  MPI_DIMS_CREATE_LABEL             "MPI_Dims_create"             
-#define  MPI_GRAPH_GET_LABEL               "MPI_Graph_get"            
-#define  MPI_GRAPH_MAP_LABEL               "MPI_Graph_map"            
-#define  MPI_GRAPH_CREATE_LABEL            "MPI_Graph_create"            
-#define  MPI_GRAPH_NEIGHBORS_LABEL         "MPI_Graph_neighbors"            
-#define  MPI_GRAPHDIMS_GET_LABEL           "MPI_Graphdims_get"            
+
+#define  MPI_INIT_LABEL                    "MPI_Init"
+#define  MPI_FINALIZE_LABEL                "MPI_Finalize"
+#define  MPI_BSEND_LABEL                   "MPI_Bsend"
+#define  MPI_SSEND_LABEL                   "MPI_Ssend"
+#define  MPI_RSEND_LABEL                   "MPI_Rsend"
+#define  MPI_IBSEND_LABEL                  "MPI_Ibsend"
+#define  MPI_ISSEND_LABEL                  "MPI_Issend"
+#define  MPI_IRSEND_LABEL                  "MPI_Irsend"
+#define  MPI_TEST_LABEL                    "MPI_Test"
+#define  MPI_CANCEL_LABEL                  "MPI_Cancel"
+#define  MPI_SENDRECV_LABEL                "MPI_Sendrecv"
+#define  MPI_SENDRECV_REPLACE_LABEL        "MPI_Sendrecv_replace"
+#define  MPI_CART_CREATE_LABEL             "MPI_Cart_create"
+#define  MPI_CART_SHIFT_LABEL              "MPI_Cart_shift"
+#define  MPI_CART_COORDS_LABEL             "MPI_Cart_coords"
+#define  MPI_CART_GET_LABEL                "MPI_Cart_get"
+#define  MPI_CART_MAP_LABEL                "MPI_Cart_map"
+#define  MPI_CART_RANK_LABEL               "MPI_Cart_rank"
+#define  MPI_CART_SUB_LABEL                "MPI_Cart_sub"
+#define  MPI_CARTDIM_GET_LABEL             "MPI_Cartdim_get"
+#define  MPI_DIMS_CREATE_LABEL             "MPI_Dims_create"
+#define  MPI_GRAPH_GET_LABEL               "MPI_Graph_get"
+#define  MPI_GRAPH_MAP_LABEL               "MPI_Graph_map"
+#define  MPI_GRAPH_CREATE_LABEL            "MPI_Graph_create"
+#define  MPI_GRAPH_NEIGHBORS_LABEL         "MPI_Graph_neighbors"
+#define  MPI_GRAPHDIMS_GET_LABEL           "MPI_Graphdims_get"
 #define  MPI_GRAPH_NEIGHBORS_COUNT_LABEL   "MPI_Graph_neighbors_count"
 #define  MPI_WAITANY_LABEL                 "MPI_Waitany"
 #define  MPI_TOPO_TEST_LABEL               "MPI_Topo_test"
-#define  MPI_WAITSOME_LABEL                "MPI_Waitsome"               
+#define  MPI_WAITSOME_LABEL                "MPI_Waitsome"
 #define  MPI_PROBE_LABEL                   "MPI_Probe"
 #define  MPI_IPROBE_LABEL                  "MPI_Iprobe"
 
@@ -556,27 +556,27 @@ typedef enum
 
 #define  MPI_PACK_LABEL                    "MPI_Pack"
 #define  MPI_UNPACK_LABEL                  "MPI_Unpack"
-  
+
 #define  MPI_OP_CREATE_LABEL               "MPI_Op_create"
 #define  MPI_OP_FREE_LABEL                 "MPI_Op_free"
 #define  MPI_REDUCE_SCATTER_LABEL          "MPI_Reduce_scatter"
-  
+
 #define  MPI_ATTR_DELETE_LABEL             "MPI_Attr_delete"
 #define  MPI_ATTR_GET_LABEL                "MPI_Attr_get"
 #define  MPI_ATTR_PUT_LABEL                "MPI_Attr_put"
-  
-#define  MPI_COMM_RANK_LABEL               "MPI_Comm_rank"     
-#define  MPI_COMM_SIZE_LABEL               "MPI_Comm_size"               
-#define  MPI_COMM_CREATE_LABEL             "MPI_Comm_create"             
-#define  MPI_COMM_DUP_LABEL                "MPI_Comm_dup"                
-#define  MPI_COMM_SPLIT_LABEL              "MPI_Comm_split"              
-#define  MPI_COMM_GROUP_LABEL              "MPI_Comm_group"              
-#define  MPI_COMM_FREE_LABEL               "MPI_Comm_free"              
-#define  MPI_COMM_REMOTE_GROUP_LABEL       "MPI_Comm_remote_group"              
-#define  MPI_COMM_REMOTE_SIZE_LABEL        "MPI_Comm_remote_size"              
-#define  MPI_COMM_TEST_INTER_LABEL         "MPI_Comm_test_inter"              
+
+#define  MPI_COMM_RANK_LABEL               "MPI_Comm_rank"
+#define  MPI_COMM_SIZE_LABEL               "MPI_Comm_size"
+#define  MPI_COMM_CREATE_LABEL             "MPI_Comm_create"
+#define  MPI_COMM_DUP_LABEL                "MPI_Comm_dup"
+#define  MPI_COMM_SPLIT_LABEL              "MPI_Comm_split"
+#define  MPI_COMM_GROUP_LABEL              "MPI_Comm_group"
+#define  MPI_COMM_FREE_LABEL               "MPI_Comm_free"
+#define  MPI_COMM_REMOTE_GROUP_LABEL       "MPI_Comm_remote_group"
+#define  MPI_COMM_REMOTE_SIZE_LABEL        "MPI_Comm_remote_size"
+#define  MPI_COMM_TEST_INTER_LABEL         "MPI_Comm_test_inter"
 #define  MPI_COMM_COMPARE_LABEL            "MPI_Comm_compare"
-               
+
 #define  MPI_GROUP_DIFFERENCE_LABEL        "MPI_Group_difference"
 #define  MPI_GROUP_EXCL_LABEL              "MPI_Group_excl"
 #define  MPI_GROUP_FREE_LABEL              "MPI_Group_free"
@@ -589,7 +589,7 @@ typedef enum
 #define  MPI_GROUP_TRANSLATE_RANKS_LABEL   "MPI_Group_translate_ranks"
 #define  MPI_GROUP_UNION_LABEL             "MPI_Group_union"
 #define  MPI_GROUP_COMPARE_LABEL           "MPI_Group_compare"
-  
+
 #define  MPI_INTERCOMM_CREATE_LABEL        "MPI_Intercomm_create"
 #define  MPI_INTERCOMM_MERGE_LABEL         "MPI_Intercomm_merge"
 #define  MPI_KEYVAL_FREE_LABEL             "MPI_Keyval_free"

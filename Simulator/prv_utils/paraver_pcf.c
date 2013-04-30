@@ -62,6 +62,7 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
 
 static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert);
 
+static t_boolean PCF_write_header_and_states(FILE* output_pcf);
 /* JGG: La generación de los colores asociados a los estados debería ser más
  * dinámica...
  * HABRÁ QUE REVISARLO */
@@ -156,9 +157,10 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
                                    FILE* output_pcf,
                                    FILE* pcf_insert)
 {
-  char*   line  = NULL;
-  size_t  current_line_length = 0;
-  ssize_t bytes_read;
+  t_boolean DefaultPCFHeadPrinted = FALSE;
+  char*     line  = NULL;
+  size_t    current_line_length = 0, i;
+  ssize_t   bytes_read;
 
   while ( (bytes_read = getline(&line, &current_line_length, input_pcf)) != -1)
   {
@@ -193,7 +195,52 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
       pcf_insert = NULL;
     }
 
-    fprintf(output_pcf, "%s", line);
+    if (DefaultPCFHeadPrinted)
+    {
+      fprintf(output_pcf, "%s", line);
+    }
+    else
+    {
+      if (strcmp(line, "EVENT_TYPE\n") == 0)
+      {
+
+        PCF_write_header_and_states(output_pcf);
+
+        if ( pcf_insert != NULL )
+        {
+          char ch;
+
+          while(!feof(pcf_insert))
+          {
+            ch = fgetc(pcf_insert);
+
+            if(ferror(pcf_insert))
+            {
+              die("Error reading source cfg file to be included: %s\n",
+                  strerror(errno));
+            }
+
+            if(!feof(pcf_insert))
+            {
+              fputc(ch, output_pcf);
+            }
+
+            if(ferror(output_pcf))
+            {
+                printf("Error writing destination file when including the cfg file\n");
+                exit(1);
+            }
+          }
+          fprintf(output_pcf, "\n\n");
+
+          IO_fclose(pcf_insert);
+        }
+
+        fprintf(output_pcf, "%s", line);
+        DefaultPCFHeadPrinted = TRUE;
+      }
+    }
+
     free(line);
     line = NULL;
   }
@@ -204,7 +251,8 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
          strerror(errno));
   }
 
-  /* Copy the PCF insert supplied if it wasn't before */
+
+  /* Copy the PCF insert supplied if it wasn't before
   if (pcf_insert != NULL)
   {
     char ch;
@@ -235,6 +283,7 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
     IO_fclose(pcf_insert);
     pcf_insert = NULL;
   }
+  */
 
   IO_fclose(output_pcf);
 
@@ -246,13 +295,13 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
   int i;
   struct t_Ptask *ptask;
 
-  /* JGG: Escritura de la cabecera del PCF, estatica*/
+  /* JGG: Escritura de la cabecera del PCF, estatica
   for (i = 0; i < PCF_HEAD_LINES; i++)
   {
     fprintf(output_pcf,"%s\n",pcf_head[i]);
   }
 
-  /* JGG: Parte dinámica referente a los estados */
+  /* JGG: Parte dinámica referente a los estados
   fprintf(output_pcf, "STATES\n");
   for ( i = 0; i < PRV_STATE_COUNT; i++)
   {
@@ -264,7 +313,7 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
     );
   }
 
-  /* Dimemas private states */
+  /* Dimemas private states
   for ( i = 0; i < DIMEMAS_STATE_COUNT; i++)
   {
     fprintf(
@@ -288,7 +337,7 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
     );
   }
 
-  /* Dimemas private states */
+  /* Dimemas private states
   for ( i = 0; i < DIMEMAS_STATE_COUNT; i++)
   {
     fprintf(
@@ -302,6 +351,9 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
   }
 
   fprintf(output_pcf, "\n");
+  */
+
+  PCF_write_header_and_states(output_pcf);
 
   /* JGG: Escritura de la parte central estática */
   for(i = 0; i < PCF_MIDDLE_LINES; i++)
@@ -460,5 +512,75 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
 
   // chmod (pcf_name, 0600);
   // free(pcf_name);
+  return TRUE;
+}
+
+static t_boolean PCF_write_header_and_states(FILE* output_pcf)
+{
+  size_t i;
+
+  /* JGG: Escritura de la cabecera del PCF, estatica*/
+  for (i = 0; i < PCF_HEAD_LINES; i++)
+  {
+    fprintf(output_pcf,"%s\n",pcf_head[i]);
+  }
+
+  /* JGG: Parte dinámica referente a los estados */
+  fprintf(output_pcf, "STATES\n");
+  for ( i = 0; i < PRV_STATE_COUNT; i++)
+  {
+    fprintf(
+      output_pcf,
+      "%d\t%s\n",
+      i,
+      ParaverDefaultPalette[i].name
+    );
+  }
+
+  /* Dimemas private states */
+  for ( i = 0; i < DIMEMAS_STATE_COUNT; i++)
+  {
+    fprintf(
+      output_pcf,
+      "%d\t%s\n",
+      i + PRV_STATE_COUNT,
+      DimemasDefaultPalette[i].name
+    );
+  }
+
+  fprintf(output_pcf, "\nSTATES_COLOR\n");
+  for ( i = 0; i < PRV_STATE_COUNT; i++)
+  {
+    fprintf(
+      output_pcf,
+      "%d\t{%d,%d,%d}\n",
+      i,
+      ParaverDefaultPalette[i].RGB[0],
+      ParaverDefaultPalette[i].RGB[1],
+      ParaverDefaultPalette[i].RGB[2]
+    );
+  }
+
+  /* Dimemas private states */
+  for ( i = 0; i < DIMEMAS_STATE_COUNT; i++)
+  {
+    fprintf(
+      output_pcf,
+      "%d\t{%d,%d,%d}\n",
+      i + PRV_STATE_COUNT,
+      DimemasDefaultPalette[i].RGB[0],
+      DimemasDefaultPalette[i].RGB[1],
+      DimemasDefaultPalette[i].RGB[2]
+    );
+  }
+
+  fprintf(output_pcf, "\n");
+
+  if(ferror(output_pcf))
+  {
+      printf("Error writing destination file when including the cfg file\n");
+      exit(1);
+  }
+
   return TRUE;
 }

@@ -39,6 +39,7 @@
 
 #include <list.h>
 
+#include "sddf_records.h"
 #include "configuration.h"
 #include "check.h"
 #include "dimemas_io.h"
@@ -89,14 +90,15 @@ static FILE *random_conf_file     = NULL;
 /*
  * Private function definitions
  */
-void new_wan_info  (struct t_queue *q, struct t_entry* en);
-void new_env_info  (struct t_queue *q, struct t_entry* en);
-void new_node_info (struct t_queue *q, struct t_entry* en);
-void new_map_info  (struct t_queue *q, struct t_entry* en);
-void new_conf_files(struct t_queue *q, struct t_entry* en);
-void new_mod_info  (struct t_queue *q, struct t_entry* en);
-void new_fs_params (struct t_queue *q, struct t_entry* en);
-void new_d_conn    (struct t_queue *q, struct t_entry* en);
+void new_wan_info      (struct t_queue *q, struct t_entry* en);
+void new_env_info      (struct t_queue *q, struct t_entry* en);
+void new_node_info     (struct t_queue *q, struct t_entry* en);
+void new_OLD_node_info (struct t_queue *q, struct t_entry* en);
+void new_map_info      (struct t_queue *q, struct t_entry* en);
+void new_conf_files    (struct t_queue *q, struct t_entry* en);
+void new_mod_info      (struct t_queue *q, struct t_entry* en);
+void new_fs_params     (struct t_queue *q, struct t_entry* en);
+void new_d_conn        (struct t_queue *q, struct t_entry* en);
 
 
 /*****************************************************************************
@@ -800,6 +802,13 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
   double            local_memory_startup,
                     remote_memory_startup;
 
+
+  /* (2013/04/29): v4 CFG parsing. Should be erased as soon as possible */
+  if (count_queue(q) == SDDFA_2C_OLD_FIELD_COUNT)
+  {
+    return new_OLD_node_info(q, en);
+  }
+
   /*
    * Machine id
    */
@@ -1266,6 +1275,403 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
                                  remote_port_startup,
                                  local_memory_startup,
                                  remote_memory_startup);
+  return;
+}
+
+/*
+ * (2013/04/29) Old declaration of a node, using default values for the
+ * memory contention parameters. Should be erased as soon as possible
+ */
+void new_OLD_node_info (struct t_queue *q, struct t_entry* en)
+{
+  struct t_field   *f;
+  struct t_element *el;
+  struct t_machine *machine;
+
+  int               machine_id;
+  int               node_id;
+  char             *node_name;
+  int               no_processors;
+  int               no_input,
+                    no_output;
+  double            local_startup,
+                    remote_startup;
+  double            relative;
+  double            local_bandwith;
+  double            external_net_startup;
+  double            local_port_startup,
+                    remote_port_startup;
+  double            local_memory_startup,
+                    remote_memory_startup;
+
+  /*
+   * Machine id
+   */
+  f  = (struct t_field *) head_queue (q);
+  el = (struct t_element *) head_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Machine identifier cannot be negative (%d)\n",
+                      f->value.dec);
+    return;
+  }
+  machine_id = f->value.dec;
+
+  if (!SIMULATOR_machine_exists(machine_id))
+  {
+    near_line();
+    die("Machine id %d does not exist when defining new node\n",
+                     machine_id);
+    return;
+  }
+
+  /*
+   * Node id
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+  node_id = f->value.dec;
+
+  if (!SIMULATOR_node_exists(node_id))
+  {
+    near_line();
+    die("Node id %d does not belong to any of the created machines\n",
+                     machine_id);
+    return;
+  }
+
+  /*
+   * Node name
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  node_name = strdup(f->value.string);
+
+  /*
+   * Number of processors
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec <= 0)
+  {
+    near_line ();
+    die ("Invalid number of processors (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+  no_processors = f->value.dec;
+
+  /*
+   * Input links
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Invalid number of input links (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+  no_input = f->value.dec;
+
+  /*
+   * Output links
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.dec < 0)
+  {
+    near_line ();
+    die ("Invalid number of output links (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+  no_output = f->value.dec;
+
+  if ((no_input == 0) && (no_output == 0))
+  {
+    near_line ();
+    die ("Invalid number of half duplex  links (%d) for node %d\n",
+                      f->value.dec,
+                      node_id);
+    return;
+  }
+
+  /*
+   * Local startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.real < 0)
+  {
+    near_line ();
+    die ("Invalid startup on local communication (%le) for node %d\n",
+                      f->value.real,
+                      node_id);
+    return;
+  }
+  local_startup = f->value.real * 1e9;
+
+  /*
+   * Remote startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.real < 0)
+  {
+    near_line ();
+    die ("Invalid startup on remote communication (%le) for node %d\n",
+                      f->value.real,
+                      node_id);
+    return;
+  }
+  remote_startup = f->value.real * 1e9;
+
+  /*
+   * CPU ratio
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.real < 0)
+  {
+    near_line ();
+    die ("Invalid relative processor speed (%le) for node %d\n",
+                      f->value.real,
+                      node_id);
+    return;
+  }
+  relative = f->value.real;
+
+  /*
+   * Internal network bandwidth
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.real < 0)
+  {
+    near_line ();
+    die ("Invalid memory bandwidth (%le) for node %d\n",
+                      f->value.real,
+                      node_id);
+    return;
+  }
+  local_bandwith = f->value.real;
+
+  /*
+   * Remote network startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (f->tipo != el->type)
+  {
+    BAD_TYPES(f->tipo, el->type);
+  }
+
+  if (f->value.real < 0)
+  {
+    near_line ();
+    die ("Invalid external net startup (%le) for node %d\n",
+                      f->value.real,
+                      node_id);
+    return;
+  }
+  external_net_startup = f->value.real * 1e9;
+
+  /*
+   * Local port startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (el != NULL)
+  {
+    if (f->tipo != el->type)
+    {
+      BAD_TYPES(f->tipo, el->type);
+    }
+
+    if (f->value.real < 0)
+    {
+      near_line ();
+      die ("Invalid local port startup (%le) for node %d\n",
+                        f->value.real,
+                        node_id);
+      return;
+    }
+    local_port_startup = f->value.real * 1e9;
+  }
+  else
+  {
+    local_port_startup = 0.0;
+  }
+
+  /*
+   * Remote port startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (el != NULL)
+  {
+    if (f->tipo != el->type)
+    {
+      BAD_TYPES(f->tipo, el->type);
+    }
+
+    if (f->value.real < 0)
+    {
+      near_line ();
+      die ("Invalid remote port startup (%le) for node %d\n",
+                        f->value.real,
+                        node_id);
+      return;
+    }
+    remote_port_startup = f->value.real * 1e9;
+  }
+  else
+  {
+    remote_port_startup = 0.0;
+  }
+
+  /*
+   * Local memory startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (el != NULL)
+  {
+    if (f->tipo != el->type)
+    {
+      BAD_TYPES(f->tipo, el->type);
+    }
+
+    if (f->value.real < 0)
+    {
+      near_line ();
+      die ("Invalid local memory startup (%le) for node %d\n",
+                        f->value.real,
+                        node_id);
+      return;
+    }
+    local_memory_startup = f->value.real * 1e9;
+  }
+  else
+  {
+    local_memory_startup = 0.0;
+  }
+
+  /*
+   * Remote memory startup
+   */
+  f  = (struct t_field *) next_queue (q);
+  el = (struct t_element *) next_queue (en->types);
+
+  if (el != NULL)
+  {
+    if (f->tipo != el->type)
+    {
+      BAD_TYPES(f->tipo, el->type);
+    }
+
+    if (f->value.real < 0)
+    {
+      near_line ();
+      die ("Invalid remote memory startup (%le) for node %d\n",
+                        f->value.real,
+                        node_id);
+      return;
+    }
+    remote_memory_startup = f->value.real * 1e9;
+  }
+  else
+  {
+    remote_memory_startup = 0.0;
+  }
+
+  SIMULATOR_set_node_definition (node_id,
+                                 node_name,
+                                 no_processors,
+                                 no_processors, // mem_buses = processors
+                                 1,             // 1 mem_in_link
+                                 0,             // 0 mem_out_link (half-duplex link)
+                                 no_input,
+                                 no_output,
+                                 local_startup,
+                                 remote_startup,
+                                 relative,
+                                 local_bandwith,
+                                 external_net_startup,
+                                 local_port_startup,
+                                 remote_port_startup,
+                                 local_memory_startup,
+                                 remote_memory_startup);
+
   return;
 }
 

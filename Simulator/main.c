@@ -174,7 +174,7 @@ struct t_queue *CP_nodes = &CP_NODES;
 
 t_boolean NEW_MODIFICATIONS = FALSE;
 
-int  RD_SYNC_message_size;   /* Minimum message size to use Rendez-vous
+long long int  RD_SYNC_message_size;   /* Minimum message size to use Rendez-vous
                               * <0 = Asynchronous unless specified: */
 int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
                               * in the trace? */
@@ -258,7 +258,7 @@ help_message(char *tname)
 }
 
 static dimemas_timer read_timer(char *c);
-static int read_size(char *c);
+static long long int read_size(char *c);
 
 
 void parse_arguments(int argc, char *argv[])
@@ -494,38 +494,45 @@ static dimemas_timer read_timer(char *c)
   return (tmp_timer);
 }
 
-static int read_size(char *c)
+static long long int read_size(char *c)
 {
-  int i, mida_tmp, mida;
+  int i;
+  long long int mida_tmp, mida;
   char unitats;
 
   /* Un int es massa petit si les unitats son > kb */
 
-  i = sscanf (c, "%d%c", &mida_tmp,&unitats);
-  if (i==0)
+  i = sscanf (c, "%lld%c", &mida_tmp, &unitats);
+  if (i == 0)
   {
     fprintf(stderr,"Incorrect minimum message size to use Rendez vous!\n");
     exit(1);
   }
   else if (i==1)
-    mida=mida_tmp; /* La mida es en bytes */
+  {
+    mida = mida_tmp; /* La mida es en bytes */
+  }
   else /* S'ha indicat les unitats */
   {
     switch (unitats)
     {
       case 'k': /* La mida es en Kb */
+      case 'K':
         mida=mida_tmp<<10;
         break;
 
       case 'm': /* La mida es en Mb */
+      case 'M':
         mida=mida_tmp<<20;
         break;
 
       case 'g': /* La mida es en Gb */
+      case 'G':
         mida=mida_tmp<<30;
         break;
 
       case 'b':
+      case 'B':
       default: /* La mida es en bytes */
         mida=mida_tmp;
         break;

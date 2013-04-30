@@ -79,6 +79,20 @@
 #define SDDFA_2C_17A "local_memory_startup"
 #define SDDFA_2C_18A "remote_memory_startup"
 
+/* (2013/04/29): Old Record 2: Node information to keep compatibility with v4
+   CFG files. Should be removed as soon as possible */
+#define SDDFA_2C_OLD_FIELD_COUNT 11
+#define SDDFA_2C_OLD_1A  "machine_id"
+#define SDDFA_2C_OLD_2A  "node_id"
+#define SDDFA_2C_OLD_3A  "simulated_architecture"
+#define SDDFA_2C_OLD_4A  "number_of_processors"
+#define SDDFA_2C_OLD_5A  "number_of_input_links"
+#define SDDFA_2C_OLD_6A  "number_of_output_links"
+#define SDDFA_2C_OLD_7A  "startup_on_local_communication"
+#define SDDFA_2C_OLD_8A  "startup_on_remote_communication"
+#define SDDFA_2C_OLD_9A  "speed_ratio_instrumented_vs_simulated"
+#define SDDFA_2C_OLD_10A "memory_bandwidth"
+#define SDDFA_2C_OLD_11A "external_net_startup"
 
 /* Record 3 */
 #define SDDFA_3C_NAME "mapping information"

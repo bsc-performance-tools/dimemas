@@ -77,7 +77,7 @@ void COMMUNIC_wait(struct t_thread *thread);
 void COMMUNIC_block_after_busy_wait(struct t_thread *thread);
 
 /* It is used also in 'memory' and 'ports' */
-void transferencia(int size,
+void transferencia(long long int size,
                    t_boolean remote,
                    struct t_thread *thread,
                    struct t_dedicated_connection *connection,

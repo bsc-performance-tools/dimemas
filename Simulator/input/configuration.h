@@ -60,16 +60,16 @@ typedef enum { WAN_INFORMATION = 0,
 #define DED_CONNECTION   7
 
 
-extern void CONFIGURATION_Init(char *configuration_filename);
+extern void  CONFIGURATION_Init(char *configuration_filename);
 
-extern void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_file);
+extern void  CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_file);
 
-extern void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_file);
+extern void  CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_file);
 
 extern char* CONFIGURATION_Get_Configuration_FileName(void);
 
-extern void CONFIGURATION_New_Definition(struct t_queue *definition_fields,
-                                         struct t_entry *definition_structure);
+extern void  CONFIGURATION_New_Definition(struct t_queue *definition_fields,
+                                          struct t_entry *definition_structure);
 
 extern void CONFIGURATION_Load_Communications_Configuration(void);
 extern void CONFIGURATION_Load_Scheduler_Configuration(void);

@@ -159,6 +159,83 @@ void ReadArgs(int argc, char *argv[])
   return;
 }
 
+void CopyRowFile(string InputTraceName, string OutputTraceName)
+{
+  string InputROWName, OutputROWName;
+  FILE* InputROW = NULL, *OutputROW = NULL;
+
+  string::size_type SubstrPosition;
+  string ChoppedFileName;
+
+  char*   line  = NULL;
+  size_t  current_line_length = 0;
+
+  ssize_t bytes_read;
+
+  cout << "COPYING ROW FILE" << endl;
+
+  SubstrPosition = InputTraceName.rfind(".prv");
+
+  if (SubstrPosition == string::npos)
+  {
+    ChoppedFileName = InputTraceName;
+  }
+  else
+  {
+    ChoppedFileName = InputTraceName.substr(0, SubstrPosition);
+  }
+
+  InputROWName = ChoppedFileName+".row";
+
+  if ( (InputROW = fopen(InputROWName.c_str(), "r")) == NULL)
+  {
+    cout << "-> No input trace ROW file found" << endl;
+    InputROW = NULL;
+  }
+
+  /* Generate the output PCF name */
+  SubstrPosition = OutputTraceName.rfind(".dim");
+
+  if (SubstrPosition == string::npos)
+  {
+    ChoppedFileName = OutputTraceName;
+  }
+  else
+  {
+    ChoppedFileName = OutputTraceName.substr(0, SubstrPosition);
+  }
+  OutputROWName = ChoppedFileName+".row";
+
+  if ( OutputROWName.compare(InputROWName) == 0)
+  {
+    cout << "-> Input and ouput ROW files have the same name. Please use it in your simulations" << endl;
+    return;
+  }
+
+  if ( (OutputROW = fopen(OutputROWName.c_str(), "w")) == NULL)
+  {
+    cout << "-> Unable to open output ROW file" <<  strerror(errno) << endl;
+    return;
+  }
+
+  while ( (bytes_read = getline(&line, &current_line_length, InputROW)) != -1)
+  {
+    fprintf(OutputROW, "%s", line);
+    free(line);
+    line = NULL;
+  }
+
+  if (!feof(InputROW))
+  {
+    cout << "   * Error reading input ROW file: " << strerror(errno) << endl;
+    return;
+  }
+
+  fclose(InputROW);
+  fclose(OutputROW);
+  return;
+}
+
 int main(int argc, char *argv[])
 {
   ParaverTraceTranslator *Translator;
@@ -214,6 +291,8 @@ int main(int argc, char *argv[])
   PCFGenerator = new PCFGeneration(PrvTraceName, TrfTraceName);
 
   PCFGenerator->GeneratePCF(string(""));
+
+  CopyRowFile(PrvTraceName, TrfTraceName);
 
   exit (EXIT_SUCCESS);
 }

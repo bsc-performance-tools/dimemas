@@ -10,6 +10,18 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/04/30 - jgonzale - prv2dim - 5.1.0
+	FEATURES:	The translator also copies the '.row' file if available.
+
+2013/04/29 - jgonzale - Simulator - 5.1.0
+	FEATURES:	Added back support for v4 CFG files. Simulator sets 
+				mem_buses = # processors and 1 half duplex intra-node link
+				when using v4 configuration files.
+
+	CHANGES:	When copying the output PCF, all information befor the event
+				types are embedded, using the Dimemas default states
+				
+
 2013/03/28 - jgonzale - GUI - 5.0.0
 	BUGFIX		Wrong order in 'Node information' labels
 

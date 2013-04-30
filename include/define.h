@@ -236,7 +236,7 @@
 #define CONNECTION_LINK 4
 
 /* Five communication types */
-#define MEMORY_COMMUNICATION_TYPE       0
+#define MEMORY_COMMUNICATION_TYPE      0
 #define INTERNAL_NETWORK_COM_TYPE      1
 #define EXTERNAL_NETWORK_COM_TYPE      2
 #define DEDICATED_CONNECTION_COM_TYPE  3

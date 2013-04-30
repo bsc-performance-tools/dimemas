@@ -315,7 +315,7 @@ struct t_compute
 
 struct t_send
 {
-  int                 mess_size;    /* Size of message */
+  long long int       mess_size;    /* Size of message */
   int                 dest;         /* Taskid of partner (receiver) */
   int                 dest_thread;  /* Thread_id of partner (receiver) */
   int                 mess_tag;     /* Message tag */
@@ -335,12 +335,12 @@ struct t_send
 
 struct t_recv
 {
-  int ori;         /* Taskid of partner(sender) */
-  int ori_thread;  /* Thread_id of partner(sender) */
-  int mess_tag;    /* Message tag */
-  int mess_size;   /* Size of message */
-  int communic_id; /* Communicator id */
-  int comm_type;   /* Communication type */
+  int           ori;         /* Taskid of partner(sender) */
+  int           ori_thread;  /* Thread_id of partner(sender) */
+  int           mess_tag;    /* Message tag */
+  long long int mess_size;   /* Size of message */
+  int           communic_id; /* Communicator id */
+  int           comm_type;   /* Communication type */
 
   struct t_thread *sender;
   dimemas_timer    logical_recv;
@@ -451,12 +451,12 @@ struct t_mem
 
 struct t_global_op
 {
-  int glop_id;     /* Global operation identificator */
-  int comm_id;     /* Communicator identificator */
-  int root_rank;   /* Identificator of root task */
-  int root_thid;   /* Identificator of thread root task */
-  int bytes_send;  /* Number of bytes send */
-  int bytes_recvd; /* Number of bytes received */
+  int           glop_id;     /* Global operation identificator */
+  int           comm_id;     /* Communicator identificator */
+  int           root_rank;   /* Identificator of root task */
+  int           root_thid;   /* Identificator of thread root task */
+  long long int bytes_send;  /* Number of bytes send */
+  long long int bytes_recvd; /* Number of bytes received */
 };
 
 struct t_mpi_io

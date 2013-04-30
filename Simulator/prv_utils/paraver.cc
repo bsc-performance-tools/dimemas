@@ -138,6 +138,8 @@ void NewCommunication(int cpu_s, int ptask_s, int task_s, int thread_s,
 
 void GenerateParaverHeader(FILE* ParaverTraceFile);
 
+bool CopyParaverRow(const char* output_trace_name);
+
 
 /*
  * Class to collapse the Paraver events generated at the same timestamp
@@ -1142,4 +1144,81 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
   }
 
   fprintf(ParaverTraceFile, "%s", Header.str().c_str());
+}
+
+bool CopyParaverRow(const char* output_trace_name)
+{
+  struct t_Ptask* ptask;
+
+  FILE *input_row_file, *output_row_file;
+  char *input_row_name, *output_row_name;
+
+  char*     line  = NULL;
+  size_t    current_line_length = 0;
+  ssize_t   bytes_read;
+
+  /* The ROW would be a copy of the first trace ROW, if exists! */
+  ptask  = (struct t_Ptask *) head_queue(&Ptask_queue);
+
+  input_row_name = strdup(ptask->tracefile);
+
+  if (input_row_name == NULL)
+  {
+    return true;
+  }
+  else
+  {
+    strncpy(&input_row_name[strlen(input_row_name)-3],"row", 3);
+
+    /*
+    printf("PCF to be copied = %s\n",
+           input_pcf_name);
+    */
+
+    if ( ( input_row_file = IO_fopen(input_row_name, "r")) == NULL)
+    {
+      warning ("Unable to open input ROW file (%s): %s\n",
+               input_row_name,
+               IO_get_error());
+
+      return false;
+    }
+  }
+
+  /* Generate the output PCF name */
+  output_row_name = strdup(output_trace_name);
+
+  if (strcmp(&output_row_name[strlen(output_trace_name)-4],".prv") != 0)
+  {
+    warning ("Wrong extension in output Paraver trace. ROW file would be named wrong\n");
+  }
+
+  strcpy(&output_row_name[strlen(output_trace_name)-4],".row");
+
+  if ( (output_row_file = IO_fopen(output_row_name, "w")) == NULL)
+  {
+    warning ("Unable to open output ROW file (%s): %s\n",
+             output_row_name,
+             IO_get_error());
+
+    return false;
+  }
+
+  while ( (bytes_read = getline(&line, &current_line_length, input_row_file)) != -1)
+  {
+    fprintf(output_row_file, "%s", line);
+    free(line);
+    line = NULL;
+  }
+
+  if (!feof(input_row_file))
+  {
+    die ("Error reading input ROW: %s\n",
+         strerror(errno));
+  }
+
+  fclose(input_row_file);
+  fclose(output_row_file);
+
+  return true;
 }

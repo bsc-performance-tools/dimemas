@@ -77,14 +77,15 @@ extern int      max_task_id;
 /*
  * Private functions
  */
-static void check_wan_info_definition  (char *c, struct t_queue *q);
-static void check_env_info_definition  (char *c, struct t_queue *q);
-static void check_node_info_definition (char *c, struct t_queue *q);
-static void check_mapping_definition   (char *c, struct t_queue *q);
-static void check_conf_files_definition (char *c, struct t_queue *q);
-static void check_mod_info_definition  (char *c, struct t_queue *q);
-static void check_fs_params_definition (char *c, struct t_queue *q);
-static void check_ded_conn_definition  (char *c, struct t_queue *q);
+static void check_wan_info_definition      (char *c, struct t_queue *q);
+static void check_env_info_definition      (char *c, struct t_queue *q);
+static void check_node_info_definition     (char *c, struct t_queue *q);
+static void check_OLD_node_info_definition (char *c, struct t_queue *q);
+static void check_mapping_definition       (char *c, struct t_queue *q);
+static void check_conf_files_definition    (char *c, struct t_queue *q);
+static void check_mod_info_definition      (char *c, struct t_queue *q);
+static void check_fs_params_definition     (char *c, struct t_queue *q);
+static void check_ded_conn_definition      (char *c, struct t_queue *q);
 
 void near_line()
 {
@@ -580,6 +581,21 @@ void check_node_info_definition (char *c, struct t_queue *q)
     return;
   }
 
+  if (count_queue(q) == SDDFA_2C_OLD_FIELD_COUNT)
+  {
+    warning("\n");
+    warning("*************************** INFORMATION ********************************\n");
+    warning("Old configuration file used (no intra node contention available). This\n");
+    warning("simulation will use default values (intra node buses = # of processors\n");
+    warning("and 1 half-duplex link per task).\n");
+    warning("\n");
+    warning("Please update the configuration file using 'DimemasUpdateCFG'\n");
+    warning("************************************************************************\n");
+    warning("\n");
+
+    return check_OLD_node_info_definition (c, q);
+  }
+
   if (count_queue(q) != SDDFA_2C_FIELD_COUNT)
   {
     warning ("Wrong number of fields in #2\n");
@@ -817,6 +833,141 @@ void check_node_info_definition (char *c, struct t_queue *q)
       Invalid_type (15, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
     }
   }
+}
+
+void check_OLD_node_info_definition (char *c, struct t_queue *q)
+{
+  struct t_element *el;
+
+  el = (struct t_element *) head_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_1A) != 0)
+  {
+    Invalid_attribute (1, 2, c, el->i3->i1, SDDFA_2C_OLD_1A);
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (1, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_2A) != 0)
+  {
+    Invalid_attribute (2, 2, c, el->i3->i1, SDDFA_2C_OLD_2A);
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (2, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_3A) != 0)
+  {
+    Invalid_attribute (3, 2, c, el->i3->i1, SDDFA_2C_OLD_3A);
+
+  }
+  if ( (el->type != TYPE_CHAR) || (el->i3->dimension != 1) )
+  {
+    Invalid_type (3, el->i3->i1, 2, c, el->type, TYPE_CHAR, el->i3->dimension, 1);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_4A) != 0)
+  {
+    Invalid_attribute (4, 2, c, el->i3->i1, SDDFA_2C_OLD_4A);
+
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (4, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_5A) != 0)
+  {
+    Invalid_attribute (5, 2, c, el->i3->i1, SDDFA_2C_OLD_5A);
+
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (5, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_6A) != 0)
+  {
+    Invalid_attribute (6, 2, c, el->i3->i1, SDDFA_2C_OLD_6A);
+
+  }
+  if ( (el->type != TYPE_INTEGER) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (6, el->i3->i1, 2, c, el->type, TYPE_INTEGER, el->i3->dimension, 0);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_7A) != 0)
+  {
+    Invalid_attribute (7, 2, c, el->i3->i1, SDDFA_2C_OLD_7A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (7, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_8A) != 0)
+  {
+    Invalid_attribute (8, 2, c, el->i3->i1, SDDFA_2C_OLD_8A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (8, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_9A) != 0)
+  {
+    Invalid_attribute (9, 2, c, el->i3->i1, SDDFA_2C_OLD_9A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (9, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_10A) != 0)
+  {
+    Invalid_attribute (10, 2, c, el->i3->i1, SDDFA_2C_OLD_10A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (10, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+  }
+
+  el = (struct t_element *) next_queue (q);
+  if (strcmp (el->i3->i1, SDDFA_2C_OLD_11A) != 0)
+  {
+    Invalid_attribute (11, 2, c, el->i3->i1, SDDFA_2C_OLD_11A);
+
+  }
+  if ( (el->type != TYPE_DOUBLE) || (el->i3->dimension != 0) )
+  {
+    Invalid_type (11, el->i3->i1, 2, c, el->type, TYPE_DOUBLE, el->i3->dimension, 0);
+
+  }
+
+  return;
 }
 
 void check_mapping_definition (char *c, struct t_queue *q)

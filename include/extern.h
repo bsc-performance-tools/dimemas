@@ -136,8 +136,8 @@ extern char    *fichero_random;
 
 extern int      greatest_cpuid;
 
-extern int  RD_SYNC_message_size;
-extern int  RD_SYNC_use_trace_sync;
+extern long long int  RD_SYNC_message_size;
+extern int            RD_SYNC_use_trace_sync;
 
 /* Data copy latency global variables. Defined in 'communic.c' */
 

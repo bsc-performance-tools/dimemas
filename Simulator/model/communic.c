@@ -535,7 +535,7 @@ void COMMUNIC_end()
           action = thread->action;
           mess = &(action->desc.recv);
 
-          printf ("          * Sender: T%02d  t%02d, Destination T%02d  t%02d  Tag: %02d CommId: %02d Size: %d\n",
+          printf ("          * Sender: T%02d  t%02d, Destination T%02d  t%02d  Tag: %02d CommId: %02d Size: %lld\n",
                   mess->ori,
                   mess->ori_thread,
                   thread->task->taskid,
@@ -577,7 +577,7 @@ void COMMUNIC_end()
           mess_source = &(action->desc.send);
           // mess_source = &(action->desc.recv);
 
-          printf (" Dest-: T%02d Tag: %02d CommId: %02d Size: %d\n",
+          printf (" Dest-: T%02d Tag: %02d CommId: %02d Size: %lld\n",
                   mess_source->dest,
                   mess_source->mess_tag,
                   mess_source->communic_id,
@@ -598,7 +598,7 @@ void COMMUNIC_end()
         {
           action = thread->action;
           mess_source = &(action->desc.send);
-          printf ("          -> Sender: T%02d t%02d  destT%02d  destt%02d  Tag: %02d CommId: %d Size: %d\n",
+          printf ("          -> Sender: T%02d t%02d  destT%02d  destt%02d  Tag: %02d CommId: %d Size: %lld\n",
                   thread->task->taskid,
                   thread->threadid,
                   mess_source->dest,
@@ -1589,7 +1589,7 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
     {
       PRINT_TIMER (current_time);
       printf (
-        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %d, Communicator: %d -  this is only matching - looking for the correct message\n",
+        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %lld, Communicator: %d -  this is only matching - looking for the correct message\n",
         IDENTIFIERS (thread),
         task_source->taskid,
         mess_source->mess_tag,
@@ -1695,7 +1695,7 @@ static t_boolean is_message_awaiting_dependency_synchronization (
     {
       PRINT_TIMER (current_time);
       printf (
-        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %d, Communicator: %d -  this is only matching - looking for the correct message\n",
+        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %lld, Communicator: %d -  this is only matching - looking for the correct message\n",
         IDENTIFIERS (thread),
         task_source->taskid,
         mess_source->mess_tag,
@@ -3242,7 +3242,7 @@ void COMMUNIC_send (struct t_thread *thread)
    if (debug&D_COMM)
    {
     PRINT_TIMER (current_time);
-    printf (":----calling COMMUNIC_send   P%02d T%02d (t%02d) -> T%02d Tag(%d) Size: %d  Communicator: %d \n",
+    printf (":----calling COMMUNIC_send   P%02d T%02d (t%02d) -> T%02d Tag(%d) Size: %lld  Communicator: %d \n",
             IDENTIFIERS (thread),
             mess->dest,
             mess->mess_tag,
@@ -3427,7 +3427,7 @@ void COMMUNIC_send (struct t_thread *thread)
   {
     PRINT_TIMER (current_time);
     printf (
-      ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d t%d Tag: %d Communicator: %d Size: %db\n",
+      ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d t%d Tag: %d Communicator: %d Size: %lldb\n",
       IDENTIFIERS (thread),
       action->desc.send.dest,
       action->desc.send.dest_thread,
@@ -3498,6 +3498,9 @@ void COMMUNIC_send (struct t_thread *thread)
   }
 
   comm_kind = (mess->immediate << 1) + mess->rendez_vous;
+
+  // printf("Communication kind = %d\n", comm_kind);
+
   switch (comm_kind)
   {
     /* Con RD estamos en un Send */
@@ -3620,7 +3623,7 @@ void COMMUNIC_recv (struct t_thread *thread)
   {
     PRINT_TIMER (current_time);
     printf (
-      ":----calling COMMUNIC_recv   P%02d T%02d (t%02d) <- T%02d (t%02d) Tag: %d Communicator: %d size: %d\n",
+      ":----calling COMMUNIC_recv   P%02d T%02d (t%02d) <- T%02d (t%02d) Tag: %d Communicator: %d size: %lld\n",
       IDENTIFIERS (thread),
       action->desc.recv.ori,
       action->desc.recv.ori_thread,
@@ -3774,7 +3777,7 @@ void COMMUNIC_recv (struct t_thread *thread)
     {
       PRINT_TIMER (current_time);
       printf (
-        ": COMMUNIC_recv_reached\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d size: %d (Local Message)\n",
+        ": COMMUNIC_recv_reached\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d size: %lld (Local Message)\n",
         IDENTIFIERS (thread),
         action->desc.recv.ori,
         action->desc.recv.ori_thread,
@@ -3813,7 +3816,7 @@ void COMMUNIC_recv (struct t_thread *thread)
       {
         PRINT_TIMER (current_time);
         printf (
-          ": COMMUNIC_recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d  Size1: %d  Size2: %d (Waiting)\n",
+          ": COMMUNIC_recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d  Size1: %lld  Size2: %lld (Waiting)\n",
           IDENTIFIERS (thread),
           action->desc.recv.ori,
           action->desc.recv.ori_thread,
@@ -3878,7 +3881,7 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   if (debug & D_COMM)
   {
     PRINT_TIMER (current_time);
-    printf (":-----calling COMMUNIC_Irecv   P%02d T%02d (t%02d)  <- T%02d (t%02d)  Tag: %d  Communicator: %d  Size: %d \n",
+    printf (":-----calling COMMUNIC_Irecv   P%02d T%02d (t%02d)  <- T%02d (t%02d)  Tag: %d  Communicator: %d  Size: %lld \n",
             IDENTIFIERS (thread),
             action->desc.recv.ori,
             action->desc.recv.ori_thread,
@@ -4098,7 +4101,7 @@ void COMMUNIC_wait (struct t_thread *thread)
   {
     PRINT_TIMER (current_time);
     printf (
-      ":----calling COMMUNIC_wait   P%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d size: %d\n",
+      ":----calling COMMUNIC_wait   P%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d size: %lld\n",
       IDENTIFIERS (thread),
       action->desc.recv.ori,
       action->desc.recv.ori_thread,
@@ -4467,7 +4470,7 @@ void new_global_op (int         identificator,
  * Transfer message time function
  */
 /*t_nano */
-void transferencia (int                            size,
+void transferencia (long long int                  size,
                     int                            communication_type,
                     struct t_thread               *thread,
                     struct t_dedicated_connection *connection,
@@ -4639,7 +4642,7 @@ void transferencia (int                            size,
     PRINT_TIMER (current_time);
     printf
     (
-      ": TRANSFERENCIA\tP%02d T%02d (t%02d) -> T%d Size: %db Time: %.9f Rsrc_Time: %.9f\n",
+      ": TRANSFERENCIA\tP%02d T%02d (t%02d) -> T%d Size: %lldb Time: %.9f Rsrc_Time: %.9f\n",
       IDENTIFIERS (thread),
       task_partner->taskid,
       size,

@@ -88,12 +88,12 @@
 #define CPU_BURST_REGEXP "%lf" // burst_duration
 
 #define RECORD_MSG_SEND  2
-#define MSG_SEND_REGEXP_MPI  "%d:%ld:%d:%d:%d"     // dest_task_id:msg_size:tag:comm_id:synchronism
-#define MSG_SEND_REGEXP_SS   "%d:%d:%ld:%d:%d:%d"  // dest_task_id:dest_thread_id:msg_size:tag:comm_id:synchronism
+#define MSG_SEND_REGEXP_MPI  "%d:%lld:%d:%d:%d"     // dest_task_id:msg_size:tag:comm_id:synchronism
+#define MSG_SEND_REGEXP_SS   "%d:%d:%lld:%d:%d:%d"  // dest_task_id:dest_thread_id:msg_size:tag:comm_id:synchronism
 
 #define RECORD_MSG_RECV  3
-#define MSG_RECV_REGEXP_MPI "%d:%ld:%d:%d:%d"     // src_task_id:msg_size:tag:comm_id:recv_type
-#define MSG_RECV_REGEXP_SS  "%d:%d:%ld:%d:%d:%d"  // ssrc_task_id:src_thread_id:msg_size:tag:comm_id:recv_type
+#define MSG_RECV_REGEXP_MPI "%d:%lld:%d:%d:%d"     // src_task_id:msg_size:tag:comm_id:recv_type
+#define MSG_RECV_REGEXP_SS  "%d:%d:%lld:%d:%d:%d"  // ssrc_task_id:src_thread_id:msg_size:tag:comm_id:recv_type
 
 #define RECORD_GLOBAL_OP 10
 #define GLOBAL_OP_REGEXP    "%d:%d:%d:%d:%ld:%ld" // global_op_id:comm_id:root_task:root_th:bytes_send:bytes_recv
@@ -1297,6 +1297,15 @@ off_t DAP_locate_thread_offset(app_struct *app,
         return 0;
       }
 
+      // printf("Line lenght = %d bytes_read = %d \n", line_length, bytes_read);
+
+      if (bytes_read == 1 && line[0] == '\n' || bytes_read == 0)
+      {
+        free(line);
+        continue;
+      }
+
+
       op_fields = malloc(strlen(line)+1);
 
       if (sscanf(line,
@@ -1676,7 +1685,7 @@ t_boolean DAP_read_action (app_struct       *app,
                            int               thread_id,
                            struct t_action **action)
 {
-  t_boolean result;
+  t_boolean result, empty_line;
 
   FILE *stream;
 
@@ -1693,27 +1702,43 @@ t_boolean DAP_read_action (app_struct       *app,
     return FALSE;
   }
 
-  if ( (bytes_read = getline(&line,
-                             &line_length,
-                             stream )) == -1)
+  empty_line = TRUE;
+
+  while (empty_line)
   {
-    if (feof(stream))
+    if ( (bytes_read = getline(&line,
+                               &line_length,
+                               stream )) == -1)
     {
-      /* EOF is not an error */
-      /* printf("EOF reached %d,%d, read %d bytes\n", task_id, thread_id, bytes_read); */
-      (*action) = NULL;
-      return TRUE;
+      if (feof(stream))
+      {
+        /* EOF is not an error */
+        /* printf("EOF reached %d,%d, read %d bytes\n", task_id, thread_id, bytes_read); */
+        (*action) = NULL;
+        return TRUE;
+      }
+
+      DAP_report_error("error reading operation record definitions: %s",
+                       strerror(errno));
+
+      return FALSE;
     }
 
-    DAP_report_error("error reading operation record definitions: %s",
-                     strerror(errno));
-
-    return FALSE;
+    if (bytes_read == 1 && line[0] == '\n')
+    {
+      free(line);
+      line = NULL;
+    }
+    else
+    {
+      empty_line = FALSE;
+    }
   }
 
   /*
   PRINT_TIMER (current_time);
   printf(": App %d read: %s", app->ptask_id, line);
+  fflush(stdout);
   */
 
   if ( (op_fields = malloc(bytes_read+1)) == NULL)
@@ -1891,12 +1916,12 @@ t_boolean DAP_read_CPU_burst (const char      *cpu_burst_str,
 t_boolean DAP_read_msg_send  (const char      *msg_send_str,
                               struct t_action *action)
 {
-  int      dest_task_id;
-  int      dest_thread_id;
-  long int msg_size;
-  int      tag;
-  int      comm_id;
-  int      sync;
+  int           dest_task_id;
+  int           dest_thread_id;
+  long long int msg_size;
+  int           tag;
+  int           comm_id;
+  int           sync;
 
 
   if (sscanf(msg_send_str,
@@ -1938,8 +1963,26 @@ t_boolean DAP_read_msg_send  (const char      *msg_send_str,
   action->desc.send.dest_thread = dest_thread_id;
   action->desc.send.mess_tag    = tag;
   action->desc.send.communic_id = comm_id;
+/*
+#define USE_RENDEZ_VOUS(rende, mida) \
+        (( (RD_SYNC_use_trace_sync && (rende)) || \
+         ((RD_SYNC_message_size >= 0) && ((mida)>=RD_SYNC_message_size)) \
+         ) ? 1 : 0)
+*/
+
+  /* Rendez-vous DEBUG
+  printf("rende = %d, mida = %lld, RD_SYNC_use_trace_sync = %d, RD_SYNC_message_size = %lld\n",
+         sync & ((int)1),
+         msg_size,
+         RD_SYNC_use_trace_sync,
+         RD_SYNC_message_size);
+  */
 
   action->desc.send.rendez_vous = USE_RENDEZ_VOUS((sync & ((int)1)), msg_size);
+
+  /* Rendez-vous DEBUG
+   printf("Rendez_vous= %d\n",  action->desc.send.rendez_vous);
+  */
 
   if (sync & ((int)2))
   {
@@ -1950,18 +1993,22 @@ t_boolean DAP_read_msg_send  (const char      *msg_send_str,
     action->desc.send.immediate = FALSE;
   }
 
+  /* Rendez-vous DEBUG
+  printf("Message size = %lld\n", msg_size);
+  */
+
   return TRUE;
 }
 
 t_boolean DAP_read_msg_recv  (const char      *msg_recv_str,
                               struct t_action *action)
 {
-  int      src_task_id;
-  int      src_thread_id;
-  long int msg_size;
-  int      tag;
-  int      comm_id;
-  int      rcvt;
+  int           src_task_id;
+  int           src_thread_id;
+  long long int msg_size;
+  int           tag;
+  int           comm_id;
+  int           rcvt;
 
   if (sscanf(msg_recv_str,
              MSG_RECV_REGEXP_SS,
