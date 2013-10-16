@@ -1,0 +1,698 @@
+! **********************************************************************
+!
+!		GLOBAL  FONT  LIST
+!
+! **********************************************************************
+!
+! /usr/lib/X11/fonts/75dpi
+! /usr/lib/X11/fonts/misc/fonts.alias
+!
+!*FontList: -*-helvetica-bold-r-normal--*-120-*-*-*-*-*-*
+!*FontList: -adobe-helvetica-bold-r-normal--12-120-75-75-p-70-iso8859-1
+!*FontList: heb6x13
+!*FontList:          -*-helvetica-medium-r-normal--*-100-*-*-*-*-*-*
+!*FontList: 6x13bold
+*FontList: -adobe-helvetica-bold-r-normal--14-140-75-75-p-82-iso8859-1
+
+
+! **********************************************************************
+!
+!		GLOBAL  WINDOW  COLOR
+!
+! **********************************************************************
+*Foreground: black
+*background: #c5cdfd
+!*Background: LightSkyBlue
+! CornflowerBlue
+! LightSkyBlue1 LightSkyBlue2
+! SkyBlue1 SkyBlue2
+! LightBlue1 LightBlue2
+! CadetBlue2
+! **********************************************************************
+!
+!		PUSH  BUTTONS
+!
+! **********************************************************************
+*XmPushButton.foreground  : black
+*XmPushButton.background  : CornflowerBlue
+*XmPushButton.marginLeft  : 20
+*XmPushButton.marginRight : 20
+!
+! Only Close buttons
+!
+*Close.labelString       : Close
+!*Close.foreground        : black
+!*Close.background        : LightSkyBlue
+!
+! Only Save buttons
+!
+*Save.labelString       : Save
+!*Save.foreground        : black
+!*Save.background        : LightSkyBlue
+!
+! Only Quit buttons
+!
+*Quit.labelString       : Quit
+!*Quit.foreground        : black
+!*Quit.background        : LightSkyBlue
+
+
+! **********************************************************************
+!
+!		LABEL  DIMENSION
+!
+! **********************************************************************
+*XmLabel*height:        35
+*XmLabel*width :       350
+
+!! **********************************************************************
+!!
+!		MENU  FEATURES
+!
+! **********************************************************************
+*conf_trace_label*labelString : Current config filename
+!*menu_bar*foreground      : black
+!*menu_bar*background      : LightSkyBlue
+
+! **********************************************************************
+!
+!		INITIAL  MACHINE
+!
+! **********************************************************************
+*init_machine_win*title:        Initial Machine
+*init_machine_win*iconName:     Initial Machine
+!
+!
+!		Labels
+!
+*init_machine_win*map_trace_label*labelString : Application tracefile name
+*init_machine_win*env_archi_label*labelString : Machine used to instrument
+*init_machine_win*map_nbtask_label*labelString: Number of tasks in the application
+!
+!		Buttons
+!
+*init_machine_win*browse_button*labelString      : Browse Tracefiles
+*init_machine_win*get_info_button*labelString    : Get Trace Info
+*init_machine_win*Close*labelString              : Close Initial
+
+! **********************************************************************
+!
+!		TARGET  MACHINE
+!
+! **********************************************************************
+*virt_machine_win*title:        Target Machine
+*virt_machine_win*iconName:     Target Machine
+!
+!
+!		Labels
+!
+*virt_machine_win*env_node_label*labelString : Number of nodes
+*virt_machine_win*env_net_label*labelString  : Network Type
+*virt_machine_win*env_data_label*labelString : Network BandWidth (in Mbytes/s)
+*virt_machine_win*env_mess_label*labelString : Number of Buses on Network
+*virt_machine_win*env_mach_label*labelString : Simulated Machine for all nodes
+!
+!		Buttons
+!
+*virt_machine_win*virt_machine_node_but*labelString : Node Definition
+*virt_machine_win*virt_machine_map_but*labelString  : Task Mapping
+*virt_machine_win*virt_machine_one_but*labelString  : Linear Mapping
+*virt_machine_win*Close*labelString  : Close Target
+
+! **********************************************************************
+!
+!               NODE  DEFINITIONS
+!
+! **********************************************************************
+*target_node_win*title:        Node definition
+*target_node_win*iconName:     Node definition
+!
+!
+!               Labels
+!
+*target_node_win*node_no_label*labelString     : Node Number
+*target_node_win*node_archi_label*labelString  : Simulated Machine
+*target_node_win*node_proc_label*labelString   : Number of Processors
+*target_node_win*node_input_label*labelString  : Number of input links in node
+*target_node_win*node_output_label*labelString : Number of output links in node
+! Startup on Local Communication (in secs)
+*target_node_win*node_lcomm_label*labelString  : Startup on Local Communication
+! Startup on Remote Communication (in secs)
+*target_node_win*node_rcomm_label*labelString  : Startup on Remote Communication
+! Instrumented Processor Speed vs Simulated
+*target_node_win*node_speed_label*labelString  : Processor Speed ratio
+*target_node_win*node_data_label*labelString   : Memory BandWidth (in Mbytes/s)
+!
+!               Buttons
+!
+*target_node_win*node_same_but*labelString   : Do All Same
+*target_node_win*node_undo_but*labelString   : Undo All Same
+*target_node_win*node_def_but*labelString    : Defaults
+*target_node_win*Close*labelString    : Close Window 
+
+! **********************************************************************
+!
+!               TASK  MAPPING
+!
+! **********************************************************************
+*mapping_win*title    :    Task Mapping on Nodes
+*mapping_win*iconName :    Task Mapping on Nodes
+*mapping_win*selectColor  : white
+*mapping_win.width    : 150
+*mapping_win.height   : 150
+!
+!
+
+! **********************************************************************
+!
+!               CALL  DIMEMAS
+!
+! **********************************************************************
+*option_win*title:        Call Dimemas
+*option_win*iconName:     Call Dimemas
+!
+!               Labels
+!
+*option_win*flag_load_label*labelString     : Load all trace in Memory
+*option_win*flag_break_label*labelString    : Simulation break time
+*option_win*flag_output_label*labelString   : Dimemas Results
+*option_win*flag_trace_label*labelString    : Visualization Tracefile
+*option_win*flag_filetype_label*labelString : Type of output tracefile
+*option_win*flag_initt_label*labelString    : Initial time for output
+*option_win*flag_finalt_label*labelString   : Final time for output
+!
+!               Buttons
+!
+*option_win*option_dimemas*labelString   : Dimemas
+!*option_win*option_dimemas.foreground    : black
+!*option_win*option_dimemas.background    : LightSkyBlue
+
+! **********************************************************************
+!
+!               MACHINE  DATA  BASE
+!
+! **********************************************************************
+*machine_win*title:       Machine Definition
+*machine_win*iconName:    Machine Definition
+*machine_win*selectColor  : white
+*machine_win.width    : 300
+*machine_win.height   : 150
+!
+!               Buttons
+!
+*machine_win*new_mach_button*labelString   : New Machine
+
+! **********************************************************************
+!
+!               MACHINE  FEATURES
+!
+! **********************************************************************
+*mach_win*title:       Machine Features
+*mach_win*iconName:    Machine Features
+!
+!               Labels
+!
+*mach_win*mach_archi_label*labelString  : Machine name
+*mach_win*mach_proc_label*labelString   : Number of processors
+*mach_win*mach_input_label*labelString  : Number of input links
+*mach_win*mach_output_label*labelString : Number of output links
+*mach_win*mach_lcomm_label*labelString  : Local communication Startup
+*mach_win*mach_rcomm_label*labelString  : Remote communication Startup
+*mach_win*mach_data_label*labelString   : Data transfer rate in the machine
+! Data transfer rate in the machine (in MB/s)
+
+!
+*mach_dialog_delete*title     : Deleting Machine
+*mach_dialog_delete*iconName  : Deleting Machine
+*mach_dialog_delete*messageString  : Are you sure you want to delete it?
+*mach_dialog_delete_popup*title     : Deleting Machine
+
+! **********************************************************************
+!
+!               MACHINE  CREATION
+!
+! **********************************************************************
+*creat_mach_win*title:       Creating Machine
+*creat_mach_win*iconName:    Creating Machine
+!
+!               Labels
+!
+*creat_mach_win*creat_mach_ident_label*labelString : Machine Name (identifier)
+*creat_mach_win*creat_mach_mess_label*labelString : Machine Label (comment)
+
+! **********************************************************************
+!
+!               RELATIVE  SPEED  DEFINITION
+!
+! **********************************************************************
+*speed_win*title:       Relative Speed
+*speed_win*iconName:    Relative Speed
+!
+!               Labels
+!
+*speed_win*speed_src_label*labelString  : Source Machine Name
+*speed_win*speed_dest_label*labelString : Destination Machine Name
+*speed_win*speed_rel_label*labelString  : Processor relative speed
+
+! **********************************************************************
+!
+!               NETWORK  DATA  BASE
+!
+! **********************************************************************
+*network_win*title:       Network Definition
+*network_win*iconName:    Network Definition
+*network_win*selectColor  : white
+*network_win.width    : 300
+*network_win.height   : 150
+!
+!               Buttons
+!
+*network_win*new_net_button*labelString  : New Network
+
+
+! **********************************************************************
+!
+!               NETWORK  FEATURES
+!
+! **********************************************************************
+*net_win*title:       Network Features
+*net_win*iconName:    Network Features
+!
+!               Labels
+!
+*net_win*net_name_label*labelString  : Network Type
+*net_win*net_band_label*labelString  : BandWidth (in Mbytes/s)
+*net_win*net_bus_label*labelString   : Number of Buses 
+
+!
+!
+!
+*net_dialog_delete*title     : Deleting Network
+*net_dialog_delete*iconName  : Deleting Network
+*net_dialog_delete*messageString  : Are you sure you want to delete it?
+*net_dialog_delete_popup*title     : Deleting Machine
+!
+
+! **********************************************************************
+!
+!               NETWORK  CREATION
+!
+! **********************************************************************
+*creat_net_win*title:       Creating Network
+*creat_net_win*iconName:    Creating Network
+!
+!               Labels
+!
+*creat_net_win*creat_net_ident_label*labelString  : Network Name (identifier)
+*creat_net_win*creat_net_mess_label*labelString  : Network Label (comment)
+
+! **********************************************************************
+!
+!               SYNTHETIC  PERTURBATION ANALISYS
+!
+! **********************************************************************
+*synth_win*title:        Synthetic Perturbation
+*synth_win*iconName:     Synthetic Perturbation
+*synth_win*XmLabel*height:        35
+*synth_win*XmLabel*width :       250
+!*synth_win*XmFrame*background:     LightSkyBlue
+!*synth_win*XmFrame*foreground:     black
+!
+!               Labels
+!
+*synth_win_name_param*labelString : Machine parameters
+*synth_win_pert_param*labelString : Synthetic perturbation (in %)
+!
+*critical_path*labelString     : Critical Path Analysis
+!
+*synth_win_block_label*labelString : Synthetic perturbation for blocks (in %)
+!*block_list*background : LightSkyBlue
+!*block_list*foreground : black
+!
+*win_nb_sim_label*labelString  : Simulations needed to analyze
+!
+*win_block_id*labelString      : Block Id
+!
+*synth_pert_param1*labelString : Data transfer rate between nodes
+*synth_pert_param2*labelString : Data transfer rate within nodes
+*synth_pert_param3*labelString : Local Startup for all nodes
+*synth_pert_param4*labelString : Remote Startup for all nodes
+*synth_pert_param5*labelString : Global relative processor speed 
+!
+*win_list_title0*labelString   : Blocks/Functions
+*win_list_title1*labelString   : % of Critical Path time
+*win_list_title2*labelString   : % of Total CPU time
+!
+*win_list_stats0*labelString : Identifiers
+*win_list_stats1*labelString : CPU
+*win_list_stats2*labelString : OVH
+*win_list_stats3*labelString : COM
+*win_list_stats4*labelString : SUM
+!
+!		SIMULATION  RESULTS
+!
+*win_simulation_title*title    : Simulation Results
+*win_simulation_title*iconName : Simulation Results
+*win_simulation_title*XmLabel*height:        35
+*win_simulation_title*XmLabel*width :       250
+*win_simulation_title*XmFrame*height:        45
+!*win_simulation_title*XmFrame*background:     LightSkyBlue
+!*win_simulation_title*XmFrame*foreground:     black
+!
+*win_analysis_label*labelString  : Analysis number :
+*from_label*labelString          : Source :
+*win_nb_done_label*labelString   : simulations done
+!
+*win_reference_label*labelString  : Reference execution
+*win_total_time_label*labelString : Total time
+*win_block_time_label*labelString : Block time
+*win_cpu_time_label*labelString   : CPU time
+!
+*win_result_title1*labelString : Block/Parameters
+*win_result_title2*labelString : Total time Gain
+*win_result_title3*labelString : BCK time Gain
+*win_result_title4*labelString : CPU time Gain
+!
+!		Block Names
+!
+!*win_block_name1*labelString : Pack
+!*win_block_name2*labelString : Unpack
+!*win_block_name3*labelString : User Block
+!*win_block_name4*labelString : Probe
+!
+!		Buttons
+!
+*analyze_button*labelString    : Analyze !
+*moreCPinfo_button*labelString : More Info
+
+
+! **********************************************************************
+!
+!               PRESENTATION  WINDOW 
+!
+! **********************************************************************
+!
+!
+!
+*logo_version_win*title         : CEPBA-PALLAS
+*logo_version_win*iconName      : CEPBA-PALLAS
+*logo_version_win*height:     250
+*logo_version_win*width :     400
+
+
+! **********************************************************************
+!
+!                       ADVISE WINDOW 
+!
+! **********************************************************************
+!
+!
+!
+*advise_msg_win*title         : Caution
+*advise_msg_win*iconName      : Caution
+*advise_msg_win*XmLabel*height:      35
+*advise_msg_win*XmLabel*width :     600
+!
+!
+!
+
+*advise_synth_msg1*labelString : Making analysis ... Can take some time ... Please wait ...
+!
+!
+!
+
+! **********************************************************************
+!
+!                       WARNING WINDOW
+!
+! **********************************************************************
+!
+!
+!
+*warning_msg_win*title         : Warning
+*warning_msg_win*iconName      : Warning
+*warning_msg_win*XmLabel*height:      35
+*warning_msg_win*XmLabel*width :     600
+!
+!
+!
+*warning_results_msg1*labelString : Results in standard output. Execution Completed
+*warning_results_msg2*labelString : Results in user selected file. Execution Completed
+!
+!
+!
+*warning_version_msg3*labelString : The Dimemas's GUI. Version 1.0 Developed at CEPBA-UPC, 1996
+!
+!
+!
+! **********************************************************************
+!
+!                       DATABASE WARNING WINDOW
+!
+! **********************************************************************
+!
+!
+!
+*database_msg_win*title         : Data Base Warning
+*database_msg_win*iconName      : Data Base Warning
+*database_msg_win*XmLabel*height:      35
+*database_msg_win*XmLabel*width :     600
+
+
+*database_msg1*labelString : Fixing Default Machine Data Base 
+*database_msg2*labelString : Fixing Default Network Data Base
+*database_msg3*labelString : Fixing Default Machine & Network Data Bases
+!
+!
+!
+
+! **********************************************************************
+!
+!			MESSAGE  ERRORS
+!
+! **********************************************************************
+!
+!
+!
+*error_msg_win*title         : Error
+*error_msg_win*iconName      : Error
+*error_msg_win*XmLabel*height:      35
+*error_msg_win*XmLabel*width :     600
+!
+!
+!
+
+*error_env_msg1*labelString : Initial Architecture not defined
+*error_env_msg2*labelString : Incorrect number of nodes
+*error_env_msg3*labelString : Incorrect Data Transfer Rate between nodes
+*error_env_msg4*labelString : Incorrect number of messages on network
+!
+!
+!
+*error_node_msg1*labelString : Node Machine not defined
+*error_node_msg2*labelString : Incorrect number of processors
+*error_node_msg3*labelString : Incorrect number of input links
+*error_node_msg4*labelString : Incorrect number of output links
+*error_node_msg5*labelString : Incorrect local startup
+*error_node_msg6*labelString : Incorrect remote startup
+*error_node_msg7*labelString : Incorrect Relative processor speed
+*error_node_msg8*labelString : Incorrect Data Transfer
+!
+!
+!
+*error_map_msg1*labelString : Incorrect number of tasks in application
+*error_map_msg2*labelString : Incorrect Application Tracefile name
+*error_map_msg3*labelString : Application Tracefile doesn't exist
+*error_map_msg4*labelString : Application Mapping is wrong (node Id is unknown)
+!
+!
+!
+*error_flag_msg1*labelString : Incorrect output selection
+*error_flag_msg2*labelString : Output filename not defined
+*error_flag_msg3*labelString : Incorrect trace selection
+*error_flag_msg4*labelString : Trace filename not defined
+*error_flag_msg5*labelString : Incorrect load option
+*error_flag_msg6*labelString : Incorrect break time option
+*error_flag_msg7*labelString : Incorrect type for paraver files selection
+*error_flag_msg8*labelString : Incorrect initial time for paraver file selection
+*error_flag_msg9*labelString : Incorrect final time for paraver file selection
+
+!
+!
+!
+*error_config_msg1*labelString : ERROR in Loading configuration file SDDF
+*error_config_msg2*labelString : ERROR in Saving configuration file SDDF
+*error_config_msg3*labelString : ERROR Creating configuration file in SDDF for Dimemas
+
+!
+!
+!
+*error_load_msg1*labelString : ERROR in Loading dimemas options
+*error_load_msg2*labelString : ERROR in Options File Format
+!
+!
+!
+*error_save_msg1*labelString : ERROR in Saving dimemas options
+ 
+
+!
+!
+!
+*error_initial_msg1*labelString : Some problems getting info : check your tracefile
+
+!
+!
+!
+*error_machine_msg1*labelString : ERROR in Loading Machine Data Base
+*error_machine_msg2*labelString : ERROR in Saving Machine Data Base
+*error_machine_msg3*labelString : ERROR in Saving Machine empty Data Base
+*error_machine_msg4*labelString : ERROR in machine identifier (trying to delete machine)
+
+!
+!
+!
+*error_results_msg1*labelString : Bad Format in Dimemas Results (Sum)
+*error_results_msg2*labelString : Bad Format in Dimemas Results (Min)
+*error_results_msg3*labelString : Bad Format in Dimemas Results (Max)
+*error_results_msg4*labelString : Bad Format in Dimemas Results (Average)
+*error_results_msg5*labelString : Bad Format in Dimemas Results (Task)
+*error_results_msg6*labelString : Bad Format in Dimemas Results (Final time)
+*error_results_msg7*labelString : Bad Format in Dimemas Results (Unknown)
+!
+!
+!
+*error_network_msg1*labelString : ERROR in Loading Network Data Base
+*error_network_msg2*labelString : ERROR in Saving Network Data Base
+*error_network_msg3*labelString : ERROR in Saving Network empty Data Base
+*error_network_msg4*labelString : ERROR in network identifier (trying to delete network)
+ 
+
+!
+!		Synthetic  Perturbation
+!
+*error_synth_msg1*labelString : You should select at least one parameter ...
+*error_synth_msg2*labelString : Problems executing Simulations
+*error_synth_msg3*labelString : Sorry, can\'t find the Critical Path ...
+*error_synth_msg4*labelString : Reading dimemas results ...
+*error_synth_msg5*labelString : Sorry, only one Analysis at time. Check the Mapping window please
+!*error_synth_msg6*labelString : Sorry, can't  generate graph for analyse ...
+*error_synth_msg7*labelString : Sorry, only one Analysis at time
+*error_synth_msg8*labelString : Problems with tracefile. I can't open it
+*error_synth_msg9*labelString : No more memory for malloc to load file
+*error_synth_msg10*labelString : Oops.. I found a block_end without block_begin
+*error_synth_msg11*labelString : Oops... Unknown block type
+*error_synth_msg12*labelString : Problems with Instrumentation. I can't find any block
+*error_synth_msg13*labelString : Problems with matching  #block_begin not equal #block_end
+*error_synth_msg14*labelString : Problems calling Dimemas for Initial Simulation
+*error_synth_msg15*labelString : Problems calling Dimemas for Analysis
+*error_synth_msg16*labelString : Problems allocating Memory for Critical Path
+*error_synth_msg17*labelString : Problems allocating Memory for Analysis
+*error_synth_msg18*labelString : Problems allocating Memory for S.P.A.
+
+! **********************************************************************
+!
+!                       MESSAGE  INFORMATION
+!
+! **********************************************************************
+!
+!
+!
+! *error_running_msg1*labelString : ERROR Running DIMEMAS
+! *information_msg_win*title         : Information about Execution
+*information_msg_win*title         : Information about Execution
+*information_msg_win*iconName      : Information about Execution
+*information_msg_win*XmLabel*height:     100
+*information_msg_win*XmLabel*width :     600
+!
+!
+!
+
+
+
+! **********************************************************************
+!
+!                       WINDOW FOR DIMEMAS  RESULTS
+!
+! **********************************************************************
+!
+!
+!
+*result_msg_win*title         : Dimemas Results
+*result_msg_win*iconName      : Dimemas Results
+!
+!
+!
+*head_results_label1*labelString : Task number
+*head_results_label2*labelString : CPU time
+*head_results_label3*labelString : CPU Utilization
+*head_results_label4*labelString : Blocking time
+*head_results_label5*labelString : % Blocking time
+*head_results_label6*labelString : # Sended Messages
+*head_results_label7*labelString : # Sended Bytes
+*head_results_label8*labelString : # Non Blocking Messages
+*head_results_label9*labelString : # Blocking Messages
+*head_results_label10*labelString : # Received Bytes
+!
+!
+!
+*row_totals_label1*labelString : Sum
+*row_totals_label2*labelString : Min
+*row_totals_label3*labelString : Max
+*row_totals_label4*labelString : Average
+!
+!
+!
+*final_time_result*labelString : Final time
+!
+!
+!
+
+
+*result_msg_win*result_header*labelString : Results per Process
+!
+!*result_msg_win*scroll_results*height        :     200
+!*result_msg_win*scroll_results*width         :     700
+!
+*result_msg_win*total_header*labelString : Totals
+
+!
+!*result_msg_win*scroll_totals*height        :     200
+!*result_msg_win*scroll_totals*width         :     700
+!
+
+
+! **********************************************************************
+!
+!                       WINDOW FOR CRITICAL-PATH  RESULTS
+!
+! **********************************************************************
+!
+!
+!
+*moreinfo_msg_win*title         : Dimemas Results
+*moreinfo_msg_win*iconName      : Dimemas Results
+*scroll_moreinfo*height        :     200
+*scroll_moreinfo*width         :     700
+!
+!
+!
+
+! **********************************************************************
+!
+!                       WINDOW  FOR  WAITINGS
+!
+! **********************************************************************
+!
+!
+!
+*wait_msg_win*title         : Loading Tracefile
+*wait_msg_win*iconName      : Loading Tracefile
+*wait_msg_win*XmLabel*height:      35
+*wait_msg_win*XmLabel*width :     300
+!
+!
+!
+
+*wait_label*labelString : Analysis done (in %)
+
+*pathMode:     XmPATH_MODE_RELATIVE
