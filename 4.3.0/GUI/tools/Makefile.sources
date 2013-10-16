@@ -1,0 +1,6 @@
+tools_pkgpath=$(JAVAROOT)/tools
+
+dist_noinst_JAVA += \
+  $(tools_pkgpath)/Tools.java
+
+CLEANFILES += $(tools_pkgpath)/*.class
