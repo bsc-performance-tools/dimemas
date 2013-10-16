@@ -113,12 +113,14 @@ class DimemasSDDFTraceParser: public Error
   
     bool   GetTraceLine(FILE* File, char* Line, int LineSize);
   
+    /*
     CPUBurst_t      ParseSDDFCPUBurst(char* SDDFCPUBurst);
     Send_t          ParseSDDFSend(char* SDDFSend);
     Receive_t       ParseSDDFReceive(char* SDDFReceive);
     Event_t         ParseEvent(char* SDDFEvent);
     Event_t         AppendEvents(Event_t CurrentEvent, char* SDDFEvent);
     GlobalOp_t      ParseSDDFGlobalOp(char* SDDFGlobalOp);
+    */
 };
 typedef DimemasSDDFTraceParser* DimemasSDDFTraceParser_t;
 

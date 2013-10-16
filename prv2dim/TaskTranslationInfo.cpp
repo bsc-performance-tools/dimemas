@@ -1090,6 +1090,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         if (Dimemas_NX_Recv(TemporaryFile,
                             TaskId, ThreadId,
                             PartnerTaskId,
+                            -1, /* That should be corrected eventually */
                             CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1117,7 +1118,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_BlockingSend(TemporaryFile,
                                     TaskId, ThreadId,
-                                    PartnerTaskId,
+                                    PartnerTaskId, -1, /* That should be corrected eventually */
                                     CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1145,7 +1146,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_ImmediateSend(TemporaryFile,
                                      TaskId, ThreadId,
-                                     PartnerTaskId,
+                                     PartnerTaskId, -1, /* That should be corrected eventually */
                                      CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1171,7 +1172,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_Irecv(TemporaryFile,
                              TaskId, ThreadId,
-                             PartnerTaskId,
+                             PartnerTaskId, -1, /* That should be corrected eventually */
                              CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1197,7 +1198,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
-                            PartnerTaskId,
+                            PartnerTaskId, -1, /* That should be corrected eventually */
                             CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1230,7 +1231,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
-                            PartnerTaskId,
+                            PartnerTaskId, -1, /* That should be corrected eventually */
                             CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1259,7 +1260,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_Irecv(TemporaryFile,
                              TaskId, ThreadId,
-                             PartnerTaskId,
+                             PartnerTaskId, -1, /* That should be corrected eventually */
                              CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1276,7 +1277,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_Send(TemporaryFile,
                             TaskId, ThreadId,
-                            PartnerTaskId,
+                            PartnerTaskId, -1, /* That should be corrected eventually */
                             CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1293,7 +1294,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
-                            PartnerTaskId,
+                            PartnerTaskId, -1, /* That should be corrected eventually */
                             CommId, Size, (INT64) Tag) < 0)
         {
           SetError(true);
@@ -1312,7 +1313,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 
       fprintf(
         stdout,
-        "[%03d:%02d %lld] Communication wrapped with unknown communication call (%d:%s)\n",
+        "[%03d:%02d %lu] Communication wrapped with unknown communication call (%d:%s)\n",
         CurrentComm->GetTaskId(),
         CurrentComm->GetThreadId(),
         CurrentComm->GetTimestamp(),

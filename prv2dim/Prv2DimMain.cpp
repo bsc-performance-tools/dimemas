@@ -191,9 +191,10 @@ void CopyRowFile(string InputTraceName, string OutputTraceName)
   {
     cout << "-> No input trace ROW file found" << endl;
     InputROW = NULL;
+    return;
   }
 
-  /* Generate the output PCF name */
+  /* Generate the output ROW name */
   SubstrPosition = OutputTraceName.rfind(".dim");
 
   if (SubstrPosition == string::npos)

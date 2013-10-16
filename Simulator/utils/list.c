@@ -481,7 +481,7 @@ char* query_prio_queue(struct t_queue *queue, t_priority prio)
 /*
  * Extract element from queue
  */
-void extract_from_queue(struct t_queue *queue, char * content)
+void extract_from_queue(struct t_queue *queue, char* content)
 {
   register struct t_item *tmp1, *tmp2;
 

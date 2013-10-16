@@ -46,6 +46,8 @@ using std::endl;
 #include <vector>
 using std::vector;
 
+#include <cstdio>
+
 /*****************************************************************************
  * class TaskDescription
  ****************************************************************************/
@@ -53,9 +55,10 @@ using std::vector;
 class TaskDescription
 {
   private:
-    INT32 TaskId;
-    INT32 ThreadCount;
-    INT32 Node;
+    INT32         TaskId;
+    INT32         ThreadCount;
+    INT32         Node;
+    vector<off_t> OutputOffsets;
   public:
     TaskDescription(INT32 TaskId, INT32 ThreadCount, INT32 Node = 0)
     {
@@ -66,9 +69,14 @@ class TaskDescription
     
     void Write ( ostream & os ) const;
     
-    INT32 GetTaskId(void)      { return TaskId; };
-    INT32 GetThreadCount(void) { return ThreadCount; };
-    INT32 GetNode(void)        { return Node; };
+    INT32 GetTaskId(void)             { return TaskId; };
+    INT32 GetThreadCount(void)        { return ThreadCount; };
+    INT32 GetNode(void)               { return Node; };
+    off_t GetElement(int number)      { return OutputOffsets[number]; };
+    
+    void  SetThreadCount(INT32 ThreadCount) { this->ThreadCount = ThreadCount; };
+    void  PushBackOffset(off_t elem)  { OutputOffsets.push_back(elem); };
+
     
 };
 typedef TaskDescription* TaskDescription_t;

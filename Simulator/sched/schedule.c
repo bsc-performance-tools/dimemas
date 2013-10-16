@@ -652,9 +652,9 @@ void SCHEDULER_general (int value, struct t_thread *thread)
       if (thread->doing_startup)
       {
         PARAVER_Startup (cpu->unique_number,
-                                IDENTIFIERS (thread),
-                                thread->last_paraver,
-                                current_time);
+                         IDENTIFIERS (thread),
+                         thread->last_paraver,
+                         current_time);
         new_cp_node (thread, CP_OVERHEAD);
         thread->startup_done  = TRUE;
         thread->doing_startup = FALSE;
@@ -1198,7 +1198,7 @@ SCHEDULER_info (int              value,
 void
 SCHEDULER_thread_to_ready_return(int              module,
                                  struct t_thread *thread,
-                                 t_nano          ti,
+                                 t_nano           ti,
                                  int              id)
 {
   struct t_action *action, *cur_action;

@@ -10,6 +10,15 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/10/16 - jgonzale - Simulator - 5.1.1
+	BUGFIX:		Solved a bug when locating the offsets in a trace without
+				offset information
+
+2013/10/02 - jgonzale - prv2dim | trf2dim | Other
+	CHANGES:	Merged the trf2dim and trf2trf from Vladimir. Including some
+				'common_utilities' files
+
+
 2013/04/30 - jgonzale - prv2dim - 5.1.0
 	FEATURES:	The translator also copies the '.row' file if available.
 

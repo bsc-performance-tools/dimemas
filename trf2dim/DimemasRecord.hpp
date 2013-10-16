@@ -36,6 +36,7 @@
 
 #include <basic_types.h>
 #include <EventEncoding.h>
+#include <define.h>
 
 #include <vector>
 using std::vector;
@@ -45,11 +46,11 @@ using std::ostream;
 
 #include <cstdio>
 
-#define DIMEMAS_CPUBURST 1
-#define DIMEMAS_SEND     2
-#define DIMEMAS_RECEIVE  3
-#define DIMEMAS_GLOBALOP 10
-#define DIMEMAS_EVENT    20
+#define DIM_TRACE_CPUBURST 1
+#define DIM_TRACE_SEND     2
+#define DIM_TRACE_RECEIVE  3
+#define DIM_TRACE_GLOBALOP 10
+#define DIM_TRACE_EVENT    20
 
 /*****************************************************************************
  * class ParaverRecord
@@ -69,7 +70,7 @@ class DimemasRecord
     virtual INT32 GetTaskId(void)   { return TaskId; };
     virtual INT32 GetThreadId(void) { return ThreadId; };
     
-    virtual bool ToDimemas(FILE* OutputTraceFile) {};
+    virtual bool ToDimemas(FILE* OutputTraceFile) = 0 ;
     
     virtual void Write(ostream& os) const {};
 };
@@ -114,6 +115,7 @@ class Send: public virtual DimemasRecord
 {
   private:
     INT32 DestTaskId;
+    INT32 DestThreadId;
     INT64 Size;
     INT32 Tag;
     INT32 CommunicatorId;
@@ -123,13 +125,14 @@ class Send: public virtual DimemasRecord
     Send() {};
     
     Send(INT32 TaskId, INT32 ThreadId,
-         INT32 DestTaskId,
+         INT32 DestTaskId, INT32 DestThreadId,
          INT64 Size,
          INT32 Tag,
          INT32 CommunicatorId,
          INT32 Synchronism);
 
     INT32 GetDestTaskId(void)     { return DestTaskId; };
+    INT32 GetDestThreadId(void)   { return DestThreadId; };
     INT64 GetSize(void)           { return Size; };
     INT32 GetTag(void)            { return Tag; };
     INT32 GetCommunicatorId(void) { return CommunicatorId; };
@@ -150,14 +153,15 @@ ostream& operator<< (ostream& os, const Send& Comm);
  * class Receive
  ****************************************************************************/
 
-#define RECV  0
-#define WAIT  2
-#define IRECV 1
+#define DIMEMAS_TRACE_RECV  0
+#define DIMEMAS_TRACE_WAIT  2
+#define DIMEMAS_TRACE_IRECV 1
 
 class Receive: public virtual DimemasRecord
 {
   private:
     INT32 SrcTaskId;
+    INT32 SrcThreadId;
     INT64 Size;
     INT32 Tag;
     INT32 CommunicatorId;
@@ -167,13 +171,14 @@ class Receive: public virtual DimemasRecord
     Receive() {};
     
     Receive(INT32 TaskId, INT32 ThreadId,
-            INT32 SrcTaskId,
+            INT32 SrcTaskId, INT32 SrcThreadId,
             INT64 Size,
             INT32 Tag,
             INT32 CommunicatorId,
             INT32 Type);
 
-    INT32 SrcDestTaskId(void)     { return SrcTaskId; };
+    INT32 GetSrcTaskId(void)      { return SrcTaskId; };
+    INT32 GetSrcThreadId(void)    { return SrcThreadId; };
     INT64 GetSize(void)           { return Size; };
     INT32 GetTag(void)            { return Tag; };
     INT32 GetCommunicatorId(void) { return CommunicatorId; };
@@ -289,8 +294,10 @@ class EventTypeValue
     
     bool IsMPIEvent(void)
     {
+      /* Incompatible redefinition
       #define TRUE  1
       #define FALSE !TRUE
+      */
       if (MPIEventEncoding_Is_MPIBlock(this->Type) == TRUE)
         return true;
       else

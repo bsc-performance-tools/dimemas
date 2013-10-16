@@ -352,7 +352,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
   }
   else
   {
-    if ((OffsetsLength = fprintf(DimemasTraceFile, "%lld", OffsetsOffset)) <= 0)
+    if ((OffsetsLength = fprintf(DimemasTraceFile, "%zu", OffsetsOffset)) <= 0)
     {
       SetErrorMessage("error writing header", strerror(errno));
       return false;
@@ -955,7 +955,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   {
     // JGG (12/2011): TESTS NEW TRACE
     // if (fprintf(DimemasTraceFile, ":%d,%lld", Task, OutputOffsets[Task]) < 0, )
-    if (fprintf(DimemasTraceFile, "s:%d:%lld\n", Task, OutputOffsets[Task]) < 0)
+    if (fprintf(DimemasTraceFile, "s:%d:%zu\n", Task, OutputOffsets[Task]) < 0)
     {
       SetErrorMessage("Error printing offsets line",
                       strerror(errno));

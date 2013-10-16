@@ -88,8 +88,8 @@
 #define CPU_BURST_REGEXP "%lf" // burst_duration
 
 #define RECORD_MSG_SEND  2
-#define MSG_SEND_REGEXP_MPI  "%d:%lld:%d:%d:%d"     // dest_task_id:msg_size:tag:comm_id:synchronism
-#define MSG_SEND_REGEXP_SS   "%d:%d:%lld:%d:%d:%d"  // dest_task_id:dest_thread_id:msg_size:tag:comm_id:synchronism
+#define MSG_SEND_REGEXP_MPI  "%d:%lld:%d:%d:%c"     // dest_task_id:msg_size:tag:comm_id:synchronism
+#define MSG_SEND_REGEXP_SS   "%d:%d:%lld:%d:%d:%c"  // dest_task_id:dest_thread_id:msg_size:tag:comm_id:synchronism
 
 #define RECORD_MSG_RECV  3
 #define MSG_RECV_REGEXP_MPI "%d:%lld:%d:%d:%d"     // src_task_id:msg_size:tag:comm_id:recv_type
@@ -181,6 +181,8 @@ t_boolean   DAP_init_data_access_layer (void);
 app_struct* DAP_locate_app_struct (int ptask_id);
 
 t_boolean DAP_add_ptask         (int ptask_id, char *trace_file_name, int index);
+
+t_boolean DAP_reset_app_stream_fps (app_struct *app);
 
 void      DAP_end_ptask (app_struct *app);
 
@@ -1315,13 +1317,19 @@ off_t DAP_locate_thread_offset(app_struct *app,
                  &read_thread_id,
                  op_fields) != 4)
       {
-        DAP_report_error("error accessing to an operation record when locating offsets: %s",
-                         line);
+        if (sscanf(line,
+                   NOOP_REGEXP,
+                   &read_task_id,
+                   &read_thread_id) != 2)
+        {
+          DAP_report_error("error accessing to an operation record when locating offsets: %s",
+                           line);
 
-        free(op_fields);
-        free(line);
+          free(op_fields);
+          free(line);
 
-        return 0;
+          return 0;
+        }
       }
 
       free(op_fields);
@@ -1384,13 +1392,19 @@ off_t DAP_locate_thread_offset(app_struct *app,
                &read_thread_id,
                op_fields) != 4)
     {
-      DAP_report_error("error accessing to an operation record when locating offsets: %s",
-                       line);
+      if (sscanf(line,
+                 NOOP_REGEXP,
+                 &read_task_id,
+                 &read_thread_id) != 2)
+    {
+        DAP_report_error("error accessing to an operation record when locating offsets: %s",
+                         line);
 
-      free(op_fields);
-      free(line);
+        free(op_fields);
+        free(line);
 
-      return 0;
+        return 0;
+      }
     }
 
     free(op_fields);
@@ -1916,12 +1930,12 @@ t_boolean DAP_read_CPU_burst (const char      *cpu_burst_str,
 t_boolean DAP_read_msg_send  (const char      *msg_send_str,
                               struct t_action *action)
 {
-  int           dest_task_id;
-  int           dest_thread_id;
-  long long int msg_size;
-  int           tag;
-  int           comm_id;
-  int           sync;
+  int            dest_task_id;
+  int            dest_thread_id;
+  long long int  msg_size;
+  int            tag;
+  int            comm_id;
+  char           sync;
 
 
   if (sscanf(msg_send_str,
@@ -1934,12 +1948,12 @@ t_boolean DAP_read_msg_send  (const char      *msg_send_str,
              &sync) != 6)
   {
     if (sscanf(msg_send_str,
-                   MSG_SEND_REGEXP_MPI,
-                  &dest_task_id,
-                  &msg_size,
-                  &tag,
-                  &comm_id,
-                  &sync) == 5)
+               MSG_SEND_REGEXP_MPI,
+               &dest_task_id,
+               &msg_size,
+               &tag,
+               &comm_id,
+               &sync) == 5)
     {
       /* Regular MPI message */
       dest_thread_id = -1;

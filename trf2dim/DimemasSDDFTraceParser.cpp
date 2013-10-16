@@ -192,8 +192,8 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
   char           *Buffer;
   INT32           CurrentLineLength;
   INT32           Matches;
-
-  INT32           ReadTaskId, ReadThreadId, DstTaskId, SrcTaskId, Size, Tag;
+  
+  INT32           ReadTaskId, ReadThreadId, DstTaskId, DstThreadId, SrcTaskId, SrcThreadId, Size, Tag;
   INT32           CommId, Synchronism, RecvType;
   INT64           BlockId;
   double          BurstDuration;
@@ -219,7 +219,7 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
 
       SetErrorMessage(CurrentError,
                       strerror(errno));
-      return false;
+      return NULL;
     }
 
     EffectiveFile = TraceFile;
@@ -250,41 +250,79 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
     if (ReadTaskId > TaskId)
       return NULL;
 
+    /*Vladimir - update the number of threads detected in the trace */
+    INT32 currentThreadId = ((GetApplicationsDescription()->GetTaskInfo())[TaskId])->GetThreadCount();
+    if (ReadThreadId > currentThreadId - 1)
+    {
+       ((GetApplicationsDescription()->GetTaskInfo())[TaskId])->SetThreadCount(ReadThreadId + 1);
+    }
     Record = new CPUBurst(ReadTaskId, ReadThreadId, BurstDuration);
   }
 
-  /* NX send */
+  /* NX send - double scan 8 or 7 parameters */
   Matches = sscanf(Buffer,
-                   "\"NX send\" { %d, %d, %d, %d, %d, %d, %d };;\n",
+                   "\"NX send\" { %d, %d, %d, %d, %d, %d, %d, %d };;\n",
                    &ReadTaskId, &ReadThreadId,
-                   &DstTaskId, &Size, &Tag, &CommId, &Synchronism);
-  if (Matches == 7)
+                   &DstTaskId, &DstThreadId, &Size, &Tag, &CommId, &Synchronism);
+  if (Matches == 8)
   {
     if (ReadTaskId > TaskId)
       return NULL;
-
+    
     Record = new Send(ReadTaskId, ReadThreadId,
-                      DstTaskId, Size, Tag, CommId, Synchronism);
+                      DstTaskId, DstThreadId, Size, Tag, CommId, Synchronism);
+  }
+  else
+  {
+    Matches = sscanf(Buffer,
+                     "\"NX send\" { %d, %d, %d, %d, %d, %d, %d };;\n",
+                     &ReadTaskId, &ReadThreadId,
+                     &DstTaskId, &Size, &Tag, &CommId, &Synchronism);
+    if (Matches == 7)
+    {
+      if (ReadTaskId > TaskId)
+        return NULL;
+      
+      /* -1: ANY THREAD */
+      Record = new Send(ReadTaskId, ReadThreadId,
+                        DstTaskId, -1, Size, Tag, CommId, Synchronism);
+    }
   }
 
-  /* NX recv */
+  /* NX recv - double scan, 8 or 7 parameters */
   Matches = sscanf(Buffer,
-                   "\"NX recv\" { %d, %d, %d, %d, %d, %d, %d};;\n",
+                   "\"NX recv\" { %d, %d, %d, %d, %d, %d, %d, %d};;\n",
                    &ReadTaskId, &ReadThreadId,
-                   &SrcTaskId, &Size, &Tag, &CommId, &RecvType );
-
-  if (Matches == 7)
+                   &SrcTaskId, &SrcThreadId, &Size, &Tag, &CommId, &RecvType );
+  
+  if (Matches == 8)
   {
     if (ReadTaskId < TaskId)
       return NULL;
-
+    
     Record = new Receive(ReadTaskId, ReadThreadId,
-                         SrcTaskId, Size, Tag, CommId, RecvType);
+                         SrcTaskId, SrcThreadId, Size, Tag, CommId, RecvType);
+  }
+  else
+  {
+    Matches = sscanf(Buffer,
+                     "\"NX recv\" { %d, %d, %d, %d, %d, %d, %d};;\n",
+                     &ReadTaskId, &ReadThreadId,
+                     &SrcTaskId, &Size, &Tag, &CommId, &RecvType );
+
+    if (Matches == 7)
+    {
+      if (ReadTaskId < TaskId)
+        return NULL;
+
+      Record = new Receive(ReadTaskId, ReadThreadId,
+                           SrcTaskId, -1, Size, Tag, CommId, RecvType);
+    }
   }
 
   /* block begin */
   Matches = sscanf(Buffer,
-                   "\"block begin\" { %d, %d, %lld};;\n",
+                   "\"block begin\" { %d, %d, %ld};;\n",
                    &ReadTaskId, &ReadThreadId, &BlockId );
 
   if (Matches == 3)
@@ -307,7 +345,7 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
 
   /* block end */
   Matches = sscanf(Buffer,
-                   "\"block end\" { %d, %d, %lld};;\n",
+                   "\"block end\" { %d, %d, %ld};;\n",
                    &ReadTaskId, &ReadThreadId, &BlockId );
 
   if (Matches == 3)
@@ -320,7 +358,7 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
 
   /* user event */
   Matches = sscanf(Buffer,
-                   "\"user event\" { %d, %d, %d, %lld};;\n",
+                   "\"user event\" { %d, %d, %d, %ld};;\n",
                    &ReadTaskId, &ReadThreadId, &EvtType, &EvtValue);
   if (Matches == 4)
   {
@@ -335,7 +373,7 @@ DimemasSDDFTraceParser::GetNextRecord(INT32 TaskId, INT32 ThreadId)
 
   /* global OP */
   Matches = sscanf(Buffer,
-                  "\"global OP\" { %d, %d, %d, %d, %d, %d, %lld, %lld};;\n",
+                  "\"global OP\" { %d, %d, %d, %d, %d, %d, %ld, %ld};;\n",
                   &ReadTaskId, &ReadThreadId,
                   &GlobalOpId,
                   &CommId, &RootTaskId, &RootThreadId,
@@ -811,6 +849,7 @@ bool DimemasSDDFTraceParser::GetTraceLine(FILE* File, char* Line, int LineSize)
 }
 
 
+/*
 
 CPUBurst_t
 DimemasSDDFTraceParser::ParseSDDFCPUBurst(char* SDDFCPUBurst)
@@ -842,7 +881,6 @@ DimemasSDDFTraceParser::ParseSDDFGlobalOp(char* SDDFGlobalOp)
 {
 }
 
-/*
 State_t
 DimemasSDDFTraceParser::ParseState(char* ASCIIState)
 {

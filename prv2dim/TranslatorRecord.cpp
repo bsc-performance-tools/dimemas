@@ -53,10 +53,10 @@ PartialCommunication::PartialCommunication(INT32 Type,
 {
   this->Type      = Type;
   this->Timestamp = Timestamp;
-  
+
   InitFields(SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
              DstCPU, DstAppId, DstTaskId, DstThreadId);
-  
+
   this->Size   = Size;
   this->Tag    = Tag;
   this->CommId = CommId;
@@ -70,22 +70,22 @@ PartialCommunication::PartialCommunication(INT32           Type,
   INT32  SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
   INT32  DstCPU, DstAppId, DstTaskId, DstThreadId;
   INT32  ReadedSize, ReadedTag;
-  
+
   SrcCPU      = Comm->GetSrcCPU();
   SrcAppId    = Comm->GetSrcAppId();
   SrcTaskId   = Comm->GetSrcTaskId();
   SrcThreadId = Comm->GetSrcThreadId();
-  
+
   DstCPU      = Comm->GetDstCPU();
   DstAppId    = Comm->GetDstAppId();
   DstTaskId   = Comm->GetDstTaskId();
   DstThreadId = Comm->GetDstThreadId();
-  
+
   ReadedSize  = Comm->GetSize();
   ReadedTag   = Comm->GetTag();
-  
+
   this->Type = Type;
-  
+
   switch(Type)
   {
     case LOGICAL_SEND:
@@ -108,21 +108,21 @@ PartialCommunication::PartialCommunication(INT32           Type,
 
   cout << "Main:    " << SrcCPU << ":" << SrcAppId << ":" << SrcTaskId;
   cout << ":" << SrcThreadId << endl;
-  
+
   cout << "Partner: " << DstCPU << ":" << DstAppId << ":" << DstTaskId;
   cout << ":" << DstThreadId << endl;
-  
+
   cout << "Size: " << ReadedSize << " Tag: " << ReadedTag << endl;
   */
   Timestamp = InterestingTime;
-  
+
   InitFields(SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
              DstCPU, DstAppId, DstTaskId, DstThreadId);
-  
+
   this->Size   = ReadedSize;
   this->Tag    = ReadedTag;
   this->CommId = CommId;
-  
+
 }
 
 void PartialCommunication::Write ( ostream & os ) const
@@ -147,7 +147,7 @@ void PartialCommunication::Write ( ostream & os ) const
   }
 
   os << " [";
-  
+
   os.width(3);
   os.fill('0');
   os << TaskId << ":";
@@ -155,13 +155,13 @@ void PartialCommunication::Write ( ostream & os ) const
   os.width(2);
   os.fill('0');
   os << ThreadId << "] ";
-  
+
   os << " T: " << Timestamp;
-  
+
   os << " Partner: ";
-  
+
   os << "[";
-  
+
   os.width(3);
   os.fill('0');
   os << PartnerTaskId << ":";
@@ -169,14 +169,14 @@ void PartialCommunication::Write ( ostream & os ) const
   os.width(2);
   os.fill('0');
   os << PartnerThreadId << "] ";
-  
+
   os << "Size: " << Size << " Tag: " << Tag << " CommId: " << CommId << endl;
 }
 
 void PartialCommunication::ToFile(FILE* OutputFile)
 {
   fprintf(OutputFile,
-          "%d:%llu:%d,%d:%d,%d:%d:%d\n",
+          "%d:%lu:%d,%d:%d,%d:%d:%d\n",
           Type,
           Timestamp,
           TaskId,
@@ -244,11 +244,11 @@ TranslationCommunicator::AddGlobalOp(GlobalOp_t NewGlobalOp)
     FinishedGlobalOp = false;
     PendingGlobalOp  = true;
   }
-  
+
   if (CommunicatorTasks.count(NewGlobalOp->GetTaskId()) != 1)
   {
-    char CurrentError[128]; 
-    
+    char CurrentError[128];
+
     sprintf(CurrentError,
       "Adding operation from task %02d not associated with communicator %02d",
       NewGlobalOp->GetTaskId(),
@@ -257,12 +257,12 @@ TranslationCommunicator::AddGlobalOp(GlobalOp_t NewGlobalOp)
     LastError = CurrentError;
     return false;
   }
-  
+
   /*
   if (TaskIdArrived.count(NewGlobalOp->GetTaskId()) == 1)
   {
-    char CurrentError[128]; 
-    
+    char CurrentError[128];
+
     sprintf(CurrentError,
       "Arrived two global op operations from task %02d on communicator %02d",
       NewGlobalOp->GetTaskId(),
@@ -272,7 +272,7 @@ TranslationCommunicator::AddGlobalOp(GlobalOp_t NewGlobalOp)
     return false;
   }
   */
-  
+
   TaskIdArrived.insert(NewGlobalOp->GetTaskId());
   GlobalOpsArrived.push_back(NewGlobalOp);
 
@@ -280,21 +280,21 @@ TranslationCommunicator::AddGlobalOp(GlobalOp_t NewGlobalOp)
   {
     RootTaskId = NewGlobalOp->GetTaskId();
   }
-  
+
   if (TaskIdArrived.size() == CommunicatorTasks.size())
   { /* Global Op finished!! */
     for (UINT32 i = 0; i < GlobalOpsArrived.size(); i++)
     { /* Root TaskId distribution */
       GlobalOpsArrived[i]->SetRootTaskId(RootTaskId);
     }
-    
+
     /* Clear all containers */
     GlobalOpsArrived.clear();
     TaskIdArrived.clear();
-    
+
     PendingGlobalOp  = false;
     FinishedGlobalOp = true;
   }
-  
+
   return true;
 }

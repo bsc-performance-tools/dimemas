@@ -72,6 +72,55 @@ using std::string;
 "\t// \"wan_startup\" \"Startup time (s) of inter-machines (WAN) communications model\"\n" \
 "\tdouble  \"wan_startup\";\n"
 
+/* Function 'trim' sourcode extracted from
+
+http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
+
+:D
+
+*/
+char *trim(char *str)
+{
+  size_t len = 0;
+  char *frontp = str - 1;
+  char *endp = NULL;
+
+  if( str == NULL )
+          return NULL;
+
+  if( str[0] == '\0' )
+          return str;
+
+  len = strlen(str);
+  endp = str + len;
+
+  /* Move the front and back pointers to address
+   * the first non-whitespace characters from
+   * each end.
+   */
+  while( isblank(*(++frontp)) );
+  while( isblank(*(--endp)) && endp != frontp );
+
+  if( str + len - 1 != endp )
+          *(endp + 1) = '\0';
+  else if( frontp != str &&  endp == frontp )
+          *str = '\0';
+
+  /* Shift the string so that it starts at str so
+   * that if it's dynamically allocated, we can
+   * still free it on the returned pointer.  Note
+   * the reuse of endp to mean the front of the
+   * string buffer now.
+   */
+  endp = str;
+  if( frontp != str )
+  {
+          while( *frontp ) *endp++ = *frontp++;
+          *endp = '\0';
+  }
+
+  return str;
+}
 
 /*
 #5:
@@ -86,8 +135,8 @@ bool ProcessModulesInformation(FILE  *CFGFile,
                                FILE  *CFGModifiedFile,
                                string CFGModifiedFileName)
 {
-  char*   line        = NULL;
-  size_t  line_length = 0;
+  char*   line, *line_backup = NULL;
+  size_t  line_length        = 0;
   ssize_t bytes_read;
 
   /*
@@ -117,25 +166,40 @@ bool ProcessModulesInformation(FILE  *CFGFile,
    * Id. comment
    */
   free(line);
-  line = NULL;
+  free(line_backup);
+  line        = NULL;
+  line_backup = NULL;
   if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
   {
     cerr << "Error reading CFG file: " << strerror(errno) << endl;
     exit(EXIT_FAILURE);
   }
 
-  if (strcmp(line, "\t// Module identificator number\n") == 0 ||
+  line_backup = strdup(line);
+  trim(line);
+
+
+  /*
+  if (strcmp(line, "\t// Module identificator number\n") == 0   ||
       strcmp(line, "   // Module identificator number\n") == 0)
+  */
+  if (strcmp(line, "// Module identificator number\n") == 0)
   {
     fprintf(CFGModifiedFile, "\t// Module type\n");
   }
+  /*
   else if (strcmp(line, "\t// Module type\n") == 0 ||
            strcmp(line, "   // Module type\n") == 0)
+  */
+  else if (strcmp(line, "// Module type\n") == 0)
   {
     fprintf(CFGModifiedFile, "%s", line);
     return false;
   }
+  /*
   else if (strcmp(line, "\tint     \"type\";\n") == 0)
+  */
+  else if (strcmp(line, "int     \"type\";\n") == 0)
   {
     return false;
   }
@@ -153,15 +217,23 @@ bool ProcessModulesInformation(FILE  *CFGFile,
    * Identificator
    */
   free(line);
-  line = NULL;
+  free(line_backup);
+  line        = NULL;
+  line_backup = NULL;
   if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
   {
     cerr << "Error reading CFG file: " << strerror(errno) << endl;
     exit(EXIT_FAILURE);
   }
 
+  line_backup = strdup(line);
+  trim(line);
+
+  /*
   if (strcmp(line, "\tint     \"identificator\";\n") == 0 ||
       strcmp(line, "   int     \"identificator\";\n") == 0)
+  */
+  if (strcmp(line, "int     \"identificator\";\n"))
   {
     fprintf(CFGModifiedFile, "\t// Module tpye\n");
     fprintf(CFGModifiedFile, "\tint     \"type\";\n");
@@ -179,6 +251,7 @@ bool ProcessModulesInformation(FILE  *CFGFile,
       unlink(CFGModifiedFileName.c_str());
       exit(EXIT_FAILURE);
     }
+    free(line);
     if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
     {
       cerr << "Error reading CFG file: " << strerror(errno) << endl;
@@ -186,7 +259,7 @@ bool ProcessModulesInformation(FILE  *CFGFile,
       unlink(CFGModifiedFileName.c_str());
       exit(EXIT_FAILURE);
     }
-
+    free(line);
     if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
     {
       cerr << "Error reading CFG file: " << strerror(errno) << endl;
@@ -194,6 +267,7 @@ bool ProcessModulesInformation(FILE  *CFGFile,
       unlink(CFGModifiedFileName.c_str());
       exit(EXIT_FAILURE);
     }
+    free(line);
   }
   else
   {
@@ -241,10 +315,10 @@ bool ProcessNodeInformation(FILE  *CFGFile,
                             FILE  *CFGModifiedFile,
                             string CFGModifiedFileName)
 {
-  char*   line        = NULL;
-  size_t  line_length = 0;
+  char*   line, *line_backup = NULL;
+  size_t  line_length        = 0;
   ssize_t bytes_read;
-  size_t  field_count = 0;
+  size_t  field_count        = 0;
 
   if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
   {
@@ -286,18 +360,28 @@ bool ProcessNodeInformation(FILE  *CFGFile,
   }
 
   free(line);
-  line = NULL;
+  free(line_backup);
+  line        = NULL;
+  line_backup = NULL;
   if ((bytes_read = getline(&line, &line_length, CFGFile)) == -1)
   {
     cerr << __FUNCTION__ <<  "Error reading CFG file: " << strerror(errno) << endl;
     exit(EXIT_FAILURE);
   }
 
+  line_backup = strdup(line);
+  trim(line);
+
   // "number_of_input_links" "Number of input links in node"
+  /*
   if (strcmp(line, "// \"number_of_input_links\" \"Number of input links in node\"\n") == 0 ||
       strcmp(line, "\t// \"number_of_input_links\" \"Number of input links in node\"\n") == 0)
+  */
+  if (strcmp(line, "// \"number_of_input_links\" \"Number of input links in node\"\n") == 0)
   {
     fprintf(CFGModifiedFile, "%s", NEW_NODE_INFO_RECORD_BODY);
+
+    free(line_backup);
 
     field_count = 0;
     while (field_count < 13) // 13 lines of the previous record must be erased

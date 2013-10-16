@@ -93,6 +93,7 @@ ostream& operator<< (ostream& os, const CPUBurst& Comm)
 
 Send::Send(INT32 TaskId, INT32 ThreadId,
            INT32 DestTaskId,
+           INT32 DestThreadId,
            INT64 Size,
            INT32 Tag,
            INT32 CommunicatorId,
@@ -100,6 +101,7 @@ Send::Send(INT32 TaskId, INT32 ThreadId,
 :DimemasRecord(TaskId, ThreadId)
 {
   this->DestTaskId     = DestTaskId;
+  this->DestThreadId   = DestThreadId;
   this->Size           = Size;
   this->Tag            = Tag;
   this->CommunicatorId = CommunicatorId;
@@ -128,7 +130,7 @@ bool
 Send::ToDimemas(FILE* OutputTraceFile)
 {
   if (Dimemas_NX_Generic_Send(OutputTraceFile, TaskId, ThreadId,
-                              DestTaskId, CommunicatorId, (INT32) Size,
+                              DestTaskId, DestThreadId, CommunicatorId, (INT32) Size,
                               (INT64) Tag, Synchronism) < 0)
     return false;
 
@@ -138,7 +140,7 @@ Send::ToDimemas(FILE* OutputTraceFile)
 void
 Send::Write(ostream& os) const
 {
-  os << "Send [" << TaskId << ":" << ThreadId << "] -> " << DestTaskId;
+  os << "Send [" << TaskId << ":" << ThreadId << "] -> " << DestTaskId << ":" << DestThreadId;
   os << " Size: " << Size << " Tag: " << Tag;
   os << " CommId: " << CommunicatorId << " Sync: " << Synchronism;
   
@@ -176,6 +178,7 @@ ostream& operator<< (ostream& os, const Send& SendRecord)
 
 Receive::Receive(INT32 TaskId, INT32 ThreadId,
                  INT32 SrcTaskId,
+                 INT32 SrcThreadId,
                  INT64 Size,
                  INT32 Tag,
                  INT32 CommunicatorId,
@@ -183,6 +186,7 @@ Receive::Receive(INT32 TaskId, INT32 ThreadId,
 :DimemasRecord(TaskId, ThreadId)
 {
   this->SrcTaskId      = SrcTaskId;
+  this->SrcThreadId    = SrcThreadId;
   this->Size           = Size;
   this->Tag            = Tag;
   this->CommunicatorId = CommunicatorId;
@@ -192,7 +196,7 @@ Receive::Receive(INT32 TaskId, INT32 ThreadId,
 bool
 Receive::IsReceive(void)
 {
-  if (Type == RECV)
+  if (Type == DIMEMAS_TRACE_RECV)
     return true;
   else
     return false;
@@ -201,7 +205,7 @@ Receive::IsReceive(void)
 bool
 Receive::IsImmediateReceive(void)
 {
-  if (Type == IRECV)
+  if (Type == DIMEMAS_TRACE_IRECV)
     return true;
   else
     return false;
@@ -210,7 +214,7 @@ Receive::IsImmediateReceive(void)
 bool
 Receive::IsWait(void)
 {
-  if (Type == WAIT)
+  if (Type == DIMEMAS_TRACE_WAIT)
     return true;
   else
     return false;
@@ -220,7 +224,7 @@ bool
 Receive::ToDimemas(FILE* OutputTraceFile)
 {
   if (Dimemas_NX_Generic_Recv(OutputTraceFile, TaskId, ThreadId,
-                              SrcTaskId, CommunicatorId, (INT32) Size,
+                              SrcTaskId, SrcThreadId, CommunicatorId, (INT32) Size,
                               (INT64) Tag, Type) < 0)
     return false;
   
@@ -230,19 +234,19 @@ Receive::ToDimemas(FILE* OutputTraceFile)
 void
 Receive::Write(ostream& os) const
 {
-  os << "Recv [" << TaskId << ":" << ThreadId << "] <- " << SrcTaskId;
+  os << "Recv [" << TaskId << ":" << ThreadId << "] <- " << SrcTaskId << ":" << SrcThreadId;
   os << " Size: " << Size << " Tag: " << Tag;
   os << " CommId: " << CommunicatorId << " Type: " << Type;
   
   switch (Type)
   {
-    case RECV:
+    case DIMEMAS_TRACE_RECV:
       os << " (RECV)" << endl;
       break;
-    case IRECV:
+    case DIMEMAS_TRACE_IRECV:
       os << " (IRECV)" << endl;
       break;
-    case WAIT:
+    case DIMEMAS_TRACE_WAIT:
       os << " (WAIT)" << endl;
       break;
     default:

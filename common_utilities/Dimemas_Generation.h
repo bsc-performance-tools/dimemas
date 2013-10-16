@@ -23,53 +23,53 @@ int DimemasHeader_WriteHeader_withAdditionalBlocks( FILE  *fd,
                                                     int    size );
 
 int Dimemas_NX_Generic_Send( FILE *fd,
-                             int task, int thread,
-                             int task_r, /* receiver */
+                             int task,   int thread,
+                             int task_r, int thread_r, /* receiver */
                              int commid,
                              int size, long64_t tag,
                              int synchronism );
 
 int Dimemas_NX_Send( FILE *fd,
-                     int task, int thread,
-                     int task_r, /* receiver */
+                     int task,   int thread,
+                     int task_s, int thread_s, /* sender */
                      int commid,
                      int size, long64_t tag );
 
 int Dimemas_NX_ImmediateSend( FILE *fd,
-                     int task, int thread,
-                     int task_r, /* receiver */
+                     int task,   int thread,
+                     int task_r, int thread_r, /* receiver */
                      int commid,
                      int size, long64_t tag );
 
 
 int Dimemas_NX_BlockingSend( FILE *fd,
-                             int task, int thread,
-                             int task_r, /* receiver */
+                             int task,   int thread,
+                             int task_r, int thread_r, /* receiver */
                              int commid,
                              int size, long64_t tag );
 
 int Dimemas_NX_Generic_Recv( FILE *fd,
-                             int task, int thread,
-                             int task_s, /* source */
+                             int task,   int thread,
+                             int task_s, int thread_s, /* sender */
                              int commid,
                              int size, long64_t tag,
                              int type );
 
 int Dimemas_NX_Recv( FILE *fd,
-                     int task, int thread,
-                     int task_s, /* source */
+                     int task,   int thread,
+                     int task_s, int thread_s, /* sender */
                      int commid,
                      int size, long64_t tag );
 
 int Dimemas_NX_Irecv( FILE *fd,
-                      int task, int thread,
-                      int task_s, /* source */
+                      int task,   int thread,
+                      int task_s, int thread_s, /* sender */
                       int commid,
                       int size, long64_t tag );
 
 int Dimemas_NX_Wait( FILE *fd,
-                     int task, int thread,
-                     int task_s, /* source */
+                     int task,   int thread,
+                     int task_s, int thread_s, /* sender */
                      int commid,
                      int size, long64_t tag );
 

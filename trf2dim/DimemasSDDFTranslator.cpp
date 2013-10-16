@@ -156,7 +156,11 @@ DimemasSDDFTranslator::Translate(void)
   for (INT32 Task = 0; Task < ApplicationStructure->GetTaskCount(); Task++)
   {
     OutputOffsets.push_back(ftello(OutputTraceFile));
-
+    
+    TaskDescription_t taskInfo;
+    taskInfo = ApplicationStructure->GetTaskInfo()[Task];
+    taskInfo->PushBackOffset(ftello(OutputTraceFile));
+    
     if (OutputOffsets[Task] == -1)
     {
       char CurrentError[128];
@@ -170,8 +174,9 @@ DimemasSDDFTranslator::Translate(void)
       return false;
     }
 
-    CurrentRecord = Parser->GetNextRecord(Task, 0); /* Only thread 0 is needed*/
-
+    INT32 CurrentThread = 0;
+    CurrentRecord = Parser->GetNextRecord(Task, CurrentThread); /* Only thread 0 is needed*/
+    
     while (CurrentRecord != NULL)
     {
       CurrentRecord->ToDimemas(OutputTraceFile);
@@ -180,8 +185,28 @@ DimemasSDDFTranslator::Translate(void)
       cout << (*CurrentRecord) << endl; */
 
       delete CurrentRecord;
-      CurrentRecord = Parser->GetNextRecord(Task, 0);
+      CurrentRecord = Parser->GetNextRecord(Task, CurrentThread);
+      
+      if (CurrentRecord != NULL)
+      {
+         if (CurrentThread < CurrentRecord->GetThreadId())
+         {
+            if (CurrentRecord->GetThreadId() - CurrentThread > 1)
+            {
+               char CurrentError[128];
+               sprintf(CurrentError,
+                     "Error CurrentRecord->ThreadId %d,  currentThread %d \n",
+                     CurrentRecord->GetThreadId(), CurrentThread);
 
+               SetError(true);
+               SetErrorMessage(CurrentError, strerror(errno));
+               return false;
+            }
+            taskInfo->PushBackOffset(ftello(OutputTraceFile));
+            CurrentThread = CurrentRecord->GetThreadId();
+         }
+      }
+      
       if (VerboseMode)
       {
         PercentageRead =
@@ -228,14 +253,36 @@ DimemasSDDFTranslator::Translate(void)
   /* Write offset lines */
   for (INT32 Task = 0; Task < ApplicationStructure->GetTaskCount(); Task++)
   {
-    if (fprintf(OutputTraceFile, "s:%d:%lld\n", Task, OutputOffsets[Task]) < 0)
-    {
-      SetErrorMessage("Error printing offsets line",
-                      strerror(errno));
-      return false;
-    }
-  }
+      if (fprintf(OutputTraceFile, "s:%d", Task) < 0)
+      {
+         SetError(true);
+         SetErrorMessage("Error printing offsets line",
+                        strerror(errno));
+         return false;
+      }
 
+      TaskDescription_t taskInfo;
+      taskInfo = ApplicationStructure->GetTaskInfo()[Task];
+      for (INT32 Thread = 0; Thread < taskInfo->GetThreadCount(); Thread++)
+      {
+         if (fprintf(OutputTraceFile, ":%lld", taskInfo->GetElement(Thread)) < 0)
+         {
+            SetError(true);
+            SetErrorMessage("Error printing offsets line",
+                           strerror(errno));
+            return false;
+         }
+      }
+      if (fprintf(OutputTraceFile, "\n") < 0)
+      {
+         SetError(true);
+         SetErrorMessage("Error printing offsets line, error in last NEWLINE",
+                        strerror(errno));
+         return false;
+      }
+  }
+  
+  
   if (!WriteHeader(ApplicationStructure, false, OffsetsOffset))
     return false;
 
@@ -252,10 +299,11 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
                                    off_t                    OffsetsOffset
 )
 {
-#define OFFSETS_OFFSET_RESERVE 15
+#define OFFSETS_OFFSET_RESERVE          15
+#define OFFSETS_DIGITS_THREADS_RESERVE  6
 
-  INT32 OffsetsLength;
-
+  INT32 OffsetsLength, offsetToAdd = 0;
+  
   char   OffsetsLengthStr[10];
 
   if (InitialHeader)
@@ -297,6 +345,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
   if (InitialHeader)
   {
     /* Reserve characters for future information */
+    /* these are 15 Xes -> mind the OFFSETS_OFFSET_RESERVE = 15 */
     if (fprintf (OutputTraceFile, "XXXXXXXXXXXXXXX") < 0)
     {
       SetErrorMessage("error writing header", strerror(errno));
@@ -314,6 +363,7 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
         cout << "Error!" << endl;
       return false;
     }
+    offsetToAdd += OFFSETS_OFFSET_RESERVE - OffsetsLength;
   }
 
   if (fprintf (OutputTraceFile, ":%d(", AppDescription->GetTaskCount()) < 0)
@@ -325,32 +375,78 @@ DimemasSDDFTranslator::WriteHeader(ApplicationDescription_t AppDescription,
     return false;
   }
 
-  for (INT32 i = 0; i < AppDescription->GetTaskCount()-1; i++)
+
+  if (InitialHeader)
   {
-    if (fprintf (OutputTraceFile, "1,") < 0)
-    {
-      SetErrorMessage("error writing header", strerror(errno));
+    /* Reserve characters for future information */
+    /* these are 6 Xes -> mind the OFFSETS_DIGITS_THREADS_RESERVE = 6 */
+      for (INT32 i = 0; i < AppDescription->GetTaskCount()-1; i++)
+      {
+         if ( (OffsetsLength = fprintf (OutputTraceFile, "XXXXXX,")) < 0)
+         {
+            SetErrorMessage("error writing header", strerror(errno));
+            if (VerboseMode)
+            cout << "Error!" << endl;
+            return false;
+         }
+      }
 
-      if (VerboseMode)
-        cout << "Error!" << endl;
-      return false;
-    }
-  }
+    /* these are 6 Xes -> mind the OFFSETS_DIGITS_THREADS_RESERVE = 6 */
+      if (fprintf(OutputTraceFile, "XXXXXX") < 0)
+      {
+         SetErrorMessage("error writing header", strerror(errno));
+         if (VerboseMode)
+            cout << "Error!" << endl;
+         return false;
+      }
 
-  if (fprintf(OutputTraceFile,
-              "1),%d",
-              AppDescription->GetCommunicatorCount()) < 0)
+      if (fprintf(OutputTraceFile, "),%d",
+          AppDescription->GetCommunicatorCount()) < 0)
+      {
+         SetErrorMessage("error writing header", strerror(errno));
+         if (VerboseMode)
+            cout << "Error!" << endl;
+         return false;
+      }        
+  } else
   {
-    SetErrorMessage("error writing header", strerror(errno));
+      for (INT32 i = 0; i < AppDescription->GetTaskCount()-1; i++)
+      {
+         if ( (OffsetsLength = fprintf (OutputTraceFile, "%d,",
+                     ((AppDescription->GetTaskInfo())[i])->GetThreadCount()) - 1) < 0)
+         {
+            SetErrorMessage("error writing header", strerror(errno));
+            if (VerboseMode)
+            cout << "Error!" << endl;
+            return false;
+         }
+         offsetToAdd += OFFSETS_DIGITS_THREADS_RESERVE - OffsetsLength;
+      }
+      
+      if ((OffsetsLength = fprintf(OutputTraceFile, "%d)",
+                  ((AppDescription->GetTaskInfo())[AppDescription->GetTaskCount()-1])->GetThreadCount())  - 1) < 0)
+      {
+         SetErrorMessage("error writing header", strerror(errno));
+         if (VerboseMode)
+            cout << "Error!" << endl;
+         return false;
+      }
+      offsetToAdd += OFFSETS_DIGITS_THREADS_RESERVE - OffsetsLength;
 
-    if (VerboseMode)
-      cout << "Error!" << endl;
-    return false;
+      if (fprintf(OutputTraceFile, ",%d",
+                  AppDescription->GetCommunicatorCount()) < 0)
+      {
+         SetErrorMessage("error writing header", strerror(errno));
+
+         if (VerboseMode)
+            cout << "Error!" << endl;
+         return false;         
+      }
   }
-
+  
   if (!InitialHeader)
   {
-    for (INT32 i = 0; i < OFFSETS_OFFSET_RESERVE - OffsetsLength; i++)
+    for (INT32 i = 0; i < offsetToAdd; i++)
     {
       if (fprintf(OutputTraceFile," ") < 0)
       {
@@ -393,7 +489,7 @@ DimemasSDDFTranslator::WriteCommunicators(
   {
     cout << "-> Translating communicators 0/0";
     fprintf(stdout,
-            "\r-> Translating communicators 0/%d",
+            "\r-> Translating communicators 0/%zu",
             Communicators.size());
   }
 
@@ -446,7 +542,7 @@ DimemasSDDFTranslator::WriteCommunicators(
 
     if (VerboseMode)
       fprintf(stdout,
-              "\r-> Translating communicators %d/%d",
+              "\r-> Translating communicators %d/%zu",
               Index+1,
               Communicators.size());
 

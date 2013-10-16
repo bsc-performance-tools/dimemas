@@ -432,20 +432,20 @@ int DimemasHeader_WriteHeader_withAdditionalBlocks( FILE *fd, char **labels, int
  ******************************************************************************/
 
 int Dimemas_NX_Generic_Send( FILE *fd,
-                             int task, int thread,
-                             int task_r, /* receiver */
+                             int task,   int thread,
+                             int task_r, int thread_r, /* receiver */
                              int commid,
                              int size, long64_t tag,
                              int synchronism )
 {
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_GENERIC_SEND_STRING "2:%d:%d:%d:-1:%d:%lld:%d:%d\n"
+  #define NX_GENERIC_SEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:%d\n"
 #else
   #define NX_GENERIC_SEND_STRING "\"NX send\" { %d, %d, %d, %d, %lld, %d, %d };;\n"
 #endif
   return fprintf(fd,
                  NX_GENERIC_SEND_STRING,
-                 task, thread, task_r, size, tag, commid, synchronism);
+                 task, thread, task_r, thread_r, size, tag, commid, synchronism);
 }
 
 /******************************************************************************
@@ -455,20 +455,20 @@ int Dimemas_NX_Generic_Send( FILE *fd,
  ******************************************************************************/
 
 int Dimemas_NX_Send( FILE *fd,
-                     int task, int thread,
-                     int task_r, /* receiver */
+                     int task,   int thread,
+                     int task_r, int thread_r, /* sender */
                      int commid,
                      int size, long64_t tag )
 {
   /* synchronism: NO immediate + NO rendezvous = 0 */
 
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_SEND_STRING "2:%d:%d:%d:-1:%d:%lld:%d:0\n"
+  #define NX_SEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:0\n"
 #else
   #define NX_SEND_STRING "\"NX send\" { %d, %d, %d, %d, %lld, %d, 0 };;\n"
 #endif
 
-  return fprintf(fd, NX_SEND_STRING, task, thread, task_r, size, tag, commid);
+  return fprintf(fd, NX_SEND_STRING, task, thread, task_r, thread_r, size, tag, commid);
 }
 
 
@@ -480,20 +480,20 @@ int Dimemas_NX_Send( FILE *fd,
  ******************************************************************************/
 
 int Dimemas_NX_ImmediateSend( FILE *fd,
-                              int task, int thread,
-                              int task_r, /* receiver */
+                              int task,   int thread,
+                              int task_r, int thread_r, /* receiver */
                               int commid,
-                              int size, long64_t tag)
+                              int size, long64_t tag )
 {
   /* synchronism: immediate + NO rendezvous = 2 */
 
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_ISEND_STRING "2:%d:%d:%d:-1:%d:%lld:%d:2\n"
+  #define NX_ISEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:2\n"
 #else
   #define NX_ISEND_STRING "\"NX send\" { %d, %d, %d, %d, %lld, %d, 2 };;\n"
 #endif
 
-  return fprintf(fd, NX_ISEND_STRING, task, thread, task_r, size, tag, commid);
+  return fprintf(fd, NX_ISEND_STRING, task, thread, task_r, thread_r, size, tag, commid);
 }
 
 
@@ -505,20 +505,20 @@ int Dimemas_NX_ImmediateSend( FILE *fd,
  ******************************************************************************/
 
 int Dimemas_NX_BlockingSend( FILE *fd,
-                             int task, int thread,
-                             int task_r, /* receiver */
+                             int task,   int thread,
+                             int task_r, int thread_r, /* receiver */
                              int commid,
                              int size, long64_t tag )
 {
   /* synchronism: NO immediate + rendezvous = 1 */
 
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_BSEND_STRING "2:%d:%d:%d:-1:%d:%lld:%d:1\n"
+  #define NX_BSEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:1\n"
 #else
   #define NX_BSEND_STRING "\"NX send\" { %d, %d, %d, %d, %lld, %d, 1 };;\n"
 #endif
 
-  return fprintf(fd, NX_BSEND_STRING, task, thread, task_r, size, tag, commid);
+  return fprintf(fd, NX_BSEND_STRING, task, thread, task_r, thread_r, size, tag, commid);
 }
 
 /******************************************************************************
@@ -528,22 +528,22 @@ int Dimemas_NX_BlockingSend( FILE *fd,
  ******************************************************************************/
 
 int Dimemas_NX_Generic_Recv( FILE *fd,
-                             int task, int thread,
-                             int task_s, /* source */
+                             int task,   int thread,
+                             int task_s, int thread_s, /* sender */
                              int commid,
                              int size, long64_t tag,
                              int type )
 {
 
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_GENERIC_RECV_STRING "3:%d:%d:%d:-1:%d:%lld:%d:%d\n"
+  #define NX_GENERIC_RECV_STRING "3:%d:%d:%d:%d:%d:%lld:%d:%d\n"
 #else
   #define NX_GENERIC_RECV_STRING "\"NX recv\" { %d, %d, %d, %d, %lld, %d, %d };;\n"
 #endif
 
   return fprintf(fd,
                  NX_GENERIC_RECV_STRING,
-                 task, thread, task_s, size, tag, commid, type);
+                 task, thread, task_s, thread_s, size, tag, commid, type);
 }
 
 /******************************************************************************
@@ -553,19 +553,19 @@ int Dimemas_NX_Generic_Recv( FILE *fd,
  ******************************************************************************/
 
 int Dimemas_NX_Recv( FILE *fd,
-                     int task, int thread,
-                     int task_s, /* source */
+                     int task,   int thread,
+                     int task_s, int thread_s, /* sender */
                      int commid,
                      int size, long64_t tag )
 {
 
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_RECV_STRING "3:%d:%d:%d:-1:%d:%lld:%d:0\n"
+  #define NX_RECV_STRING "3:%d:%d:%d:%d:%d:%lld:%d:0\n"
 #else
   #define NX_RECV_STRING "\"NX recv\" { %d, %d, %d, %d, %lld, %d, 0 };;\n"
 #endif
 
-  return fprintf(fd, NX_RECV_STRING, task, thread, task_s, size, tag, commid);
+  return fprintf(fd, NX_RECV_STRING, task, thread, task_s, thread_s, size, tag, commid);
 }
 
 /******************************************************************************
@@ -575,19 +575,19 @@ int Dimemas_NX_Recv( FILE *fd,
  ******************************************************************************/
 
 int Dimemas_NX_Irecv( FILE *fd,
-                      int task, int thread,
-                      int task_s, /* source */
+                      int task,   int thread,
+                      int task_s, int thread_s, /* sender */
                       int commid,
                       int size, long64_t tag )
 {
 
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_IRECV_STRING "3:%d:%d:%d:-1:%d:%lld:%d:1\n"
+  #define NX_IRECV_STRING "3:%d:%d:%d:%d:%d:%lld:%d:1\n"
 #else
   #define NX_IRECV_STRING "\"NX recv\" { %d, %d, %d, %d, %lld, %d, 1 };;\n"
 #endif
 
-  return fprintf(fd, NX_IRECV_STRING, task, thread, task_s, size, tag, commid);
+  return fprintf(fd, NX_IRECV_STRING, task, thread, task_s, thread_s, size, tag, commid);
 }
 
 /******************************************************************************
@@ -597,17 +597,17 @@ int Dimemas_NX_Irecv( FILE *fd,
  ******************************************************************************/
 
 int Dimemas_NX_Wait( FILE *fd,
-                     int task, int thread,
-                     int task_s, /* source */
+                     int task,   int thread,
+                     int task_s, int thread_s, /* sender */
                      int commid,
                      int size, long64_t tag )
 {
 #ifdef NEW_DIMEMAS_TRACE
-  #define NX_WAIT_STRING "3:%d:%d:%d:-1:%d:%lld:%d:2\n"
+  #define NX_WAIT_STRING "3:%d:%d:%d:%d:%d:%lld:%d:2\n"
 #else
   #define NX_WAIT_STRING "\"NX recv\" { %d, %d, %d, %d, %lld, %d, 2 };;\n"
 #endif
-  return fprintf(fd, NX_WAIT_STRING, task, thread, task_s, size, tag, commid);
+  return fprintf(fd, NX_WAIT_STRING, task, thread, task_s, thread_s, size, tag, commid);
 }
 
 /******************************************************************************
