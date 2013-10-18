@@ -10,9 +10,13 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2013/10/18 - jgonzale - Simulator - 5.1.2
+	BUGFIX:		Bug #38 related to offsets location was not completely 
+				solved. Final solution
+
 2013/10/16 - jgonzale - Simulator - 5.1.1
 	BUGFIX:		Solved a bug when locating the offsets in a trace without
-				offset information
+				offset information (#38)
 
 2013/10/02 - jgonzale - prv2dim | trf2dim | Other
 	CHANGES:	Merged the trf2dim and trf2trf from Vladimir. Including some

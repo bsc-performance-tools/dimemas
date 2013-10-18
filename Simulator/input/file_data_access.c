@@ -61,8 +61,8 @@
 // Configures maximum error message length
 #define DATA_ACCESS_MAX_ERROR_LENGTH 256
 
-// Thereshold value that deterimnates sequential or advanced metrhod for offsets search
-#define DATA_ACCESS_SEEK_THRESHOLD 20*1024*1024
+// Thereshold value that deterimnates sequential or advanced metrhod for offsets search (2KBytes)
+#define DATA_ACCESS_SEEK_THRESHOLD 2*1024
 
 
 #define DEFINITION d
@@ -107,6 +107,42 @@
 
 #define DATA_ACCESS_ERROR -1
 #define DATA_ACCESS_OK     1
+
+/*******************************************************************************
+ * Macro per decidir si cal utilitzar rendez vous en un send.
+ * Hi ha 4 possibilitats:
+ *
+ * - TOTES les comunicacions son Asincrones.
+ *   Quan no s'hautoritza l'us del camp que indica sincronisme als sends de la
+ *   traça (RD_SYNC_use_trace_sync == FALSE) i la mida minima del missatge per
+ *   utilitzar sincronisme es negativa (RD_SYNC_message_size < 0).
+ *
+ * - Nomes s'utilitza comunicacio Sincrona si s'indica de forma explicita. Quan
+ *   RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size < 0.
+ *
+ * - Nomes s'utilitza comunicacio Sincrona si la mida del missatge es >= que la
+ *   mida donada. Quan RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size>=0.
+ *
+ * - S'utilitza comunicacio Sincrona si s'indica de forma explicita o la mida
+ *   del missatge es >= que la mida donada. Quan RD_SYNC_use_trace_sync == TRUE
+ *   i RD_SYNC_message_size >= 0.
+ ******************************************************************************/
+#define USE_RENDEZ_VOUS(rende, mida) \
+        (( (RD_SYNC_use_trace_sync && (rende)) || \
+         ((RD_SYNC_message_size >= 0) && ((mida)>=RD_SYNC_message_size)) \
+         ) ? 1 : 0)
+
+
+t_boolean UseRendezVous(t_boolean trace_rendez_vous, long long int msg_size)
+{
+  if ( (RD_SYNC_use_trace_sync && trace_rendez_vous) ||
+       (RD_SYNC_message_size >= 0 && msg_size >= RD_SYNC_message_size) )
+  {
+    return TRUE;
+  }
+
+  return FALSE;
+}
 
 /*****************************************************************************
  * Internal structures
@@ -298,7 +334,7 @@ t_boolean DATA_ACCESS_init_index (int   ptask_id,
     }
   }
 
-  if (DAP_add_ptask (ptask_id, trace_file_location, index) == -1)
+  if (DAP_add_ptask (ptask_id, trace_file_location, index) == FALSE)
   {
     return FALSE;
   }
@@ -1267,7 +1303,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
     {
       DAP_report_error("unable to reposition trace (%s)",
                        strerror(errno));
-      return FALSE;
+      return 0;
     }
 
     /* First line is discarded to avoid possible seek missplacements */
@@ -1347,14 +1383,14 @@ off_t DAP_locate_thread_offset(app_struct *app,
   else
   {
     /* Dicotomic search */
-    off_t half_bound = (upper_bound-lower_bound)/2;
+    off_t half_bound = lower_bound + ((upper_bound - lower_bound)/2);
 
     if (fseek(main_struct.current_stream, half_bound, SEEK_SET) < 0)
     {
       DAP_report_error("unable to reposition trace at %zu (%s)",
                        half_bound,
                        strerror(errno));
-      return FALSE;
+      return 0;
     }
 
     /* First line is discarded to avoid possible seek missplacements */
@@ -1396,7 +1432,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
                  NOOP_REGEXP,
                  &read_task_id,
                  &read_thread_id) != 2)
-    {
+      {
         DAP_report_error("error accessing to an operation record when locating offsets: %s",
                          line);
 
@@ -1418,7 +1454,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
     {
       result = DAP_locate_thread_offset(app, task_id, thread_id, lower_bound, half_bound);
     }
-    else
+    else if (task_id == read_task_id)
     {
       if (thread_id > read_thread_id)
       {
@@ -1986,25 +2022,32 @@ t_boolean DAP_read_msg_send  (const char      *msg_send_str,
 
   /* Rendez-vous DEBUG
   printf("rende = %d, mida = %lld, RD_SYNC_use_trace_sync = %d, RD_SYNC_message_size = %lld\n",
-         sync & ((int)1),
+         sync & 0x01,
          msg_size,
          RD_SYNC_use_trace_sync,
          RD_SYNC_message_size);
   */
 
-  action->desc.send.rendez_vous = USE_RENDEZ_VOUS((sync & ((int)1)), msg_size);
+  // if ((RD_SYNC_use_trace_sync && (rende)) || ((RD_SYNC_message_size >= 0) && ((mida)>=RD_SYNC_message_size))
+
+  // action->desc.send.rendez_vous = USE_RENDEZ_VOUS((sync & ((int)1)), msg_size);
+  action->desc.send.rendez_vous = UseRendezVous((t_boolean) sync & 0x01, msg_size);
 
   /* Rendez-vous DEBUG
-   printf("Rendez_vous= %d\n",  action->desc.send.rendez_vous);
+  printf("Rendez_vous= %d\n",  action->desc.send.rendez_vous);
   */
 
-  if (sync & ((int)2))
+
+  if (sync & 0x02)
   {
     action->desc.send.immediate = TRUE;
+    /* Rendez-vous DEBUG
+    printf("Immediate = TRUE\n"); */
   }
   else
   {
     action->desc.send.immediate = FALSE;
+    // printf("Immediate = FALSE\n");
   }
 
   /* Rendez-vous DEBUG
