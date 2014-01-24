@@ -16,5 +16,6 @@ libCommonUtilities_la_SOURCES = \
 	Error.hpp \
 	EventEncoding.c \
 	EventEncoding.h \
-	ParaverColors.h
-
+	ParaverColors.h \
+	error.c \
+	error.h
