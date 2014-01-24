@@ -125,7 +125,7 @@ abstract class GUIWindow extends JFrame implements ActionListener
 
     // Propiedades de ventana generales.
 
-    setIconImage(Toolkit.getDefaultToolkit().getImage(Data.ICON_IMAGE));
+    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource(Data.ICON_IMAGE)));
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     getRootPane().setBorder(BorderFactory.createRaisedBevelBorder());
     windowPanel.setLayout(layout);
@@ -137,5 +137,5 @@ abstract class GUIWindow extends JFrame implements ActionListener
 
   // Todas las clases que deriven de la clase GUIWindow deberán incluir este
   // método.
-  abstract public void actionPerformed(ActionEvent e);
+  public void actionPerformed(ActionEvent e) {}
 }

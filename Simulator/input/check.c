@@ -91,7 +91,7 @@ void near_line()
 {
   warning ("\n* Parse error near line %d in file '%s':\n",
            line_no,
-           CONFIGURATION_Get_Configuration_FileName() );
+           SIMULATOR_Get_Configuration_FileName() );
 }
 
 static void Invalid_attribute (int   field_number,
@@ -587,7 +587,7 @@ void check_node_info_definition (char *c, struct t_queue *q)
     warning("*************************** INFORMATION ********************************\n");
     warning("Old configuration file used (no intra node contention available). This\n");
     warning("simulation will use default values (intra node buses = # of processors\n");
-    warning("and 1 half-duplex link per task).\n");
+    warning("and 1 half-duplex link per CPU).\n");
     warning("\n");
     warning("Please update the configuration file using 'DimemasUpdateCFG'\n");
     warning("************************************************************************\n");

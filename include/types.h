@@ -616,6 +616,8 @@ struct t_Ptask
   char           *tracefile;
   char           *configfile;
 
+  int             map_definition;
+  int             tasks_per_node;
 /*
   HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
   AND THAN READ THE TRF FILE AS IT WAS A STRING

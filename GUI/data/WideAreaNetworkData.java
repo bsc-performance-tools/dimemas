@@ -53,20 +53,20 @@ public class WideAreaNetworkData
 {
   public final String COMM_GROUP_LOG = "3";
   public final String COMM_GROUP_LIN = "2";
-  public final String COMM_GROUP_CT = "1";
+  public final String COMM_GROUP_CT  = "1";
 
   public final String TRAFFIC_FUNCTION_EXP = "1";
   public final String TRAFFIC_FUNCTION_LOG = "2";
   public final String TRAFFIC_FUNCTION_LIN = "3";
-  public final String TRAFFIC_FUNCTION_CT = "4";
+  public final String TRAFFIC_FUNCTION_CT  = "4";
 
   // Valores por defecto.
-  public final String DEFAULT_NAME = "";
-  public final String DEFAULT_MACHINES = "1";
-  public final String DEFAULT_DEDICATED = "0";
-  public final String DEFAULT_TRAFFIC = TRAFFIC_FUNCTION_CT;
-  public final String DEFAULT_MAX = "0.0";
-  public final String DEFAULT_BANDWIDTH = "0.0";
+  public final String DEFAULT_NAME          = "";
+  public final String DEFAULT_MACHINES      = "1";
+  public final String DEFAULT_DEDICATED     = "0";
+  public final String DEFAULT_TRAFFIC       = TRAFFIC_FUNCTION_CT;
+  public final String DEFAULT_MAX           = "0.0";
+  public final String DEFAULT_BANDWIDTH     = "0.0";
   public final String DEFAULT_COMMUNICATION = COMM_GROUP_CT;
 
   private String name;          // Name of WAN.
@@ -92,7 +92,7 @@ public class WideAreaNetworkData
   {
     int first = Data.WAN.length();
     int second = line.indexOf(",",first);
-
+  
     setName(Tools.blanks(line.substring(first,second)));
     first = second + 1;
     second = line.indexOf(",",first);

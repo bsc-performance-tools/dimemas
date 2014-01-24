@@ -42,7 +42,6 @@ package tools;
  * @version 1.0
  */
 
-import data.Data;
 import java.awt.*;
 import javax.swing.*;
 
@@ -50,7 +49,6 @@ public class Tools
 {
   // Selector de ficheros utilizado en las operaciones "Load/Save"
   static public JFileChooser fc = new JFileChooser(System.getProperty("user.dir"));
-
 
   // Filtro para el selector de ficheros: archivos con extensión ".cfg"
   static public class CFGfilter extends javax.swing.filechooser.FileFilter
@@ -470,5 +468,5 @@ public class Tools
         return "MAX";
       }
     }
-  }
+  }  
 }

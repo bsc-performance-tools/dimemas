@@ -45,8 +45,6 @@ package data;
 import data.Data.*;
 import tools.*;
 import java.io.*;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /*
 * La clase Node provee la informaciÃ³n de un nodo.
@@ -71,7 +69,9 @@ public class Node
   static public final String DEFAULT_WAN_STARTUP          = "0.0";
 
 
-  static public final int    NODE_RECORD_FIELD_COUNT   = 14;
+  static public final int    NODE_RECORD_NO_INTRA_NODE_FIELD_COUNT = 11;
+  static public final int    NODE_RECORD_WITH_NODE_ID_FIELD_COUNT  = 14;
+  static public final int    NODE_RECORD_FIELD_COUNT               = 13;
 
   private String machine_id;           // Machine to which belongs the node.
   private String node_id;              // Node identificator.
@@ -102,11 +102,11 @@ public class Node
   // MÃ©todo que inicializa los datos con los valores por defecto.
   public void initialValues()
   {
-    machine_id    = DEFAULT_MACHINE_ID;
-    node_id       = DEFAULT_NODE_ID;
-    architecture  = DEFAULT_ARCHITECTURE;
-    processors    = DEFAULT_PROCESSORS;
-    cpu_ratio     = DEFAULT_CPU_RATIO;
+    machine_id           = DEFAULT_MACHINE_ID;
+    node_id              = DEFAULT_NODE_ID;
+    architecture         = DEFAULT_ARCHITECTURE;
+    processors           = DEFAULT_PROCESSORS;
+    cpu_ratio            = DEFAULT_CPU_RATIO;
 
     intra_node_startup   = DEFAULT_INTRA_NODE_STARTUP;
     intra_node_bandwidth = DEFAULT_INTRA_NODE_BANDWIDTH;
@@ -154,129 +154,45 @@ public class Node
   }
 
   /*
-  * El mÃ©todo loadData almacena los datos facilitados en @line en la
-  * estructura de datos de un nodo.
-  *
-  * @param: Â· String line -> lÃ­nea con todos los datos de un nodo.
-  *         Â· boolean oldFile -> TRUE si los datos provienen de un fichero de
-  *                              configuraciÃ³n antiguo (menos datos), FALSE
-  *                              en otro caso.
-  *
-  * @exc: Valor numÃ©rico no vÃ¡lido.
-  */
-  public boolean loadData(String line, boolean oldFile, int lineCount) throws Exception
+   * Method to compare two objects
+   */
+  public boolean equals(Object obj)
   {
-    Pattern pattern = Pattern.compile("\"node information\" \\{(.*)\\};;$");
-    Matcher matcher = pattern.matcher(line);
-
-    if (!matcher.matches())
+    // if the two objects are equal in reference, they are equal
+    if (this == obj)
     {
-      Tools.showErrorDialog("Wrong node information record");
-      return false;
+      return true;
     }
-
-    String fields = matcher.group(1);
-
-    int first = Data.NODE.length();
-    int second = line.indexOf(",",first);
-
-    String[] nodeFields = fields.split(",");
-
-    if (nodeFields.length != NODE_RECORD_FIELD_COUNT)
+    else if (obj instanceof Node) 
     {
-      Tools.showErrorDialog("Wrong number of fields of node information record (line "+lineCount+").\nTry to update the CFG file");
-      return false;
-    }
-
-    setMachine_id(Tools.blanks(nodeFields[0]));
-    setNode_id(Tools.blanks(nodeFields[1]));
-    setArchitecture(Tools.blanks(nodeFields[2]));
-    setProcessors(Tools.blanks(nodeFields[3]));
-    setCPURatio(Tools.blanks(nodeFields[4]));
-    setIntraNodeStartup(Tools.blanks(nodeFields[5]));
-    setIntraNodeBandwidth(Tools.blanks(nodeFields[6]));
-    setIntraNodeBuses(Tools.blanks(nodeFields[7]));
-    setIntraNodeInLinks(Tools.blanks(nodeFields[8]));
-    setIntraNodeOutLinks(Tools.blanks(nodeFields[9]));
-    setInterNodeStartup(Tools.blanks(nodeFields[10]));
-    setInterNodeInLinks(Tools.blanks(nodeFields[11]));
-    setInterNodeOutLinks(Tools.blanks(nodeFields[12]));
-    setWANStartup(Tools.blanks(nodeFields[13]));
-
-    /*
-    System.out.println("Number of node fields = "+nodeFields.length);
-    System.out.println("First field = "+nodeFields[0]);
-
-
-    if(!oldFile)
-    {
-      setMachine_id(Tools.blanks(line.substring(first,second)));
-      first = second + 1;
-      second = line.indexOf(",",first);
-    }
-
-    setNode_id(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setArchitecture(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setProcessors(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setMemBuses(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setMemInLinks(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setMemOutLinks(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setInput(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setOutput(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setLocal(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setRemote(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-    second = line.indexOf(",",first);
-    setSpeed(Tools.blanks(line.substring(first,second)));
-
-    first = second + 1;
-
-    if(!oldFile)
-    {
-      second = line.indexOf(",",first);
-      setBandwidth(Tools.blanks(line.substring(first,second)));
-      first = second + 1;
-      second = line.indexOf("}",first);
-      setLatency(Tools.blanks(line.substring(first,second)));
+      Node otherNode = (Node) obj;
+      
+      if ( this.machine_id.equals(otherNode.getMachine_id())                  &&
+           this.architecture.equals(otherNode.getArchitecture(false))         &&
+           this.processors.equals(otherNode.getProcessors())                  &&
+           this.cpu_ratio.equals(otherNode.getCPURatio())                     &&
+           this.intra_node_startup.equals(otherNode.getIntraNodeStartup())    &&
+           this.intra_node_buses.equals(otherNode.getIntraNodeBuses())        &&
+           this.intra_node_in_links.equals(otherNode.getIntraNodeInLinks())   &&
+           this.intra_node_out_links.equals(otherNode.getIntraNodeOutLinks()) &&
+           this.inter_node_startup.equals(otherNode.getInterNodeStartup())    &&
+           this.inter_node_in_links.equals(otherNode.getInterNodeInLinks())   &&
+           this.inter_node_out_links.equals(otherNode.getInterNodeOutLinks()) &&
+           this.wan_startup.equals(otherNode.getWANStartup()))
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
     }
     else
     {
-      second = line.indexOf("}",first);
-      setBandwidth(Tools.blanks(line.substring(first,second)));
+      return false;
     }
-    */
-
-    return true;
   }
-
+  
   /*
   * El mÃ©todo saveData genera, en un fichero de configuraciÃ³n @target, la
   * informaciÃ³n correspondiente a un nodo.
@@ -289,7 +205,8 @@ public class Node
   {
     target.writeBytes(Data.NODE);
     target.writeBytes(getMachine_id() + ", ");
-    target.writeBytes(getNode_id() + ", ");
+    // Node ID is no longer used. It will be generated sequentially
+    // target.writeBytes(getNode_id() + ", ");
     target.writeBytes(getArchitecture(true) + ", ");
     target.writeBytes(getProcessors() + ", ");
     target.writeBytes(getCPURatio() + ", ");

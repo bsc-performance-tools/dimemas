@@ -91,7 +91,7 @@ int   Ptask_ids = 0;
 t_boolean PREEMP_initialized = FALSE;
 t_boolean PREEMP_enabled;
 int       PREEMP_cycle;
-t_nano   PREEMP_time;
+t_nano    PREEMP_time;
 int      *PREEMP_table; /* Array to manage preemption cycles for each task */
 
 /*
@@ -112,6 +112,12 @@ void TASK_module_new_general (unsigned long int module_type,
                               unsigned long int module_value,
                               double        ratio,
                               double        const_burst_duration);
+
+void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask);
+
+int *TASK_Map_Filling_Nodes(int task_count);
+int *TASK_Map_N_Tasks_Per_Node(int task_count, int n_tasks_per_node);
+int *TASK_Map_Interleaved(int task_count);
 
 /*****************************************************************************
 * Public functions implementation
@@ -151,12 +157,14 @@ void TASK_Init(int sintetic_io_applications)
   {
     if (debug)
     {
-      printf ("   * Loading Ptask %02d\n", Ptask->Ptaskid);
+      printf ("   * Loading Ptask %02d", Ptask->Ptaskid);
     }
 
     if (!DATA_ACCESS_init(Ptask->Ptaskid, Ptask->tracefile))
     {
-      die("Error accessing trace: %s", DATA_ACCESS_get_error());
+      die("Error accessing trace (%s): %s",
+          Ptask->tracefile,
+          DATA_ACCESS_get_error());
     }
 
     /*
@@ -167,6 +175,19 @@ void TASK_Init(int sintetic_io_applications)
       die("Error retrieving application %d information from trace: %s",
           Ptask->Ptaskid,
           DATA_ACCESS_get_error());
+    }
+
+    if (Ptask->map_definition != MAP_NO_PREDEFINED)
+    { // We must initialize the tasks mapping here
+      Ptask->tasks_count = ptask_structure->tasks_count;
+      TASK_Initialize_Ptask_Mapping(Ptask);
+    }
+    else
+    {
+      if (debug)
+      {
+        printf(" (Using task mapping present on the configuration file)\n");
+      }
     }
 
     if (ptask_structure->tasks_count != Ptask->tasks_count)
@@ -310,7 +331,9 @@ void TASK_end()
  * Create a new Ptask. Ptask is a queue whose elements are tasks
  */
 // struct t_Ptask* create_Ptask (char *tracefile, char *configfile)
-void TASK_New_Ptask(char *trace_name, int tasks_count, int *tasks_mapping)
+void TASK_New_Ptask(char *trace_name,
+                    int   tasks_count,
+                    int  *tasks_mapping)
 {
   struct t_Ptask *Ptask;
   size_t          new_taskid;
@@ -323,6 +346,8 @@ void TASK_New_Ptask(char *trace_name, int tasks_count, int *tasks_mapping)
   /* Not used anywhere
   Ptask->configfile = configfile;
   */
+
+  Ptask->map_definition = MAP_NO_PREDEFINED;
 
   Ptask->n_rerun    = 0;
 //mmap: changing to mmap
@@ -367,13 +392,13 @@ void TASK_New_Ptask(char *trace_name, int tasks_count, int *tasks_mapping)
   }
   else
   {
+
     Ptask->tasks_count = tasks_count;
     Ptask->tasks       = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
     for (new_taskid = 0; new_taskid < tasks_count; new_taskid++)
     {
       TASK_New_Task(Ptask, new_taskid, tasks_mapping[new_taskid]);
-
     }
   }
 
@@ -381,10 +406,57 @@ void TASK_New_Ptask(char *trace_name, int tasks_count, int *tasks_mapping)
   // return (Ptask);
 }
 
+/*
+ * Create a new Ptask, using a predefined map information
+ */
+void TASK_New_Ptask_predefined_map(char* trace_name,
+                                   int   map_definition,
+                                   int   tasks_per_node)
+{
+  struct t_Ptask *Ptask;
+  size_t          new_taskid;
+
+  Ptask = (struct t_Ptask*) malloc (sizeof (struct t_Ptask));
+  Ptask->Ptaskid    = Ptask_ids++;
+
+  Ptask->tracefile  = strdup(trace_name);
+
+  /* Unknown number of total tasks */
+  Ptask->tasks_count    = 0;
+
+  Ptask->map_definition = map_definition;
+  Ptask->tasks_per_node = tasks_per_node;
+
+  /* Not used anywhere
+  Ptask->configfile = configfile;
+  */
+
+  Ptask->n_rerun    = 0;
+//mmap: changing to mmap
+//   Ptask->file = (FILE *) NULL;
+  Ptask->mmapped_file          = (char*) NULL;
+  Ptask->mmap_position         = 0;
+  Ptask->synthetic_application = FALSE;
+
+  // create_queue (&(Ptask->tasks));
+
+  create_queue (&(Ptask->global_operation));
+  create_queue (&(Ptask->Communicator));
+  create_queue (&(Ptask->Window));
+  create_queue (&(Ptask->MPI_IO_fh_to_commid));
+  create_queue (&(Ptask->MPI_IO_request_thread));
+  // create_queue (&(Ptask->Modules));
+  create_modules_map(&(Ptask->Modules));
+  create_queue (&(Ptask->Filesd));
+  create_queue (&(Ptask->UserEventsInfo));
+
+  insert_queue(&Ptask_queue, (char*) Ptask, (t_priority) Ptask->Ptaskid);
+}
+
 /**
  * This method is used when reading the configuration, so the task structure
  * is not fully defined. When the tracefile is read each task definition is
- * completed with the resto of informatio (threads count, communicators, etc.)
+ * completed with the rest of information (threads count, communicators, etc.)
  */
 void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
 {
@@ -1925,6 +1997,172 @@ void TASK_module_new_general (unsigned long int module_type,
 
   return;
   return;
+}
+
+void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
+{
+  int  new_taskid, i;
+  int *task_mapping;
+  Ptask->tasks       = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
+
+  if (Ptask->map_definition == MAP_FILL_NODES)
+  {
+    if ( (task_mapping = TASK_Map_Filling_Nodes(Ptask->tasks_count)) == NULL)
+    {
+      die("Unable to apply the fill nodes mapping");
+    }
+
+    if (debug)
+    {
+      printf(" (Fill nodes mapping)\n");
+    }
+  }
+  else if (Ptask->map_definition == MAP_N_TASKS_PER_NODE)
+  {
+    task_mapping = TASK_Map_N_Tasks_Per_Node(Ptask->tasks_count, Ptask->tasks_per_node);
+
+    if (task_mapping == NULL)
+    {
+      die("'%d' tasks per node mapping not applicable (%d nodes per %d tasks is less than the application total tasks %d)",
+          Ptask->tasks_per_node,
+          SIMULATOR_get_number_of_nodes(),
+          Ptask->tasks_per_node,
+          Ptask->tasks_count);
+    }
+
+    if (debug)
+    {
+      printf(" (%d tasks per node mapping)\n", Ptask->tasks_per_node);
+    }
+  }
+  else if (Ptask->map_definition == MAP_INTERLEAVED)
+  {
+    task_mapping = TASK_Map_Interleaved(Ptask->tasks_count);
+
+    if (debug)
+    {
+      printf(" (interleaved mapping)\n");
+    }
+  }
+  else
+  {
+    die ("Unknow predefined map value when initializing task mapping (%d)",
+         Ptask->map_definition);
+  }
+
+  for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
+  {
+    TASK_New_Task(Ptask, new_taskid, task_mapping[new_taskid]);
+  }
+
+  /* DEBUG
+  printf("Mapping = { ");
+  for (i = 0; i < Ptask->tasks_count; i++)
+  {
+    printf("%d ", task_mapping[i]);
+  }
+  printf("}\n");
+  */
+
+  free(task_mapping);
+}
+
+int* TASK_Map_Filling_Nodes(int task_count)
+{
+  int      *task_mapping;
+  int       last_task_assigned = 0;
+  int       n_nodes;
+  int      *n_cpus_per_node;
+  int       total_cpus = 0;
+  int       i, j;
+  t_boolean end = FALSE, saturated_node = FALSE;
+
+  task_mapping = malloc(task_count*sizeof(int));
+
+  n_nodes         = SIMULATOR_get_number_of_nodes();
+
+  if ( (n_cpus_per_node = SIMULATOR_get_cpus_per_node()) == NULL)
+  {
+    return NULL;
+  }
+
+  for (i = 0; i < n_nodes && last_task_assigned < task_count; i++)
+  {
+    for (j = 0; j < n_cpus_per_node[i] && last_task_assigned < task_count; j++)
+    {
+      task_mapping[last_task_assigned] = i;
+      last_task_assigned++;
+      total_cpus++;
+    }
+  }
+
+  for (;last_task_assigned < task_count; last_task_assigned++)
+  {
+    task_mapping[last_task_assigned] = n_nodes-1;
+    saturated_node                   = TRUE;
+  }
+
+  if (saturated_node)
+  {
+    /* How to manage this situation?
+    result.errorMessage =  "Total available CPUs ("+totalCpus+") less than the number of tasks\n"+
+                           "Last node in the machine will be saturated";
+
+    return NULL;
+    */
+  }
+
+  free(n_cpus_per_node);
+  return task_mapping;
+}
+
+int* TASK_Map_N_Tasks_Per_Node(int task_count, int n_tasks_per_node)
+{
+  int *task_mapping;
+  int  last_assigned_node   = 0;
+  int  assigned_tasks_count = 0;
+  int  n_nodes              = SIMULATOR_get_number_of_nodes();
+  int  i;
+
+  if (n_tasks_per_node * n_nodes < task_count)
+  {
+    return NULL;
+  }
+
+  task_mapping = malloc(task_count*sizeof(int));
+
+  for (i = 0; i < task_count; i++)
+  {
+    if (assigned_tasks_count < n_tasks_per_node)
+    {
+      task_mapping[i] = last_assigned_node;
+      assigned_tasks_count++;
+    }
+    else
+    {
+      task_mapping[i]      = ++last_assigned_node;
+      assigned_tasks_count = 1;
+    }
+  }
+
+  return task_mapping;
+
+}
+
+int* TASK_Map_Interleaved(int task_count)
+{
+  int *task_mapping;
+  int  n_nodes = SIMULATOR_get_number_of_nodes();
+  int  i;
+
+  task_mapping = malloc(task_count*sizeof(int));
+
+  for (i = 0; i < task_count; i++)
+  {
+    task_mapping[i] = i%n_nodes;
+  }
+
+  return task_mapping;
 }
 
 void module_entrance(struct t_thread  *thread,

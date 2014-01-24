@@ -45,7 +45,6 @@ package gui;
 import data.*;
 import tools.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -54,7 +53,7 @@ import java.awt.event.*;
 */
 public class NodeWindow extends GUIWindow
 {
-  public static final long serialVersionUID = 17L;
+  public static final long serialVersionUID = 12L;
 
   private JButton b_left = createButton("<<<");
   private JButton b_right = createButton(">>>");
@@ -108,6 +107,8 @@ public class NodeWindow extends GUIWindow
   */
   private void fillInformation(int index)
   {
+    // System.out.println("Node "+index+" has "+data.nodes_information.node[index].getProcessors()+" processors");
+    
     tf_number.setText(String.valueOf(index+1));
     tf_machine_id.setText(data.nodes_information.node[index].getMachine_id());
     tf_node_id.setText(data.nodes_information.node[index].getNode_id());
@@ -222,6 +223,8 @@ public class NodeWindow extends GUIWindow
   */
   private boolean storeInformation(int index, boolean reply)
   {
+    String result;
+    
     if(!dataOK())
     {
       return false;
@@ -229,6 +232,8 @@ public class NodeWindow extends GUIWindow
 
     try
     {
+      
+      
       if(!reply)
       {
         data.nodes_information.node[index].setNode_id(tf_node_id.getText());
@@ -249,11 +254,18 @@ public class NodeWindow extends GUIWindow
 
       data.nodes_information.node[index].setWANStartup(tf_wan_startup.getText());
 
-      return true;
     } catch(Exception exc)
       {
         return false;
       }
+    
+    if ( (result = data.map.changeAtNodes()) != null)
+    {
+      Tools.showWarningMessage(result+"\n"+
+              "Please check the \"Mapping information\" to verify your task mapping");
+    }
+    
+    return true;
   }
 
   // Constructor de la clase NodeWindow.

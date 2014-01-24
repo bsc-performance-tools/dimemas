@@ -43,21 +43,384 @@ package data;
  */
 
 import data.Data.*;
-import tools.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import tools.Tools;
 
 /*
 * Clase que albergará los datos correspondientes a NODES.
 */
 public class NodeData
 {
-  private int nNodes = 0; // Número de nodos.
-  public Node[] node;     // Nodos.
+  private int    nNodes = 0; // Número de nodos.
+  public  Node[] node;       // Nodos.
+  
+  private boolean  nodesCreated       = false;
+  private int      lastNodeIdAssigned = 0;
+  
+  
+  /**
+  * Loads a single node definition record described in @line and stores it 
+  * in the array of nodes
+  *
+  * @param line      ASCII string with data a description of the node
+  * @param oldFile   true if record is defined in a previous version of the 
+  *                  configuration file (less fields), false otherwise
+  * @param lineCount number of line in the configuration file where the
+  *                  record appear
+  * 
+  * @return          true if node was successfully loaded, false otherwise
+  */
+  public boolean loadSingleNodeData(String line, boolean oldFile, int lineCount) throws Exception
+  {
+    int nodeId;
+    
+    Pattern pattern = Pattern.compile("\"node information\" \\{(.*)\\};;$");
+    Matcher matcher = pattern.matcher(line);
 
+    if (!matcher.matches())
+    {
+      Tools.showErrorDialog("Wrong node information record");
+      return false;
+    }
+
+    String   fields = matcher.group(1);
+    String[] nodeFields = fields.split(",");
+    
+    if (nodeFields.length != Node.NODE_RECORD_NO_INTRA_NODE_FIELD_COUNT &&
+        nodeFields.length != Node.NODE_RECORD_WITH_NODE_ID_FIELD_COUNT  &&
+        nodeFields.length != Node.NODE_RECORD_FIELD_COUNT)
+    {
+      Tools.showErrorDialog("Wrong number of fields of node information record (line "+lineCount+").\nTry to update the CFG file");
+      return false;
+    }
+
+    if (nodeFields.length == Node.NODE_RECORD_NO_INTRA_NODE_FIELD_COUNT ||
+        nodeFields.length == Node.NODE_RECORD_WITH_NODE_ID_FIELD_COUNT)
+    {
+      try
+      {
+        nodeId = Integer.parseInt(Tools.blanks(nodeFields[1]));
+        if (nodeId != lastNodeIdAssigned)
+        {
+          Tools.showErrorDialog("Wrong node identifier in node information record. "+
+                                "Expected: '"+lastNodeIdAssigned+"' Read: '"+nodeId+"' "+
+                                "(line "+lineCount+")");
+          return false;
+        }
+      }
+      catch(NumberFormatException e)
+      {
+        Tools.showErrorDialog("Wrong node identifier in node information record (line "+lineCount+")");
+        return false;
+      }
+    }
+    else
+    {
+      nodeId = lastNodeIdAssigned;
+    }
+    
+    if (nodeId >= node.length)
+    {
+      Tools.showErrorDialog("More nodes defined than actual machines nodes (line "+lineCount+")");
+      return false;
+    }
+    
+    if (nodeFields.length == Node.NODE_RECORD_FIELD_COUNT)
+    {
+      node[nodeId].setMachine_id(Tools.blanks(nodeFields[0]));
+      node[nodeId].setNode_id(String.valueOf(nodeId));
+      node[nodeId].setArchitecture(Tools.blanks(nodeFields[1]));
+      node[nodeId].setProcessors(Tools.blanks(nodeFields[2]));
+      node[nodeId].setCPURatio(Tools.blanks(nodeFields[3]));
+      node[nodeId].setIntraNodeStartup(Tools.blanks(nodeFields[4]));
+      node[nodeId].setIntraNodeBandwidth(Tools.blanks(nodeFields[5]));
+      node[nodeId].setIntraNodeBuses(Tools.blanks(nodeFields[6]));
+      node[nodeId].setIntraNodeInLinks(Tools.blanks(nodeFields[7]));
+      node[nodeId].setIntraNodeOutLinks(Tools.blanks(nodeFields[8]));
+      node[nodeId].setInterNodeStartup(Tools.blanks(nodeFields[9]));
+      node[nodeId].setInterNodeInLinks(Tools.blanks(nodeFields[10]));
+      node[nodeId].setInterNodeOutLinks(Tools.blanks(nodeFields[11]));
+      node[nodeId].setWANStartup(Tools.blanks(nodeFields[12]));
+    }
+    else if (nodeFields.length == Node.NODE_RECORD_WITH_NODE_ID_FIELD_COUNT)
+    {
+      node[nodeId].setMachine_id(Tools.blanks(nodeFields[0]));
+      node[nodeId].setNode_id(Tools.blanks(nodeFields[1]));
+      node[nodeId].setArchitecture(Tools.blanks(nodeFields[2]));
+      node[nodeId].setProcessors(Tools.blanks(nodeFields[3]));
+      node[nodeId].setCPURatio(Tools.blanks(nodeFields[4]));
+      node[nodeId].setIntraNodeStartup(Tools.blanks(nodeFields[5]));
+      node[nodeId].setIntraNodeBandwidth(Tools.blanks(nodeFields[6]));
+      node[nodeId].setIntraNodeBuses(Tools.blanks(nodeFields[7]));
+      node[nodeId].setIntraNodeInLinks(Tools.blanks(nodeFields[8]));
+      node[nodeId].setIntraNodeOutLinks(Tools.blanks(nodeFields[9]));
+      node[nodeId].setInterNodeStartup(Tools.blanks(nodeFields[10]));
+      node[nodeId].setInterNodeInLinks(Tools.blanks(nodeFields[11]));
+      node[nodeId].setInterNodeOutLinks(Tools.blanks(nodeFields[12]));
+      node[nodeId].setWANStartup(Tools.blanks(nodeFields[13]));
+    }
+    else
+    {
+      node[nodeId].setMachine_id(Tools.blanks(nodeFields[0]));
+      node[nodeId].setNode_id(Tools.blanks(nodeFields[1]));
+      node[nodeId].setArchitecture(Tools.blanks(nodeFields[2]));
+      node[nodeId].setProcessors(Tools.blanks(nodeFields[3]));
+      node[nodeId].setInterNodeInLinks(Tools.blanks(nodeFields[4]));
+      node[nodeId].setInterNodeOutLinks(Tools.blanks(nodeFields[5]));
+      node[nodeId].setIntraNodeStartup(Tools.blanks(nodeFields[6]));
+      node[nodeId].setInterNodeStartup(Tools.blanks(nodeFields[7]));
+      node[nodeId].setCPURatio(Tools.blanks(nodeFields[8]));
+      node[nodeId].setIntraNodeBandwidth(Tools.blanks(nodeFields[9]));
+      node[nodeId].setWANStartup(Tools.blanks(nodeFields[10]));
+      
+      node[nodeId].setIntraNodeBuses(Tools.blanks(nodeFields[3])); // Same intra-node buses as processors
+      node[nodeId].setIntraNodeInLinks("1");
+      node[nodeId].setIntraNodeOutLinks("0");
+    }
+    
+    lastNodeIdAssigned++;
+    
+    /*
+    System.out.println("Number of node fields = "+nodeFields.length);
+    System.out.println("First field = "+nodeFields[0]);
+
+
+    if(!oldFile)
+    {
+      setMachine_id(Tools.blanks(line.substring(first,second)));
+      first = second + 1;
+      second = line.indexOf(",",first);
+    }
+
+    setNode_id(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setArchitecture(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setProcessors(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setMemBuses(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setMemInLinks(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setMemOutLinks(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setInput(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setOutput(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setLocal(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setRemote(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+    second = line.indexOf(",",first);
+    setSpeed(Tools.blanks(line.substring(first,second)));
+
+    first = second + 1;
+
+    if(!oldFile)
+    {
+      second = line.indexOf(",",first);
+      setBandwidth(Tools.blanks(line.substring(first,second)));
+      first = second + 1;
+      second = line.indexOf("}",first);
+      setLatency(Tools.blanks(line.substring(first,second)));
+    }
+    else
+    {
+      second = line.indexOf("}",first);
+      setBandwidth(Tools.blanks(line.substring(first,second)));
+    }
+    */
+
+    return true;
+  }
+  
+ /**
+  * Loads a multiple node definition record described in @line and * stores it 
+  * in the array of nodes
+  *
+  * @param line       ASCII string with data a description of multiple nodes
+  * @param lineCount  number of line in the configuration file where the
+  *                   record appear
+  * 
+  * @return           true if nodes were successfully loaded, false otherwise
+  */
+  public boolean loadMultiNodeData(String line, int lineCount) throws Exception
+  {
+    Pattern pattern = Pattern.compile("\"multi node information\" \\{(.*)\\};;$");
+    Matcher matcher = pattern.matcher(line);
+    
+    int numberOfNodes;
+    
+    if (!matcher.matches())
+    {
+      Tools.showErrorDialog("Wrong multi node information record");
+      return false;
+    }
+    
+    String   fields     = matcher.group(1);
+    String[] nodeFields = fields.split(",");
+    
+    if (nodeFields.length == 14)
+    {
+      try
+      {
+        numberOfNodes = Integer.parseInt(Tools.blanks(nodeFields[1]));
+      }
+      catch (NumberFormatException e)
+      {
+        Tools.showErrorDialog("Incorrect number of nodes in multi node definition record");
+        return false;
+      }
+      
+      if (lastNodeIdAssigned + numberOfNodes > node.length)
+      {
+        Tools.showErrorDialog("Wrong number of nodes defined");
+        return false;
+      }
+      
+      for (int i = 0; i < numberOfNodes; i++)
+      {
+        node[lastNodeIdAssigned].setMachine_id(Tools.blanks(nodeFields[0]));
+        node[lastNodeIdAssigned].setNode_id(String.valueOf(lastNodeIdAssigned));
+        node[lastNodeIdAssigned].setArchitecture(Tools.blanks(nodeFields[2]));
+        node[lastNodeIdAssigned].setProcessors(Tools.blanks(nodeFields[3]));
+        node[lastNodeIdAssigned].setCPURatio(Tools.blanks(nodeFields[4]));
+        node[lastNodeIdAssigned].setIntraNodeStartup(Tools.blanks(nodeFields[5]));
+        node[lastNodeIdAssigned].setIntraNodeBandwidth(Tools.blanks(nodeFields[6]));
+        node[lastNodeIdAssigned].setIntraNodeBuses(Tools.blanks(nodeFields[7]));
+        node[lastNodeIdAssigned].setIntraNodeInLinks(Tools.blanks(nodeFields[8]));
+        node[lastNodeIdAssigned].setIntraNodeOutLinks(Tools.blanks(nodeFields[9]));
+        node[lastNodeIdAssigned].setInterNodeStartup(Tools.blanks(nodeFields[10]));
+        node[lastNodeIdAssigned].setInterNodeInLinks(Tools.blanks(nodeFields[11]));
+        node[lastNodeIdAssigned].setInterNodeOutLinks(Tools.blanks(nodeFields[12]));
+        node[lastNodeIdAssigned].setWANStartup(Tools.blanks(nodeFields[13]));
+        
+        lastNodeIdAssigned++;
+      }
+    }
+    else
+    {
+      Tools.showErrorDialog("Wrong multi node information record");
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+  * Stores the information of the nodes defined in the target
+  * configuration file, merging consecutive nodes with same definition
+  * in single "multi node information" record
+  *
+  * @param  target configuration file to be written
+  *
+  */
+  public void saveData(RandomAccessFile target) throws IOException
+  {
+    int currentNode  = 0;
+    int previousNode = 0;
+    int summarized   = 0;
+    
+    while (currentNode < node.length)
+    {
+      if (node[currentNode].equals(node[previousNode]))
+      {
+        summarized++;
+        currentNode++;
+      }
+      else
+      {
+        if (summarized == 1)
+        {
+          node[previousNode].saveData(target);
+        }
+        else
+        {
+          target.writeBytes(Data.MULTINODE);
+          target.writeBytes(node[previousNode].getMachine_id() + ", ");
+          target.writeBytes(String.valueOf(summarized) + ", ");
+          target.writeBytes(node[previousNode].getArchitecture(true) + ", ");
+          target.writeBytes(node[previousNode].getProcessors() + ", ");
+          target.writeBytes(node[previousNode].getCPURatio() + ", ");
+          target.writeBytes(node[previousNode].getIntraNodeStartup() + ", ");
+          target.writeBytes(node[previousNode].getIntraNodeBandwidth() + ", ");
+          target.writeBytes(node[previousNode].getIntraNodeBuses() + ", ");
+          target.writeBytes(node[previousNode].getIntraNodeInLinks() + ", ");
+          target.writeBytes(node[previousNode].getIntraNodeOutLinks() + ", ");
+          target.writeBytes(node[previousNode].getInterNodeStartup() + ", ");
+          target.writeBytes(node[previousNode].getInterNodeInLinks() + ", ");
+          target.writeBytes(node[previousNode].getInterNodeOutLinks() + ", ");
+          target.writeBytes(node[previousNode].getWANStartup() + "};;\n");
+        }
+        
+        previousNode = currentNode;
+        summarized   = 0;
+      }
+    }
+    
+    if (summarized == 1)
+    {
+      node[previousNode].saveData(target);
+    }
+    else
+    {
+      target.writeBytes(Data.MULTINODE);
+      target.writeBytes(node[previousNode].getMachine_id() + ", ");
+      target.writeBytes(String.valueOf(summarized) + ", ");
+      target.writeBytes(node[previousNode].getArchitecture(true) + ", ");
+      target.writeBytes(node[previousNode].getProcessors() + ", ");
+      target.writeBytes(node[previousNode].getCPURatio() + ", ");
+      target.writeBytes(node[previousNode].getIntraNodeStartup() + ", ");
+      target.writeBytes(node[previousNode].getIntraNodeBandwidth() + ", ");
+      target.writeBytes(node[previousNode].getIntraNodeBuses() + ", ");
+      target.writeBytes(node[previousNode].getIntraNodeInLinks() + ", ");
+      target.writeBytes(node[previousNode].getIntraNodeOutLinks() + ", ");
+      target.writeBytes(node[previousNode].getInterNodeStartup() + ", ");
+      target.writeBytes(node[previousNode].getInterNodeInLinks() + ", ");
+      target.writeBytes(node[previousNode].getInterNodeOutLinks() + ", ");
+      target.writeBytes(node[previousNode].getWANStartup() + "};;\n");
+    }
+  }
+  
   // Método que permite acceder al número de nodos fuera de la clase.
   public int getNumberOfNodes()
   {
     return nNodes;
+  }
+  
+  public int[] getCpusPerNode()
+  {
+    int[] Result = new int[nNodes];
+    
+    for (int i = 0; i < nNodes; i++)
+    {
+      Result[i] = Integer.parseInt(node[i].getProcessors());
+    }
+    
+    return Result;
   }
 
   // Método que permite fijar el número de nodos desde fuera de la clase.
@@ -81,6 +444,8 @@ public class NodeData
         return false;
       }
     }
+    
+    lastNodeIdAssigned = 0;
 
     return true;
   }
@@ -104,7 +469,10 @@ public class NodeData
   */
   //public void verifyArchitecture(String oldId, String newId, MachineDataBase mDB,
   //  EnvironmentData env, int index) throws Exception
-  public void verifyArchitecture(String oldId, String newId, EnvironmentData env, int index) throws Exception
+  public void verifyArchitecture(String oldId,
+                                 String newId,
+                                 EnvironmentData env,
+                                 int index) throws Exception
   {
     for(int i = nNodes-1; i >= 0; i--)
     {
@@ -141,30 +509,35 @@ public class NodeData
   // public void createNodes(EnvironmentData env, MachineDataBase.Machine[] mDB) throws Exception
   public void createNodes(EnvironmentData env) throws Exception
   {
-    node = new Node[nNodes];
-    int aux = nNodes-1;
-
-    for(int i = env.getNumberOfMachines()-1; i >= 0; i--)
+    if (!nodesCreated)
     {
-      for(int j = Integer.parseInt(env.machine[i].getNodes())-1; j >= 0; j--)
+      node    = new Node[nNodes];
+      int aux = nNodes-1;
+
+      for(int i = env.getNumberOfMachines()-1; i >= 0; i--)
       {
-        node[aux] = new Node(String.valueOf(aux),env.machine[i].getId());
+        for(int j = Integer.parseInt(env.machine[i].getNodes())-1; j >= 0; j--)
+        {
+          node[aux] = new Node(String.valueOf(aux),env.machine[i].getId());
 
-        /*
-        if(env.machine[i].getIndex() != -1)
-        { // Datos de la arquitectura de la máquina a la que pertenece el nodo.
-          node[aux].setArchitecture(mDB[env.machine[i].getIndex()].getLabel());
-          node[aux].setProcessors(mDB[env.machine[i].getIndex()].getProcessors());
-          node[aux].setInput(mDB[env.machine[i].getIndex()].getInputLinks());
-          node[aux].setOutput(mDB[env.machine[i].getIndex()].getOutputLinks());
-          node[aux].setLocal(mDB[env.machine[i].getIndex()].getLocalStartup());
-          node[aux].setRemote(mDB[env.machine[i].getIndex()].getRemoteStartup());
-          node[aux].setBandwidth(mDB[env.machine[i].getIndex()].getDataTransferRate());
+          /*
+          if(env.machine[i].getIndex() != -1)
+          { // Datos de la arquitectura de la máquina a la que pertenece el nodo.
+            node[aux].setArchitecture(mDB[env.machine[i].getIndex()].getLabel());
+            node[aux].setProcessors(mDB[env.machine[i].getIndex()].getProcessors());
+            node[aux].setInput(mDB[env.machine[i].getIndex()].getInputLinks());
+            node[aux].setOutput(mDB[env.machine[i].getIndex()].getOutputLinks());
+            node[aux].setLocal(mDB[env.machine[i].getIndex()].getLocalStartup());
+            node[aux].setRemote(mDB[env.machine[i].getIndex()].getRemoteStartup());
+            node[aux].setBandwidth(mDB[env.machine[i].getIndex()].getDataTransferRate());
+          }
+          */
+
+          aux--;
         }
-        */
-
-        aux--;
       }
+      
+      nodesCreated = true;
     }
   }
 
@@ -185,8 +558,10 @@ public class NodeData
       node[i] = null;
     }
 
-    nNodes = 0;
-    node = null;
+    nNodes             = 0;
+    node               = null;
+    nodesCreated       = false;
+    lastNodeIdAssigned = 0;
     System.gc();
   }
 

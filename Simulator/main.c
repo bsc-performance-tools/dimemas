@@ -119,6 +119,14 @@ void segfaultHandler(int sigtype)
 
 t_boolean Pallas_output = TRUE;
 
+char      *parameter_tracefile = (char*) 0;
+
+double    parameter_bw  = DBL_MIN;
+double    parameter_lat = DBL_MIN;
+
+int       parameter_predefined_map = MAP_NO_PREDEFINED;
+int       parameter_tasks_per_node;
+
 char *config_file  = "rc.dimemas";
 int   output_level = 0;
 int   debug        = 0;
@@ -183,14 +191,20 @@ int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
 #define USAGE \
 "Usage: %s [-h] [-v] [-d] [-x[s|e|p]] [-o[l] output-file] [-T time] [-l] [-C]\n"\
 "\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
-"\t[-e event_type] [-g event_output_info] [-A sddf-file]\n" \
-"\t[-F] [-S sync_size] [-venus] [-venusconn host:port] config-file\n"
+"\t[-e event_type] [-g event_output_info] [-a input-trace]\n" \
+"\t[-F] [-S sync_size] [-venus] [-venusconn host:port]\n"\
+"\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
+"\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
+"\tconfig-file\n"
 #else
 #define USAGE \
 "Usage: %s [-h] [-v] [-d] [-x[s|e|p]] [-o[l] output-file] [-T time] [-l] [-C]\n"\
 "\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
-"\t[-e event_type] [-g event_output_info] [-A sddf-file]\n" \
-"\t[-F] [-S sync_size] config-file\n"
+"\t[-e event_type] [-g event_output_info] [-F] [-S sync_size]\n" \
+"\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
+"\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
+"\t config-file\n"
+
 #endif
 
 
@@ -250,6 +264,13 @@ help_message(char *tname)
   printf ("\t-g event_output\tFile for output information on events occurrence\n");
   printf ("\t-F\t\tIgnore synchronism send trace field\n");
   printf ("\t-S sync_size\tMinimum message size to use Rendez vous\n");
+  printf ("\t--dim input-trace\tSet input trace (overrides the configuration file)\n");
+  printf ("\t--bw  bandwidth\tSet inter-node bandwidth (MBps, overrides the configuration file)\n");
+  printf ("\t--lat latency\tSet inter-node latency for all nodes (seconds, overrides the configuration file)\n");
+  printf ("\t--fill\tSet node filling task mapping (overrides the configuration file)\n");
+  printf ("\t--ppn tasks_per_node\tSet 'n' tasks per node mapping (overrides the configuration file)\n");
+  printf ("\t--interlvd\tSet interleaved node tasks mapping (overrides the configuration file)\n");
+
 
 #ifdef VENUS_ENABLED
   printf ("\t-venus\tConnect to a Venus server at localhost:'default venus port'\n");
@@ -264,7 +285,7 @@ static long long int read_size(char *c);
 void parse_arguments(int argc, char *argv[])
 {
   int   j;
-  char *conn_url;
+  char *conn_url, *endptr;
 
   if (argc == 1)
   {
@@ -388,9 +409,13 @@ void parse_arguments(int argc, char *argv[])
           j++;
           output_level = atoi (argv[j]);
           if (output_level < 0)
+          {
             output_level = 0;
+          }
           if (output_level > MAX_OUTPUT_LEVEL)
+          {
             output_level = MAX_OUTPUT_LEVEL;
+          }
           break;
         case 'f':
           j++;
@@ -454,6 +479,70 @@ void parse_arguments(int argc, char *argv[])
           break;
         case 't':
           short_out_info = TRUE; /* Only simulation time */
+          break;
+
+        case '-':
+          if (strncmp(argv[j], "--dim", 5) == 0)
+          {
+            j++;
+            parameter_tracefile = argv[j];
+            break;
+          }
+          else if (strncmp(argv[j], "--bw", 4) == 0)
+          {
+            j++;
+
+            parameter_bw = strtod(argv[j], &endptr);
+
+            if (*endptr != 0 || parameter_bw < 0)
+            {
+              die("Wrong bandwidth (--bw) value: %s\n", argv[j]);
+            }
+          }
+          else if (strncmp(argv[j], "--lat", 5) == 0)
+          {
+            j++;
+            parameter_lat = strtod(argv[j], &endptr);
+
+            if (*endptr != 0 || parameter_lat < 0)
+            {
+              die("Wrong latency (--lat) value: %s\n", argv[j]);
+            }
+
+            parameter_lat = parameter_lat*1e9; // Internally, in nanoseconds!
+          }
+          else if (strncmp(argv[j], "--ppn", 5) == 0)
+          {
+            if (parameter_predefined_map != MAP_NO_PREDEFINED)
+            {
+              warning("More than one predefined map provided, using the last one ('n' tasks per node)\n");
+            }
+
+            j++;
+            parameter_predefined_map = MAP_N_TASKS_PER_NODE;
+            parameter_tasks_per_node = atoi(argv[j]);
+          }
+          else if (strncmp(argv[j], "--fill", 6) == 0)
+          {
+            if (parameter_predefined_map != MAP_NO_PREDEFINED)
+            {
+              warning("More than one predefined map provided, using the last one (fill nodes)\n");
+            }
+            parameter_predefined_map = MAP_FILL_NODES;
+          }
+          else if (strncmp(argv[j], "--interlvd", 8) == 0)
+          {
+            if (parameter_predefined_map != MAP_NO_PREDEFINED)
+            {
+              warning("More than one predefined map provided, using the last one (interleaved)\n");
+            }
+            parameter_predefined_map = MAP_INTERLEAVED;
+          }
+          else
+          {
+            fprintf (stderr, USAGE, argv[0]);
+            exit (1);
+          }
           break;
         default:
           fprintf (stderr, USAGE, argv[0]);
@@ -639,11 +728,16 @@ int main (int argc, char *argv[])
   // MALLOC_Init();
 
   /* Modules Initial routines */
-  SIMULATOR_Init();
+  SIMULATOR_Init(config_file,
+                 parameter_tracefile,
+                 parameter_bw,
+                 parameter_lat,
+                 parameter_predefined_map,
+                 parameter_tasks_per_node);
 
   /* Configuration file (target machine description and application mapping)
    * parsing */
-  CONFIGURATION_Init(config_file);
+  // CONFIGURATION_Init(config_file);
   RANDOM_Init ();
   TASK_Init(sintetic_io_applications);
 

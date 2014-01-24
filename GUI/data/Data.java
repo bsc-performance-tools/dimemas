@@ -42,10 +42,14 @@ package data;
  * @version 1.0
  */
 
-import tools.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import javax.swing.*;
-import java.io.*;
-import java.lang.Throwable;
+import tools.Tools;
 
 /*
 * La clase Data ofrece acceso a todos los datos de la GUI.
@@ -55,21 +59,38 @@ public class Data
   private JTextField currentConfigurationFile;
   public String instrumentedArchitecture = "";
 
-  // Ficheros externos.
-  static public boolean       UNDEFINED_HOME  = false;
-  static public final String  HOME            = os();
-  static public final String  ICON_IMAGE      = HOME + "icon.jpg";
-  static public final String  HEADER_FILE     = HOME + "header.txt";
+  // Files included in the 'resource' directory of the JAR file
+  static public final String  ICON_IMAGE              = "resources/icon.jpg";
+  static public final String  RECORDS_DEFINITION_FILE = "resources/records_definition.txt";
+  // static public boolean       UNDEFINED_HOME  = false;
+  // static public final String  HOME            = os();
   // static public final String  MACHINE_DB_FILE = HOME + "machines.db";
   // static public final String  NETWORK_DB_FILE = HOME + "networks.db";
 
-  // Constantes de Mapeo
-  static public final int NO_MAP         = -1;
-  static public final int UNKNOW_MAP     =  0;
-  static public final int LINEAR_MAP     =  1;
-  static public final int CHUNK_MAP      =  2;
-  static public final int INTERLEAVE_MAP =  3;
-
+  // 'Magic numbers' of the two Dimemas configuration files versions
+  static final public String SDDFA_MAGIC       = "SDDFA";
+  static final public String DIMEMAS_CFG_MAGIC = "#DIMEMAS_CONFIGURATION";
+  
+  // To check type of configuration file loaded
+  static public final int NO_CFG_LOADED = -1;
+  static public final int SDDFA         = 0;
+  static public final int DIMEMAS_CFG   = 1;
+  int ConfigurationFileType = Data.NO_CFG_LOADED;
+  
+  // Mapping constants
+  static public final int NO_MAP                = -1;
+  static public final int UNKNOWN_MAP           =  0;
+  static public final int FILL_NODE_MAP         =  1;
+  static public final int N_TASKS_PER_NODE_MAP  =  2;
+  static public final int INTERLEAVE_MAP        =  3;
+  
+  static public final int NO_TASKS_DETECTED     = -1;
+  
+  // Mapping constants strings
+  public static final String FILL_NODE_MAP_STR        = "FILL_NODES";
+  public static final String N_TASKS_PER_NODE_MAP_STR = "TASKS_PER_NODE";
+  public static final String INTERLEAVE_MAP_STR       = "INTERLEAVED";
+  
   // Número de elementos que componen las COLLECTIVE OPERATIONS.
   static public final int DEFAULT_MPI_ITEMS = 14;
 
@@ -77,7 +98,9 @@ public class Data
   static public final String CONNECTION  = "\"dedicated connection information\" {";
   static public final String ENVIRONMENT = "\"environment information\" {";
   static public final String NODE        = "\"node information\" {";
+  static public final String MULTINODE   = "\"multi node information\" {";
   static public final String MAPPING     = "\"mapping information\" {";
+  static public final String PREDEF_MAP  = "\"predefined mapping information\" {";
   static public final String CONFIG      = "\"configuration files\" {";
   static public final String MODULE      = "\"modules information\" {";
   static public final String FILE_SYS    = "\"file system parameters\" {";
@@ -88,18 +111,27 @@ public class Data
   public DedicatedConnectionData dedicated         = new DedicatedConnectionData();
   public EnvironmentData         environment       = new EnvironmentData();
   public NodeData                nodes_information = new NodeData();
-  public MappingData             map               = new MappingData();
+  public MappingData             map               = new MappingData(nodes_information);
   public ConfigurationData       config            = new ConfigurationData();
   public FileSystemData          fileSys           = new FileSystemData();
   public SimulatorCallData       simOptions        = new SimulatorCallData();
   public BlockData               block             = new BlockData();
-
+  
+  // To check if there are multiple mappings defined on the configuration file
+  int MapsOnDisk = 0;
+  
+  // To check if multiple 'wan definition' records appear on the trace
+  boolean wan_defined = false;
+  
+  
+  
   /*
   * El método os genera una cadena con el path correcto para llegar a los
   * ficheros requeridos.
   *
   * @ret String: Cadena de caracteres que forman el path dependiendo del S.O.
   */
+  /*
   private static String os()
   {
     if(System.getProperty("os.name").startsWith("Windows"))
@@ -120,6 +152,7 @@ public class Data
         return HomeDirectory+"/share/dimemas_defaults/";
       }
     }
+    */
 
 
 
@@ -132,9 +165,9 @@ public class Data
     {
       return System.getProperty("user.home") + "/.DIMEMAS_defaults/";
     }
-    */
+    
   }
-
+  */
   // Constructor de la clase Data.
   public Data(JTextField tf)
   {
@@ -144,49 +177,9 @@ public class Data
   }
 
   public static boolean checkConfigurationFiles()
-  {
-    RandomAccessFile test;
-
-    if (UNDEFINED_HOME)
-    {
-      Tools.showErrorDialog("'DIMEMAS_HOME' environment variable not set!");
-      return false;
-    }
-
-    /*
-    try
-    {
-      test = new RandomAccessFile(new File(Data.MACHINE_DB_FILE),"r");
-      test.close();
-    }
-    catch(Exception e)
-    {
-      Tools.showErrorDialog("Unable to open 'machine.db' file. Check existence and permissions on DIMEMAS_HOME directories");
-      return false;
-    }
-
-    try
-    {
-      test = new RandomAccessFile(new File(Data.NETWORK_DB_FILE),"r");
-      test.close();
-    }
-    catch(Exception e)
-    {
-      Tools.showErrorDialog("Unable to open 'network.db' file.  Check existence and permissions on DIMEMAS_HOME directories");
-      return false;
-    }
-    */
-
-    try
-    {
-      test = new RandomAccessFile(new File(Data.HEADER_FILE),"r");
-      test.close();
-    }
-    catch(Exception e)
-    {
-      Tools.showErrorDialog("Unable to open 'header.txt' file.  Check existence and permissions on DIMEMAS_HOME directories");
-      return false;
-    }
+  {  
+    /* Check if the application ICON and the RECORDS_DEFINITION file are
+     * available */  
 
     return true;
   }
@@ -344,63 +337,124 @@ public class Data
     try
     {
       source = new RandomAccessFile(new File(filename),"r");
+      
+      if (source.length() == 0)
+      {
+        Tools.showInformationMessage("The configuration file selected is empty");
+        return;
+      }
+     
+      // Check file type
+      line = source.readLine();
+      lineCount++;
+      seek     = source.getFilePointer();
+      lineSeek = lineCount;
+      
+      if(!validFile)
+      {
+        if(line.equalsIgnoreCase(Data.SDDFA_MAGIC) || line.equalsIgnoreCase(Data.DIMEMAS_CFG_MAGIC))
+        {
+          validFile  = true;
+          MapsOnDisk = 0;
+          wan.initialValues();
+          dedicated.destroyConnections();
+          environment.destroyMachines();
+          nodes_information.destroyNodes();
+          map.initialValues();
+          config.initialValues();
+          fileSys.initialValues();
+          block.destroyFactors();
+          
+          if (line.equalsIgnoreCase(Data.SDDFA_MAGIC))
+          {
+            ConfigurationFileType = Data.SDDFA;
+          }
+          else
+          {
+            ConfigurationFileType = Data.DIMEMAS_CFG;
+          }
+        }
+        else
+        {
+          Tools.showInformationMessage("The file you selected is not a valid Dimemas configuration file");
+          return;
+        }
+        
+        /* Now, the configuration file must always have the magic number 
+         * at the very beginning 
+        else if(!Tools.blanks(line).equalsIgnoreCase(""))
+        {
+          Tools.showInformationMessage("The file you selected is not a valid Dimemas configuration file");
+          return;
+        }
+        */
+      }
 
-      // Recorrer el fichero para ver si pertenece a la versión actual del GUI.
+      /* Traverse the possible SDDF definition records or DIMEMAS_CONFIGURATION
+       * records description */
+      
+      line = source.readLine();
       while(source.getFilePointer() != source.length())
       {
-        if(line.startsWith("#"))   // Empieza un módulo de configuración.
+        if (ConfigurationFileType == Data.SDDFA)
         {
-          if(line.endsWith("};;")) // Acaba un módulo de configuración.
+          if(line.startsWith("#"))   // Configuration record start
           {
-            if(oldFile && (line.startsWith("#0") || line.startsWith("#7")))
+            if(line.endsWith("};;")) // Configuration record end
             {
-              oldFile = false;
+              if(oldFile && (line.startsWith("#0") || line.startsWith("#7")))
+              {
+                oldFile = false;
+              }
+
+              seek      = source.getFilePointer();
+              lineSeek  = lineCount;
+
+              line = source.readLine();
+              lineCount++;
             }
-
-            seek = source.getFilePointer();
-            lineSeek  = lineCount;
-
+            else                     // Módulo de configuración incompleto.
+            {
+              line += source.readLine();
+              lineCount++;
+            }
+          }
+          else
+          {
             line = source.readLine();
             lineCount++;
           }
-          else                     // Módulo de configuración incompleto.
+        }
+        else
+        {
+          if (line.startsWith("/*")) // Records description start
           {
-            line += source.readLine();
+            if (line.endsWith("*/")) // Records description end
+            {
+              seek      = source.getFilePointer();
+              lineSeek  = lineCount;
+
+              line = source.readLine();
+              lineCount++;
+            }
+            else
+            {
+              line += source.readLine();
+              lineCount++;
+            }
+          }
+          else
+          {
+            line = source.readLine();
             lineCount++;
           }
         }
-        else                       // Comprobar que sea un fichero SDDFA válido.
-        {
-          line = source.readLine();
-          lineCount++;
-
-          if(!validFile)
-          {
-            if(line.equalsIgnoreCase("SDDFA"))
-            {
-              validFile = true;
-              wan.initialValues();
-              dedicated.destroyConnections();
-              environment.destroyMachines();
-              nodes_information.destroyNodes();
-              map.initialValues();
-              config.initialValues();
-              fileSys.initialValues();
-              block.destroyFactors();
-            }
-            else if(!Tools.blanks(line).equalsIgnoreCase(""))
-            {
-              Tools.showInformationMessage("The file you have selected is not a valid SDDFA file.\n"+
-                                           "It won't be loaded");
-              return;
-            }
-          } // END if(!validFile)
-        } // END if(SDDFA válido)
-      } // END while()
+      }
 
       source.seek(seek);
       lineCount = lineSeek;
 
+      wan_defined   = false;
       malformedFile = false;
 
       // Recorrer el fichero obteniendo los datos de cada uno de los módulos.
@@ -408,11 +462,20 @@ public class Data
       {
         line = source.readLine();
         lineCount++;
-
+              
         if(line.startsWith(WAN))              // Datos de WAN.
         {
-          if (!wan.loadData(splitLine(line,source), lineCount))
+          if (!wan_defined)
           {
+            if (!wan.loadData(splitLine(line,source), lineCount))
+            {
+              malformedFile = true;
+            }
+            wan_defined = true;
+          }
+          else
+          {
+            Tools.showErrorMessage("Multiple 'wide area network information' records on file");
             malformedFile = true;
           }
         }
@@ -435,7 +498,7 @@ public class Data
           }
         }
         else if(line.startsWith(ENVIRONMENT)) // Datos de MACHINES.
-        {
+        {        
           environment.setNumberOfMachines(Integer.parseInt(wan.getMachines()));
 
           if(instrumentedArchitecture.equalsIgnoreCase(""))
@@ -492,6 +555,8 @@ public class Data
           // nodes_information.createNodes(environment,machineDB.machine);
           nodes_information.createNodes(environment);
 
+          /* JGG (10/01/2014): This assumes that all node definitions come 
+             consecutive, change to line by line load!
           for(int i = 0; i < nodes_information.getNumberOfNodes(); i++)
           {
             if (!nodes_information.node[i].loadData(splitLine(line,source), oldFile, lineCount))
@@ -505,17 +570,45 @@ public class Data
               lineCount++;
             }
           }
+          */
+          if (!nodes_information.loadSingleNodeData(splitLine(line,source), oldFile, lineCount))
+          {
+            malformedFile = true;
+            break;
+          }
+        }
+        else if(line.startsWith(MULTINODE))
+        {
+          nodes_information.createNodes(environment);
+          if (!nodes_information.loadMultiNodeData(line, lineCount))
+          {
+            malformedFile = true;
+            break;
+          }
         }
         else if(line.startsWith(MAPPING))     // Datos de MAPPING.
         {
-          if (!map.loadData(splitLine(line,source), lineCount))
+          if (MapsOnDisk == 0)
           {
-            malformedFile = true;
+            if (!map.loadTaskMapping(splitLine(line,source), lineCount))
+            {
+              malformedFile = true;
+            }
           }
-          else
+          
+          MapsOnDisk++;
+        }
+        else if (line.startsWith(PREDEF_MAP))
+        {
+          if (MapsOnDisk == 0)
           {
-            map.setMapInfo(Data.UNKNOW_MAP);
+            if (!map.loadPredefinedMapping(splitLine(line,source), lineCount))
+            {
+              malformedFile = true;
+            }
           }
+          
+          MapsOnDisk++;
         }
         else if(line.startsWith(CONFIG))      // Datos de EXTRA CONFIG FILES.
         {
@@ -572,6 +665,12 @@ public class Data
     }
     else
     {
+      if (MapsOnDisk > 1)
+      {
+        Tools.showInformationMessage("Current configuration file has multiple applications defined.\n\n"+
+                                     "Only first application will be loaded");
+      }
+      
       for (int i = environment.getNumberOfMachines()-1; i >= 0; i--)
       {
         // Los nodos de una máquina tendrán su misma arquitectura.
@@ -609,35 +708,55 @@ public class Data
   *
   * @param: String filename -> nombre del fichero de configuración a generar.
   */
-  public void saveToDisk(String filename)
+  public boolean saveToDisk(String filename)
   {
     RandomAccessFile source;
     RandomAccessFile target;
 
+    String cfgCheckResult = checkCorrectConfiguration();
+    
+    if (cfgCheckResult != null)
+    {
+      Tools.showErrorDialog(cfgCheckResult+"\n\n"+
+                            "Configuration file won't be saved");
+      return false;
+    }
+    
     try
     {
-      source = new RandomAccessFile(new File(HEADER_FILE),"r");
+      // source = new RandomAccessFile(new File(HEADER_FILE),"r");
       target = new RandomAccessFile(new File(filename),"rw");
-
-      if(target.length() != 0)
+      target.setLength(0);
+      InputStream is = getClass().getClassLoader().getResourceAsStream(Data.RECORDS_DEFINITION_FILE);
+      
+      target.writeBytes(Data.DIMEMAS_CFG_MAGIC+"\n\n");
+      
+      if (is == null)
       {
-        target.setLength(0);
+        Tools.showInformationMessage("Unable to open record description file, it won't be included in configuration file\n"+
+                                     "Please report this error to tools@bsc.es");
+      }
+      else
+      {
+        InputStreamReader isr = new InputStreamReader(is);
+        BufferedReader br     = new BufferedReader(isr);
+        String line;
+
+        while ((line = br.readLine()) != null)
+        {
+          target.writeBytes(line+"\n");
+        }
+        br.close();
+        isr.close();
+        is.close();
+        target.writeBytes("\n");
       }
 
-      // Generación de la cabecera del nuevo fichero de configuración.
-      while(source.getFilePointer() != source.length())
-      {
-        target.writeBytes(source.readLine() + "\n");
-      }
-
-      source.close();
-      target.writeBytes("\n");
-
-      // Datos de WAN.
+      // WAN information record
       wan.saveData(target);
       target.writeBytes("\n");
 
-      // Datos de DEDICATED CONNECTION.
+      // DEDICATED CONNECTION records
       for(int i = 0; i < dedicated.getNumberOfConnections(); i++)
       {
         dedicated.connection[i].saveData(target);
@@ -645,11 +764,12 @@ public class Data
 
       target.writeBytes("\n");
 
-      // Datos de MACHINES.
+      // MACHINE records
       if(environment.getNumberOfMachines() == 0)
       {
         environment.setNumberOfMachines(1);
-        environment.createMachines(environment.DEFAULT_ARCHITECTURE,environment.DEFAULT_BUSES);
+        environment.createMachines(environment.DEFAULT_ARCHITECTURE,
+                                   environment.DEFAULT_BUSES);
       }
 
       for(int i = 0; i < environment.getNumberOfMachines(); i++)
@@ -659,7 +779,7 @@ public class Data
 
       target.writeBytes("\n");
 
-      // Datos de NODES.
+      /* JGG 10/01/2014 Now 'nodes_information' object prints all the nodes data
       if(nodes_information.getNumberOfNodes() == 0)
       {
         nodes_information.setNumberOfNodes(environment.getNumberOfMachines());
@@ -671,37 +791,67 @@ public class Data
       {
         nodes_information.node[i].saveData(target);
       }
+      */
+      nodes_information.saveData(target);
 
       target.writeBytes("\n");
 
-      // Datos de MAPPING.
+      /*
       if(map.getTasks() == 0)
       {
-        map.setTasks("1");
+        map.setTasks(1);
       }
 
       if(map.getMap(false).equalsIgnoreCase(""))
       {
-        map.setMap("0");
+        map.setMap(new int[0]);
       }
+      */
 
       map.saveData(target);
       target.writeBytes("\n");
 
-      // Datos de EXTRA CONFIG FILES.
+      // EXTRA CONFIG FILES record
       config.saveData(target);
       target.writeBytes("\n");
 
-      // Datos de BLOCK FACTORS/MODULES.
+      // MODULES record
       block.saveData(target);
       target.writeBytes("\n");
 
-      // Datos de FILE SYSTEM INFO.
+      // FILE SYSTEM INFO record
       fileSys.saveData(target);
       target.close();
-    } catch(Throwable exc)
-      {
-        Tools.showInformationMessage(exc.toString());
-      }
+    }
+    catch(IOException exc)
+    {
+      Tools.showErrorDialog("Error writing configuration file\n"+exc.toString());
+      return false;
+    }
+    catch(NumberFormatException exc)
+    {
+      Tools.showErrorDialog("Error creating default values, configuration file not written\n"+exc.toString());
+      return false;
+    }
+    
+    
+    return true;
+  }
+  
+  private String checkCorrectConfiguration()
+  {
+    if (nodes_information.getNumberOfNodes() == 0)
+    {
+      return "No nodes defined in current machine!";
+    }
+    
+    if (map.getMapInfo() == Data.NO_MAP)
+    {
+      return "No tasks mapping defined!";
+    }
+    
+    return null;
   }
 }
+
+

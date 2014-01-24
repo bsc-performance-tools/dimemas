@@ -75,12 +75,19 @@ public class InitialMachineWindow extends GUIWindow
     super(d);
 
     // Propiedades de la ventana.
-    setTitle("Initial machine information");
+    setTitle("Application information");
 
     // Añadiendo información.
     tf_tracefile.setText(data.map.getTracefile(false));
     // tf_instrumentedArch.setText(data.instrumentedArchitecture);
-    tf_tasks.setText(String.valueOf(data.map.getTasks()));
+    if (data.map.getTasks() == Data.NO_TASKS_DETECTED)
+    {
+      tf_tasks.setText("N/A");
+    }
+    else
+    {
+      tf_tasks.setText(String.valueOf(data.map.getTasks()));
+    }
 
     // Añadiendo los componentes a la ventana.
     drawLine(new Component[] {new JLabel("Input tracefile name"),tf_tracefile});
@@ -246,7 +253,7 @@ public class InitialMachineWindow extends GUIWindow
         }
         else if (line.startsWith("SDDFA;;"))
         {
-          Tools.showErrorDialog("This version does not support TRF tracefiles. Plase translate the trace");
+          Tools.showErrorDialog("This version does not support TRF tracefiles. Plase convert the trace");
           tf_tracefile.setText(null);
         }
         else
@@ -268,8 +275,11 @@ public class InitialMachineWindow extends GUIWindow
 
       // prog.interrupt();
     }
+        
   }
 
+  
+  
   /*
   * La clase progress crea y mantiene la barra de progreso que indica el proceso
   * de cálculo del número de tareas de un fichero de trazas.
@@ -286,7 +296,7 @@ public class InitialMachineWindow extends GUIWindow
       bar.setMinimum(0);
       bar.setMaximum(length);
       bar.setStringPainted(true);
-      frame.setIconImage(Toolkit.getDefaultToolkit().createImage(Data.ICON_IMAGE));
+      frame.setIconImage(Toolkit.getDefaultToolkit().createImage(getClass().getClassLoader().getResource(Data.ICON_IMAGE)));
       frame.getContentPane().setLayout(new BorderLayout());
       frame.getContentPane().add(new JLabel("Please wait",JLabel.CENTER),BorderLayout.CENTER);
       frame.getContentPane().add(bar,BorderLayout.SOUTH);
@@ -358,9 +368,9 @@ public class InitialMachineWindow extends GUIWindow
       {
         try
         {
-          data.map.setTasks(tf_tasks.getText());
+          //data.map.setTasks(Integer.parseInt(tf_tasks.getText()));
           //data.instrumentedArchitecture = tf_instrumentedArch.getText();
-          data.map.setTracefile(tf_tracefile.getText());
+          
 
           for(int i = data.environment.getNumberOfMachines()-1; i >= 0; i--)
           {
@@ -373,6 +383,7 @@ public class InitialMachineWindow extends GUIWindow
     }
     else if(e.getSource() == b_select)
     {
+      Tools.fc.setAcceptAllFileFilterUsed(false);
       Tools.fc.addChoosableFileFilter(new Tools.DIMfilter());
 
       int result = Tools.fc.showOpenDialog(null);
@@ -380,12 +391,27 @@ public class InitialMachineWindow extends GUIWindow
       if(result == JFileChooser.APPROVE_OPTION)
       {
         tf_tracefile.setText(Tools.fc.getSelectedFile().getAbsolutePath());
+        
+        data.map.setTracefile(tf_tracefile.getText());
+
+        if (data.map.getTasks() != Data.NO_TASKS_DETECTED)
+        {
+          tf_tasks.setText(String.valueOf(data.map.getTasks()));
+        }
+        else
+        {
+          tf_tasks.setText("N/A");
+        }
       }
 
-      // Check the trace format and the number of tasks
+      /* JGG: not needed any more
+              Check the trace format and the number of tasks
       File source = new File(tf_tracefile.getText());
       workUnit wu = new workUnit(source);
       wu.start();
+      */
+
+      
 
       Tools.fc.resetChoosableFileFilters();
     }

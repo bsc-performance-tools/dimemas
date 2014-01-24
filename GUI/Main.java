@@ -40,8 +40,8 @@
  * @version 1.0
  */
 
-import gui.*;
-import data.*;
+import gui.*; 
+import data.Data;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -59,7 +59,7 @@ public class Main extends JFrame
   {
     super("DIMEMAS");
 
-    setIconImage(Toolkit.getDefaultToolkit().getImage(Data.ICON_IMAGE));
+    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource((Data.ICON_IMAGE))));          
     setResizable(false);
     setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
@@ -69,6 +69,7 @@ public class Main extends JFrame
     panelPrincipal.add("Center",currentConfigurationFile);
 
     setBounds(25,50,600,100);
+    setResizable(false);
     setVisible(true);
   }
 
@@ -83,6 +84,7 @@ public class Main extends JFrame
 
     ventanaPrincipal.addWindowListener(new WindowAdapter()
       {
+        @Override
         public void windowClosing(WindowEvent e)
         {
           if ( 0 ==

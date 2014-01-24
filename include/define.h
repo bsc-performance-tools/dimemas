@@ -48,6 +48,7 @@
   #define MYFREOPEN  freopen64
   #define MYFCLOSE   fclose
   #define MYFSEEKO   fseeko64
+  #define MYFSEEK    fseek64
   #define MYFTELLO   ftello64
   #define MYFSTAT    fstat64
   #define MYLSEEK    lseek64
@@ -57,6 +58,7 @@
   #define MYFREOPEN  freopen
   #define MYFCLOSE   fclose
   #define MYFSEEKO   fseeko
+  #define MYFSEEK    fseek
   #define MYFTELLO   ftello
   #define MYFSTAT    fstat
   #define MYLSEEK    lseek
@@ -522,31 +524,6 @@
         x.micro = -1;
 
 #endif /* PACA */
-
-
-/*******************************************************************************
- * Macro per decidir si cal utilitzar rendez vous en un send.
- * Hi ha 4 possibilitats:
- *
- * - TOTES les comunicacions son Asincrones.
- *   Quan no s'hautoritza l'us del camp que indica sincronisme als sends de la
- *   traça (RD_SYNC_use_trace_sync == FALSE) i la mida minima del missatge per
- *   utilitzar sincronisme es negativa (RD_SYNC_message_size < 0).
- *
- * - Nomes s'utilitza comunicacio Sincrona si s'indica de forma explicita. Quan
- *   RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size < 0.
- *
- * - Nomes s'utilitza comunicacio Sincrona si la mida del missatge es >= que la
- *   mida donada. Quan RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size>=0.
- *
- * - S'utilitza comunicacio Sincrona si s'indica de forma explicita o la mida
- *   del missatge es >= que la mida donada. Quan RD_SYNC_use_trace_sync == TRUE
- *   i RD_SYNC_message_size >= 0.
- ******************************************************************************/
-#define USE_RENDEZ_VOUS(rende, mida) \
-        (( (RD_SYNC_use_trace_sync && (rende)) || \
-         ((RD_SYNC_message_size >= 0) && ((mida)>=RD_SYNC_message_size)) \
-         ) ? 1 : 0)
 
 
 

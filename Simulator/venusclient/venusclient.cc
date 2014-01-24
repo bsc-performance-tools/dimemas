@@ -479,13 +479,13 @@ struct t_event *EVENT_venus_timer (
   return event;
 }
 
-int VC_command_send (double dtime, int src, int dest, int size, void *event, void *event_resources_out, int src_app, int dest_app) {
+int VC_command_send (double dtime, int src, int dest, int tag, int size, void *event, void *event_resources_out, int src_app, int dest_app) {
 
   char buffer[10000];
 
   assert(VC_is_enabled()); // avoid "per-event" checks in non-debug; event have small granularity; checks can multiply per-event process time
 
-  sprintf(buffer, "SEND %.100lg %d %d %d %p %p %d %d %d %d\n", dtime, src, dest, size, event, event_resources_out, src, dest, src_app, dest_app);
+  sprintf(buffer, "SEND %.100lg %d %d %d %d %p %p %d %d %d %d\n", dtime, src, dest, tag, size, event, event_resources_out, src, dest, src_app, dest_app);
   if (PRINT_VENUS_SENDS) {
     printf ("%s  [in flight = %d]\n", buffer, venusmsgs_in_flight);
   }
@@ -543,7 +543,8 @@ int venus_outFIFO_event (struct t_queue *q, struct t_event *e) {
 #ifdef USE_EQUEUE
     printf ("EVENT %6d, in QUEUE %p: %d, Interactive Queue = %d\n", processed, *q, count_Equeue (q), count_Equeue (&Interactive_event_queue) );
 #else
-    printf ("EVENT %6d, in QUEUE %p: %d, Interactive Queue = %d\n", processed, *q, count_queue (q), count_queue (&Interactive_event_queue) );
+    /* DEBUG: changed '*q' per 'q', to check the @ of the actual queue not where it points */
+    printf ("EVENT %6d, in QUEUE %p: %d, Interactive Queue = %d\n", processed, q, count_queue (q), count_queue (&Interactive_event_queue) );
 #endif
   }
   if (e == E_NIL) {
@@ -655,14 +656,14 @@ int venus_outFIFO_event (struct t_queue *q, struct t_event *e) {
           if ( (rc = sscanf (token, "COMPLETED SEND %lg %d %d %d %p %p %d %d %lg %[^\n]", &time, &from, &to, &size, &event, &out_resources_event, &check_src, &check_dest, &physical_send_time, buffer) ) >= 6) {
             TIMER_TO_FLOAT (current_time, sim_time);
             if (time < sim_time) {
-              fprintf (stderr, "WARNING: DRIFT: STOP scheduled at: %.20lf s, simTime is: %.20lf s; drift of %.20lf ns\n",
-                       time, sim_time, (sim_time - time) * 1e9);
+              //fprintf (stderr, "WARNING: DRIFT: STOP scheduled at: %.20lf s, simTime is: %.20lf s; drift of %.20lf ns\n",
+              //         time, sim_time, (sim_time - time) * 1e9);
               time = sim_time;
             }
 
             if (rc >= 9) {
               if (physical_send_time < event->thread->physical_send) {
-                fprintf (stderr, "WARNING: physical send time reported by Venus (= %.20lf s) is smaller than Dimemas physical send (= %.20lf s)\n", physical_send_time, event->thread->physical_send);
+                //fprintf (stderr, "WARNING: physical send time reported by Venus (= %.20lf s) is smaller than Dimemas physical send (= %.20lf s)\n", physical_send_time, event->thread->physical_send);
               }
               else {
                 FLOAT_TO_TIMER (physical_send_time, tmp_timer);

@@ -45,13 +45,15 @@ package data;
 import data.Data.*;
 import tools.*;
 import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
 * Clase que albergará los datos correspondientes a MACHINES.
 */
 public class EnvironmentData
 {
-  public final String COMM_CT = "1";
+  public final String COMM_CT  = "1";
   public final String COMM_LIN = "2";
   public final String COMM_LOG = "3";
 
@@ -66,7 +68,7 @@ public class EnvironmentData
 
   private double[][] ft;      // Flight Time de las máquinas.
   private int nMachines = 0;  // Número de máquinas.
-  public Machine[] machine;   // Máquinas.
+  public  Machine[] machine;   // Máquinas.
 
   // Método que permite acceder al número de máquinas fuera de la clase.
   public int getNumberOfMachines()
@@ -262,7 +264,7 @@ public class EnvironmentData
   *
   * @exc: Valor numérico no válido (buses).
   */
-  public void createMachines(String architecture, String buses) throws Exception
+  public void createMachines(String architecture, String buses) throws NumberFormatException
   {
     machine = new Machine[nMachines];
 
@@ -386,13 +388,13 @@ public class EnvironmentData
     {
       // index = -1;
       nodeArchitecture = DEFAULT_NODE_ARCHITECTURE;
-      name = DEFAULT_NAME;
-      id = DEFAULT_ID;
-      architecture = DEFAULT_ARCHITECTURE;
-      nodes = DEFAULT_NODES;
-      bandwidth = DEFAULT_BANDWIDTH;
-      buses = DEFAULT_BUSES;
-      communication = DEFAULT_COMMUNICATION;
+      name             = DEFAULT_NAME;
+      id               = DEFAULT_ID;
+      architecture     = DEFAULT_ARCHITECTURE;
+      nodes            = DEFAULT_NODES;
+      bandwidth        = DEFAULT_BANDWIDTH;
+      buses            = DEFAULT_BUSES;
+      communication    = DEFAULT_COMMUNICATION;
 
       for(int i = 0; i < 4; i++)
       {
@@ -590,9 +592,35 @@ public class EnvironmentData
     */
     public boolean loadData(String line, boolean oldFile, int lineCount) throws Exception
     {
-      int first = Data.ENVIRONMENT.length();
-      int second = line.indexOf(",",first);
+      Pattern pattern = Pattern.compile("\"environment information\" \\{(.*)\\};;$");
+      Matcher matcher = pattern.matcher(line);
 
+      if (!matcher.matches())
+      {
+        Tools.showErrorDialog("Wrong node information record structure");
+        return false;
+      }
+      
+      String fields          = matcher.group(1);
+      String machineFields[] = fields.split(",");
+      
+      if (machineFields.length == 7)
+      {
+        setName(Tools.blanks(machineFields[0]));
+        setId(Tools.blanks(machineFields[1]));
+        setArchitecture(Tools.blanks(machineFields[2]));
+        setNodes(Tools.blanks(machineFields[3]));
+        setBandwidth(Tools.blanks(machineFields[4]));
+        setBuses(Tools.blanks(machineFields[5]));
+        setCommunication(Tools.blanks(machineFields[6]));
+      }
+      else
+      {
+        Tools.showErrorDialog("Wrong node information record fields");
+        return false;
+      }
+      
+      /*
       if(!oldFile)
       {
         setName(Tools.blanks(line.substring(first,second)));
@@ -616,6 +644,7 @@ public class EnvironmentData
       first = second + 1;
       second = line.indexOf("}",first);
       setCommunication(Tools.blanks(line.substring(first,second)));
+      */
 
       return true;
     }
@@ -722,7 +751,7 @@ public class EnvironmentData
       }
     }
 
-    public void setId(String value) throws Exception
+    public void setId(String value) throws NumberFormatException
     {
       try
       {
@@ -747,7 +776,7 @@ public class EnvironmentData
       }
     }
 
-    public void setNodes(String value) throws Exception
+    public void setNodes(String value) throws NumberFormatException
     {
       try
       {
@@ -760,7 +789,7 @@ public class EnvironmentData
         }
     }
 
-    public void setBandwidth(String value) throws Exception
+    public void setBandwidth(String value) throws NumberFormatException
     {
       try
       {
@@ -773,7 +802,7 @@ public class EnvironmentData
         }
     }
 
-    public void setBuses(String value) throws Exception
+    public void setBuses(String value) throws NumberFormatException
     {
       try
       {
@@ -786,7 +815,7 @@ public class EnvironmentData
         }
     }
 
-    public void setCommunication(String value) throws Exception
+    public void setCommunication(String value) throws NumberFormatException
     {
       try
       {

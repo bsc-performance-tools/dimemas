@@ -38,6 +38,7 @@
 #include <types.h>
 #include "machine.h"
 
+#define NO_NODE_ID -1
 
 struct t_simulator
 {
@@ -94,7 +95,16 @@ extern struct t_queue  Port_queue;
 extern dimemas_timer   current_time;
 extern dimemas_timer   final_statistical_time;
 
-void SIMULATOR_Init(void);
+void SIMULATOR_Init(char  *simulator_configuration_filename,
+                    char  *input_tracefile,
+                    double parameter_bw,
+                    double parameter_lat,
+                    int    parameter_predefined_map,
+                    int    parameter_tasks_per_node);
+
+char *SIMULATOR_get_configuration_filename(void);
+int   SIMULATOR_get_number_of_nodes(void);
+int  *SIMULATOR_get_cpus_per_node(void);
 
 void SIMULATOR_set_number_of_machines(int number_of_machines);
 void SIMULATOR_set_wan_name(char*);
@@ -105,17 +115,28 @@ void SIMULATOR_set_wan_global_op_model(int global_op_model);
 void SIMULATOR_set_wan_flight_times(double** flight_times);
 void SIMULATOR_set_number_of_dedicated_connections(int dedicated_connections_count);
 
-t_boolean SIMULATOR_machine_exists(int machine_id);
+t_boolean SIMULATOR_set_wan_definition(char  *wan_name,
+                                       int    number_of_machines,
+                                       int    number_of_dedicated_connections,
+                                       int    function_of_traffic,
+                                       double max_traffic_value,
+                                       double external_net_bandwidth,
+                                       int    communication_group_model);
+
+t_boolean         SIMULATOR_machine_exists(int machine_id);
+struct t_machine* SIMULATOR_get_machine(int machine_id);
+
 t_boolean SIMULATOR_set_machine_definition(int    machine_id,
-                                     char  *machine_name,
-                                     char  *instrumented_architecture,
-                                     int    number_of_nodes,
-                                     double network_bandwidth,
-                                     int    number_of_buses,
-                                     int    global_operation_model);
+                                           char  *machine_name,
+                                           char  *instrumented_architecture,
+                                           int    number_of_nodes,
+                                           double network_bandwidth,
+                                           int    number_of_buses,
+                                           int    global_operation_model);
 
 t_boolean SIMULATOR_node_exists(int node_id);
 t_boolean SIMULATOR_set_node_definition(int            node_id,
+                                        int            machine_id,
                                         char          *node_name,
                                         int            no_processors,
                                         int            no_mem_buses,
@@ -133,21 +154,43 @@ t_boolean SIMULATOR_set_node_definition(int            node_id,
                                         double         local_memory_startup,
                                         double         remote_memory_startup);
 
+t_boolean SIMULATOR_set_multiple_node_definition(int            node_count,
+                                                 int            machine_id,
+                                                 char          *node_name,
+                                                 int            no_processors,
+                                                 int            no_mem_buses,
+                                                 int            no_mem_in_links,
+                                                 int            no_mem_out_links,
+                                                 int            no_input,
+                                                 int            no_output,
+                                                 double         local_startup,
+                                                 double         remote_startup,
+                                                 double         relative,
+                                                 double         local_bandwidth,
+                                                 double         external_net_startup,
+                                                 double         local_port_startup,
+                                                 double         remote_port_startup,
+                                                 double         local_memory_startup,
+                                                 double         remote_memory_startup);
+
 t_boolean SIMULATOR_dedicated_connection_exists(int d_conn_id);
 t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
-                                                  int    s_machine_id,
-                                                  int    d_machine_id,
-                                                  double bandwidth,
-                                                  int    tags_size,
-                                                  int   *tags,
-                                                  int    first_message_size,
-                                                  char   first_size_cond,
-                                                  int    operation,
-                                                  int    second_message_size,
-                                                  char   second_size_cond,
-                                                  int    comms_size,
-                                                  int   *comm_ids,
-                                                  double startup,
-                                                  double flight_time);
+                                                        int    s_machine_id,
+                                                        int    d_machine_id,
+                                                        double bandwidth,
+                                                        int    tags_size,
+                                                        int   *tags,
+                                                        int    first_message_size,
+                                                        char   first_size_cond,
+                                                        char   operation,
+                                                        int    second_message_size,
+                                                        char   second_size_cond,
+                                                        int    comms_size,
+                                                        int   *comm_ids,
+                                                        double startup,
+                                                        double flight_time);
 
+void SIMULATOR_check_correct_definitions(void);
+
+char* SIMULATOR_get_last_error(void);
 #endif

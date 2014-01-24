@@ -398,39 +398,79 @@ public class ConfigurationOptionsWindow extends GUIWindow
       {
         Tools.showInformationMessage("You must specify the number of nodes before configure task-mapping.");
       }
-      else if(data.map.getTasks() == 0)
+      /* Not needed any more 
+      else if(data.map.getTasks() == 0 || )
       {
         Tools.showInformationMessage("You must specify the number of tasks before configure task-mapping.");
       }
+      */
       else
       {
-        new MappingWindow(data).addWindowListener(
-          new WindowAdapter()
-          {
-            public void windowOpened(WindowEvent we)
+        if (data.map.getTasks() == -1 || data.map.getTasks() == 0 ||
+            data.map.getTasks() > 64 || 
+            data.nodes_information.getNumberOfNodes() > 64)
+        {
+          /* Compact window of predefined maps */
+          new PredefinedMapsWindow(data).addWindowListener(
+            new WindowAdapter()
             {
-              b_mapping.setEnabled(false);
-              lbl_mapping.setText(STATUS_OPEN);
-              lbl_mapping.setForeground(Color.red);
-            }
+              public void windowOpened(WindowEvent we)
+              {
+                b_mapping.setEnabled(false);
+                lbl_mapping.setText(STATUS_OPEN);
+                lbl_mapping.setForeground(Color.red);
+              }
 
-            public void windowClosed(WindowEvent we)
+              public void windowClosed(WindowEvent we)
+              {
+                b_mapping.setEnabled(true);
+                lbl_mapping.setForeground(Color.black);
+
+                if(data.map.defaultValues())
+                {
+                  lbl_mapping.setText(STATUS_DEFAULT);
+                }
+                else
+                {
+                  lbl_mapping.setText(STATUS_MODIFIED);
+                  lbl_mapping.setForeground(Color.blue);
+                }
+              }
+            }
+          );
+        }
+        else
+        {
+          /* Grid mapping window */       
+          new GridMappingWindow(data).addWindowListener(
+            new WindowAdapter()
             {
-              b_mapping.setEnabled(true);
-              lbl_mapping.setForeground(Color.black);
-
-              if(data.map.defaultValues())
+              public void windowOpened(WindowEvent we)
               {
-                lbl_mapping.setText(STATUS_DEFAULT);
+                b_mapping.setEnabled(false);
+                lbl_mapping.setText(STATUS_OPEN);
+                lbl_mapping.setForeground(Color.red);
               }
-              else
+
+              public void windowClosed(WindowEvent we)
               {
-                lbl_mapping.setText(STATUS_MODIFIED);
-                lbl_mapping.setForeground(Color.blue);
+                b_mapping.setEnabled(true);
+                lbl_mapping.setForeground(Color.black);
+
+                if(data.map.defaultValues())
+                {
+                  lbl_mapping.setText(STATUS_DEFAULT);
+                }
+                else
+                {
+                  lbl_mapping.setText(STATUS_MODIFIED);
+                  lbl_mapping.setForeground(Color.blue);
+                }
               }
             }
-          }
-        );
+          );
+        }
+        
       }
     }
     else if(e.getSource() == b_config_files)

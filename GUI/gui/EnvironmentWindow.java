@@ -412,15 +412,19 @@ public class EnvironmentWindow extends GUIWindow
       if(storeInformation(Integer.parseInt(tf_number.getText())-1,false))
       {
         int totalNodes = 0;
+        String result;
 
         for(int i = data.environment.getNumberOfMachines()-1; i >= 0; i--)
         {
           totalNodes += Integer.parseInt(data.environment.machine[i].getNodes());
         }
 
+        // System.out.println("Total Nodes = "+totalNodes);
+        
         try
         {
           data.nodes_information.setNumberOfNodes(totalNodes);
+          
 
           if(data.nodes_information.node == null)
           {
@@ -432,8 +436,17 @@ public class EnvironmentWindow extends GUIWindow
             // data.nodes_information.changeAtNodes(data.environment,data.machineDB.machine);
             data.nodes_information.changeAtNodes(data.environment);
           }
-        } catch(Exception exc) {}
 
+        } catch(Exception exc)
+        {
+        }
+
+        if ( (result = data.map.changeAtNodes()) != null)
+        {
+          Tools.showWarningMessage(result+"\n"+
+                  "Please check the \"Mapping information\" to verify your task mapping");
+        }
+        
         dispose();
       }
     }

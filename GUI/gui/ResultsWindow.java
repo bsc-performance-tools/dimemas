@@ -54,7 +54,7 @@ import java.awt.event.*;
 */
 public class ResultsWindow extends GUIWindow
 {
-  public static final long serialVersionUID = 19L;
+  public static final long serialVersionUID = 15L;
   
   private boolean errorWindow;
   private JPanel buttonPanel = new JPanel(new FlowLayout());

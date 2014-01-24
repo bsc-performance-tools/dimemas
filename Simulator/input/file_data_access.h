@@ -48,6 +48,9 @@ struct ptask_structure
 // API MAIN FUNCTIONS
 extern char* DATA_ACCESS_get_error();
 
+extern t_boolean DATA_ACCESS_get_number_of_tasks(char *trace_file_location,
+                                                 int  *tasks_count);
+
 extern t_boolean DATA_ACCESS_init(int   ptask_id,
                                   char* trace_file_location);
 

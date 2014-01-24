@@ -13,11 +13,12 @@ dist_noinst_JAVA += \
   $(gui_pkgpath)/FlightTimeWindow.java \
   $(gui_pkgpath)/GUIWindow.java \
   $(gui_pkgpath)/InitialMachineWindow.java \
-  $(gui_pkgpath)/MappingWindow.java \
   $(gui_pkgpath)/NodeWindow.java \
   $(gui_pkgpath)/OptionsMenu.java \
   $(gui_pkgpath)/ResultsWindow.java \
   $(gui_pkgpath)/SimulatorCallWindow.java \
-  $(gui_pkgpath)/WideAreaNetworkWindow.java
+  $(gui_pkgpath)/WideAreaNetworkWindow.java \
+  $(gui_pkgpath)/PredefinedMapsWindow.java \
+  $(gui_pkgpath)/GridMappingWindow.java
 
 CLEANFILES += $(gui_pkgpath)/*.class

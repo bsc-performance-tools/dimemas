@@ -32,53 +32,15 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef _CONFIGURATION_H_
-#define _CONFIGURATION_H_
+#ifndef _NEW_CONFIGURATION_H_
+#define _NEW_CONFIGURATION_H_
 
-#include "types.h"
-#include "ts.h"
-
-/*
- * Definitions in a configuration file
- */
-typedef enum { WAN_INFORMATION = 0,
-               ENV_INFORMATION,
-               NODE_INFORMATION,
-               MAPPING,
-               CONFIG_FILES,
-               MOD_INFORMATION,
-               FS_PARAMETERS,
-               DED_CONNECTION } record_types;
-
-#define WAN_INFORMATION  0
-#define ENV_INFORMATION  1
-#define NODE_INFORMATION 2
-#define MAP_INFORMATION  3
-#define CONFIG_FILES     4
-#define MOD_INFORMATION  5
-#define FS_PARAMETERS    6
-#define DED_CONNECTION   7
-
-extern t_boolean CONFIGURATION_parse(FILE  *configuration_file,
-                                     char  *input_tracefile,
-                                     double parameter_bw,
-                                     double parameter_lat,
-                                     int    parameter_predefined_map,
-                                     int    parameter_tasks_per_node);
-
-extern void  CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_file);
-extern void  CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_file);
-extern void  CONFIGURATION_Set_Communications_Configuration_File(char* comm_conf_file);
-extern void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_file);
-
-extern char* CONFIGURATION_Get_Configuration_FileName(void);
-
-extern void  CONFIGURATION_New_Definition(struct t_queue *definition_fields,
-                                          struct t_entry *definition_structure);
-
-extern void CONFIGURATION_Load_Communications_Configuration(void);
-extern void CONFIGURATION_Load_Scheduler_Configuration(void);
-extern void CONFIGURATION_Load_Random_Configuration(void);
-extern void CONFIGURATION_Load_FS_Configuration(void);
+extern t_boolean NEW_CONFIGURATION_parse(FILE  *configuration_file,
+                                         char  *input_tracefile,
+                                         double parameter_bw,
+                                         double parameter_lat,
+                                         int    parameter_predefined_map,
+                                         int    parameter_tasks_per_node);
+extern char*     NEW_CONFIGURATION_get_last_error(void);
 
 #endif

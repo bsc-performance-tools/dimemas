@@ -45,39 +45,38 @@ package gui;
 import tools.*;
 import data.Data;
 import javax.swing.*;
-import java.io.*;
-import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 
 /*
 * Esta clase crea el menu con todas las opciones del GUI.
 */
 public class OptionsMenu extends JMenuBar implements ActionListener
 {
-  public static final long serialVersionUID = 18L;
+  public static final long serialVersionUID = 13L;
 
-  private Data data;
+  private final Data data;
 
-  private JMenu config = new JMenu("Configuration");
-  private JMenu sim    = new JMenu("Simulator");
+  private final JMenu config = new JMenu("Configuration");
+  private final JMenu sim    = new JMenu("Simulator");
   // private JMenu db     = new JMenu("Database");
-  private JMenu info   = new JMenu("Information");
+  private final JMenu info   = new JMenu("Information");
 
-  private JMenuItem initial      = createMenuItem("Initial machine");
-  private JMenuItem target       = createMenuItem("Target configuration");
-  private JMenuItem loadConf     = createMenuItem("Load configuration");
-  private JMenuItem saveConf     = createMenuItem("Save configuration");
+  private final JMenuItem initial      = createMenuItem("Select tracefile...");
+  private final JMenuItem target       = createMenuItem("Configure target machine");
+  private final JMenuItem loadConf     = createMenuItem("Load configuration");
+  private final JMenuItem saveConf     = createMenuItem("Save configuration");
 
 
-  private JMenuItem exit         = createMenuItem("Exit");
-  private JMenuItem dimemas      = createMenuItem("Dimemas");
-  private JMenuItem critical     = createMenuItem("Critical path analysis");
-  private JMenuItem perturbation = createMenuItem("Synthetic perturbation analysis");
-  private JMenuItem loadOp       = createMenuItem("Load options");
-  private JMenuItem saveOp       = createMenuItem("Save options");
+  private final JMenuItem exit         = createMenuItem("Exit");
+  private final JMenuItem dimemas      = createMenuItem("Dimemas");
+  private final JMenuItem critical     = createMenuItem("Critical path analysis");
+  private final JMenuItem perturbation = createMenuItem("Synthetic perturbation analysis");
+  private final JMenuItem loadOp       = createMenuItem("Load options");
+  private final JMenuItem saveOp       = createMenuItem("Save options");
   // private JMenuItem machines     = createMenuItem("Machines");
   // private JMenuItem networks     = createMenuItem("Networks");
-  private JMenuItem about        = createMenuItem("About");
+  private final JMenuItem about        = createMenuItem("About");
 
   ConfigurationOptionsWindow cow;
 
@@ -132,6 +131,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
 
   // En este método se ejecutan las respuestas del GUI a las acciones del
   // usuario al interactuar con los elementos de la ventana.
+  @Override
   public void actionPerformed(ActionEvent e)
   {
     if(e.getSource() == initial)
@@ -141,6 +141,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
       new InitialMachineWindow(data).addWindowListener(
         new WindowAdapter()
         {
+          @Override
           public void windowClosed(WindowEvent we)
           {
             initial.setEnabled(true);
@@ -162,6 +163,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
       cow.addWindowListener(
         new WindowAdapter()
         {
+          @Override
           public void windowClosed(WindowEvent we)
           {
             target.setEnabled(true);
@@ -172,6 +174,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
     }
     else if(e.getSource() == loadConf)
     {
+      Tools.fc.setAcceptAllFileFilterUsed(false);
       Tools.fc.addChoosableFileFilter(new Tools.CFGfilter());
       int result = Tools.fc.showOpenDialog(null);
 
@@ -189,20 +192,42 @@ public class OptionsMenu extends JMenuBar implements ActionListener
     }
     else if(e.getSource() == saveConf)
     {
+      String saveResult, finalCFGName;
+      
+      Tools.fc.setAcceptAllFileFilterUsed(false);
       Tools.fc.addChoosableFileFilter(new Tools.CFGfilter());
       int result = Tools.fc.showSaveDialog(null);
 
       if(result == JFileChooser.APPROVE_OPTION)
       {
-        if(Tools.fc.getSelectedFile().getAbsolutePath().endsWith(".cfg"))
+        String CFGFile = Tools.fc.getSelectedFile().getAbsolutePath();
+        
+        if(CFGFile.endsWith(".cfg"))
         {
-          data.saveToDisk(Tools.fc.getSelectedFile().getAbsolutePath());
-          data.setCurrentConfigurationFileLabel(Tools.fc.getSelectedFile().getAbsolutePath());
+          finalCFGName = CFGFile;
         }
         else
         {
-          data.saveToDisk(Tools.fc.getSelectedFile().getAbsolutePath() + ".cfg");
-          data.setCurrentConfigurationFileLabel(Tools.fc.getSelectedFile().getAbsolutePath() + ".cfg");
+          finalCFGName = CFGFile+".cfg";
+        }
+        
+        /* Check first if the file exists, and ask for confirmation */
+        boolean writeCFG = true;
+        if (new File(finalCFGName).isFile())
+        {
+          if (!Tools.showConfirmationMessage("Do you want to overwrite current file?"))
+          {
+            writeCFG = false;
+          }
+        }
+        
+        if (writeCFG)
+        {
+          
+          if (data.saveToDisk(finalCFGName))
+          {
+            data.setCurrentConfigurationFileLabel(finalCFGName);
+          }
         }
       }
 
@@ -229,6 +254,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
       new SimulatorCallWindow(data).addWindowListener(
         new WindowAdapter()
         {
+          @Override
           public void windowClosed(WindowEvent we)
           {
             dimemas.setEnabled(true);
@@ -312,6 +338,7 @@ public class OptionsMenu extends JMenuBar implements ActionListener
       new AboutWindow().addWindowListener(
         new WindowAdapter()
         {
+          @Override
           public void windowClosed(WindowEvent we)
           {
             about.setEnabled(true);

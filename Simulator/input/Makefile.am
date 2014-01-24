@@ -26,6 +26,8 @@ libDimemasInput_la_SOURCES = \
 	comm_configuration.h \
 	configuration.c \
 	configuration.h \
+	new_configuration.c \
+	new_configuration.h \
 	file_data_access.c \
 	file_data_access.h \
 	read.c \

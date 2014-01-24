@@ -36,6 +36,18 @@
 #define __task_h
 
 /*****************************************************************************
+ * Mapping constants
+ *****************************************************************************/
+#define MAP_NO_PREDEFINED        -1
+#define MAP_IRREGULAR            0
+#define MAP_FILL_NODES           1
+#define MAP_FILL_NODES_TXT       "FILL_NODES"
+#define MAP_N_TASKS_PER_NODE     2
+#define MAP_N_TASKS_PER_NODE_TXT "TASKS_PER_NODE"
+#define MAP_INTERLEAVED          3
+#define MAP_INTERLEAVED_TXT      "INTERLEAVED"
+
+/*****************************************************************************
  * Global variables
  *****************************************************************************/
 
@@ -55,6 +67,10 @@ void TASK_end (void);
 void TASK_New_Ptask(char *trace_name,
                     int   tasks_count,
                     int  *tasks_mapping);
+
+void TASK_New_Ptask_predefined_map(char* trace_name,
+                                   int   map_definition,
+                                   int   tasks_per_node);
 
 void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid);
 

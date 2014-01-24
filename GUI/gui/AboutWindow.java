@@ -121,11 +121,11 @@ public class AboutWindow extends JFrame implements ActionListener
     setTitle("About DIMEMAS");
     setResizable(false);
     setLocation(200,200);
-    setIconImage(Toolkit.getDefaultToolkit().getImage(Data.ICON_IMAGE));
+    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource(Data.ICON_IMAGE)));
     panelPrincipal.setLayout(new BorderLayout());
 
     // Se añaden los elementos de la ventana.
-    panelPrincipal.add("North",new JLabel(new ImageIcon(Data.ICON_IMAGE)));
+    panelPrincipal.add("North",new JLabel(new ImageIcon(getClass().getClassLoader().getResource(Data.ICON_IMAGE))));
     panelPrincipal.add("Center",aboutPanel());
     panelPrincipal.add("South",b_close);
 

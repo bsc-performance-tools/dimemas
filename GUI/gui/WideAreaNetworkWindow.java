@@ -53,7 +53,7 @@ import java.awt.event.*;
 */
 public class WideAreaNetworkWindow extends GUIWindow
 {
-  public static final long serialVersionUID = 21L;
+  public static final long serialVersionUID = 17L;
 
   private JRadioButton commLin;
   private JRadioButton commLog;

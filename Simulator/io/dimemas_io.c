@@ -194,6 +194,21 @@ int IO_fseeko(FILE *stream, off_t offset, int whence)
 }
 
 /**
+ * FSEEK(3) wrapper to keep uniform the I/O
+ */
+int IO_fseek(FILE *stream, long offset, int whence)
+{
+  int result;
+
+  if ( (result = MYFSEEK(stream, offset, whence)) == -1)
+  {
+    IO_report_error("%s", strerror(errno));
+  }
+
+  return result;
+}
+
+/**
  * Return the error message
  */
 const char* IO_get_error(void)

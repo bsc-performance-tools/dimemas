@@ -127,6 +127,7 @@ void MACHINE_Fill_Machine_Fields(struct t_machine* machine,
   machine->name                                  = strdup(machine_name);
   machine->instrumented_arch                     = strdup(instrumented_architecture);
   machine->number_of_nodes                       = number_of_nodes;
+  machine->loaded_nodes                          = 0;
   machine->communication.remote_bandwidth        = network_bandwidth;
   machine->communication.num_messages_on_network = number_of_buses;
   machine->communication.global_op_model         = global_operation_model;

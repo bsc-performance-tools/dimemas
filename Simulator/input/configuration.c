@@ -36,6 +36,7 @@
 #include <string.h>
 #include <errno.h>
 #include <math.h>
+#include <float.h>
 
 #include <list.h>
 
@@ -43,10 +44,13 @@
 #include "configuration.h"
 #include "check.h"
 #include "dimemas_io.h"
+#include "file_data_access.h" /* risky, to read the number of tasks from the
+                                 parameter trace */
 
 /* That shouldn't be used here... */
 #include "simulator.h"
 #include "machine.h"
+#include "task.h"
 #include "random.h"
 #include "sched_vars.h"
 
@@ -56,6 +60,10 @@
  near_line ();\
  return;\
 }
+
+extern int   yyparse();
+extern FILE *yyin;
+
 
 /*
  * External definitions
@@ -69,7 +77,7 @@ extern char *types[];
 /*
  * Global variables
  */
-static char *configuration_filename;
+
 
 /*
  * Extra configuration files that can be included in the main configuration file
@@ -88,6 +96,17 @@ static char *random_conf_filename = NULL;
 static FILE *random_conf_file     = NULL;
 
 /*
+ * Configuration elemets that can be overridden per parameter
+ */
+static char  *CONFIGURATION_parameter_tracefile = (char*) 0;
+static double CONFIGURATION_parameter_bw;
+static double CONFIGURATION_parameter_lat;
+static int    CONFIGURATION_parameter_predefined_map;
+static int    CONFIGURATION_parameter_tasks_per_node;
+
+static int    CONFIGURATION_mappings_read   = 0;
+
+/*
  * Private function definitions
  */
 void new_wan_info      (struct t_queue *q, struct t_entry* en);
@@ -100,34 +119,57 @@ void new_mod_info      (struct t_queue *q, struct t_entry* en);
 void new_fs_params     (struct t_queue *q, struct t_entry* en);
 void new_d_conn        (struct t_queue *q, struct t_entry* en);
 
+// Code replication from 'new_configuration.c'
+void CONFIGURATION_load_mapping(char* tracefile,
+                                int*  tasks_mapping,
+                                int   tasks_mapping_length);
 
-/*****************************************************************************
- * Public functions implementation
- ****************************************************************************/
+t_boolean CONFIGURATION_load_tasks_mapping_array(char* tracefile,
+                                                 int*  tasks_mapping,
+                                                 int   tasks_mapping_length);
 
-void CONFIGURATION_Init(char *simulator_configuration_filename)
+  /*****************************************************************************
+   * Public functions implementation
+   ****************************************************************************/
+
+t_boolean CONFIGURATION_parse(FILE  *configuration_file,
+                              char  *parameter_tracefile,
+                              double parameter_bw,
+                              double parameter_lat,
+                              int    parameter_predefined_map,
+                              int    parameter_tasks_per_node)
 {
-  printf ("-> Simulator configuration to be read %s\n",
-          simulator_configuration_filename);
-
-  if (MYFREOPEN (simulator_configuration_filename, "r", stdin) == NULL)
-  {
-    die("Can't open configuration file %s\n", simulator_configuration_filename);
-  }
   create_queue (&Registers_queue);
 
-  configuration_filename = simulator_configuration_filename;
+  if (parameter_tracefile != (char*) 0)
+  {
+    CONFIGURATION_parameter_tracefile = strdup(parameter_tracefile);
+  }
+  CONFIGURATION_parameter_bw             = parameter_bw;
+  CONFIGURATION_parameter_lat            = parameter_lat;
+  CONFIGURATION_parameter_predefined_map = parameter_predefined_map;
+  CONFIGURATION_parameter_tasks_per_node = parameter_tasks_per_node;
+
+  yyin = configuration_file;
 
   if (yyparse())
   {
-    die("Error parsing configuration file %s\n", simulator_configuration_filename);
+    return FALSE;
   }
 
-  return;
+  SIMULATOR_check_correct_definitions();
+
+  return TRUE;
 }
 
 void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename)
 {
+  if (sch_conf_filename != NULL)
+  {
+    warning("Using the '-s' scheduling parametrization (%s) instead of the indicated in the configuration file\n",
+              sch_conf_filename);
+  }
+
   sch_conf_filename = strdup(sch_filename);
 
   if ( (sch_conf_file = IO_fopen(sch_conf_filename, "r")) == NULL)
@@ -152,10 +194,34 @@ void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_file)
   return;
 }
 
-char* CONFIGURATION_Get_Configuration_FileName(void)
+void CONFIGURATION_Set_Communications_Configuration_File(char *comm_conf_file)
 {
-  return configuration_filename;
+  comm_conf_filename = strdup(comm_conf_file);
+
+  if ( (fs_conf_file = IO_fopen(comm_conf_filename, "r")) == NULL)
+  {
+    die("Unable to set and open communications configuration file (%s): %s\n",
+        comm_conf_file,
+        IO_get_error());
+  }
+  return;
 }
+
+
+void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_file)
+{
+  random_conf_filename = strdup(rand_file);
+
+  if ( (fs_conf_file = IO_fopen(random_conf_filename, "r")) == NULL)
+  {
+    die("Unable to set and open random values configuration file (%s): %s\n",
+        rand_file,
+        IO_get_error());
+  }
+  return;
+}
+
+
 
 void CONFIGURATION_New_Definition(struct t_queue *definition_fields,
                                   struct t_entry *definition_structure)
@@ -321,7 +387,7 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
 
     /* Initialize the scheduler using the 'SCH' function table */
     (*SCH[Machines[machine_it].scheduler.policy].scheduler_init) (sch_conf_filename, &Machines[machine_it]);
-    printf ("   * Machine %d. Policy: %s\n",
+    printf ("   * Machine %zu. Policy: %s\n",
             machine_it,
             SCH[Machines[machine_it].scheduler.policy].name);
   }
@@ -761,6 +827,11 @@ void new_env_info (struct t_queue *q, struct t_entry* en)
     return;
   }
   global_operation_model = f->value.dec;
+
+  if (CONFIGURATION_parameter_bw != DBL_MIN)
+  {
+    bandwidth = CONFIGURATION_parameter_bw;
+  }
 
   SIMULATOR_set_machine_definition(machine_id,
                                    machine_name,
@@ -1258,7 +1329,13 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
     remote_memory_startup = 0.0;
   }
 
+  if (CONFIGURATION_parameter_lat != DBL_MIN)
+  {
+    remote_startup = CONFIGURATION_parameter_lat;
+  }
+
   SIMULATOR_set_node_definition (node_id,
+                                 machine_id,
                                  node_name,
                                  no_processors,
                                  no_mem_buses,
@@ -1654,7 +1731,13 @@ void new_OLD_node_info (struct t_queue *q, struct t_entry* en)
     remote_memory_startup = 0.0;
   }
 
+  if (CONFIGURATION_parameter_lat != DBL_MIN)
+  {
+    remote_startup = CONFIGURATION_parameter_lat;
+  }
+
   SIMULATOR_set_node_definition (node_id,
+                                 machine_id,
                                  node_name,
                                  no_processors,
                                  no_processors, // mem_buses = processors
@@ -1682,7 +1765,7 @@ void new_map_info  (struct t_queue *q, struct t_entry* en)
   int               j;
 
   char*  trace_name;
-  int    tasks_count, *tasks_mapping;
+  int    tasks_count, tasks_mapping_length, *tasks_mapping;
 
   if (count_queue (q) != count_queue (en->types))
   {
@@ -1703,7 +1786,6 @@ void new_map_info  (struct t_queue *q, struct t_entry* en)
   }
 
   trace_name = strdup(f->value.string);
-
 
   /*
    * Number of tasks
@@ -1739,20 +1821,12 @@ void new_map_info  (struct t_queue *q, struct t_entry* en)
     f4 = (struct t_field *) head_queue (f3->value.arr.q);
   }
 
-  if ((tasks_count != count_queue (f->value.arr.q)) ||
-      (tasks_count != f->value.arr.dim1))
-  {
-    near_line ();
-    die("Number of tasks (%d) greater than mapping info (%d)\n",
-        tasks_count,
-        count_queue (f->value.arr.q));
-    return;
-  }
+  tasks_mapping_length = count_queue (f->value.arr.q);
 
-  tasks_mapping = (int*) malloc(tasks_count*sizeof(int));
+  tasks_mapping = (int*) malloc(tasks_mapping_length*sizeof(int));
 
   for (j = 0, f2 = (struct t_field *) head_queue (f->value.arr.q);
-       j < tasks_count;
+       j < tasks_mapping_length;
        j++,   f2 = (struct t_field *) next_queue (f->value.arr.q))
   {
     int current_node_id = f2->value.dec;
@@ -1765,9 +1839,10 @@ void new_map_info  (struct t_queue *q, struct t_entry* en)
     tasks_mapping[j] = current_node_id;
   }
 
-  TASK_New_Ptask(trace_name, tasks_count, tasks_mapping);
+  CONFIGURATION_load_mapping(trace_name, tasks_mapping, tasks_mapping_length);
 
   free(tasks_mapping);
+
 
   // inFIFO_queue (&Ptask_queue, (char *) Ptask);
 }
@@ -1800,7 +1875,7 @@ void new_conf_files(struct t_queue *q, struct t_entry* en)
     }
     else
     {
-      warning("Using the '-s' scheduling parametrization (%s) instead of the indicated in the configuration file",
+      warning("Using the '-s' scheduling parametrization (%s) instead of the indicated in the configuration file\n",
               sch_conf_filename);
     }
   }
@@ -1828,7 +1903,7 @@ void new_conf_files(struct t_queue *q, struct t_entry* en)
     }
     else
     {
-      warning ("Using the '-f' file system parametrization (%s) instead of the indicated in the configuration file",
+      warning ("Using the '-f' file system parametrization (%s) instead of the indicated in the configuration file\n",
                fs_conf_filename);
     }
   }
@@ -2070,9 +2145,11 @@ void new_d_conn    (struct t_queue *q, struct t_entry* en)
   int    i, d_conn_id, s_machine_id, d_machine_id;
   double bandwidth, startup, flight_time;
   int    tags_size, *tags;
-  int    first_message_size, first_size_cond;
-  int    second_message_size, second_size_cond;
-  int    operation;
+  int    first_message_size;
+  char   first_size_cond;
+  int    second_message_size;
+  char   second_size_cond;
+  char   operation;
   int    comms_size, *comm_ids;
 
   t_boolean error = FALSE;
@@ -2246,17 +2323,9 @@ void new_d_conn    (struct t_queue *q, struct t_entry* en)
   {
     error = TRUE;
   }
-  else if (f->value.string[0]=='<')
+  else if (f->value.string[0] == '<' || f->value.string[0]=='=' || f->value.string[0]=='>')
   {
-    first_size_cond = 0;
-  }
-  else if (f->value.string[0]=='=')
-  {
-    first_size_cond = 1;
-  }
-  else if (f->value.string[0]=='>')
-  {
-    first_size_cond = 2;
+    first_size_cond = f->value.string[0];
   }
   else
   {
@@ -2287,13 +2356,9 @@ void new_d_conn    (struct t_queue *q, struct t_entry* en)
   {
     error = TRUE;
   }
-  else if (f->value.string[0]=='&')
+  else if (f->value.string[0]=='&' || f->value.string[0]=='|')
   {
-    operation = 0;
-  }
-  else if (f->value.string[0]=='|')
-  {
-    operation = 1;
+    operation = f->value.string[0];
   }
   else
   {
@@ -2345,17 +2410,9 @@ void new_d_conn    (struct t_queue *q, struct t_entry* en)
   {
     error = TRUE;
   }
-  else if (f->value.string[0]=='<')
+  else if (f->value.string[0] == '<' || f->value.string[0]=='=' || f->value.string[0]=='>')
   {
-    second_size_cond = 0;
-  }
-  else if (f->value.string[0]=='=')
-  {
-    second_size_cond = 1;
-  }
-  else if (f->value.string[0]=='>')
-  {
-    second_size_cond = 2;
+    second_size_cond = f->value.string[0];
   }
   else
   {
@@ -2453,3 +2510,105 @@ void new_d_conn    (struct t_queue *q, struct t_entry* en)
                                                 startup,
                                                 flight_time);
 }
+
+void CONFIGURATION_load_mapping(char* tracefile,
+                                int*  tasks_mapping,
+                                int   tasks_mapping_length)
+{
+  char* effective_tracefile;
+  int   effective_tasks_count;
+
+  if (CONFIGURATION_mappings_read == 0)
+  {
+    /* Check if there is a tracefile available */
+    if (CONFIGURATION_parameter_tracefile != (char*) 0)
+    {
+      effective_tracefile = CONFIGURATION_parameter_tracefile;
+    }
+    else if (tracefile == (char*) 0)
+    {
+      near_line ();
+      die("No tracefile provided, please use the '--dim' parameter to supply an application trace to simulate");
+    }
+    else
+    {
+      effective_tracefile = tracefile;
+    }
+
+    /* Check the configuration precedence. In the first mapping, command line
+     * mapping parameters override the ones present in the configuration file */
+    if (CONFIGURATION_parameter_predefined_map != MAP_NO_PREDEFINED)
+    {
+      TASK_New_Ptask_predefined_map(effective_tracefile,
+                                    CONFIGURATION_parameter_predefined_map,
+                                    CONFIGURATION_parameter_tasks_per_node);
+    }
+    else if (tasks_mapping_length !=  0)
+    {
+      CONFIGURATION_load_tasks_mapping_array(effective_tracefile,
+                                             tasks_mapping,
+                                             tasks_mapping_length);
+    }
+    else
+    {
+      near_line ();
+      die("Inconsistent task mapping");
+    }
+  }
+  else
+  {
+    if (tracefile == (char*) 0)
+    {
+      near_line();
+      die("no trace provided for mapping");
+    }
+
+    CONFIGURATION_load_tasks_mapping_array(tracefile,
+                                           tasks_mapping,
+                                           tasks_mapping_length);
+  }
+
+  CONFIGURATION_mappings_read++;
+
+  return;
+}
+
+t_boolean CONFIGURATION_load_tasks_mapping_array(char* tracefile,
+                                                 int*  tasks_mapping,
+                                                 int   tasks_mapping_length)
+{
+  int tasks_count;
+
+  if (DATA_ACCESS_get_number_of_tasks(tracefile, &tasks_count) == FALSE)
+  {
+    die("Unable to retrieve number of tasks of trace '%s': %s",
+        tracefile,
+        DATA_ACCESS_get_error());
+  }
+
+  if (tasks_mapping_length >= tasks_count)
+  {
+    if (tasks_mapping_length > tasks_count)
+    {
+      warning("Number of tasks in trace '%s' (%d) is smaller than the mapping defined (%d), using only part of the map\n",
+              tracefile,
+              tasks_count,
+              tasks_mapping_length);
+    }
+
+    TASK_New_Ptask(tracefile,
+                   tasks_count,
+                   tasks_mapping);
+  }
+  else
+  {
+    near_line();
+    die("number of tasks in trace '%s' (%d) is larger than the tasks mapping (%d)",
+        tracefile,
+        tasks_count,
+        tasks_mapping_length);
+  }
+
+  return;
+}
+

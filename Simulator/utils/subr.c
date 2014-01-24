@@ -61,6 +61,7 @@ void warning(const char *fmt, ...)
 {
   va_list args;
   va_start (args, fmt);
+  fprintf(stderr, "WARNING: ");
   vfprintf (stderr, fmt, args);
   va_end (args);
 }

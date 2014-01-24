@@ -55,7 +55,7 @@ import java.awt.event.*;
 */
 public class SimulatorCallWindow extends GUIWindow
 {
-  public static final long serialVersionUID = 20L;
+  public static final long serialVersionUID = 16L;
   
   private final String TEMP_CONFIG_FILE = "conf0000.tmp";
 
@@ -318,7 +318,7 @@ public class SimulatorCallWindow extends GUIWindow
         layout.setLayout(new BorderLayout());
         layout.add(new JLabel("Please wait."),BorderLayout.CENTER);
         window.setContentPane(layout);
-        window.setIconImage(Toolkit.getDefaultToolkit().getImage(Data.ICON_IMAGE));
+        window.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource(Data.ICON_IMAGE)));
         window.setResizable(false);
         window.setBounds(375,275,window.getWidth()+80,window.getHeight()+25);
         window.pack();

@@ -43,6 +43,7 @@ struct t_machine
   int            id;                /* Machine number */
   char          *instrumented_arch; /* Architecture used to instrument */
   int            number_of_nodes;   /* Number of nodes on virtual machine */
+  int            loaded_nodes;
 
   struct t_scheduler /* Informacio del scheduler */
   {

@@ -76,8 +76,7 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
   create_queue (&(node->IO_disks_threads));
 
   node->initialized = FALSE;
-
-  node->machine = machine;
+  node->machine     = machine;
 
 #ifdef USE_EQUEUE
     insert_Equeue (&Node_queue, (char *) node, (t_priority) (node->nodeid));

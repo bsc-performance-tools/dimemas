@@ -300,6 +300,88 @@ char* DATA_ACCESS_get_error (void)
   return main_struct.error_string;
 }
 
+// THIS IS A SPECIAL ROUTINE JUST TO CHECK THE NUMBER TASKS DEFINED IN A TRACE
+t_boolean DATA_ACCESS_get_number_of_tasks(char *trace_file_location, int *tasks_count)
+{
+  FILE   *trace_file;
+  char   *header        = NULL;
+  size_t  header_length = 0;
+  ssize_t bytes_read;
+
+  char *app_name_str, *offsets_str, *ptask_info_str, *threads_str;
+  int   comms_count;
+
+  // Init main structure if necessary (this routine can be accessed without
+  // having to initialize the whole data access layer
+  if (main_struct.init_flag != 1)
+  {
+    if (!DAP_init_data_access_layer())
+    {
+      return FALSE;
+    }
+  }
+
+
+  if ( (trace_file = IO_fopen(trace_file_location, "r")) == NULL)
+  {
+    DAP_report_error("unable to open trace file '%s' (%s)",
+                     trace_file_location,
+                     IO_get_error());
+    return FALSE;
+  }
+
+  /* Obtain the header line */
+  if ( (bytes_read = getline(&header,
+                             &header_length,
+                             trace_file)) == -1)
+  {
+    DAP_report_error("unable to retrieve header line");
+    return FALSE;
+  }
+
+  app_name_str   = malloc(bytes_read+1);
+  offsets_str    = malloc(bytes_read+1);
+  ptask_info_str = malloc(bytes_read+1);
+
+  /* Scan the general header structure */
+
+  // Header format: #DIMEMAS:trace_name:offsets[,offsets_offset]:ptask_info
+  if (sscanf(header,
+             "#DIMEMAS:\"%[^\"]\":%[^:]:%s",
+             app_name_str,
+             offsets_str,
+             ptask_info_str) != 3)
+  {
+    DAP_report_error("wrong header format");
+    return FALSE;
+  }
+
+  /* Scan the ptask information substring
+   * format: task_num(task_1_thread_num,...,task_n_thread_num),comms_num */
+  threads_str = malloc(bytes_read+1);
+
+  if (sscanf(ptask_info_str,
+             "%d(%[^)]),%d",
+             tasks_count,
+             threads_str,
+             &comms_count) != 3)
+  {
+    DAP_report_error("wrong application definition on trace header (%s)",
+                     ptask_info_str);
+    return FALSE;
+  }
+
+  if (IO_fclose(trace_file) != 0)
+  {
+    DAP_report_error("error closing trace '%s' (%s)",
+                     trace_file_location,
+                     IO_get_error());
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 
 // API SPECIFIC ROUTINES
 // INIT OF APPLICATION
@@ -624,7 +706,8 @@ t_boolean DAP_add_ptask (int ptask_id, char *trace_file_name, int index)
     // Open the main stream for current ptask
     if ( (main_struct.current_stream = IO_fopen(trace_file_name, "r")) == NULL)
     {
-      DAP_report_error("unable to open trace file: %s",
+      // printf("tracefile = %s (%zu)\n", trace_file_name, strlen(trace_file_name));
+      DAP_report_error("unable to open trace file (%s)",
                        IO_get_error());
       return FALSE;
     }
@@ -662,7 +745,7 @@ t_boolean DAP_add_ptask (int ptask_id, char *trace_file_name, int index)
 
     if ( IO_fclose(main_struct.current_stream) != 0)
     {
-      DAP_report_error("error closing trace '%s' of ptask %d: %s",
+      DAP_report_error("error closing trace '%s' of ptask %d (%s)",
                        trace_file_name,
                        ptask_id,
                        IO_get_error());
@@ -870,7 +953,7 @@ t_boolean DAP_read_header (app_struct *ptask,
              threads_str,
              &comms_count) != 3)
   {
-    DAP_report_error("wrong application definition on trace header: %s",
+    DAP_report_error("wrong application definition on trace header (%s)",
                      ptask_info_str);
     return DATA_ACCESS_ERROR;
   }
@@ -938,7 +1021,7 @@ t_boolean DAP_read_definitions (app_struct *app)
                                &line_length,
                                main_struct.current_stream )) == -1)
     {
-      DAP_report_error("error reading object definitions: %s",
+      DAP_report_error("error reading object definitions (%s)",
                        strerror(errno));
 
       return FALSE;
@@ -969,7 +1052,7 @@ t_boolean DAP_read_definitions (app_struct *app)
           /* Not yet implemented :( */
           break;
         default:
-          DAP_report_error("unknown object definition type: %s", line);
+          DAP_report_error("unknown object definition type (%s)", line);
           return FALSE;
       }
     }
@@ -1019,7 +1102,7 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
               &comm_tasks_count,
               comm_tasks_str) != 3)
   {
-    DAP_report_error("wrong communicator definition: %s", comm_fields);
+    DAP_report_error("wrong communicator definition (%s)", comm_fields);
     return FALSE;
   }
 
@@ -1152,7 +1235,7 @@ t_boolean DAP_read_offsets (app_struct *app)
                &current_task_read,
                threads_offsets_str) != 2)
     {
-      DAP_report_error("wrong offset definition %s",line);
+      DAP_report_error("wrong offset definition (%s)",line);
       return FALSE;
     }
 
@@ -1311,7 +1394,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
                                &line_length,
                                main_struct.current_stream )) == -1)
     {
-      DAP_report_error("error locating offset for task %d, thread %d: %s",
+      DAP_report_error("error locating offset for task %d, thread %d (%s)",
                        task_id,
                        thread_id,
                        strerror(errno));
@@ -1328,7 +1411,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
                                  &line_length,
                                  main_struct.current_stream )) == -1)
       {
-        DAP_report_error("error locating offset for task %d, thread %d: %s",
+        DAP_report_error("error locating offset for task %d, thread %d (%s)",
                          task_id,
                          thread_id,
                          strerror(errno));
@@ -1358,7 +1441,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
                    &read_task_id,
                    &read_thread_id) != 2)
         {
-          DAP_report_error("error accessing to an operation record when locating offsets: %s",
+          DAP_report_error("error accessing to an operation record when locating offsets (%s)",
                            line);
 
           free(op_fields);
@@ -1398,7 +1481,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
                                &line_length,
                                main_struct.current_stream )) == -1)
     {
-      DAP_report_error("error locating offset for task %d, thread %d: %s",
+      DAP_report_error("error locating offset for task %d, thread %d (%s)",
                        task_id,
                        thread_id,
                        strerror(errno));
@@ -1412,7 +1495,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
                                &line_length,
                                main_struct.current_stream )) == -1)
     {
-      DAP_report_error("error locating offset for task %d, thread %d: %s",
+      DAP_report_error("error locating offset for task %d, thread %d (%s)",
                        task_id,
                        thread_id,
                        strerror(errno));
@@ -1433,7 +1516,7 @@ off_t DAP_locate_thread_offset(app_struct *app,
                  &read_task_id,
                  &read_thread_id) != 2)
       {
-        DAP_report_error("error accessing to an operation record when locating offsets: %s",
+        DAP_report_error("error accessing to an operation record when locating offsets (%s)",
                          line);
 
         free(op_fields);
@@ -1654,7 +1737,7 @@ FILE* DAP_get_stream (app_struct* app, int task_id, int thread_id)
                    app->threads_offsets[task_id][thread_id], // Initial offset!
                    SEEK_SET) == -1)
     {
-      DAP_report_error("unable to position the trace '%s' to access task %d thread %d information: %s",
+      DAP_report_error("unable to position the trace '%s' to access task %d thread %d information (%s)",
                        app->trace_file_name,
                        task_id,
                        thread_id,
@@ -1682,7 +1765,7 @@ FILE* DAP_get_stream (app_struct* app, int task_id, int thread_id)
                       app->current_threads_offsets[task_id][thread_id],
                       SEEK_SET) == -1)
       {
-        DAP_report_error("unable to position the trace '%s' to access task %d thread %d information: %s",
+        DAP_report_error("unable to position the trace '%s' to access task %d thread %d information (%s)",
                        app->trace_file_name,
                        task_id,
                        thread_id,
@@ -1768,7 +1851,7 @@ t_boolean DAP_read_action (app_struct       *app,
         return TRUE;
       }
 
-      DAP_report_error("error reading operation record definitions: %s",
+      DAP_report_error("error reading operation record definitions (%s)",
                        strerror(errno));
 
       return FALSE;
@@ -1863,7 +1946,7 @@ t_boolean DAP_read_action (app_struct       *app,
       return TRUE;
     }
 
-    DAP_report_error("wrong operation record format: %s", line);
+    DAP_report_error("wrong operation record format (%s)", line);
 
     free(op_fields);
     free(line);
@@ -1913,7 +1996,7 @@ t_boolean DAP_read_action (app_struct       *app,
         result = DAP_read_event(op_fields, *action);
         break;
       default:
-        DAP_report_error("unknown action: %s", line);
+        DAP_report_error("unknown action (%s)", line);
         result = FALSE;
         break;
     }
@@ -1953,7 +2036,7 @@ t_boolean DAP_read_CPU_burst (const char      *cpu_burst_str,
              CPU_BURST_REGEXP,
              &duration) != 1)
   {
-    DAP_report_error("wrong CPU burst duration: %s", cpu_burst_str);
+    DAP_report_error("wrong CPU burst duration (%s)", cpu_burst_str);
     return FALSE;
   }
 
@@ -1996,7 +2079,7 @@ t_boolean DAP_read_msg_send  (const char      *msg_send_str,
     }
     else
     {
-      DAP_report_error("wrong message sending operation: %s", msg_send_str);
+      DAP_report_error("wrong message sending operation (%s)", msg_send_str);
       return FALSE;
     }
   }
@@ -2089,7 +2172,7 @@ t_boolean DAP_read_msg_recv  (const char      *msg_recv_str,
     }
     else
     {
-      DAP_report_error("wrong message reception operation: %s", msg_recv_str);
+      DAP_report_error("wrong message reception operation (%s)", msg_recv_str);
       return FALSE;
     }
   }
@@ -2141,7 +2224,7 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
              &bytes_sent,
              &bytes_recv) != 6)
   {
-    DAP_report_error("wrong global operation: %", global_op_str);
+    DAP_report_error("wrong global operation (%)", global_op_str);
     return FALSE;
   }
 
@@ -2168,7 +2251,7 @@ t_boolean DAP_read_event     (const char      *event_str,
              &type,
              &value) != 2)
   {
-    DAP_report_error("wrong event in trace: %", event_str);
+    DAP_report_error("wrong event in trace (%s)", event_str);
     return FALSE;
   }
 
