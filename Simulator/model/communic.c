@@ -5047,7 +5047,7 @@ void really_send_internal_network(struct t_thread *thread)
       }
       else
       {
-        VC_command_send (dtime, node->nodeid, node_partner->nodeid, mess->mess_size, thread->event, out_resources_ev, task->Ptask->Ptaskid, task_partner->Ptask->Ptaskid);
+        VC_command_send (dtime, node->nodeid, node_partner->nodeid, mess->mess_tag, mess->mess_size, thread->event, out_resources_ev, task->Ptask->Ptaskid, task_partner->Ptask->Ptaskid);
       }
     }
 #else
