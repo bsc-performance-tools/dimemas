@@ -1,0 +1,466 @@
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(Dimemas, @@VERSION_NUMBER@@, tools@bsc.es)
+
+AC_CANONICAL_SYSTEM
+
+AM_INIT_AUTOMAKE
+AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
+
+AC_SUBST(PACKAGE)
+AC_SUBST(VERSION)
+
+AC_DEFINE_UNQUOTED(DATE, ["`date`"], [Current date of compilation] )
+
+dnl =======================================================================
+dnl Check if CFLAGS/CXXFLAGS have been defined by user
+dnl =======================================================================
+ 
+AC_MSG_CHECKING([whether configure should try to set CFLAGS])
+if test "x$CFLAGS" = "x"; then
+  enable_cflags_setting=yes
+else
+  enable_cflags_setting=no
+fi
+AC_MSG_RESULT($enable_cflags_setting)
+
+AC_MSG_CHECKING([whether configure should try to set CXXFLAGS])
+if test "x$CXXFLAGS" = "x"; then
+  enable_cxxflags_setting=yes
+else
+  enable_cxxflags_setting=no
+fi
+AC_MSG_RESULT($enable_cxxflags_setting)
+
+dnl =======================================================================
+dnl Check Compilers/Libraries
+dnl =======================================================================
+
+AC_PROG_CC(icc xlc gcc)
+AC_PROG_CXX(icpc xlC g++)
+AC_PROG_CPP
+
+AM_PROG_LIBTOOL
+AM_PROG_CC_C_O
+
+AM_CONFIG_HEADER(config.h)
+
+dnl ========================================================================
+dnl Transforming Program Names When Installing
+dnl ========================================================================
+dnl AC_ARG_PROGRAM
+
+dnl ========================================================================
+dnl Look for the install program
+dnl ========================================================================
+AC_PROG_INSTALL
+
+dnl ========================================================================
+dnl Look for the ranlib program
+dnl ========================================================================
+AC_PROG_RANLIB
+
+dnl ========================================================================
+dnl Look for yacc (bison) program
+dnl ========================================================================
+dnl AC_PROG_YACC
+AC_CHECK_PROGS(YACC, 'bison -y' byacc yacc)
+AM_PROG_LEX
+
+echo  
+ac_cv_errcount=0; 
+if test -z "$YACC"; then 
+  AC_MSG_WARN(bison or yacc not found. Please install bison before continuing) 
+  ac_cv_errcount=$((ac_cv_errcount + 1)) 
+fi 
+	 
+if test -z "$LEXLIB"; then 
+  AC_MSG_WARN(flex or lex not found. Please install flex before continuing) 
+  ac_cv_errcount=$((ac_cv_errcount + 1)) 
+fi 
+	 
+if test $ac_cv_errcount -gt 0; then 
+  AC_MSG_ERROR(Critical packages are missing and compilation will fail. Please 
+               install the packages listed above and rerun ./configure) 
+fi 
+
+LIBS="$LIBS $LEXLIB"
+
+dnl ========================================================================
+dnl If the package is not flat
+dnl ========================================================================
+AC_PROG_MAKE_SET
+
+
+dnl =========================================================================
+dnl Architecture and OS detection
+dnl =========================================================================
+
+case "$host_cpu*" in
+  i386*    ) Architecture="ia32"    ;;
+  i486*    ) Architecture="ia32"    ;;
+  i586*    ) Architecture="ia32"    ;;
+  i686*    ) Architecture="ia32"    ;;
+  powerpc* ) Architecture="powerpc" ;;
+  ia64*    ) Architecture="ia64"    ;;
+  alpha*   ) Architecture="alpha"   ;;
+  mips*    ) Architecture="mips"    ;;
+esac
+
+case "x$host_os" in
+  xlinux*  ) Operating_System="linux" ;;
+  xaix*    ) Operating_System="aix"   ;;
+  xosf*    ) Operating_System="dec"   ;;
+  xirix*   ) Operating_System="irix"  ;;
+  xdarwin* ) Operating_System="osx"   ;;
+  xcygwin* ) Operating_System="cygwin";;
+esac
+
+AM_CONDITIONAL(ARCH_IA32,    test "${Architecture}"    = "ia32"    )
+AM_CONDITIONAL(ARCH_POWERPC, test "${Architecture}"    = "powerpc" )
+AM_CONDITIONAL(ARCH_IA64,    test "${Architecture}"    = "ia64"    )
+AM_CONDITIONAL(ARCH_ALPHA,   test "${Architecture}"    = "alpha"   )
+AM_CONDITIONAL(ARCH_MIPS,    test "${Architecture}"    = "mips"    )
+
+AM_CONDITIONAL(OS_LINUX,     test "${OperatingSystem}" = "linux"   )
+AM_CONDITIONAL(OS_AIX,       test "${OperatingSystem}" = "aix"     )
+AM_CONDITIONAL(OS_DEC,       test "${OperatingSystem}" = "dec"     )
+AM_CONDITIONAL(OS_IRIX,      test "${OperatingSystem}" = "irix"    )
+AM_CONDITIONAL(OS_FREEBSD,   test "${OperatingSystem}" = "freebsd" )
+AM_CONDITIONAL(OS_SOLARIS,   test "${OperatingSystem}" = "solaris" )
+AM_CONDITIONAL(OS_MACOSX,    test "${OperatingSystem}" = "osx"     )
+AM_CONDITIONAL(OS_CYGWIN,    test "${OperatingSystem}" = "cygwin"  )
+
+dnl =========================================================================
+dnl Check the existence of the next data types and its size
+dnl =========================================================================
+
+AC_CHECK_TYPES([long, long long, char, int, float, long float, double, long double])
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(float)
+AC_CHECK_SIZEOF(long float)
+AC_CHECK_SIZEOF(double)
+AC_CHECK_SIZEOF(long double)
+AC_CHECK_TYPES([int64_t, uint64_t, int8_t, uint8_t, int32_t, uint32_t])
+
+dnl =========================================================================
+dnl Check whether the compilers need additional parameters
+dnl =========================================================================
+
+AC_MSG_CHECKING([for additional options in compilers C/C++])
+if test "x$enable_cflags_setting" = "yes"; then
+  if test "$ac_compiler_gnu" = "yes" ; then
+    ADDITIONAL_FLAGS_CC=""
+    ADDITIONAL_FLAGS_CXX=""
+  elif test "$CC" = "xlc" ; then
+    ADDITIONAL_FLAGS_CC="-qcpluscmt"
+    ADDITIONAL_FLAGS_CXX="-qstaticinline"
+  elif test "$CC" = "cc" ; then
+    if test "$Architecture" = "mips" -a "$Operating_System" = "irix" ; then
+      ADDITIONAL_FLAGS_CC=""
+      ADDITIONAL_FLAGS_CXX=""
+    elif test "$Architecture" = "alpha" -a "$Operating_System" = "dec" ; then
+      ADDITIONAL_FLAGS_CC=""
+      ADDITIONAL_FLAGS_CXX=""
+    fi
+  fi
+  CFLAGS="$CFLAGS $ADDITIONAL_FLAGS_CC"
+  CXXFLAGS="$CXXFLAGS $ADDITIONAL_FLAGS_CXX"
+
+  dnl Just to write a nice message to the user 
+  if test "$ADDITIONAL_FLAGS_CC"  = "" ; then
+    ADDITIONAL_FLAGS_CC="none"
+  fi
+  if test "$ADDITIONAL_FLAGS_CXX" = "" ; then
+    ADDITIONAL_FLAGS_CXX="none"
+  fi
+
+  dnl Specific LDFLAGS for Intel C Compiler
+  if test "$CC" = "icc" ; then
+    LDFLAGS="-i-static $LDFLAGS"
+  fi
+fi
+
+dnl Do we have inline?
+AC_C_INLINE
+
+dnl =======================================================================
+dnl Additional checks
+dnl =======================================================================
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(fcntl.h limits.h malloc.h strings.h sys/time.h unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+dnl Checks for library functions.
+AC_FUNC_MMAP
+AC_FUNC_SETVBUF_REVERSED
+AC_FUNC_STRFTIME
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(gethostname gettimeofday strdup strerror strstr strtoul uname)
+
+AC_CHECK_LIB(z, [gzopen,gzputs],[
+    AC_DEFINE(HAVE_LIBZ,[1],[libz present on the system])
+      if test "x${Z_DIR}" != "x"; then
+        Z_CFLAGS="-I${Z_DIR}/include"
+        Z_LIBS="-L${Z_DIR}/lib -lz"
+      else
+        Z_LIBS="-lz"
+      fi])
+
+CFLAGS="$CFLAGS $Z_FLAGS"
+CXXFLAGS="$CXXFLAGS $Z_FLAGS"
+LIBS="$LIBS $Z_LIBS"
+
+AC_CHECK_LIB([m],[sqrt])
+AC_CHECK_LIB([dl],[dlopen])
+
+dnl ========================================================================
+dnl BOOST
+dnl ========================================================================
+
+have_boost="yes"
+BOOST_REQUIRE(1.36,
+[
+  echo "------------------------------------------------------------"
+  echo " Boost libraries not found. 'trf2dim' will not be compiled"
+  echo "------------------------------------------------------------"
+  have_boost="no"
+]
+)
+
+AM_CONDITIONAL(HAVE_BOOST, test x$have_boost = xyes)
+
+dnl =======================================================================
+dnl Java checks
+dnl =======================================================================
+AC_CHECK_CLASSPATH
+AX_PROG_JAVAC
+AX_PROG_JAVA
+AX_PROG_JAR
+
+have_java=yes 
+if test "x$ac_cv_prog_java_works" = "x"; then
+  echo "NOT JAVA"
+  have_java=no;
+fi
+
+if test "x$ac_cv_prog_javac_works" = "x"; then
+  echo "NOT JAVAC"
+  have_java=no;
+fi 
+
+if test "x$ac_cv_prog_jar_exists" = "x"; then
+  echo "NOT JAR"
+  have_java=no;
+fi 
+
+if test "x$have_java" = "xno"; then
+  echo "------------------------------------------------------------"
+  echo " Some Java tools not found - continuing without GUI support"
+  echo "------------------------------------------------------------"
+fi
+
+AM_CONDITIONAL([HAVE_JAVA], [test "x$have_java" = "xyes"])
+
+dnl if test "x$have_java" = xyes; then
+dnl  AC_DEFINE(HAVE_JAVA, 1, Define to 1 if JAVA is installed in the system)
+dnl fi
+
+
+dnl =========================================================================
+dnl Set default xxxFLAGS if not defined
+dnl =========================================================================
+
+if test "x$enable_cflags_setting" = "xyes"; then
+  
+  dnl Optimization
+  CFLAGS="-g -O3 -Os"
+fi
+
+dnl Large files
+if test "$Operating_System" = "cygwin"; then
+  CFLAGS="$CFLAGS -D__LARGE64_FILES"
+elif test "$Operating_System" = "linux" ; then
+  CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
+fi
+
+
+if test "x$enable_cxxflags_setting" = "xyes"; then
+
+  dnl Optimization
+  CXXFLAGS="-g -O3 -Os"
+
+fi
+
+dnl Large files
+if test "$Operating_System" = "cygwin"; then
+  CXXFLAGS="$CXXFLAGS -D__LARGE64_FILES"
+elif test "$Operating_System" = "linux" ; then
+  CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
+fi
+
+CFLAGS="$CFLAGS -DDIMEMAS_COMPILATION"
+CXXFLAGS="$CXXFLAGS -DDIMEMAS_COMPILATION"
+LDFLAGS="$LDFLAGS"
+
+
+
+dnl =======================================================================
+dnl Conditional defines
+dnl =======================================================================
+
+
+dnl STARTUP_ALS_IRECV: if defined Dimemas considers initial startups on 
+dnl MPI_Irecv functions
+AC_ARG_ENABLE(
+  irecv-startup, 
+  AS_HELP_STRING(
+    [--enable-irecv-startup],
+    [version with startup time during IRECV primitives]
+  ),
+  AC_DEFINE(STARTUP_ALS_IRECV,
+            [1],
+            [Dimemas will consider intial startup times on MPI_ircv functions])
+)
+
+dnl LOGICAL_RECEIVE_ALS_WAIT: if defined Dimemas puts logical receive time
+dnl when MPI_Wait is called (not on MPI_Irecv)
+AC_ARG_ENABLE(
+  wait-logical-recv,
+  AS_HELP_STRING(
+    [--enable-wait-logical-recv],
+    [version with logical recv time on WAIT primitives]
+  ),
+  AC_DEFINE(LOGICAL_RECEIVE_ALS_WAIT,
+            [1],
+            [Paraver 'logical recv' events will we located when MPI_wait is
+            called])
+)
+
+dnl GESTIO_LINKS_ORIGINAL: if defined Dimemas uses the original protocol to
+dnl manage links
+AC_ARG_ENABLE(
+  original-links,
+  AS_HELP_STRING(
+    [--enable-original-links],
+    [version with original link management]
+  ),
+  AC_DEFINE(GESTIO_LINKS_ORIGINAL, [1], [Use first version of link managing protocol])
+)
+
+dnl TIME_LIMIT: this variable is used on 'define.h' and indicates the maximum
+dnl clock value on simulations. By default, it assumes 7h (2.52e10 us) of 
+dnl maximum clock time
+AC_ARG_WITH(
+  time_limit,
+  AS_HELP_STRING(
+    [--with-time-limit=TIME-LIMIT], 
+    [give the simulation time limit in nanoseconds (scientific notation can  
+     be used)]
+  ),
+  time_limit="$withval",
+  time_limit="2.52e13"
+)
+
+AC_DEFINE_UNQUOTED(TIME_LIMIT,
+                   $time_limit,
+                   [Maximum simulation time in microseconds])
+
+
+dnl NO_COMPILATION_INFO: if defined Dimemas doesn't show compilation 
+dnl information on help message
+AC_ARG_ENABLE(
+  no-compilation-info,
+  AS_HELP_STRING(
+    [--enable-no-compilation-info],
+    [compile without compilation information]
+  ),
+  AC_DEFINE(NO_COMPILATION_INFO,
+            [1],
+            ["Dimemas won't show compilation information"])
+)
+
+dnl IDLE_ACCOUNTING: if defined, idle CPU regions are computed as CPU
+dnl consumption in the accouting stats
+AC_ARG_ENABLE(
+  idle-accounting,
+  AC_HELP_STRING(
+    [--enable-idle-accounting],
+    [compile with idle blocks accouting]
+  ),
+  AC_DEFINE(IDLE_ACCOUNTING,
+            [1],
+            [Idle CPU regions are computed as CPU consumption])
+)
+
+dnl VENUS_ENABLED: if defined, venus client are compiled and included in Dimemas
+AC_ARG_ENABLE(
+  venus,
+  AC_HELP_STRING(
+    [--enable-venus],
+    [compile with Venus simulator]
+  ),
+  [ CFLAGS="$CFLAGS -DVENUS_ENABLED"
+    CXXFLAGS="$CXXFLAGS -DVENUS_ENABLED"
+    venus_enabled="yes" ]
+)
+AM_CONDITIONAL(VENUS_ENABLED, test "x$venus_enabled" = "xyes")
+
+
+dnl =======================================================================
+dnl Final Makefile generation
+dnl =======================================================================
+
+AC_CONFIG_FILES([
+  Makefile
+  include/Makefile
+  common_utilities/Makefile
+  Simulator/Makefile
+  Simulator/io/Makefile
+  Simulator/input/Makefile
+  Simulator/model/Makefile
+  Simulator/prv_utils/Makefile
+  Simulator/sched/Makefile
+  Simulator/utils/Makefile
+  Simulator/venusclient/Makefile
+  GUI/Makefile
+  prv2dim/Makefile
+  trf2dim/Makefile
+])
+
+AC_OUTPUT
+
+dnl =======================================================================
+dnl Compiling options resume
+dnl =======================================================================
+echo "
+  $PACKAGE_NAME version $PACKAGE_VERSION
+
+  IBM Venus Module Enabled.......: ${venus_enabled:-no}
+  Simulation Time Limit..........: ${time_limit} nanoseconds
+
+  Installation Prefix............: $prefix
+  C Compiler Flags...............: $CFLAGS
+  C++ Compiler Flags.............: $CXXFLAGS $CPPFLAGS
+  Linker flags...................: ${LDFLAGS:-none}
+  Required libraries.............: ${LIBS:-}
+
+  Java VM........................: ${JAVA:-none}
+  Java Compiler..................: ${JAVAC:-none} $JAVACFLAGS
+  Jar Utility....................: ${JAR:-none} $JARFLAGS
+  Boost Includes.................: ${have_boost:-default} $BOOST_CPPFLAGS
+"
+
