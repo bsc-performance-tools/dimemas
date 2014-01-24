@@ -110,6 +110,8 @@ t_boolean NEW_CONFIGURATION_parse(FILE  *configuration_file,
                                   int    parameter_predefined_map,
                                   int    parameter_tasks_per_node)
 {
+  t_boolean reading_records_definition = FALSE;
+
   char   *line_buffer = NULL, *trim_line = NULL;
   size_t  line_length = 0;
   ssize_t bytes_read;
@@ -152,13 +154,24 @@ t_boolean NEW_CONFIGURATION_parse(FILE  *configuration_file,
       {
         // comment
       }
+      else if (strstr(trim_line, "/*") != NULL)
+      {
+        reading_records_definition = TRUE;
+      }
+      else if (strstr(trim_line, "*/") != NULL)
+      {
+        reading_records_definition = FALSE;
+      }
       else
       {
-        // actual record line
-        if (!parse_record(trim_line))
+        if (!reading_records_definition)
         {
-          free(trim_line);
-          return FALSE;
+          // actual record line
+          if (!parse_record(trim_line))
+          {
+            free(trim_line);
+            return FALSE;
+          }
         }
       }
     }
