@@ -30,10 +30,10 @@ Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
 nodist_EXTRA_Dimemas_SOURCES = dummy.cc
 
 Dimemas_LDADD = \
+	$(simulator_dir)/model/libDimemasModel.la \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la \
 	$(simulator_dir)/input/libDimemasInput.la \
 	$(simulator_dir)/io/libDimemasIO.la \
-	$(simulator_dir)/model/libDimemasModel.la \
 	$(simulator_dir)/prv_utils/libDimemas2ParaverUtils.la \
 	$(simulator_dir)/sched/libDimemasScheduling.la \
 	$(simulator_dir)/utils/libDimemasUtils.la 
