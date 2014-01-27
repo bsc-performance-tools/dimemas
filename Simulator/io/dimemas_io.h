@@ -54,7 +54,7 @@ off_t IO_ftello(FILE* stream);
 
 int   IO_fseeko(FILE *stream, off_t offset, int whence);
 
-int   IO_fseek(FILE *stream, off_t offset, int whence);
+int   IO_fseek(FILE *stream, long offset, int whence);
 
 t_boolean IO_file_exists(const char *path);
 

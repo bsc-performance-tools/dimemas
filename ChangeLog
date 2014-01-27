@@ -11,6 +11,8 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 	CHANGES:  	explanation of codification changes
 
 2014/01/24 - jgonzale - Simulator - 5.2.0 (corrected)
+	BUGFIX:		Correct defition of the 'IO_fseek' in the dimemas header
+
 	BUGFIX:		Correct creation of output PCF name when output Paraver
 				trace name does not have any extension, or the extension
 				is different from '.prv'.
