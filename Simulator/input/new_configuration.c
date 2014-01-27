@@ -471,7 +471,7 @@ t_boolean parse_node_info (char* record_fields)
                    &intra_node_buses,
                    &intra_node_input_links,
                    &intra_node_output_links,
-                   &intra_node_startup,
+                   &inter_node_startup,
                    &inter_node_input_links,
                    &inter_node_output_links,
                    &wan_startup);
@@ -482,6 +482,9 @@ t_boolean parse_node_info (char* record_fields)
     {
       inter_node_startup = NEW_CONFIGURATION_parameter_lat;
     }
+
+    inter_node_startup = inter_node_startup*1e9;
+    intra_node_startup = intra_node_startup*1e9;
 
     /* The node_id is then ignored (NO_NODE_ID) */
     if (!SIMULATOR_set_node_definition (NO_NODE_ID,
@@ -528,7 +531,7 @@ t_boolean parse_node_info (char* record_fields)
                    &intra_node_buses,
                    &intra_node_input_links,
                    &intra_node_output_links,
-                   &intra_node_startup,
+                   &inter_node_startup,
                    &inter_node_input_links,
                    &inter_node_output_links,
                    &wan_startup);
@@ -539,6 +542,9 @@ t_boolean parse_node_info (char* record_fields)
     {
       inter_node_startup = NEW_CONFIGURATION_parameter_lat;
     }
+
+    inter_node_startup = inter_node_startup*1e9;
+    intra_node_startup = intra_node_startup*1e9;
 
     if (!SIMULATOR_set_node_definition (NO_NODE_ID,
                                         machine_id,
@@ -598,6 +604,9 @@ t_boolean parse_node_info (char* record_fields)
     {
       inter_node_startup = NEW_CONFIGURATION_parameter_lat;
     }
+
+    inter_node_startup = inter_node_startup*1e9;
+    intra_node_startup = intra_node_startup*1e9;
 
     if (!SIMULATOR_set_node_definition (NO_NODE_ID,
                                         machine_id,
@@ -683,7 +692,7 @@ t_boolean parse_multinode_info (char* record_fields)
                    &intra_node_buses,
                    &intra_node_input_links,
                    &intra_node_output_links,
-                   &intra_node_startup,
+                   &inter_node_startup,
                    &inter_node_input_links,
                    &inter_node_output_links,
                    &wan_startup);
@@ -694,6 +703,10 @@ t_boolean parse_multinode_info (char* record_fields)
     {
       inter_node_startup = NEW_CONFIGURATION_parameter_lat;
     }
+
+    inter_node_startup = inter_node_startup*1e9;
+    intra_node_startup = intra_node_startup*1e9;
+
     if (!SIMULATOR_set_multiple_node_definition(node_count,
                                                 machine_id,
                                                 erase_quotations(trim_string(simulated_architecture)),

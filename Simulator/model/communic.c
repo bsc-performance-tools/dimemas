@@ -675,6 +675,15 @@ t_nano compute_startup (struct t_thread                 *thread,
            kind);
     break;
   }
+
+  /* If the startup is smaller than the minimum granularity, we consider it 0,
+     to avoid possible overlapped states in Paraver generation
+  */
+  if (startup < 1)
+  {
+    startup = 0;
+  }
+
   return (startup);
 }
 /******************************************************************************
@@ -1469,10 +1478,13 @@ static void message_received (struct t_thread *thread)
         mess->mess_tag
       );
     }
-    if (mess->dest_thread == -1) {
+    if (mess->dest_thread == -1)
+    {
       /* this is a real MPI transfer */
       inFIFO_queue (& (task_partner->mess_recv), (char *) thread);
-    } else {
+    }
+    else
+    {
       /* this is a dependency synchronization  */
       assert (thread_partner != TH_NIL);
       inFIFO_queue (& (thread_partner->mess_recv), (char *) thread);
@@ -6849,7 +6861,7 @@ static void close_global_communication (struct t_thread *thread)
                   IDENTIFIERS (others),
                   others->last_paraver,
                   current_time,
-                  PRV_BLOCKING_RECV_ST);
+                  PRV_GLOBAL_OP_ST);
 
     ASS_ALL_TIMER (others->collective_timers.conclude_communication,
                    current_time);
@@ -7168,7 +7180,8 @@ void GLOBAL_operation (struct t_thread *thread,
                   IDENTIFIERS (others),
                   others->last_paraver,
                   current_time,
-                  PRV_BLOCKING_RECV_ST);
+                  PRV_BLOCKED_ST);
+
     others->last_paraver = current_time;
   }
 

@@ -10,6 +10,35 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/01/24 - jgonzale - Simulator - 5.2.0 (corrected)
+	BUGFIX:		Latency times were not adjusted when reading new 
+				configuration records (multiply the written value per 1e9).
+
+				In addition, 'inter_node' latencies where wrongly used when
+				initializing the nodes
+
+
+	FEATURES:	If the latency is smaller than 1ns, it is discarded when
+				executing a communication. This avoids potential problem of
+				overlapped states in Paraver
+
+2014/01/24 - jgonzale - Simulator | GUI - 5.2.0
+	FEATURES: 	New parameters: '--dim <input_trace>' set a external trace
+								'--ppn <tasks_per_node>' predefined mapping
+								'--fill' predefined mapping
+								'--interlvd' predefined mapping
+								'--bw <bandwidth>' inter-node bandwidth
+								'--lat <latency>' inter-node latency
+
+	FEATURES:	Support for new configuration files with two new record types
+				'multine node information', to collapse the definition of 
+				multiple nodes with same configuration, and 'predefined map
+				information', to map tasks to nodes without expressing 
+				directly the task mapping array. In addition, traces are now
+				not required to be written in the configuration file, so
+				the simulator execution is more flexible (focusing a better
+				integration with Paraver)
+
 2013/10/18 - jgonzale - Simulator - 5.1.2
 	BUGFIX:		Bug #38 related to offsets location was not completely 
 				solved. Final solution
