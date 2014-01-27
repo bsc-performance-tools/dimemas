@@ -1,2 +1,0 @@
-network : VPP_Cross VPP_Crossbar 500.000000 0
-network : HPS_2 IBM_Switch_2 35.000000 1
