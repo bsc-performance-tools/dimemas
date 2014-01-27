@@ -79,17 +79,34 @@ t_boolean MakeParaverPCF(const char *output_trace_name,
   struct t_Ptask* ptask;
 
   FILE *input_pcf_file, *output_pcf_file, *pcf_insert_file;
-  char *input_pcf_name, *output_pcf_name;
+  const char *extension, *input_pcf_name, *output_pcf_name;
 
   /* Generate the output PCF name */
-  output_pcf_name = strdup(output_trace_name);
 
-  if (strcmp(&output_pcf_name[strlen(output_trace_name)-4],".prv") != 0)
+  extension = strrchr(output_trace_name, '.');
+
+  if (!extension || extension == output_trace_name)
   {
-    warning ("Wrong extension in output Paraver trace. PCF file would be named wrong\n");
+    warning ("No extension in output Paraver trace. PCF file would be named wrong\n");
+    output_pcf_name = (char*) malloc( (strlen(output_trace_name)+5)*sizeof(char) );
+    strcpy(output_pcf_name, output_trace_name);
+    strcat(output_pcf_name, ".pcf");
   }
-
-  strcpy(&output_pcf_name[strlen(output_trace_name)-4],".pcf");
+  else
+  {
+    if (strcmp(extension, ".prv") != 0)
+    {
+      warning ("Wrong extension in output Paraver trace. PCF file would be named wrong\n");
+      output_pcf_name = (char*) malloc( (strlen(output_trace_name)+5)*sizeof(char) );
+      strcpy(output_pcf_name, output_trace_name);
+      strcat(output_pcf_name, ".pcf");
+    }
+    else
+    {
+      output_pcf_name = strdup(output_trace_name);
+      strcpy(&output_pcf_name[strlen(output_trace_name)-4],".pcf");
+    }
+  }
 
   if ( (output_pcf_file = IO_fopen(output_pcf_name, "w")) == NULL)
   {

@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = libDimemasUtils.la
 
 simulator_dir = $(top_srcdir)/Simulator
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/common_utilities \
 	-I$(top_srcdir)/include \
 	-I$(simulator_dir)/io \

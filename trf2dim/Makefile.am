@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/common_utilities \
 	-I$(top_srcdir)/include 
 

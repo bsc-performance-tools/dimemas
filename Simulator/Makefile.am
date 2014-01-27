@@ -8,7 +8,7 @@ if VENUS_ENABLED
   SUBDIRS += venusclient
 endif
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/common_utilities \
 	-I$(top_srcdir)/include \
 	-I$(simulator_dir)/io \

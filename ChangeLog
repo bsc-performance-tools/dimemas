@@ -11,6 +11,13 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 	CHANGES:  	explanation of codification changes
 
 2014/01/24 - jgonzale - Simulator - 5.2.0 (corrected)
+	BUGFIX:		Correct creation of output PCF name when output Paraver
+				trace name does not have any extension, or the extension
+				is different from '.prv'.
+
+	CHANGES:	Changed 'INCLUDES' per 'AM_CPPFLAGS' in the different
+				'Makefile.am' files
+
 	BUGFIX:		Latency times were not adjusted when reading new 
 				configuration records (multiply the written value per 1e9).
 

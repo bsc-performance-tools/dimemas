@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = libDimemasVenusClient.la
 
 simulator_dir = $(top_srcdir)/Simulator
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(simulator_dir)/io \
 	-I$(simulator_dir)/input \
