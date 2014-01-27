@@ -1,0 +1,690 @@
+ChangeLog 'Dimemas package'
+
+Structure
+
+Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
+
+	FEATURES: 	explanation of new features
+
+	BUGFIX:   	explanation of bug solved
+
+	CHANGES:  	explanation of codification changes
+
+2014/01/24 - jgonzale - Simulator - 5.2.0 (corrected)
+	BUGFIX:		Correct defition of the 'IO_fseek' in the dimemas header
+
+	BUGFIX:		Correct creation of output PCF name when output Paraver
+				trace name does not have any extension, or the extension
+				is different from '.prv'.
+
+	CHANGES:	Changed 'INCLUDES' per 'AM_CPPFLAGS' in the different
+				'Makefile.am' files
+
+	BUGFIX:		Latency times were not adjusted when reading new 
+				configuration records (multiply the written value per 1e9).
+
+				In addition, 'inter_node' latencies where wrongly used when
+				initializing the nodes
+
+
+	FEATURES:	If the latency is smaller than 1ns, it is discarded when
+				executing a communication. This avoids potential problem of
+				overlapped states in Paraver
+
+2014/01/24 - jgonzale - Simulator | GUI - 5.2.0
+	FEATURES: 	New parameters: '--dim <input_trace>' set a external trace
+								'--ppn <tasks_per_node>' predefined mapping
+								'--fill' predefined mapping
+								'--interlvd' predefined mapping
+								'--bw <bandwidth>' inter-node bandwidth
+								'--lat <latency>' inter-node latency
+
+	FEATURES:	Support for new configuration files with two new record types
+				'multine node information', to collapse the definition of 
+				multiple nodes with same configuration, and 'predefined map
+				information', to map tasks to nodes without expressing 
+				directly the task mapping array. In addition, traces are now
+				not required to be written in the configuration file, so
+				the simulator execution is more flexible (focusing a better
+				integration with Paraver)
+
+2013/10/18 - jgonzale - Simulator - 5.1.2
+	BUGFIX:		Bug #38 related to offsets location was not completely 
+				solved. Final solution
+
+2013/10/16 - jgonzale - Simulator - 5.1.1
+	BUGFIX:		Solved a bug when locating the offsets in a trace without
+				offset information (#38)
+
+2013/10/02 - jgonzale - prv2dim | trf2dim | Other
+	CHANGES:	Merged the trf2dim and trf2trf from Vladimir. Including some
+				'common_utilities' files
+
+
+2013/04/30 - jgonzale - prv2dim - 5.1.0
+	FEATURES:	The translator also copies the '.row' file if available.
+
+2013/04/29 - jgonzale - Simulator - 5.1.0
+	FEATURES:	Added back support for v4 CFG files. Simulator sets 
+				mem_buses = # processors and 1 half duplex intra-node link
+				when using v4 configuration files.
+
+	CHANGES:	When copying the output PCF, all information befor the event
+				types are embedded, using the Dimemas default states
+				
+
+2013/03/28 - jgonzale - GUI - 5.0.0
+	BUGFIX		Wrong order in 'Node information' labels
+
+2013/03/28 - jgonzale - Simulator
+	BUGFIX:		Correction in scape characters of 'DimemasUpdateCFG'
+
+2013/03/28 - jgonzale - Simulator | GUI | prv2dim - 5.0.0
+	FEATURES:	Added intra-node contention simulation. This contention
+				is modelled in the same way as the intra-node contention,
+				using # of buses, # of input links and # of output links.
+				It requires adding these three parameters to the configuration
+				file ('node information' has changed), the GUI and also
+				the DimemasUpdateCFG, to translate old CFG files no the
+				newer version.
+
+				Due to the introduction of these new feature and the
+				modificacion of the configuration file, the major version
+				has been increased.
+
+	BUGFIX:		'prv2dim' did not translate the MPI_Rsend primitives. Now
+				they are translated as regular MPI_Send.
+				
+
+2013/03/07 - jgonzale - Simulator
+	CHANGES:	New way to compute the collective FANs, taking into
+				account the number of partners at different stages:
+					- Number of tasks per node
+					- Number of nodes per machine
+					- Number of machines in WAN
+	
+	CHANGES:	LIN model now applies P = num_partners-1 (as the total
+				number of messages interchanged)
+	
+	BUGFIX:		Solved a bug when loading the collectives fine tuning
+				using an external file. It loaded the values mixing the
+				internal network and the WAN.
+
+2013/02/26 - jgonzale - prv2dim - 4.4.1pre
+	BUGFIX:		Solved a bug when reading blank lines of a trace with
+				CRLF line terminators
+
+	FEATURES:	Added a warning when wrong records (TaskIds out of bounds
+				found in the trace
+
+2013/02/21 - jgonzale - Simulator
+	BUGFIX:		Add missing include of 'list.h' to 'simulator.c' file that
+				caused a segmentation fault in linux-ia64 machines.
+
+2013/02/21 - jgonzale - Simulator
+	BUGFIX:		Add missing information about collective communications ids
+				to the 'extern_comm_model.h' header file
+
+2013/02/20 - jgonzale - Simulator - 4.4.0
+	FEATURES:	Backport of the 'lib_extern_model' support to compute some
+				communications parameters externally to the simulator core.
+
+2013/01/31 - jgonzale - GUI - 4.3.7
+	CHANGES:	Added execution permission for all users to the 'DimemasGUI'
+				script
+
+2013/01/31 - jgonzale - prv2dim - 4.3.7
+	CHANGES:	Changed the message of the translator when detecting
+				non-deterministic MPI primitives in the translation
+
+2013/01/30 - jgonzale - GUI
+	BUGFIX:		Solved a problem when using 'chunked mapping'. Now each
+				node is saturated in terms of its number of processors and
+				the processes that not fall in any node, are mapped to
+				the last node
+
+2013/01/03 - jgonzale - prv2dim - 4.3.6
+	BUGFIX:		MPI_Test[*] primitives are translated as communication
+				wait records
+
+2013/01/02 - jgonzale - Simulator | GUI
+	BUGFIX:		Dimemas[GUI] not robust against ':' in trace name
+
+2012/12/17 - jgonzale - Simulator - 4.3.5
+	BUGFIX:		Collective operations compute the inter-node 'fans' when
+				just one node involved
+
+	BUGFIX:		Event type/values are now managed using 'unsigned long long'
+				variables
+
+	FEATURES:	Added 'TODO' file
+
+2012/12/13 - jgonzale - Simulator - 4.3.4
+	CHANGES:	Added the PID to Paraver temporal files to allow multiple
+				simultaneos executions.
+
+	CHANGES:	Increased the bison stack size.
+
+2012/12/03 - jgonzale - Simulator - 4.3.3
+	BUGFIX:		TASK_end / PARAVER_end order reversed. On file_data_access
+				total number of file pointers reserved minus 2, so as to 
+				guarantee the availability to the Paraver trace generator.
+
+2012/12/03 - jgonzale - Simulator - 4.3.2
+	BUGFIX:		TASK_end was called after PARAVER_end causing a resource lock
+				regarding the total number of files opened.
+
+2012/11/23 - jgonzale - Other
+	CHANGES: 	Version update to '4.3.1'
+
+	CHANGES:	Modifications to adapt to the build farm
+
+2012/10/19 - jgonzale - Other
+	CHANGES:	Version update to '4.3.0'
+
+	CHANGES:	Minor cosmetic changes in the output
+
+2012/10/19 - jgonzale - Other
+	BUGFIX:		Solved a bug in the compilation system of the 'common_utilities'
+				that prevent the Dimemas trace to create nanosecond traces.
+
+2012/10/19 - jgonzale - Simulator
+	CHANGES:	Using negative values in the 'modules information' field
+				of the CFG file now indicated the simulator that all
+				CPU bursts inside this module will change its duration to
+				absoulte value of the number indicated. Required to
+				perform 'forced balancing' simulations.
+
+2012/10/10 - jgonzale - prv2dim
+	CHANGES:	Removed a wrong information message in the
+				'ParaverTraceParser'.
+
+	CHANGES: 	Version updated to '4.2.2'.
+
+2012/10/10 - jgonzale - Other
+	BUGFIX:		Solved the missing definition 'DIMEMAS_NEW_TRACE' on
+				'common_utilities' commodity library.	
+
+	CHANGES:	Version updated to '4.2.1'.
+
+	CHANGES:	Updated README file.
+
+2012/10/09 - jgonzale - Simulator
+	BUGFIX:		Solved a massive leak in 'file_data_access.c' when
+				reading actions. 'op_fields' variable was never free'd
+				causing a total memory waste (each trace line stay in
+				memory during the whole execution)
+
+	CHANGES:	'MALLOC_*' (in 'mallocame.h|c') never used anymore.
+				All memory allocation now uses the pure standard
+				'malloc/free' calls.
+
+	CHANGES:	All 'common-files' dependencies are now inside the
+				source code package. This is the first step in to rebuild
+				an actual 'common-files' in the Performance Tools team.
+
+	BUGFIX:		Almost all compilation 'warnings' cleaned.
+
+2012/09/12 - jgonzale - GUI
+	BUGFIX:		Corrected the binary path to call the simulator
+				(Dimemas3->Dimemas).
+
+2012/09/03 - vladimir - Simulator
+	CHANGES:	Updates on the StarSs scheduler.
+
+2012/09/03 - jgonzale - Other
+	CHANGES:	Added a missing header (basic_types.h) and changed the
+				building numbering system.
+
+2012/07/31 - jgonzale - Other
+	CHANGES:	Small change in the building system to guarantee the
+				big file flags inclusion.
+
+2012/07/12 - jgonzale - GUI
+
+	CHANGES:	GUI script is now called 'DimemasGUI'. It is installation
+				agnostic, and performs better checks for user-environment
+				variables and JRE installation.
+
+2012/07/11 - jgonzale - Other
+
+	CHANGES:	'configure.ac.' moved to 'configure.ac.template' to keep
+				track of the versioning easily.
+
+2012/07/11 - jgonzale - trf2dim
+
+	BUGFIX:		Offsets generation adapted to new trace format.
+
+2012/07/11 - jgonzale - Other
+
+	CHANGES:	Full integration of the simulator, GUI and translators in
+				a single package to ease the tool distribution and maintenance.
+
+	CHANGES:	Commit tagged as Version 4 of the tool, considering stability
+				of the stability of HOPSA integration.
+
+2012/07/05 - jgonzale - GUI
+	
+	CHANGES:	Deep modification of 'DimemasGUI' to correctly generate new
+				CFGs files (using new block codification). It is still
+				under validation.
+
+2012/03/27 - jgonzale - prv2dim
+
+	FEATURES:	changed 'iprobe' translation to indicate the iprobe threshold
+				in a miliseconds 'rate' instead of absolute values
+
+2012/03/23 - jgonzale - prv2dim
+
+	BUGFIX:		solved a wrong header creation when less file descriptors than
+				tasks to translate were available.
+				
+	CHANGES:	better distinction of wrong communication primitives inside
+				wrong block (FEATURE of 2012/03/22). 
+
+2012/03/22 - grodrigu - Simulator
+	
+	BUGFIX:		Solved a bug on parsing: when reading NOOPs offset location
+				was not updated properly.
+
+2012/03/22 - jgonzale - prv2dim
+
+	FEATURES:	SVN numbering using 'configure.ac.template' and a modification
+				on 'autogen.sh' that uses 'svnversion' application.
+
+	FEATURES:	Added a check when communication primitives inside a MPI
+				block does not correspond to the expected (for example a send
+				primitive inside MPI_recv). A warning message is thrown.
+
+				That solves a miss-translation bug discovered in Dalton
+				caused by the time granularity of the Paraver trace.
+
+2012/03/05 - jgonzale - Simulator
+	
+	CHANGES:	MALLOC_free_memory does not need size any more. Erased
+				alternative implementation of memory allocation (pool based).
+
+2012/02/28 - jgonzale - Other
+
+	CHANGES:	Minimun integration
+
+2012/02/21 - grodrigu - Simulator
+
+	FEATURES:	Added support for application reloading
+
+	BUGFIX:		Solved a bug when using 'off_t', 'size_t' and 'int' to
+				index structures.
+
+	BUGFIX:		Corrected spelling mistake in 'configure.ac'
+
+	BUGFIX:		Solved a pattern matching when reading MPI communaction
+				primitives and some pointer errors in 'file_data_access.c'
+
+2012/02/03 - jgonzale - Simulator
+
+	CHANGES:	Complete integration of all Dimemas versions. 
+
+	CHANGES:	Total change of 'file_data_acces.c'. Now is uses 'getline'
+				and 'sscanf' as basic ASCII parsing of DIM traces. It also
+				performs a more sofisticated file descriptor sharing in
+				conjunction with the new IO library (under the 'io' directory).
+				Some primitives defined in the new trace description are not
+				supported yet (One-Sided definitions and operations).
+
+				The new IO library acts as a wrapper between the actual C
+				'stdio.h' and the Dimemas code. The main feature is the
+				ability to account the number of available file descriptors.
+				This accounting is crucial for optimal file descriptor sharing.
+
+	CHANGES:	Also present in the 2012/01/11 commit, but more extended, is
+				the clear separation of simulator loading and the model
+				itself. It is not perfect, but the files 'configuration.c|h'
+				and 'comm_configuration.c|h') include the vast majority of
+				'target machine' initialization. The schedulers initiliazation
+				has not been moved to this location, due to its 'function
+				pointers' design.
+
+	CHANGES:	Paraver trace generation has been completely redesign. Now
+				it produces a set of sorted temporal files for states and
+				communications and a single sorted file for events. The final
+				merge is an external merge sort (found via Wikipedia in:
+				http://cis.stvincent.edu/html/tutorials/swd/extsort/extsort.html)
+				with a fan in of 2. In this way, the required open files
+				is reduced just to 3 (States&Comms. File, Events File, Output
+				PRV tracefile). The memory usage is up to 3 times the size
+				of the MAX_IN_FLIGHT_RECORDS (unfortunately, not in bytes),
+				located in 'external_sort.h'. When producing the temporal 
+				files it just used 1 buffer of this size. When merging it uses
+				3 buffers. The number of states and comms. temporal files is
+				also related to this value (by default: 10000).
+
+				PCF file is copied from the first trace that appears in the
+				configuration file. If not available, default PCF is generated.
+
+	CHANGES:	Now the Dimemas core is *always in nanoseconds*. This is not
+				a dramatic change in terms of configuration files, input
+				traces, etc. (due they expressed in seconds). The output
+				files are afected because the granularity of the timestamps
+				is bigger (9 significant digits).
+
+	CHANGES:	There are some (possible) regressions pending to be checked:
+
+				- Application reloads
+				- Performance messages (they work but need to manually add
+				  'rt' library)
+				- Multi-machine environment and multi-application environment
+				(no traces available)
+				- New modules management version on DimemasGUI not updated
+	
+	FEATURES: 	Added a simple binary called 'DimemasUpdateCFG' to CFGs with old 
+				modules definition to new version.
+
+2012/02/03 - jgonzale - prv2dim
+
+	CHANGES:	Traces are generated *always* in nanoseconds granularity.
+
+	FEATURES:	PCF file is copied from input trace. If it does not exists
+				a default is generated.
+	
+	FEATURES:	Added CodeBlocks project
+
+2012/01/11 - jgonzale
+
+	CHANGES:	First commit with the merge of the Vladimir+German+Official
+				versions. Now, the TRF trace is deprecated, and all improvements
+				should be written on the DIM trace. In further commits, all
+				code that manages the SDDF trace will be erased progresively
+				adopting the DIM (Paraver style trace) codification of 
+				equivalent semantics.
+
+				There have been modifications by Vladimir in the original DIM
+				trace, basically adding offsets for all threads of all tasks,
+				sorting each task per thread and adding the thread field on
+				the P2P communication primitives. This has to be documented.
+
+				The current version supports the codification of CPU ratios
+				using user events present on DIM trace. Paraver and Dimemas
+				will use same event encoding, and Dimemas blocks are discontinued.
+
+				Now it lacks support of generating PCF file, but it can be
+				copied using the '-pc' parameter.
+
+				Most part of the File IO simulation is not currently supported.
+				It should be analyzed and ported.
+
+	FEATURES:	It has been added the skeleton to implement the new scalable
+				IO, as part of the HOPSA project. Every IO made by Dimemas
+				should use the new interface to be implemented.
+
+2012/01/05 - jgonzale - prv2dim
+
+	CHANGES:	Major changes to generate the new DIM format accepted by
+				the Dimemas merged from Vladimir (StarSs)/Official(MPI)
+				versions
+			
+				Major changes in the trace file result from the P2P 
+				communication primitives, which include the origin/destination
+				thread. In MPI, this field takes the value '-1', but should
+				be changed to keep the trace elegant.
+
+				As a comment, it manipulates the MPI/Cluster/User blocks 
+				in the old fashion, but generates user events using the
+				Paraver encoding. We should evaluate dropping support
+				to TRF files translation.
+
+2011/10/24 - jgonzale - prv2dim
+
+	CHANGES: 	Building system now builds both translators at the
+				same time
+
+	FEATURES:	Added support to translate 'User Functions' in the same
+				way the Clusters are translated.
+
+2011/07/14 - jgonzale - Other
+
+	CHANGES:	MAJOR modifications in building system. Now, each big module
+				of core code is compiled as a facility library. That was
+				modified in previous update, but not added up to this one
+
+2011/07/13 - jgonzale - Other
+
+	CHANGES:	Minor cosmetic changes in building system
+
+2011/03/22 - jgonzale - prv2dim
+
+	CHANGES:	Translator only translates the first thread when
+				tasks with multiple threads are found
+
+	CHANGES:	Warning informative message when trace is disordered
+
+	CHANGES:	Trace flushing outside an MPI are not translated as
+				a running burst
+
+2010/11/10 - jgonzale - prv2dim
+
+	CHANGES:	Changes in version numbering (MAJOR.SVN_REVISION)
+
+2010/10/29 - jgonzale - trf2dim
+
+	CHANGES:	extensive cleaning of building system. Rename of all the
+				package to 'trf2dim'. First open sourced
+
+2010/10/28 - jgonzale - prv2dim
+
+	BUGFIX:		'ParaverTraceParser.cpp +430'. Bad comparison. Thanks icpc!
+
+	CHANGES:	Reestructuration of building system to guarantee the 
+				correctness of 'make dist'. The tool can be now open
+				sourced
+
+2010/10/06 - jgonzale - trf2dim
+
+	CHANGES:	added standard C headers
+
+2010/09/09 - jgonzale - prv2dim
+
+	BUGFIX:		MPI_Bsend is translated as a regular asynchronous send
+				(THIS HAS TO BE CHECKED!)
+
+2010/07/13 - jgonzale - Simulator
+
+	BUGFIX:		Solved an error in the PCF generation, caused by the macro
+				change. It generated 'null' event value names
+
+2010/07/07 - jgonzale - prv2dim
+	BUGFIX:		changes to correctly manage the root identifiers in
+				collective operations.
+
+2010/07/07 - jgonzale - Simulator
+
+	BUGFIX:		Solved a *big* issue regarding to the use of communicators
+				when simulating collective operations. The 'global OP' records
+				generated by 'prv2dim' didn't express the actual root of an
+				collective operation, just which thread is the root. Right
+				now, this is taken into account in the simulation engine.
+
+2010/05/11 - jgonzale - Simulator
+
+	CHANGES:	Cluster blocks are now translated coherently when generating
+				Paraver trace
+
+2010/05/04 - jgonzale - Simulator
+
+	CHANGES:	Increase value of 'BUFSIZE' and 'YYMAXDEPTH' to improve
+				scalability. Should be revised
+
+2010/05/04 - jgonzale - prv2dim
+
+	BUGFIX:		solved an error when translating traces sharing file
+				descriptor and generating old trace format
+
+	CHANGES:	added more progress information
+
+2010/03/19 - jgonzale - GUI
+
+	CHANGES:    Only 'javac' is checked when looking for Java compilers
+
+	BUGFIX:		Solved used of 'getenv' into the Dimemas GUI
+
+2010/03/15 - jgonzale - GUI
+
+	BUGFIX:		GUI is only compiled if Java Compiler is present. Previously it
+				tried to compile it always.
+	CHANGES:	Java m4 macros don't stop when no available compiler/VM/jar is
+				found
+	CHANGES:	Configure script no longer offers debug/optimization flags.
+				User must provide this information using CFLAGS/CXXFLAGS.
+	CHANGES:	Removed 'aclocal.m4' from the package distribution.
+
+2010/03/10 - jgonzale - GUI
+
+	CHANGES:	Minor changes on GUI
+
+2010/03/09 - jgonzale - Simulator
+
+	CHANGES:	Completed changes to integrate the Java GUI into the main
+				Dimemas packaging. See DimemasGUI directory
+	CHANGES:	Added 'm4' directories to add automake macros
+
+2010/03/03 - jgonzale - Simulator
+
+	BUGFIX:		Solved a small misuse when generating the distribution
+				package
+	CHANGES:	Minor cosmetic changes in 'README' file and elimination of
+				very old configuration options
+
+2010/02/15 - jgonzale - Simulator
+
+	CHANGES:	Cleaning to free Dimemas code
+
+2010/01/14 - jgonzale - prv2dim
+
+	BUGFIX:		solved a bug which produced a segfault when sharing file
+				descriptors
+
+2009/10/14 - jgonzale - Simulator
+
+	BUGFIX:		Solved a bug in 'transferencia' function, which did not
+				return the total transfer time correctly. Right now, resources
+				time and transfer time are return using output parameters
+
+2009/09/22 - jgonzale - prv2dim
+
+	BUGFIX:		solved a bug to use pseudo-communicators in p2p communications
+
+2008/07/21 - jgonzale - prv2dim
+
+	FEATURES:	added compilation option 'enable-nanoseconds' that enables
+			nanoseconds 
+
+2008/07/21 - jgonzale - trf2dim
+
+	FEATURES:   added compilation option 'enable-nanoseconds' that enables
+				nanoseconds
+
+2008/03/20 - jgonzale - prv2dim
+
+	BUGFIX:		solution of a regression related to 'global op' translation
+				mixed with user events
+
+2008/03/05 - jgonzale - prv2dim
+
+	BUGFIX:		solution/workaround related to record ordering when whole
+				communication is generated in the same timestamp (ex.: when
+				translating a trace generated by Dimemas)
+
+
+2007/11/28 - jgonzale - Simulator
+
+	CHANGES:	The output binary is now called Dimemas3
+
+	CHANGES:	Modifications in data access layer to use traces numbered in
+				range 0..N-1
+
+	BUGFIX:		Correct read in data access layer for 'rendez_vous' attribute
+
+2007/11/28 - jgonzale - trf2dim
+
+	CHANGES:	tasks/threads on the output trace are (again) numbered in
+				range 0..(N-1)
+
+	CHANGES:	'Dimemas2Prv.h' from common threads is used instead of the
+				local version (on 'include' directory)
+
+2007/11/13 - jgonzale - prv2dim
+
+	FEATURES:	Added support to correct translation of 'User Functions'. This
+				functions are translated to 'Block Begin/End' regions, and 
+				internal CPU bursts are computed.
+
+2007/11/05 - jgonzale - Simulator
+
+	CHANGES:    Added 'enable-idle-accounting' compilation option to not
+				include the idle blocks on CPU consumption accounting
+
+2007/10/29 - jgonzale - Simulator
+
+	CHANGES:	Incresed API buffer size, in order to correct simulate traces
+				with big headers
+
+2007/10/29 - jgonzale - trf2dim
+
+	CHANGES:	Changed the 'dynamic cast' to classic cast, one more time.
+
+	BUGFIX: 	Changed 'classical' cast to 'dynanic_cast' in order to solve
+				GCC compatibility
+
+	CHANGES:	Minor changes in 'autogen.sh'
+
+	BUGFIX:		Solved serious memory leaks on input trace parsing
+
+	FEATURES:	New progress messages using '-v' parameter
+
+2007/09/21 - jgonzale - Simulator
+
+	BUGFIX:		In function 'thread_in_communicator', TaskId of thread is
+				not modified
+
+2007/06/13 - jgonzale - Simulator
+
+	BUGFIX:		In function 'DAP_add_comm' from data access API the queues of
+				new communicators are initialized
+	BUGFIX:     'add_global_ops' function in 'read.c' file is moved to correct
+				xlc compilation
+
+2007/06/13 - jgonzale - trf2dim
+
+	CHANGES:	When an unknown record is found, the error message shows the
+				trace line
+
+2007/06/12 - jgonzale - prv2dim
+
+	BUGFIX:		solved a bug related to the 'MPI_Sendrecv' operations. Now
+				two different sorting comparisons are used depending on being
+				on a block or not ('InBlockComparison', 'OutBlockComparison')
+
+2007/05/07 - jgonzale - Simulator
+
+	CHANGES:	Time adjust (apply 1e6 factor) is done in 'get_next_action' on
+				read.c, instead of on the data access API.
+
+2007/04/20 - jgonzale - Simulator
+
+	CHANGES:	MAJOR CHANGE. New data access API is used.
+
+2007/03/22 - jgonzale - prv2dim
+
+	FEATURES:	added support to 'MPI_Issend' on 'TaskTranslationInfo'
+	FEATURES:	new debug messages, when using DEBUG compilation option
+
+2007/03/15 - jgonzale - Simulator
+
+	BUGFIX:		Solved a problem related to Paraver trace generation where
+				IDLE_BLOCKs where incorrectly translated
+
+	CHANGES:	Major changes in Paraver trace generation. Some files has been
+				moved to 'common-files'. Now state color generation is coherent
+				with burst-clusterizer and the trace facility.
+
+
+
