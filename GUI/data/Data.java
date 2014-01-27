@@ -393,7 +393,7 @@ public class Data
       /* Traverse the possible SDDF definition records or DIMEMAS_CONFIGURATION
        * records description */
       
-      line = source.readLine();
+      line = source.readLine().trim();
       while(source.getFilePointer() != source.length())
       {
         if (ConfigurationFileType == Data.SDDFA)
@@ -410,18 +410,18 @@ public class Data
               seek      = source.getFilePointer();
               lineSeek  = lineCount;
 
-              line = source.readLine();
+              line = source.readLine().trim();
               lineCount++;
             }
             else                     // Módulo de configuración incompleto.
             {
-              line += source.readLine();
+              line += source.readLine().trim();
               lineCount++;
             }
           }
           else
           {
-            line = source.readLine();
+            line = source.readLine().trim();
             lineCount++;
           }
         }
@@ -434,18 +434,18 @@ public class Data
               seek      = source.getFilePointer();
               lineSeek  = lineCount;
 
-              line = source.readLine();
+              line = source.readLine().trim();
               lineCount++;
             }
             else
             {
-              line += source.readLine();
+              line += source.readLine().trim();
               lineCount++;
             }
           }
           else
           {
-            line = source.readLine();
+            line = source.readLine().trim();
             lineCount++;
           }
         }
@@ -460,9 +460,9 @@ public class Data
       // Recorrer el fichero obteniendo los datos de cada uno de los módulos.
       while(!malformedFile && (source.getFilePointer() != source.length()))
       {
-        line = source.readLine();
+        line = source.readLine().trim();
         lineCount++;
-              
+        
         if(line.startsWith(WAN))              // Datos de WAN.
         {
           if (!wan_defined)
@@ -539,7 +539,7 @@ public class Data
             else
             {
               totalNodes += Integer.parseInt(environment.machine[i].getNodes());
-              line = source.readLine();
+              line = source.readLine().trim();
               lineCount++;
             }
           }
