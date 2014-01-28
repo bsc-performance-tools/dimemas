@@ -833,13 +833,13 @@ t_boolean parse_map_info (char* record_fields)
 */
 t_boolean parse_predef_map_info (char* record_fields)
 {
+
   int   matches;
   char *tracefile = (char*) malloc(strlen(record_fields)*sizeof(char));
   char  predefined_map[strlen(record_fields)];
   t_boolean tracefile_read = TRUE;
   int tasks_per_node;
   int map_definition;
-
 
   matches = sscanf(record_fields,
                    "%[^,]%*[, ]\"%[^\"]\"",
@@ -1312,11 +1312,18 @@ t_boolean NEW_CONFIGURATION_load_mapping(char* tracefile,
     {
       effective_tracefile = NEW_CONFIGURATION_parameter_tracefile;
     }
-    else if (tracefile == (char*) 0)
+    else
     {
-      generate_error(&error_message,
-                     "no tracefile provided, please use the '--dim' parameter to supply an application trace to simulate");
-      return FALSE;
+      if (tracefile != (char*) 0)
+      {
+        effective_tracefile = tracefile;
+      }
+      else if (tracefile == (char*) 0)
+      {
+        generate_error(&error_message,
+                       "no tracefile provided, please use the '--dim' parameter to supply an application trace to simulate");
+        return FALSE;
+      }
     }
 
     /* Check the configuration precedence. In the first mapping, command line
