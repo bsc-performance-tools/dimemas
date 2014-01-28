@@ -10,7 +10,11 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
-2014/01/24 - jgonzale - Simulator | GUI - 5.2.0 (corrected)
+2014/01/28 - jgonzale - Simulator - 5.2.0 (corrected)
+	BUGFIX:		Bug when parsing a 'predefined map info' that includes a
+				trace
+
+2014/01/27 - jgonzale - Simulator | GUI - 5.2.0 (corrected)
 	BUGFIX:		Added 'trims' when reading configuration files in the GUI
 				to solve bug #30
 
