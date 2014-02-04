@@ -10,6 +10,10 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/02/04 - jgonzale - GUI - 5.2.1
+	BUGFIX:		Bug when saving a 'n tasks per node' mapping without 
+				pressing ENTER in the text field
+
 2014/01/28 - jgonzale - Simulator - 5.2.0 (corrected)
 	BUGFIX:		Bug when parsing a 'predefined map info' that includes a
 				trace

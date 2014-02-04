@@ -342,6 +342,22 @@ public class PredefinedMapsWindow extends GUIWindow {
   }//GEN-LAST:event_tf_nTasksPerNodeActionPerformed
 
   private void b_saveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_saveActionPerformed
+    
+    /* Check a possible value change in the text field that indicates the
+       tasks per node */
+    if (rb_nTasksPerNode.isSelected())
+    {
+      try
+      {
+        nTasksPerNode = Integer.parseInt(tf_nTasksPerNode.getText());
+      }
+      catch (NumberFormatException e)
+      {
+        Tools.showErrorMessage("Wrong tasks per node value");
+        return;
+      }
+    }
+    
     data.map.setMapInfo(currentMapInfo);
     data.map.setMap(currentMap);
     data.map.setNTasksPerNode(nTasksPerNode);
