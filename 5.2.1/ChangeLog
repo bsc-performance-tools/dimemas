@@ -14,6 +14,8 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 	BUGFIX:		Bug when saving a 'n tasks per node' mapping without 
 				pressing ENTER in the text field
 
+	BUGFIX:		Bug when distributing GUI resource files in the 'Makefile.am'
+
 2014/01/28 - jgonzale - Simulator - 5.2.0 (corrected)
 	BUGFIX:		Bug when parsing a 'predefined map info' that includes a
 				trace

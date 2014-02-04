@@ -21,7 +21,7 @@ $(runscript): DimemasGUI.template
 
 CLEANFILES = $(jarfile) $(runscript) 
 
-dist_noinst_JAVA = Main.java
+dist_noinst_JAVA = Main.java 
 include data/Makefile.sources
 include gui/Makefile.sources
 include tools/Makefile.sources
@@ -30,7 +30,7 @@ include tools/Makefile.sources
 #include defaults/Makefile.sources
 
 
-dist_noinst_DATA = manifest.mf DimemasGUI.template
+dist_noinst_DATA = manifest.mf DimemasGUI.template resources/icon.jpg resources/records_definition.txt
 
 # The sleep command is to guarantee the compilation before the packaging
 
