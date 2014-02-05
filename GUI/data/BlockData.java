@@ -44,11 +44,9 @@ package data;
 
 import tools.*;
 import java.io.*;
-import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.HashSet;
 import java.util.NoSuchElementException;
+import java.util.TreeSet;
 
 
 /*
@@ -56,7 +54,7 @@ import java.util.NoSuchElementException;
 */
 public class BlockData
 {
-  private HashSet<ModuleInformation>     ModuleRatios = new HashSet<ModuleInformation>();
+  private TreeSet<ModuleInformation>     ModuleRatios = new TreeSet<ModuleInformation>();
   private Iterator<ModuleInformation>    ExternalIterator;
   private ModuleInformation              ExternalModuleInformation;
 
@@ -272,7 +270,7 @@ public class BlockData
    * JGG: External container for module ratios
    */
 
-  public class ModuleInformation
+  public class ModuleInformation implements Comparable<ModuleInformation>
   {
     private int    type;
     private int    value;
@@ -326,6 +324,7 @@ public class BlockData
       return (type + value) * value + type;
     }
 
+    @Override
     public boolean equals(Object other)
     {
       if (other instanceof ModuleInformation)
@@ -345,6 +344,34 @@ public class BlockData
       else
       {
         return false;
+      }
+    }
+    
+    @Override
+    public int compareTo (ModuleInformation other)
+    {
+      if (this.type > Integer.parseInt(other.getType()))
+      {
+        return 1;
+      }
+      else if (this.type == Integer.parseInt(other.getType()))
+      {
+        if (this.value == Integer.parseInt(other.getValue()))
+        {
+          return 0;
+        }
+        else if (this.value > Integer.parseInt(other.getValue()))
+        {
+          return 1;
+        }
+        else
+        {
+          return -1;
+        }
+      }
+      else
+      {
+        return -1;
       }
     }
 

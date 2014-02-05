@@ -1031,11 +1031,11 @@ t_boolean parse_mod_info (char* record_fields)
 
     if (execution_ratio >= 0)
     {
-      TASK_module_new_duration (type, value, fabs(execution_ratio));
+      TASK_module_new_ratio (type, value, execution_ratio);
     }
     else
     {
-      TASK_module_new_ratio (type, value, execution_ratio);
+      TASK_module_new_duration (type, value, fabs(execution_ratio));
     }
   }
   else

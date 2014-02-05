@@ -10,6 +10,12 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/02/05 - jgonzale - Simulator | GUI - 5.2.2
+	BUGFIX:		Modules balancing and ratio where wrongly captured in the
+				new configuration parsing
+
+	BUGFIX:		Modules definition in the GUI where sorted randomly
+
 2014/02/04 - jgonzale - GUI - 5.2.1
 	BUGFIX:		Bug when saving a 'n tasks per node' mapping without 
 				pressing ENTER in the text field
