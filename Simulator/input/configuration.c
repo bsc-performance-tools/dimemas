@@ -164,7 +164,7 @@ t_boolean CONFIGURATION_parse(FILE  *configuration_file,
 
 void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename)
 {
-  if (sch_conf_filename != NULL)
+  if (sch_filename != NULL)
   {
     warning("Using the '-s' scheduling parametrization (%s) instead of the indicated in the configuration file\n",
               sch_conf_filename);
@@ -175,47 +175,47 @@ void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename)
   if ( (sch_conf_file = IO_fopen(sch_conf_filename, "r")) == NULL)
   {
     die("Unable to set and open scheduling configuration file (%s): %s\n",
-        sch_conf_filename,
+        sch_filename,
         IO_get_error());
   }
   return;
 }
 
-void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_file)
+void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_filename)
 {
-  fs_conf_filename = strdup(fs_file);
+  fs_conf_filename = strdup(fs_filename);
 
   if ( (fs_conf_file = IO_fopen(fs_conf_filename, "r")) == NULL)
   {
     die("Unable to set and open file system configuration file (%s): %s\n",
-        fs_conf_filename,
+        fs_filename,
         IO_get_error());
   }
   return;
 }
 
-void CONFIGURATION_Set_Communications_Configuration_File(char *comm_conf_file)
+void CONFIGURATION_Set_Communications_Configuration_File(char *comm_filename)
 {
-  comm_conf_filename = strdup(comm_conf_file);
+  comm_conf_filename = strdup(comm_filename);
 
-  if ( (fs_conf_file = IO_fopen(comm_conf_filename, "r")) == NULL)
+  if ( (comm_conf_file = IO_fopen(comm_conf_filename, "r")) == NULL)
   {
     die("Unable to set and open communications configuration file (%s): %s\n",
-        comm_conf_file,
+        comm_filename,
         IO_get_error());
   }
   return;
 }
 
 
-void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_file)
+void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_filename)
 {
-  random_conf_filename = strdup(rand_file);
+  random_conf_filename = strdup(rand_filename);
 
-  if ( (fs_conf_file = IO_fopen(random_conf_filename, "r")) == NULL)
+  if ( (random_conf_file = IO_fopen(random_conf_filename, "r")) == NULL)
   {
     die("Unable to set and open random values configuration file (%s): %s\n",
-        rand_file,
+        rand_filename,
         IO_get_error());
   }
   return;

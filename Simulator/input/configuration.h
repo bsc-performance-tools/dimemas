@@ -66,10 +66,10 @@ extern t_boolean CONFIGURATION_parse(FILE  *configuration_file,
                                      int    parameter_predefined_map,
                                      int    parameter_tasks_per_node);
 
-extern void  CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_file);
-extern void  CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_file);
-extern void  CONFIGURATION_Set_Communications_Configuration_File(char* comm_conf_file);
-extern void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_file);
+extern void  CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename);
+extern void  CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_filename);
+extern void  CONFIGURATION_Set_Communications_Configuration_File(char* comm_filename);
+extern void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_filename);
 
 extern char* CONFIGURATION_Get_Configuration_FileName(void);
 
