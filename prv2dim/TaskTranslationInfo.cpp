@@ -1126,7 +1126,20 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           return false;
         }
       }
-      else if (CurrentComm->GetType() != PHYSICAL_SEND)
+      else if (CurrentComm->GetType() == PHYSICAL_RECV)
+      { /* Not common case, when translation comes from a simulated trace
+           Wait synchronizations may appear inside a reception operation */
+        if (Dimemas_NX_Wait(TemporaryFile,
+                            TaskId, ThreadId,
+                            PartnerTaskId, -1, /* That should be corrected eventually */
+                            CommId, Size, (INT64) Tag) < 0)
+        {
+          SetError(true);
+          SetErrorMessage("error writing output trace", strerror(errno));
+          return false;
+        }
+      }
+      else /* if (CurrentComm->GetType() != PHYSICAL_SEND) */
       {
         WrongComms = true;
       }
@@ -1154,7 +1167,20 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           return false;
         }
       }
-      else if (CurrentComm->GetType() != PHYSICAL_SEND)
+      else if (CurrentComm->GetType() == PHYSICAL_RECV)
+      { /* Not common case, when translation comes from a simulated trace
+           Wait synchronizations may appear inside a reception operation */
+        if (Dimemas_NX_Wait(TemporaryFile,
+                            TaskId, ThreadId,
+                            PartnerTaskId, -1, /* That should be corrected eventually */
+                            CommId, Size, (INT64) Tag) < 0)
+        {
+          SetError(true);
+          SetErrorMessage("error writing output trace", strerror(errno));
+          return false;
+        }
+      }
+      else /* (CurrentComm->GetType() != PHYSICAL_SEND) */
       {
         WrongComms = true;
       }

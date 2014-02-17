@@ -1253,11 +1253,9 @@ static struct t_thread* locate_receiver_real_MPI_transfer (
 
   assert (dest_threadid == -1);
 
-  for (
-    thread  = (struct t_thread *) head_queue (threads);
-    thread != TH_NIL;
-    thread  = (struct t_thread *) next_queue (threads)
-  )
+  for (thread  = (struct t_thread *) head_queue (threads);
+       thread != TH_NIL;
+       thread  = (struct t_thread *) next_queue (threads))
   {
     action = thread->action;
     mess   = & (action->desc.recv);
@@ -3452,10 +3450,13 @@ void COMMUNIC_send (struct t_thread *thread)
   /* FEC: S'avisa que s'ha arribat a aquest send i es comprova si s'ha arribat
    * a un Irecv que permeti continuar a aquest send encara que sigui sincron. */
 
-  if (mess->dest_thread == -1) {
+  if (mess->dest_thread == -1)
+  {
     /* this is a real MPI transfer */
     hi_ha_irecv = COMMUNIC_send_reached_real_MPI_transfer (thread, mess);
-  } else {
+  }
+  else
+  {
     /* this is a dependency synchronization */
     hi_ha_irecv = COMMUNIC_send_reached_dependency_synchronization (thread, mess);
   }

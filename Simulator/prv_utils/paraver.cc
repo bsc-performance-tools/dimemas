@@ -1120,8 +1120,8 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
     {
       int i;
 
-      Header << "c:" << ptask->Ptaskid+1 << ":";                         // Ptask
-      Header << (unsigned int) communicator->communicator_id+1 << ":";   // Communicator ID
+      Header << "c:" << ptask->Ptaskid+1 << ":";                       // Ptask
+      Header << (unsigned int) communicator->communicator_id << ":";   // Communicator ID, +1 not required!
       Header << (unsigned int) communicator->size;
 
       for (i = 0; i < communicator->size; i++)
