@@ -231,9 +231,11 @@ void CONFIGURATION_New_Definition(struct t_queue *definition_fields,
   if (count_queue(definition_fields) != count_queue (definition_structure->types))
   {
     near_line();
-    die("Insufficient fields on register #%d: %s\n",
+    die("Insufficient fields on register #%d: %s (Expected %d - Read %d)\n",
                      definition_structure->entryid,
-                     definition_structure->name);
+                     definition_structure->name,
+                     count_queue(definition_fields),
+                     count_queue (definition_structure->types));
     return;
   }
 

@@ -379,6 +379,10 @@ class InBlockComparison {
             CommR2->GetType() == PHYSICAL_RECV)
           return true;
 
+        if (CommR1->GetType() == LOGICAL_SEND &&
+            CommR2->GetType() == PHYSICAL_RECV)
+          return true;
+
         return false;
       }
       else if (IsCommunication(R1) && IsGlobalOp(R2))

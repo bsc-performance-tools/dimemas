@@ -9,6 +9,15 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 	BUGFIX:   	explanation of bug solved
 
 	CHANGES:  	explanation of codification changes
+2014/02/26 - jgonzale - Simulator
+	BUGFIX:		Bug when detecting the number of opened files. Changed 'fstat'
+				to 'fcntl'
+
+	BUGFIX:		Bug when re-positioning the input trace, on 32-bit linux
+
+2014/02/26 - jgonzale - prv2dim
+
+	BUGFIX:		Changes in the way the communications are sorted
 
 2014/02/17 - jgonzale - Simulator | prv2dim - 5.2.4	
 	BUGFIX:		Bug when generating Paraver trace, communicators numbering

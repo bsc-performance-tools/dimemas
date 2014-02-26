@@ -6004,7 +6004,6 @@ static void calcula_temps_maxim_intra_nodes (struct t_machine      *machine,
                  &tauxn_out,
                  &lauxn_out);
 
-    /*
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
@@ -6018,7 +6017,6 @@ static void calcula_temps_maxim_intra_nodes (struct t_machine      *machine,
         lauxn_out/1e9
       );
     }
-    */
 
     /* S'agafen els del node amb la suma mes gran */
     suma_aux = (double) (tauxn_in + lauxn_in + tauxn_out + lauxn_out);

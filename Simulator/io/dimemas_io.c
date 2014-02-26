@@ -79,7 +79,15 @@ void IO_Init(void)
   IO_MaximumFileDescriptors = nofile_limits.rlim_cur;
   IO_OpenedFileDescriptors  = 0;
 
-  /* Check the number of opened files on initialization */
+  for ( i = 0; i <= IO_MaximumFileDescriptors; i++ )
+  {
+    if (fcntl(i, F_GETFD) != -1)
+    {
+      IO_OpenedFileDescriptors++;
+    }
+  }
+
+  /* Check the number of opened files on initialization
   for ( i = 0; i <= IO_MaximumFileDescriptors; i++ )
   {
     fstat(i, &stats);
@@ -89,6 +97,12 @@ void IO_Init(void)
       IO_OpenedFileDescriptors++;
     }
   }
+  */
+
+#ifdef DEBUG_IO
+  printf("%d used file descriptors at IO_Init\n",
+         IO_OpenedFileDescriptors);
+#endif
 
   IO_error_state            = FALSE;
   sprintf(IO_error_string, "no I/O error");
