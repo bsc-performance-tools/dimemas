@@ -9,6 +9,10 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 	BUGFIX:   	explanation of bug solved
 
 	CHANGES:  	explanation of codification changes
+
+2014/03/10 - jgonzale - Simulator
+	BUGFIX:		Node speed factor is now applied to balanced modules duration
+
 2014/02/26 - jgonzale - Simulator
 	BUGFIX:		Bug when detecting the number of opened files. Changed 'fstat'
 				to 'fcntl'

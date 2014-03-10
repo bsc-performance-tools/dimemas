@@ -1193,7 +1193,11 @@ struct t_thread* locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
 }
 
 /*
- * Append an action to action list of specific thread
+ * Append an action to action list of specific thread.
+ *
+ * NOTE (2014/03/07): There are no references to this function around the source
+ * code!
+ *
  */
 void new_action_to_thread (struct t_Ptask *Ptask,
                            int taskid,

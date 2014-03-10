@@ -1022,6 +1022,14 @@ void READ_get_next_action(struct t_thread *thread)
     // JGG: NOW, time is ALWAYS in NANOSECONDS!!
     new_action->desc.compute.cpu_time *= 1e9;
 
+
+    /*
+     * JGG (2014/03/10): First apply the module transformations
+     * (balancing/factor), and then the node factor
+     */
+
+    recompute_work_upon_modules(thread, new_action);
+
     node = get_node_of_thread(thread);
 
     if (node->relative <= 0)
@@ -1059,8 +1067,6 @@ void READ_get_next_action(struct t_thread *thread)
     }
     // inLIFO_queue (&(thread->modules), (char *)mod);
     */
-
-    recompute_work_upon_modules(thread, new_action);
   }
 
   assert(thread->action == NULL);
