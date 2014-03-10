@@ -10,7 +10,8 @@ AM_CPPFLAGS = \
 	-I$(simulator_dir)/prv_utils \
 	-I$(simulator_dir)/sched \
 	-I$(simulator_dir)/utils \
-	-I$(simulator_dir)/venusclient
+	-I$(simulator_dir)/venusclient \
+	-I$(simulator_dir)/eee_model
 
 libDimemasModel_la_SOURCES = \
 	communic.c \

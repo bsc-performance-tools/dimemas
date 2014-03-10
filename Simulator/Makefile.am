@@ -1,6 +1,6 @@
 simulator_dir = $(top_srcdir)/Simulator
 
-SUBDIRS = io input model prv_utils sched utils
+SUBDIRS = io input model eee_model prv_utils sched utils
 
 EXTRA_DIST = lib_extern_model
 
@@ -17,7 +17,8 @@ AM_CPPFLAGS = \
 	-I$(simulator_dir)/prv_utils \
 	-I$(simulator_dir)/sched \
 	-I$(simulator_dir)/utils \
-	-I$(simulator_dir)/venusclient
+	-I$(simulator_dir)/venusclient \
+	-I$(simulator_dir)/eee_model
 
 bin_PROGRAMS = Dimemas DimemasUpdateCFG
 
@@ -36,7 +37,8 @@ Dimemas_LDADD = \
 	$(simulator_dir)/io/libDimemasIO.la \
 	$(simulator_dir)/prv_utils/libDimemas2ParaverUtils.la \
 	$(simulator_dir)/sched/libDimemasScheduling.la \
-	$(simulator_dir)/utils/libDimemasUtils.la 
+	$(simulator_dir)/utils/libDimemasUtils.la \
+	$(simulator_dir)/eee_model/libDimemasEEEModel.la
 
 if VENUS_ENABLED
 Dimemas_LDADD += $(simulator_dir)/venusclient/libDimemasVenusClient.la

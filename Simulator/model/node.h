@@ -81,6 +81,9 @@ struct t_node
   struct t_machine *machine;
 
   t_boolean         initialized;
+
+  //EEE
+  int messages_in_flight;
 };
 
 void NODE_Init_Empty_Node(struct t_machine* machine,

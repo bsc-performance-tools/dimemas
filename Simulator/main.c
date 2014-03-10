@@ -57,6 +57,9 @@
 #include "task.h"
 #include "random.h"
 
+// EEE
+#include "eee_configuration.h"
+
 #include "dimemas_io.h"
 
 #include "configuration.h"
@@ -193,6 +196,7 @@ int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
 "\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
 "\t[-e event_type] [-g event_output_info] [-a input-trace]\n" \
 "\t[-F] [-S sync_size] [-venus] [-venusconn host:port]\n"\
+"\t[-ES] [-Eo eee_network_definition] [-Ef eee_frame_size]\n"\
 "\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
 "\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
 "\tconfig-file\n"
@@ -201,6 +205,7 @@ int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
 "Usage: %s [-h] [-v] [-d] [-x[s|e|p]] [-o[l] output-file] [-T time] [-l] [-C]\n"\
 "\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
 "\t[-e event_type] [-g event_output_info] [-F] [-S sync_size]\n" \
+"\t[-ES] [-Eo eee_network_definition] [-Ef eee_frame_size]\n"\
 "\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
 "\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
 "\t config-file\n"
@@ -264,6 +269,13 @@ help_message(char *tname)
   printf ("\t-g event_output\tFile for output information on events occurrence\n");
   printf ("\t-F\t\tIgnore synchronism send trace field\n");
   printf ("\t-S sync_size\tMinimum message size to use Rendez vous\n");
+#ifdef VENUS_ENABLED
+  printf ("\t-venus\tConnect to a Venus server at localhost:'default venus port'\n");
+  printf ("\t-venusconn host:port\tConnect to a Venus server at host:port\n");
+#endif
+  printf ("\t-ES\tEnables the EEE network model (you must use '-Eo' and '-Ef'\n");
+  printf ("\t-Eo eee_network_definition\tSet the filename where the EEE network is defined\n");
+  printf ("\t-Ef frame_size\tSets the EEE network frame size (in bytes)\n");
   printf ("\t--dim input-trace\tSet input trace (overrides the configuration file)\n");
   printf ("\t--bw  bandwidth\tSet inter-node bandwidth (MBps, overrides the configuration file)\n");
   printf ("\t--lat latency\tSet inter-node latency for all nodes (seconds, overrides the configuration file)\n");
@@ -272,10 +284,7 @@ help_message(char *tname)
   printf ("\t--interlvd\tSet interleaved node tasks mapping (overrides the configuration file)\n");
 
 
-#ifdef VENUS_ENABLED
-  printf ("\t-venus\tConnect to a Venus server at localhost:'default venus port'\n");
-  printf ("\t-venusconn host:port\tConnect to a Venus server at host:port\n");
-#endif
+
 }
 
 static dimemas_timer read_timer(char *c);
@@ -544,6 +553,36 @@ void parse_arguments(int argc, char *argv[])
             exit (1);
           }
           break;
+
+        case 'E': // Karthikeyan 3L Network Code
+          switch (argv[j][2])
+          {
+              case 'S': // State of EEE 1 for ON
+                j++;
+                eee_enabled = atof(argv[j]);
+                if(eee_enabled) {
+                    printf("EEE Enabled!",
+                        "Frame Header Size and Cfg FileName MUST be specified!\n");
+                }
+                break;
+              case 'o':
+                j++;
+                if(eee_enabled){
+                    eee_config_file = argv[j];
+                } else {fprintf (stderr, USAGE, argv[0]); exit(1);}
+                break;
+              case 'f':
+                j++;
+                if(eee_enabled){
+                    eee_frame_header_size = atof(argv[j]);
+                    printf("Frame Header Size:%d\n",eee_frame_header_size);
+                } else {fprintf (stderr, USAGE, argv[0]); exit(1);}
+                break;
+              default:
+                {fprintf (stderr, USAGE, argv[0]); exit(1);}
+          }
+          break;
+
         default:
           fprintf (stderr, USAGE, argv[0]);
           exit (1);
@@ -760,6 +799,9 @@ int main (int argc, char *argv[])
 #ifdef VENUS_ENABLED
   VC_Init(); /* VENUS CLIENT */
 #endif
+
+  /* Code to set-up an Energy Efficient Ethernet (EEE) */
+  EEE_Init();
 
   EVENT_init ();
   SCHEDULER_init ();

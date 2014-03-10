@@ -521,6 +521,49 @@ struct t_link
   dimemas_timer    assigned_on; /* Time when the thread was assigned */
 };
 
+// Kar EEE -------------------------- 3 LEVEL NETWORK --------------- 3LEEE----------------
+
+
+struct eee_link
+{
+    int level;
+    int switch_id;
+    int link_id;
+
+    t_nano inlink_next_free_time;  // Duplex links: incoming messages
+    t_nano outlink_next_free_time; // Duplex links: outgoing messages
+
+    t_nano last_inlink_off_time;
+    t_nano last_outlink_off_time;
+
+    t_nano stats_total_inlink_on_time;     // STATS
+    t_nano stats_total_outlink_on_time;    // STATS
+
+    struct eee_link *partner_link;
+};
+
+struct switches
+{
+
+    int switch_level;
+    int switch_id;
+
+// in_link ==> lower level to current level -------- UP LINK
+// out_link ==> current level to higher level ------ OUT LINK
+
+    int N_in_links; // in_link ==> lower level to current level -------- UP LINK
+    int N_out_links; // out_link ==> current level to higher level ------ OUT LINK
+
+    // These nics connect to other routers or nodes
+    struct eee_link *in_links;
+    struct eee_link *out_links;
+
+    // Routing logic inside the switch -- fully connected bus (assumed)
+    struct eee_link *bus;
+};
+
+// ---------------------------------------- END OF Karthikeyan 3LEEE Code --------------------
+
 struct t_global_op_definition
 {
   int identificator;
@@ -735,6 +778,19 @@ struct t_thread
   unsigned long    sstask_id;
   unsigned long    sstask_type;
 
+    // Karthikeyan: EEE CODE
+
+  t_boolean eee_send_done;      // TRUE if comm_send_via_3L_network is over
+  int current_level;            // level in 3L heirarchy -1 -> outside network; 0<1<2 => 3 Levels
+  int routing_dir;              // 1 UP; -1 DOWN;
+  t_boolean link_transmit_done;
+  t_boolean nw_switch_done;
+  t_boolean eee_done_reset_var;
+  int eee_linkid;
+  int eee_switchid;
+  int messages_in_flight;
+
+  // Karthikeyan: END OF EEE CODE
 
     /* making these queues separate for every thread
        only DEPENDENCIES go to this queues

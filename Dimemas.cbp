@@ -71,6 +71,14 @@
 		<Unit filename="GUI/gui/WideAreaNetworkWindow.java" />
 		<Unit filename="GUI/tools/Tools.java" />
 		<Unit filename="Simulator/Dimemas_updateCFGs.cpp" />
+		<Unit filename="Simulator/eee_model/eee_communic.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/eee_model/eee_communic.h" />
+		<Unit filename="Simulator/eee_model/eee_configuration.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/eee_model/eee_configuration.h" />
 		<Unit filename="Simulator/input/check.c">
 			<Option compilerVar="CC" />
 		</Unit>

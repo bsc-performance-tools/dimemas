@@ -46,6 +46,7 @@
 #include <math.h>
 
 #include "communic.h"
+#include "eee_configuration.h"
 
 
 #include "events.h"
@@ -3308,6 +3309,86 @@ void COMMUNIC_send (struct t_thread *thread)
 
   mess->comm_type = kind;
 
+   /**************************************************************************************
+  *
+  *                     Karthikeyan: EEE CODE for 3 Level Network
+  *
+  ***************************************************************************************/
+
+  if(eee_enabled){
+    if(EEE_DEBUG)
+    {
+      PRINT_TIMER(current_time);
+      printf("::Message at COMMUNIC_send function--\n");
+    }
+    //TODO REMOVE THIS PRINTF!
+    //printf("------------------MESSINFLIGHT:T:%d,N_S:%d,N_R:%d\n"
+    //                                                      ,thread->messages_in_flight
+    //                                                      ,node_s->messages_in_flight
+    //                                                      ,node_r->messages_in_flight);
+    if (thread->eee_done_reset_var == TRUE) {
+        if(EEE_DEBUG) {
+            PRINT_TIMER(current_time);
+            printf("::EEE_SEND Finished! Resetting Variables!");
+        }
+        thread->doing_startup = FALSE;
+        thread->startup_done = FALSE;
+        thread->loose_cpu = FALSE;
+        thread->link_transmit_done = FALSE;
+        thread->nw_switch_done = TRUE;
+        thread->eee_done_reset_var = FALSE;
+    }
+
+    if (thread->eee_send_done == FALSE) {
+
+        if(EEE_DEBUG) {PRINT_TIMER(current_time); printf("::At EEE Network Code\n");}
+
+        t_nano eee_nw_delay;
+        eee_nw_delay = eee_network(thread);
+
+        if(EEE_DEBUG) {
+            PRINT_TIMER(current_time);
+            printf("::Delay Returned:%f\n",(double)eee_nw_delay);
+        }
+
+        if (thread->eee_send_done == TRUE) {
+            if(EEE_DEBUG) {
+                PRINT_TIMER(current_time);
+                printf("::Last Transmit - Activing reset variables after send!\n\n");
+            }
+            thread->eee_done_reset_var = TRUE;
+            if(EEE_DEBUG) {
+                PRINT_TIMER(current_time);
+                printf("::Event Added to Scheduler with delay::%f\n"
+                                              ,(double)eee_nw_delay);
+            }
+            SCHEDULER_thread_to_ready_return (M_COM, thread, eee_nw_delay, 0);
+            return;
+
+        } else {
+
+            thread->doing_startup = TRUE;
+            thread->startup_done = FALSE;
+            thread->loose_cpu = FALSE;
+            if(EEE_DEBUG) {
+                PRINT_TIMER(current_time);
+                printf("::Event Added to Scheduler with delay::%f\n"
+                                              ,(double)eee_nw_delay);
+            }
+            SCHEDULER_thread_to_ready_return (M_COM, thread, eee_nw_delay, 0);
+            return;
+        }
+
+        if(EEE_DEBUG) {
+            PRINT_TIMER(current_time);
+            printf("::Leaving EEE Network Code\n");
+        }
+    }
+  }
+  /**************************************************************************************
+  *                     Karthikeyan: End of EEE code
+  ***************************************************************************************/
+
   /* Compute startup duration and re-schedule thread if needed */
   if (thread->startup_done == FALSE)
   {
@@ -3427,6 +3508,10 @@ void COMMUNIC_send (struct t_thread *thread)
   thread->startup_done   = FALSE;
   thread->copy_done      = FALSE;
   thread->roundtrip_done = FALSE;
+  // Karthikeyan EEE Code - Resetting variables
+  thread->eee_send_done = FALSE;
+  // Karthikeyan EEE Code END
+
 
   account = current_account (thread);
   account->n_sends++;
