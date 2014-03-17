@@ -126,7 +126,8 @@ class OutBlockComparison {
           return false;
         */
 
-        if (EventR1->IsDimemasBlockBegin() &&
+        /* JGG: Test to preserve JUST TRACE ORDER
+        if (EventR1->IsMPIBlockBegin()
            (EventR2->IsCaller() || EventR2->IsCallerLine()))
           return true;
 
@@ -142,7 +143,7 @@ class OutBlockComparison {
              EventR2->IsDimemasBlockEnd())
           return true;
 
-        /* Special case for PROBE counters */
+        /* Special case for PROBE counters
         if (EventR1->GetFirstType() == MPITYPE_PROBE_SOFTCOUNTER &&
             EventR2->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER)
           return true;
@@ -150,6 +151,7 @@ class OutBlockComparison {
         if (EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER &&
             EventR2->GetFirstType() == MPITYPE_PROBE_SOFTCOUNTER)
           return false;
+        */
 
         /* Preserve trace order */
         return EventR1->GetFirstTraceOrder() < EventR2->GetFirstTraceOrder();
@@ -159,25 +161,35 @@ class OutBlockComparison {
         EventR1 = dynamic_cast<Event_t>(R1);
         CommR2  = dynamic_cast<PartialCommunication_t>(R2);
 
+        /*
         if (EventR1->IsDimemasBlockBegin())
           return true;
+        */
 
+
+        /* Changes in name
         if (EventR1->IsDimemasBlockEnd())
           return false;
+        */
 
+        /*
         if (EventR1->IsCaller() || EventR1->IsCallerLine())
           return true;
+        */
+
+        if (EventR1->IsMPIBlockEnd())
+          return false;
 
         return true;
       }
       else if (IsEvent(R1) && IsGlobalOp(R2))
       {
-        EventR1     = dynamic_cast<Event_t>(R1);
-        GlobalOpR2  = dynamic_cast<GlobalOp_t>(R2);
+        EventR1    = dynamic_cast<Event_t>(R1);
+        GlobalOpR2 = dynamic_cast<GlobalOp_t>(R2);
 
-        if (EventR1->IsDimemasBlockBegin())
+        if (EventR1->IsMPIBlockBegin())
           return true;
-        else if (EventR1->IsDimemasBlockEnd())
+        else if (EventR1->IsMPIBlockEnd())
           return false;
         else
           return true;
@@ -187,14 +199,18 @@ class OutBlockComparison {
         CommR1  = dynamic_cast<PartialCommunication_t>(R1);
         EventR2 = dynamic_cast<Event_t>(R2);
 
+        /*
         if (EventR2->IsDimemasBlockBegin())
           return false;
 
-        if (EventR2->IsDimemasBlockEnd())
+        if (EventR2->IsMPIBlockBegin())
           return true;
+        */
 
+        /*
         if (EventR2->IsCaller() || EventR2->IsCallerLine())
           return false;
+        */
 
         return false;
       }
@@ -203,9 +219,9 @@ class OutBlockComparison {
         GlobalOpR1  = dynamic_cast<GlobalOp_t>(R1);
         EventR2     = dynamic_cast<Event_t>(R2);
 
-        if (EventR2->IsDimemasBlockBegin())
+        if (EventR2->IsMPIBlockBegin())
           return false;
-        else if (EventR2->IsDimemasBlockEnd())
+        else if (EventR2->IsMPIBlockEnd())
           return true;
         else
           return false;

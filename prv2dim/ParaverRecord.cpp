@@ -42,7 +42,7 @@ using std::endl;
  ****************************************************************************/
 
 ParaverRecord::ParaverRecord(UINT64 Timestamp,
-                             INT32  CPU, 
+                             INT32  CPU,
                              INT32  AppId,
                              INT32  TaskId,
                              INT32  ThreadId)
@@ -64,7 +64,7 @@ ostream& operator<< (ostream& os, const ParaverRecord& Rec)
  * class State
  ****************************************************************************/
 State::State(INT32  CPU, INT32  AppId, INT32  TaskId, INT32  ThreadId,
-             UINT64 BeginTime, 
+             UINT64 BeginTime,
              UINT64 EndTime,
              INT32  StateValue)
 :ParaverRecord(BeginTime, CPU, AppId, TaskId, ThreadId)
@@ -84,7 +84,7 @@ void State::Write(ostream& os) const
   os.width(2);
   os.fill('0');
   os << ThreadId << "]";
-  
+
   os << Timestamp << " T:" << TimestampEnd << " State: " << StateValue;
   os << endl;
 }
@@ -102,34 +102,32 @@ ostream& operator<< (ostream& os, const State& Comm)
 INT64 EventTypeValue::CurrentTraceOrder = 0;
 
 bool
-EventTypeValue::IsDimemasBlockBegin(void)
+EventTypeValue::IsUserBlockBegin(void)
 {
 
-  if (!MPIEventEncoding_Is_MPIBlock( (INT64)  Type ) &&
-      !MPIEventEncoding_Is_UserBlock( (INT64) Type ))
-  {
-    return false;
-  }
-  
-  if (MPIEventEncoding_Is_BlockBegin( Value ))
-    return true;
-  
-  return false;
+  return MPIEventEncoding_Is_UserBlock( (INT64) Type ) &&
+         MPIEventEncoding_Is_BlockBegin( Value );
 }
 
 bool
-EventTypeValue::IsDimemasBlockEnd(void)
+EventTypeValue::IsMPIBlockBegin(void)
 {
-  if (!MPIEventEncoding_Is_MPIBlock( (INT64) Type ) &&
-      !MPIEventEncoding_Is_UserBlock( (INT64) Type ))
-  {
-    return false;
-  }
-  
-  if (!MPIEventEncoding_Is_BlockBegin( Value ))
-    return true;
-  
-  return false;
+  return MPIEventEncoding_Is_MPIBlock( (INT64)  Type ) &&
+         MPIEventEncoding_Is_BlockBegin( Value );
+}
+
+bool
+EventTypeValue::IsUserBlockEnd(void)
+{
+  return MPIEventEncoding_Is_UserBlock( (INT64) Type ) &&
+         !MPIEventEncoding_Is_BlockBegin( Value );
+}
+
+bool
+EventTypeValue::IsMPIBlockEnd(void)
+{
+  return MPIEventEncoding_Is_MPIBlock( (INT64)  Type ) &&
+         !MPIEventEncoding_Is_BlockBegin( Value );
 }
 
 bool
@@ -233,22 +231,36 @@ Event::GetTraceOrder(UINT32 Index)
     return -1;
 }
 
-bool
-Event::IsDimemasBlockBegin(void)
+bool Event::IsUserBlockBegin(void)
 {
   if (Content.size() < 1)
     return false;
   else
-    return Content[0]->IsDimemasBlockBegin();
+    return Content[0]->IsUserBlockBegin();
 }
 
-bool
-Event::IsDimemasBlockEnd (void)
+bool Event::IsMPIBlockBegin(void)
 {
   if (Content.size() < 1)
     return false;
   else
-    return Content[0]->IsDimemasBlockEnd();
+    return Content[0]->IsMPIBlockBegin();
+}
+
+bool Event::IsUserBlockEnd (void)
+{
+  if (Content.size() < 1)
+    return false;
+  else
+    return Content[0]->IsUserBlockEnd();
+}
+
+bool Event::IsMPIBlockEnd (void)
+{
+  if (Content.size() < 1)
+    return false;
+  else
+    return Content[0]->IsMPIBlockEnd();
 }
 
 bool
@@ -282,13 +294,13 @@ void Event::Write(ostream& os) const
   os << ThreadId << "] ";
 
   os << "T:" << Timestamp;
-  
+
   for (UINT32 i = 0; i < Content.size(); i++)
   {
     os << " [" << Content[i]->GetTraceOrder() << "]: ";
     os << Content[i]->GetType() << ":" << Content[i]->GetValue();
   }
-  
+
   os << endl;
 }
 
@@ -313,7 +325,7 @@ Communication::Communication(UINT64 LogSend, UINT64 PhySend,
                              INT32  Size,
                              INT32  Tag)
 {
-  
+
   CPU          = SrcCPU;
   AppId        = SrcAppId;
   TaskId       = SrcTaskId;
@@ -322,16 +334,16 @@ Communication::Communication(UINT64 LogSend, UINT64 PhySend,
   DestAppId    = DstAppId;
   DestTaskId   = DstTaskId;
   DestThreadId = DstThreadId;
-  
+
   Timestamp    = LogSend; /* Timestamp attribute corresponds to Logical Send*/
   PhysicalSend = PhySend;
   LogicalRecv  = LogRecv;
   PhysicalRecv = PhyRecv;
-  
+
   this->Size = Size;
   this->Tag  = Tag;
   TraceOrder = Communication::NewTraceOrder();
-  
+
 }
 
 void Communication::Write(ostream& os) const
@@ -349,9 +361,9 @@ void Communication::Write(ostream& os) const
   os << ThreadId << "]";
 
   os << " LogSend: " << Timestamp << " PhySend: " << PhysicalSend << endl;
-  
+
   os << "Recvr: [";
-  
+
   os.width(3);
   os.fill('0');
   os << DestTaskId << ":";
@@ -361,7 +373,7 @@ void Communication::Write(ostream& os) const
   os << DestThreadId << "]";
 
   os << " LogRecv: " << LogicalRecv << " PhyRecv: " << PhysicalRecv << endl;
-  
+
   os << "Size: " << Size << " Tag: " << Tag << endl;
 }
 
@@ -393,7 +405,7 @@ GlobalOp::GlobalOp(UINT64 Timestamp,
   this->RecvSize       = RecvSize;
   this->GlobalOpId     = GlobalOpId;
   this->RootTaskId     = RootTaskId+1; /* RootTaskIds are in range 0..(n-1) */
-  
+
   if (this->RootTaskId == this->TaskId)
     this->Root = true;
   else
@@ -413,7 +425,7 @@ GlobalOp::GlobalOp(UINT64 Timestamp,
   this->RecvSize       = RecvSize;
   this->GlobalOpId     = GlobalOpId;
   this->Root           = Root;
-  
+
   if (this->Root)
     this->RootTaskId = 1;
   else
@@ -424,7 +436,7 @@ void
 GlobalOp::Write( ostream& os) const
 {
   os << "GlobalOP [";
-  
+
   os.width(3);
   os.fill('0');
   os << TaskId << ":";
@@ -432,9 +444,9 @@ GlobalOp::Write( ostream& os) const
   os.width(2);
   os.fill('0');
   os << ThreadId << "] ";
-  
+
   os << "T: " << Timestamp << " CommId " << CommunicatorId;
-  
+
   os << " GlobOpId: " << GlobalOpId << " RootTask: " << RootTaskId << endl;
 }
 

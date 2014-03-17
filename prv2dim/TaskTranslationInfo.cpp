@@ -278,7 +278,7 @@ TaskTranslationInfo::PushRecord ( ParaverRecord_t Record )
 
       if ( (NewEvent = dynamic_cast<Event_t>(Record)) != NULL)
       { /* Check if there is block end */
-        if (NewEvent->IsDimemasBlockEnd())
+        if (NewEvent->IsMPIBlockEnd())
         {
           if (!ReorderAndFlush())
             return false;
@@ -426,10 +426,16 @@ bool TaskTranslationInfo::ReorderAndFlush(void)
   {
     if (MPIBlockIdStack.size() > 0)
     {
+#ifdef DEBUG
+      fprintf(stdout,"[%03d:%02d] InBlockComparison\n",TaskId,1);
+#endif
       sort(RecordStack.begin(), RecordStack.end(), InBlockComparison());
     }
     else
     {
+#ifdef DEBUG
+      fprintf(stdout,"[%03d:%02d] OutBlockComparison\n",TaskId,1);
+#endif
       sort(RecordStack.begin(), RecordStack.end(), OutBlockComparison());
     }
   }
@@ -747,7 +753,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
           CurrentEvent->GetThreadId(),
           CurrentEvent->GetTimestamp(),
           (INT64) CurrentBlock.second,
-          MPIEventEncoding_GetBlockLabel((MPIVal)BLOCK_TRF2PRV_VALUE(CurrentBlock.second)));
+          MPIEventEncoding_GetBlockLabel((MPIVal) (CurrentBlock.second)));
 #endif
 
 #endif

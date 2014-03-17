@@ -58,17 +58,17 @@ class ParaverRecord
     UINT64 Timestamp;
     INT32  CPU, AppId, TaskId, ThreadId;
   public:
-    
+
     ParaverRecord(void){};
-    
+
     ParaverRecord(UINT64 Timestamp,
-                  INT32  CPU, 
+                  INT32  CPU,
                   INT32  AppId,
                   INT32  TaskId,
                   INT32  ThreadId);
-    
+
     virtual ~ParaverRecord(void){};
-      
+
     virtual bool operator<  (const ParaverRecord& T1)
     {
       return this->Timestamp < T1.Timestamp;
@@ -106,7 +106,7 @@ class ParaverRecord
     virtual INT32  GetAppId(void)     { return AppId; };
     virtual INT32  GetTaskId(void)    { return TaskId; };
     virtual INT32  GetThreadId(void)  { return ThreadId; };
-    
+
     virtual void Write(ostream& os) const {};
 };
 typedef ParaverRecord* ParaverRecord_t;
@@ -132,14 +132,14 @@ class State: public virtual ParaverRecord
   public:
     State() {};
     State(INT32  CPU, INT32  AppId, INT32  TaskId, INT32  ThreadId,
-          UINT64 BeginTime, 
+          UINT64 BeginTime,
           UINT64 EndTime,
           INT32  StateValue);
-    
+
     UINT64 GetBeginTime(void)  { return Timestamp; };
     UINT64 GetEndTime(void)    { return TimestampEnd; };
     INT32  GetStateValue(void) { return StateValue; };
-    
+
     void Write(ostream& os) const;
 };
 
@@ -158,7 +158,7 @@ class EventTypeValue
     INT32 Type;
     INT64 Value;
     INT64 TraceOrder;
-  
+
     static INT64 CurrentTraceOrder;
   public:
     EventTypeValue(){};
@@ -168,13 +168,13 @@ class EventTypeValue
       this->Value      = Value;
       this->TraceOrder = EventTypeValue::NewTraceOrder();
     }
-    
+
     INT32 GetType(void)       { return Type; };
     INT64 GetValue(void)      { return Value; };
     INT64 GetTraceOrder(void) { return TraceOrder; };
-    
+
     bool ToDimemas(FILE* DimemasTrace, INT32 TaskId, INT32 ThreadId);
-    
+
     bool IsMPIEvent(void)
     {
       #define TRUE 1
@@ -184,12 +184,14 @@ class EventTypeValue
       else
         return false;
     }
-    
-    bool   IsDimemasBlockBegin(void);
-    bool   IsDimemasBlockEnd  (void);
+
+    bool   IsUserBlockBegin (void);
+    bool   IsMPIBlockBegin  (void);
+    bool   IsUserBlockEnd   (void);
+    bool   IsMPIBlockEnd    (void);
     bool   IsCaller(void);
     bool   IsCallerLine(void);
-    
+
     static INT64 NewTraceOrder(void);
 };
 typedef EventTypeValue* EventTypeValue_t;
@@ -206,26 +208,28 @@ class Event: public virtual ParaverRecord
 
     Event(UINT64 Timestamp,
           INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId);
-  
+
     void AddTypeValue(INT32 Type, INT64 Value);
-    
+
     UINT32 GetTypeValueCount(void);
-    
+
     INT32 GetFirstType(void);
     INT32 GetType(UINT32 Index);
-    
+
     INT64 GetFirstValue(void);
     INT64 GetValue(UINT32 Index);
-    
+
     INT64 GetFirstTraceOrder(void);
     INT64 GetTraceOrder(UINT32 Index);
-    
-    bool IsDimemasBlockBegin(void);
-    bool IsDimemasBlockEnd(void);
-  
+
+    bool IsUserBlockBegin(void);
+    bool IsMPIBlockBegin (void);
+    bool IsUserBlockEnd  (void);
+    bool IsMPIBlockEnd   (void);
+
     bool IsCaller(void);
     bool IsCallerLine(void);
-    
+
     void Write(ostream& os) const;
 };
 typedef Event* Event_t;
@@ -243,7 +247,7 @@ class Communication: public virtual ParaverRecord
     INT32  Size;
     INT32  Tag;
     INT64  TraceOrder;
-  
+
     static INT64 CurrentTraceOrder;
   public:
     Communication(UINT64 LogSend, UINT64 PhySend,
@@ -254,12 +258,12 @@ class Communication: public virtual ParaverRecord
                   INT32  DstTaskId, INT32 DstThreadId,
                   INT32  Size,
                   INT32  Tag);
-  
+
     UINT64 GetLogicalSend(void)  { return Timestamp; };
     UINT64 GetPhysicalSend(void) { return PhysicalSend; };
     UINT64 GetLogicalRecv(void)  { return LogicalRecv; };
     UINT64 GetPhysicalRecv(void) { return PhysicalRecv; };
-  
+
     INT32  GetSrcCPU(void)       { return CPU; };
     INT32  GetSrcAppId(void)     { return AppId; };
     INT32  GetSrcTaskId(void)    { return TaskId; };
@@ -271,9 +275,9 @@ class Communication: public virtual ParaverRecord
     INT32  GetSize(void)         { return Size; };
     INT32  GetTag(void)          { return Tag; };
     INT64  GetTraceOrder(void)   { return TraceOrder; };
-    
+
     static INT64 NewTraceOrder(void);
-    
+
     void Write(ostream& os) const;
 };
 typedef Communication* Communication_t;
@@ -302,16 +306,16 @@ class GlobalOp: public virtual ParaverRecord
              INT32  SendSize, INT32 RecvSize,
              INT32  GlobalOpId,
              INT32  RootTaskId);
-  
+
     GlobalOp(UINT64 Timestamp,
              INT32  CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId,
              INT32  CommunicatorId,
              INT32  SendSize, INT32 RecvSize,
              INT32  GlobalOpId,
              bool   IsRoot);
-    
+
     ~GlobalOp(void){};
-  
+
     void  SetCommunicatorId(INT32 CommunicatorId)
     {
       this->CommunicatorId = CommunicatorId;
@@ -336,8 +340,8 @@ class GlobalOp: public virtual ParaverRecord
     }
     INT32 GetGlobalOpId(void)     { return GlobalOpId; };
 
-    void SetRootTaskId(INT32 RootTaskId) 
-    { 
+    void SetRootTaskId(INT32 RootTaskId)
+    {
       this->RootTaskId = RootTaskId;
     };
     INT32 GetRootTaksId(void)     { return RootTaskId; };
@@ -347,9 +351,9 @@ class GlobalOp: public virtual ParaverRecord
       this->Root = Root;
     };
     bool  GetIsRoot(void)         { return Root; };
-    
-    
-  
+
+
+
     void Write(ostream& os) const;
 };
 typedef GlobalOp* GlobalOp_t;

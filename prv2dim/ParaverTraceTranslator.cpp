@@ -1290,12 +1290,12 @@ ParaverTraceTranslator::SelectNextRecord(void)
   {
     if (PrvEventRecord->GetTypeValueCount() >= 1)
     {
-      if (PrvEventRecord->IsDimemasBlockBegin())
+      if (PrvEventRecord->IsMPIBlockBegin())
       {
         LastRecordTrace = true;
         return CurrentTraceRecord;
       }
-      else if (PrvEventRecord->IsDimemasBlockEnd())
+      else if (PrvEventRecord->IsMPIBlockEnd())
       {
         LastRecordTrace = false;
         CurrentCommunicationIndex++;

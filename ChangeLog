@@ -10,6 +10,13 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/03/17 - jgonzale - prv2dim
+	BUGFIX:		Record comparison inside 'TranslatorRecord.hpp' has been
+				leveraged when comparing two Events. Now, the trace sort is
+				preserved. Solved bug #67. NOTE: its has been checked with 4
+				traces producing appart from the bug example, but it could
+				cause a regression.
+
 2014/03/10 - jgonzale - Simulator
 	FEATURES:	First addition of Karthikeyan's EEE model. Not tested yet, but
 				no regressions observed
