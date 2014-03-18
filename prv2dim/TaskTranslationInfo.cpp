@@ -1335,6 +1335,43 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         }
       }
       break;
+    case BLOCK_ID_MPI_Start:
+    case BLOCK_ID_MPI_Startall:
+      if (CurrentComm->GetType() == LOGICAL_SEND)
+      {
+#ifdef DEBUG
+        cout << "Printing NX BSend " << *CurrentComm;
+#endif
+        CommunicationPrimitivePrinted = true;
+
+        if (Dimemas_NX_BlockingSend(TemporaryFile,
+                                    TaskId, ThreadId,
+                                    PartnerTaskId, -1, /* That should be corrected eventually */
+                                    CommId, Size, (INT64) Tag) < 0)
+        {
+          SetError(true);
+          SetErrorMessage("error writing output trace", strerror(errno));
+          return false;
+        }
+      }
+      else if (CurrentComm->GetType() == PHYSICAL_RECV)
+      {
+#ifdef DEBUG
+        cout << "Printing NX Recv " << *CurrentComm;
+#endif
+        CommunicationPrimitivePrinted = true;
+
+        if (Dimemas_NX_Recv(TemporaryFile,
+                            TaskId, ThreadId,
+                            PartnerTaskId,
+                            -1, /* That should be corrected eventually */
+                            CommId, Size, (INT64) Tag) < 0)
+        {
+          SetError(true);
+          SetErrorMessage("error writing output trace", strerror(errno));
+          return false;
+        }
+      }
     default:
 #ifdef NEW_DIMEMAS_TRACE
       MPIVal CurrentBlockMPIVal = (MPIVal) CurrentBlock.second;

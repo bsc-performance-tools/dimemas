@@ -69,7 +69,7 @@ int       venus_account_nstops           = 0;
 int       venus_account_nends            = 0;
 
 t_boolean venus_enabled                  = FALSE;
-char*     venusconn                      = NULL;
+const char*     venusconn                = NULL;
 
 void VC_enable(const char* venus_conn_url)
 {
@@ -99,11 +99,14 @@ void VC_Init(void) {
   }
 
   char *s = strdup (venusconn), *saveptr;
-  char *host = strtok_r (s, ":", &saveptr);
+
+  const char *host = strtok_r (s, ":", &saveptr);
+
   if (!host) {
     host = "127.0.0.1";
   }
-  char *port = strtok_r (NULL, ":", &saveptr);
+
+  const char *port = strtok_r (NULL, ":", &saveptr);
   if (!port) {
     port = "10000";
   }
@@ -201,7 +204,7 @@ int VC_recv (char *s, int maxlen) {
   strncpy (s, data.c_str(), maxlen);
 
   if (data.size() > maxlen) {
-    printf ("WARNING: venusclient: socket read more bytes (=%d) than fit in the user buffer(%d bytes)\n", data.size(), maxlen);
+    printf ("WARNING: venusclient: socket read more bytes (=%zu) than fit in the user buffer(%d bytes)\n", data.size(), maxlen);
   }
   l = data.size();
 #ifdef VENUS_STATS
@@ -211,7 +214,7 @@ int VC_recv (char *s, int maxlen) {
 }
 
 void VC_End() {
-  VC_send ("FINISH\n");
+  VC_send ( (char*)"FINISH\n");
 #ifdef VENUS_STATS
   if (VC_is_enabled())
   {

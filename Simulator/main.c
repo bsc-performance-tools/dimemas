@@ -561,8 +561,7 @@ void parse_arguments(int argc, char *argv[])
                 j++;
                 eee_enabled = atof(argv[j]);
                 if(eee_enabled) {
-                    printf("EEE Enabled!",
-                        "Frame Header Size and Cfg FileName MUST be specified!\n");
+                    printf("EEE Enabled!\nFrame Header Size and Cfg FileName MUST be specified!\n");
                 }
                 break;
               case 'o':

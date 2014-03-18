@@ -2,7 +2,9 @@
 #include <define.h>
 #include <extern.h>
 
+#include "cpu.h"
 #include "node.h"
+#include "task.h"
 
 #include "eee_configuration.h"
 
@@ -635,8 +637,7 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
                         = eee_switches[thread->current_level][thread->eee_switchid]
                           .out_links[temp_i].link_id;
                  if(EEE_DEBUG) {
-                     printf("Level:%d::Moving to Higher Level %d",
-                            "::Current switch: %d - hop via Link: %d\n"
+                     printf("Level:%d::Moving to Higher Level %d::Current switch: %d - hop via Link: %d\n"
                                             ,thread->current_level
                                             ,(thread->current_level+1)
                                             ,thread->eee_switchid
@@ -663,8 +664,7 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
              if ( eee_switches[thread->current_level][thread->eee_switchid]
                         .in_links[thread->eee_linkid].partner_link->switch_id
                         != node_r_mod_nodes) {
-                    printf("%d->%d::Level:%d::Moving to Lower Level %d",
-                            " - Current switch: %d - hop via Link: %d\n"
+                    printf("%d->%d::Level:%d::Moving to Lower Level %d\n - Current switch: %d - hop via Link: %d\n"
                                    ,node_s_id,node_r_id
                                    ,thread->current_level
                                    ,(thread->current_level-1)
@@ -679,8 +679,7 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
              }
          }
          if (EEE_DEBUG) {
-             printf("Level:%d::Moving to Lower Level %d",
-                    " - Current switch: %d - hop via Link: %d\n"
+             printf("Level:%d::Moving to Lower Level %d\n - Current switch: %d - hop via Link: %d\n"
                             ,thread->current_level
                             ,(thread->current_level-1)
                             ,thread->eee_switchid

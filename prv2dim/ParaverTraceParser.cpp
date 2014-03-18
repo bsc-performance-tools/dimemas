@@ -32,7 +32,7 @@
 
 #include "ParaverTraceParser.hpp"
 
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <stdio.h>
 
 #include <errno.h>
@@ -556,10 +556,10 @@ ParaverRecord_t ParaverTraceParser::NextTraceRecord(UINT32 RecordTypeMask)
 
 State_t ParaverTraceParser::ParseState(char* ASCIIState)
 {
-  State_t NewState;
-  INT32   CPU, AppId, TaskId, ThreadId;
-  UINT64  BeginTime, EndTime;
-  INT32   StateValue;
+  State_t                 NewState;
+  INT32                   CPU, AppId, TaskId, ThreadId;
+  long long unsigned int  BeginTime, EndTime;
+  INT32                   StateValue;
 
   if (sscanf(ASCIIState,
              "%d:%d:%d:%d:%llu:%llu:%d",
@@ -568,7 +568,7 @@ State_t ParaverTraceParser::ParseState(char* ASCIIState)
              &StateValue) == 7)
   {
     NewState = new State(CPU, AppId, TaskId, ThreadId,
-                         BeginTime, EndTime,
+                         (UINT64) BeginTime, (UINT64) EndTime,
                          StateValue);
   }
   else
@@ -587,11 +587,11 @@ State_t ParaverTraceParser::ParseState(char* ASCIIState)
 
 Event_t ParaverTraceParser::ParseEvent(char* ASCIIEvent)
 {
-  Event_t NewEvent;
-  UINT64  Timestamp;
-  INT32   CPU, AppId, TaskId, ThreadId;
-  INT32   Type;
-  INT64   Value;
+  Event_t                NewEvent;
+  long long unsigned int Timestamp;
+  INT32                  CPU, AppId, TaskId, ThreadId;
+  INT32                  Type;
+  INT64                  Value;
   char*   TypeValueStr = (char*) calloc(strlen(ASCIIEvent)+1, sizeof(char));
   char*   CurrToken;
   INT32   PairsReaded = 0;
@@ -601,7 +601,7 @@ Event_t ParaverTraceParser::ParseEvent(char* ASCIIEvent)
              &CPU, &AppId, &TaskId, &ThreadId,
              &Timestamp, TypeValueStr) == 6)
   {
-    NewEvent = new Event(Timestamp, CPU, AppId, TaskId, ThreadId);
+    NewEvent = new Event( (UINT64) Timestamp, CPU, AppId, TaskId, ThreadId);
 
     CurrToken = strtok(TypeValueStr, ":");
     while(CurrToken != NULL)
@@ -663,11 +663,11 @@ Communication_t ParaverTraceParser::ParseCommunication(char* ASCIICommunication)
 {
   Communication_t NewCommunication;
 
-  UINT64 LogSend, PhySend, LogRecv, PhyRecv;
-  INT32  SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
-  INT32  DstCPU, DstAppId, DstTaskId, DstThreadId;
-  INT32  Size;
-  INT32  Tag;
+  long long unsigned int LogSend, PhySend, LogRecv, PhyRecv;
+  INT32                  SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
+  INT32                  DstCPU, DstAppId, DstTaskId, DstThreadId;
+  INT32                  Size;
+  INT32                  Tag;
 
 
   if (sscanf(ASCIICommunication,
@@ -679,7 +679,8 @@ Communication_t ParaverTraceParser::ParseCommunication(char* ASCIICommunication)
              &Size, &Tag) == 14)
   {
     NewCommunication =
-      new Communication(LogSend, PhySend, LogRecv, PhyRecv,
+      new Communication((UINT64) LogSend, (UINT64) PhySend,
+                        (UINT64) LogRecv, (UINT64) PhyRecv,
                         SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
                         DstCPU, DstAppId, DstTaskId, DstThreadId,
                         Size, Tag);
@@ -703,12 +704,12 @@ GlobalOp_t ParaverTraceParser::ParseGlobalOp(char* ASCIIGlobalOp)
 {
   GlobalOp_t NewGlobalOp;
 
-  UINT64 Timestamp;
-  INT32  CPU, AppId, TaskId, ThreadId;
-  INT32  CommunicatorId;
-  INT32  SendSize, RecvSize;
-  INT32  GlobalOpId;
-  INT32  RootTaskId;
+  long long unsigned int Timestamp;
+  INT32                  CPU, AppId, TaskId, ThreadId;
+  INT32                  CommunicatorId;
+  INT32                  SendSize, RecvSize;
+  INT32                  GlobalOpId;
+  INT32                  RootTaskId;
 
   if (sscanf(ASCIIGlobalOp,
              "%d:%d:%d:%d:%llu:%d:%d:%d:%d:%d",
@@ -719,7 +720,7 @@ GlobalOp_t ParaverTraceParser::ParseGlobalOp(char* ASCIIGlobalOp)
              &GlobalOpId, &RootTaskId) == 10)
   {
 
-    NewGlobalOp = new GlobalOp(Timestamp,
+    NewGlobalOp = new GlobalOp((UINT64) Timestamp,
                                CPU, AppId, TaskId, ThreadId,
                                CommunicatorId,
                                SendSize, RecvSize,

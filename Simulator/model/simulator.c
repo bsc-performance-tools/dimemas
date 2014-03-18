@@ -39,6 +39,7 @@
 #include <error.h>
 #include <list.h>
 
+#include "dimemas_io.h"
 #include "simulator.h"
 #include "machine.h"
 #include "node.h"
@@ -974,7 +975,7 @@ void SIMULATOR_check_correct_definitions(void)
         SIMULATOR_dedicated_connections_loaded);
   }
 
-  return TRUE;
+  // return TRUE;
 }
 
 char* SIMULATOR_get_last_error(void)

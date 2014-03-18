@@ -62,6 +62,7 @@
 #include "subr.h"
 #include "task.h"
 #include "random.h"
+#include "modules_map.h"
 
 #include "simulator.h"
 #include "machine.h"
@@ -1991,7 +1992,7 @@ void TASK_module_new_general (unsigned long int module_type,
   }
   else
   {
-    fprintf (stdout, "   * Module [%lu:%lu] already exists. Overwriting!\n",
+    fprintf (stdout, "   * Module [%lu:%lu] already exists. Overwriting! (Old ratio %f - New Ratio %f)\n",
              module_type,
              module_value,
              mod->ratio, ratio);

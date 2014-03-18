@@ -1,4 +1,4 @@
 
-int generate_error(__const char**__restrict __buffer, __const char*__restrict __format, ...);
+int generate_error(char** __buffer, __const char*__restrict __format, ...);
 
 

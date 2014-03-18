@@ -173,7 +173,7 @@ configure_switches()
         printf("Switches per Level: %d\n",switches_per_level[eee_i]);
     }
 
-    eee_switches = (struct switches*) malloc(N_levels * sizeof(struct switches));
+    eee_switches = (struct switches**) malloc(N_levels * sizeof(struct switches*));
 
     /* C1: Below code calculates the number of links that go into and out of each switch
             and allocates memory for the switches

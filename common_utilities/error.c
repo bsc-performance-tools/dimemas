@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-int generate_error(__const char**__restrict __buffer, __const char*__restrict __format, ...)
+int generate_error(char**__restrict __buffer, __const char*__restrict __format, ...)
 {
   int    ret_status = 0;
   size_t size;

@@ -79,7 +79,7 @@ t_boolean MakeParaverPCF(const char *output_trace_name,
   struct t_Ptask* ptask;
 
   FILE *input_pcf_file, *output_pcf_file, *pcf_insert_file;
-  const char *extension, *input_pcf_name, *output_pcf_name;
+  char *extension, *input_pcf_name, *output_pcf_name;
 
   /* Generate the output PCF name */
 
@@ -548,7 +548,7 @@ static t_boolean PCF_write_header_and_states(FILE* output_pcf)
   {
     fprintf(
       output_pcf,
-      "%d\t%s\n",
+      "%zu\t%s\n",
       i,
       ParaverDefaultPalette[i].name
     );
@@ -559,7 +559,7 @@ static t_boolean PCF_write_header_and_states(FILE* output_pcf)
   {
     fprintf(
       output_pcf,
-      "%d\t%s\n",
+      "%zu\t%s\n",
       i + PRV_STATE_COUNT,
       DimemasDefaultPalette[i].name
     );
@@ -570,7 +570,7 @@ static t_boolean PCF_write_header_and_states(FILE* output_pcf)
   {
     fprintf(
       output_pcf,
-      "%d\t{%d,%d,%d}\n",
+      "%zu\t{%d,%d,%d}\n",
       i,
       ParaverDefaultPalette[i].RGB[0],
       ParaverDefaultPalette[i].RGB[1],
@@ -583,7 +583,7 @@ static t_boolean PCF_write_header_and_states(FILE* output_pcf)
   {
     fprintf(
       output_pcf,
-      "%d\t{%d,%d,%d}\n",
+      "%zu\t{%d,%d,%d}\n",
       i + PRV_STATE_COUNT,
       DimemasDefaultPalette[i].RGB[0],
       DimemasDefaultPalette[i].RGB[1],
