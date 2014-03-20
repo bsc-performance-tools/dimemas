@@ -10,6 +10,17 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/03/20 - jgonzale - Simulator
+	BUGFIX:		Solved an incorrect location of 'logical_receives' when
+				multiple IRecv operations were executed. Now, a queue
+				named 'irecv_executed' (in t_task/t_thread structure) is 
+				used to indicate the Wait operations the time the IRecvs
+				took place.
+
+2014/03/20 - jgonzale - prv2dim
+	FEATURES:	MPI_Start/MPI_Startall primitives translate their contents
+				as IRecv or Send requests.
+
 2014/03/18 - jgonzale - All
 	CHANGES:	Clean of most C/C++ compilation warnings. Not in the GUI
 

@@ -734,7 +734,10 @@ struct t_task
                                        * la transmisio. */
   /****************************************************************************/
 
-
+  /* JGG (2014/03/19): this queue stores the t_recv structures from received
+   * messages to mark where the logical_recv time of the possible Irecv
+   * executed */
+  struct t_queue irecvs_executed;
 
   struct t_queue  semaphores;
 
@@ -823,7 +826,10 @@ struct t_thread
                                        * corresponent, no quan es fa realment
                                        * la transmisio. */
   /****************************************************************************/
-
+  /* JGG (2014/03/19): this queue stores the t_recv structures from received
+   * messages to mark where the logical_recv time of the possible Irecv
+   * executed */
+  struct t_queue irecvs_executed;
 
   struct t_action *action;
   struct t_action *last_action;

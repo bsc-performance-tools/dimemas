@@ -485,6 +485,7 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
   create_queue (&(task->send));
   create_queue (&(task->recv_without_send));
   create_queue (&(task->send_without_recv));
+  create_queue (&(task->irecvs_executed));
 
   if (node->in_mem_links == 0 || node->out_mem_links == 0)
   {
@@ -1131,6 +1132,8 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   /* FEC: Cal crear les dues noves cues pels Irecv*/
   create_queue (&(thread->recv_without_send));
   create_queue (&(thread->send_without_recv));
+  create_queue (&(thread->irecvs_executed));
+
 
   new_account (&(thread->account), task->nodeid);
 
