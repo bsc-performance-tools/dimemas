@@ -10,6 +10,9 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/03/27 - jgonzale - All - 5.2.5
+	CHANGES:	Release 5.2.5
+
 2014/03/20 - jgonzale - Simulator
 	BUGFIX:		Solved an incorrect location of 'logical_receives' when
 				multiple IRecv operations were executed. Now, a queue

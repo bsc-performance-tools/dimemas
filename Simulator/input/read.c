@@ -792,6 +792,12 @@ static void show_individual_statistics_pallas (struct t_Ptask *Ptask)
     TIMER_TO_FLOAT(account->cpu_time, x);
 
     /* Communications time */
+
+    comm_time = account->latency_time + account->time_waiting_for_message +
+                account->block_due_group_operations +
+                account->group_operations_time;
+
+    /*
     TIMER_TO_FLOAT(account->latency_time, y);
     TIMER_TO_FLOAT(account->time_waiting_for_message,z);
     y = y+z;
@@ -800,9 +806,23 @@ static void show_individual_statistics_pallas (struct t_Ptask *Ptask)
     TIMER_TO_FLOAT(account->group_operations_time, z);
     y = y+z;
     FLOAT_TO_TIMER(y, comm_time);
+    */
 
     fprintf (salida_datos, "\t%03.2f\t", (float)x*100/(x+y));
     FPRINT_TIMER (salida_datos, comm_time);
+
+    /* DEBUG
+    fprintf (salida_datos, "( LAT= ");
+    FPRINT_TIMER (salida_datos, account->latency_time);
+    fprintf (salida_datos, ", WAIT_MESSAGE = ");
+    FPRINT_TIMER (salida_datos, account->time_waiting_for_message);
+    fprintf (salida_datos, ", GOP_BLOCK = ");
+    FPRINT_TIMER (salida_datos, account->block_due_group_operations);
+    fprintf (salida_datos, ", GOP_TIME = ");
+    FPRINT_TIMER (salida_datos, account->group_operations_time);
+    fprintf(salida_datos, ")");
+    */
+
     fprintf (salida_datos,"\n");
   }
 
