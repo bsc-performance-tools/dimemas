@@ -101,6 +101,7 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
   FirstPrint            = false;
   FlushClusterStack     = false;
   // FirstPrint       = true;
+  FirstClusterRead      = false;
 
   if (!FilePointerAvailable)
   {
@@ -394,7 +395,7 @@ TaskTranslationInfo::Merge(FILE* DimemasFile)
       if (PercentageRead > CurrentPercentage)
       {
         CurrentPercentage = PercentageRead;
-        SHOW_PROGRESS(stdout, MergeMessage, CurrentPercentage);
+        SHOW_PERCENTAGE_PROGRESS(stdout, MergeMessage, CurrentPercentage);
       }
     }
   }
@@ -665,6 +666,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 #else
       ClusterBlockIdStack.push_back(CurrentBlock);
 #endif
+      FirstClusterRead = true;
       /* In order to generate burst at block end */
       LastBlockEnd = Timestamp;
     }
@@ -673,9 +675,14 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       /* It's a cluster block end */
       if (ClusterBlockIdStack.size() == 0)
       {
-        cout << "WARNING: unbalanced cluster blocks on original trace" << endl;
-        cout <<  "Task "<< TaskId + 1 << " Thread: " << ThreadId + 1 << " ";
-        cout << "Time " << Timestamp << endl;
+        if (FirstClusterRead)
+        {
+          // There is a event closing without is opening in the middle of the
+          // trace
+          cout << "WARNING: unbalanced cluster blocks on original trace" << endl;
+          cout <<  "Task "<< TaskId + 1 << " Thread: " << ThreadId + 1 << " ";
+          cout << "Time " << Timestamp << endl;
+        }
       }
       else
       {

@@ -231,9 +231,9 @@ ParaverTraceTranslator::SplitCommunications(void)
 
   i = 0;
 
-  printf("SPLITTING COMMUNICATIONS\n");
+  // printf("SPLITTING COMMUNICATIONS\n");
 
-  SHOW_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
+  SHOW_PERCENTAGE_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
   PseudoCommId = 0;
   CurrentCommunication = Parser->GetNextCommunication();
   while (CurrentCommunication != NULL)
@@ -267,7 +267,7 @@ ParaverTraceTranslator::SplitCommunications(void)
     if (PercentageRead > CurrentPercentage)
     {
       CurrentPercentage = PercentageRead;
-      SHOW_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
+      SHOW_PERCENTAGE_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
     }
   }
 
@@ -519,7 +519,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   }
   cout << " OK" << endl;
 
-  cout << "CREATING CONTROL STRUCTURES..." << flush;
+  // cout << "CREATING CONTROL STRUCTURES..." << flush;
   if (!InitTranslationStructures(AppsDescription[0],
                                  TimeFactor,
                                  GenerateFirstIdle,
@@ -540,14 +540,23 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   }
 
 
+  /*
+  */
+
   if (MultiThreadTrace)
   {
     cout << " WARNING! Tasks with multiple threads. Just first thread will be translated" << endl;
   }
   else
   {
+    cout << endl;
+  }
+  /*
+  else
+  {
     cout << " OK" << endl;
   }
+  */
 
   cout << "WRITING HEADER...";
 
@@ -653,7 +662,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
 
   printf("RECORD TRANSLATION\n");
 
-  SHOW_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
+  SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
 
   Parser->Reload();
 
@@ -758,7 +767,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     if (PercentageRead > CurrentPercentage)
     {
       CurrentPercentage = PercentageRead;
-      SHOW_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
+      SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
     }
   }
 
@@ -1050,6 +1059,11 @@ ParaverTraceTranslator::InitTranslationStructures(
 
     TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 20);
 
+    SHOW_PROGRESS(stdout,
+                  "CREATING TRANSLATION STRUCTURES ",
+                  CurrentTask+1,
+                  TaskInfo.size());
+
     if (TemporaryFileName == NULL)
     {
       SetErrorMessage("unable to allocate memory to temporay filename",
@@ -1064,9 +1078,13 @@ ParaverTraceTranslator::InitTranslationStructures(
             rand()%999999);
 
     if (!DescriptorShared)
+    {
       TemporaryFile = fopen(TemporaryFileName, "a");
+    }
     else
+    {
       TemporaryFile = NULL;
+    }
 
     if (!Parser->Reload())
     {
@@ -1080,9 +1098,13 @@ ParaverTraceTranslator::InitTranslationStructures(
     FirstRecord = Parser->GetNextTaskRecord((INT32)CurrentTask+1);
 
     if (FirstRecord == NULL)
+    {
       EmptyTask = true;
+    }
     else
+    {
       FirstRecordTime = FirstRecord->GetTimestamp();
+    }
 
     if ( DescriptorShared ||
         (TemporaryFile == NULL && (errno == EMFILE || errno == ENFILE)))
@@ -1145,6 +1167,9 @@ ParaverTraceTranslator::InitTranslationStructures(
 
     delete FirstRecord;
   }
+  SHOW_PROGRESS_END(stdout,
+                    "CREATING TRANSLATION STRUCTURES ",
+                    TaskInfo.size());
 
   return true;
 }

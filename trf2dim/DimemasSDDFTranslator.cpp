@@ -149,7 +149,7 @@ DimemasSDDFTranslator::Translate(void)
   if (VerboseMode)
   {
     CurrentPercentage = 0;
-    SHOW_PROGRESS(stdout, "-> Translating records", CurrentPercentage);
+    SHOW_PERCENTAGE_PROGRESS(stdout, "-> Translating records", CurrentPercentage);
     fflush(stdout);
   }
 
@@ -215,7 +215,7 @@ DimemasSDDFTranslator::Translate(void)
         if (PercentageRead > CurrentPercentage)
         {
           CurrentPercentage = PercentageRead;
-          SHOW_PROGRESS(stdout, "-> Translating records", CurrentPercentage);
+          SHOW_PERCENTAGE_PROGRESS(stdout, "-> Translating records", CurrentPercentage);
           fflush(stdout);
         }
       }
@@ -237,7 +237,7 @@ DimemasSDDFTranslator::Translate(void)
 
   if (VerboseMode)
   {
-    SHOW_PROGRESS_END(stdout, "-> Translating records");
+    SHOW_PERCENTAGE_PROGRESS_END(stdout, "-> Translating records");
     fprintf(stdout, "\n");
   }
 

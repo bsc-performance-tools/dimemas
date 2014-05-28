@@ -361,7 +361,7 @@ void PARAVER_end(void)
     pcf_insert_c_str = (char*) pcf_insert_filename.c_str();
   }
 
-  MakeParaverPCF(paraver_trace_filename.c_str(), pcf_insert_c_str);
+  MakeParaverPCFandROW(paraver_trace_filename.c_str(), pcf_insert_c_str);
 }
 
 void PARAVER_Start_Op (int cpu, int ptask, int task, int thread,

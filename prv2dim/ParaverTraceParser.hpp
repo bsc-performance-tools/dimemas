@@ -83,7 +83,8 @@ class ParaverTraceParser: public Error
       
     ParaverRecord_t GetNextRecord(void);
     ParaverRecord_t GetNextRecord(UINT32 RecordTypeMask);
-    ParaverRecord_t GetNextTaskRecord(INT32  TaskId);
+    ParaverRecord_t GetNextTaskRecord(INT32 TaskId);
+    ParaverRecord_t GetNextThreadRecord(INT32 TaskId, INT32 ThreadId);
 
     State_t         GetNextState(void);
     Event_t         GetNextEvent(void);

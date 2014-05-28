@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -89,7 +89,7 @@
     }
 
 extern int StackNumber;
-    
+
 #   define BEGINFNS( x ) \
     {\
       int ii;\
@@ -104,7 +104,7 @@ extern int StackNumber;
       fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ );\
       fflush( stderr );\
     }
-    
+
 #   define ENDFNS( x ) \
     {\
       int ii;\
@@ -119,7 +119,7 @@ extern int StackNumber;
       fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ );\
       fflush( stderr );\
     }
-    
+
 #else
 
 #   define DEBUGMESSAGE( x )
@@ -154,7 +154,7 @@ extern int StackNumber;
 
 #define BZERO( nelem, type, ptr ) \
    bzero ( ptr, ((size_t)(nelem)) * sizeof(type) )
-      
+
 #if defined( DEBUG_MEMORY_ALLOC )
 
 #include <Memory.h>
@@ -163,7 +163,7 @@ extern int StackNumber;
 /* << ALLOC >> */
 #   define ALLOC( nelem, type, var ) \
       malloc ( ((size_t)(nelem)) * sizeof(type) )
-      
+
 # define REALLOC( ptr, nelem, type, var )\
       realloc ( ptr, ((size_t)(nelem)) * sizeof(type) )
 
@@ -174,11 +174,19 @@ extern int StackNumber;
 }
 
 /* PROGRESS MESSAGE */
-#define SHOW_PROGRESS(channel, message, percentage) \
+#define SHOW_PROGRESS(channel, message, current, total) \
+  fprintf(channel, "\r%s %03d/%03d", message, current, total); \
+  fflush(channel)
+
+#define SHOW_PROGRESS_END(channel, message, total) \
+  fprintf(channel, "\r%s %03d/%03d", message, total, total); \
+  fflush(channel)
+
+#define SHOW_PERCENTAGE_PROGRESS(channel, message, percentage) \
   fprintf(channel, "\r%s %03d %%", message, percentage); \
   fflush(channel)
 
-#define SHOW_PROGRESS_END(channel, message) \
+#define SHOW_PERCENTAGE_PROGRESS_END(channel, message) \
   fprintf(channel, "\r%s 100 %%", message); \
   fflush(channel)
 
@@ -186,7 +194,7 @@ extern int StackNumber;
 
 #define DEBUG0( x )
 #define DEBUG1( x, y )
-#define DEBUG2( x, y, z ) 
+#define DEBUG2( x, y, z )
 #define DEBUG3( x, y, z, w )
 #define DEBUG4( x, y, z, w, v )
 

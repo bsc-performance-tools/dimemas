@@ -2611,6 +2611,6 @@ t_boolean CONFIGURATION_load_tasks_mapping_array(char* tracefile,
         tasks_mapping_length);
   }
 
-  return;
+  return TRUE;
 }
 

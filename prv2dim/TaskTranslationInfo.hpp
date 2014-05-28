@@ -71,6 +71,7 @@ class TaskTranslationInfo: public Error
     bool                    CommunicationPrimitivePrinted;
 
     bool                    GenerateFirstIdle;
+    bool                    FirstClusterRead;
 
     FILE* TemporaryFile;
     char* TemporaryFileName;

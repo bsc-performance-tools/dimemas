@@ -192,9 +192,32 @@ ParaverRecord_t ParaverTraceParser::GetNextTaskRecord(INT32  TaskId)
 {
   ParaverRecord_t Record;
 
-  Record = NextTraceRecord(EVENT_REC | STATE_REC);
+  if ( (Record = NextTraceRecord(EVENT_REC | STATE_REC)) == NULL)
+  {
+    return NULL;
+  }
 
   while (Record->GetTaskId() != TaskId)
+  {
+    delete Record;
+    if ( (Record = NextTraceRecord(EVENT_REC | STATE_REC)) == NULL)
+      return NULL;
+  }
+
+  return Record;
+}
+
+ParaverRecord_t ParaverTraceParser::GetNextThreadRecord(INT32 TaskId,
+                                                        INT32 ThreadId)
+{
+  ParaverRecord_t Record;
+
+  if ( (Record = NextTraceRecord(EVENT_REC | STATE_REC)) == NULL)
+  {
+    return NULL;
+  }
+
+  while (Record->GetTaskId() != TaskId && Record->GetThreadId() != ThreadId)
   {
     delete Record;
     if ( (Record = NextTraceRecord(EVENT_REC | STATE_REC)) == NULL)

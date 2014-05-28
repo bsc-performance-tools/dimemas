@@ -523,7 +523,7 @@ void COMMUNIC_end()
 
       if (count_queue (&(task->recv)) != 0)
       {
-        warning (": COMMUNIC_end: Task %02d ends with %d threads waiting to recv message:\n",
+        warning (": COMMUNIC_end: Task %02d ends with %d threads waiting to recv a message:\n",
                  task->taskid,
                  count_queue (&(task->recv)));
 
@@ -545,12 +545,17 @@ void COMMUNIC_end()
                   mess->communic_id,
                   mess->mess_size);
 
-          node = get_node_of_thread (thread);
-          cpu  = get_cpu_of_thread (thread);
-          PARAVER_Idle(0,
-                       IDENTIFIERS (thread),
-                       thread->last_paraver,
-                       current_time);
+          /* Avoid the generation if this last IDLE state in 'backaground'
+           * threads*/
+          if (thread->original_thread)
+          {
+            node = get_node_of_thread (thread);
+            cpu  = get_cpu_of_thread (thread);
+            PARAVER_Idle(0,
+                         IDENTIFIERS (thread),
+                         thread->last_paraver,
+                         current_time);
+          }
         }
       }
 
@@ -564,12 +569,17 @@ void COMMUNIC_end()
             thread != TH_NIL;
             thread  = (struct t_thread *) next_queue (&(task->send)))
         {
-          node = get_node_of_thread (thread);
-          cpu = get_cpu_of_thread (thread);
-          PARAVER_Idle(0,
-                       IDENTIFIERS (thread),
-                       thread->last_paraver,
-                       current_time);
+          /* Avoid the generation if this last IDLE state in 'backaground'
+           * threads*/
+          if (thread->original_thread)
+          {
+            node = get_node_of_thread (thread);
+            cpu = get_cpu_of_thread (thread);
+            PARAVER_Idle(0,
+                         IDENTIFIERS (thread),
+                         thread->last_paraver,
+                         current_time);
+          }
 
           printf ("          * Thread %02d ->",
                   thread->threadid);

@@ -10,6 +10,22 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/05/28 - jgonzale - All - 5.2.6
+	CHANGES:	Release 5.2.6
+
+2014/05/26 - jgonzale - Simulator
+	CHANGES:	When a thread finishes with pending messages to send or
+				receive, the IDLE state is only written if it is an
+				actual thread ('original_thread')
+
+	CHANGES: 	Now, if there is an existing ROW file, it is copied with
+				the same output trace prefix
+
+2014/05/12 - jgonzale - prv2dim
+	CHANGES: 	If first cluster is imbalanced, no error is shown
+	
+	CHANGES:	Added macro 'SHOW_PERCENTAGE_PROGRESS'
+
 2014/03/27 - jgonzale - All - 5.2.5
 	CHANGES:	Release 5.2.5
 
