@@ -145,8 +145,8 @@ void SIMULATOR_Init(char  *simulator_configuration_filename,
   create_queue (&Port_queue);
   create_queue (&Global_op);
 
-    printf ("-> Simulator configuration to be read %s\n",
-          simulator_configuration_filename);
+  info ("-> Simulator configuration to be read %s\n",
+        simulator_configuration_filename);
 
   FILE *configuration_file;
   /*
@@ -261,8 +261,11 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
   Simulator.number_machines = number_of_machines;
 
   /* Flight times matrix */
-  Simulator.wan.flight_times =
-    (double**) malloc( number_of_machines*number_of_machines*sizeof(double));
+  Simulator.wan.flight_times = (double**) malloc(number_of_machines*sizeof(double*));
+  for (i = 0; i < number_of_machines; i++)
+  {
+    Simulator.wan.flight_times[i] = (double*) malloc (number_of_machines*sizeof(double));
+  }
 
   if (Simulator.wan.flight_times == NULL)
   {
@@ -287,9 +290,10 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
   SIMULATOR_nodes_loaded = (int*) malloc(number_of_machines*sizeof(int));
   bzero(SIMULATOR_nodes_loaded, number_of_machines*sizeof(int));
 
-  /* Set flight times to 0 */
+  /* Set flight times to 0
   bzero(Simulator.wan.flight_times,
         number_of_machines*number_of_machines*sizeof(double));
+  */
 }
 
 void SIMULATOR_set_wan_name(char* wan_name)
@@ -1075,7 +1079,10 @@ int check_configuration_file_type(FILE* configuration_file)
 {
   char buffer[32];
 
-  while(strlen(fgets(buffer, 32, configuration_file)) == 1);
+  if (fgets(buffer, 32, configuration_file) == NULL)
+  {
+    die("Error reading the MAGIC NUMBER of the configuration file");
+  }
 
   if(strstr(buffer, NEW_CONFIGURATION_MAGIC) != NULL)
   {
@@ -1085,6 +1092,8 @@ int check_configuration_file_type(FILE* configuration_file)
   {
     return OLD_CONFIGURATION;
   }
+
+  printf("Magic Buffer = %s\n", buffer);
 
   return UNKNOWN_CONFIGURATION;
 }

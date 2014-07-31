@@ -261,12 +261,12 @@ typedef struct mesg_notification* t_mesg_notification;
  * Los estados posibles se corresponden a los estados Paraver definidos en el
  * fichero 'pcf_defines.h'
  */
-struct thread_state
+struct thread_state_
 {
   int           state;
   dimemas_timer init_time;
 };
-typedef struct thread_state* t_thread_state;
+typedef struct thread_state_ thread_state_t;
 #define STATE_NIL (struct thread_state*)0
 /****************************************************************************/
 
@@ -930,7 +930,7 @@ struct t_thread
   /* JGG IDENTIFICADOR */
   long int       th_copy_id;
   t_boolean      locked; /* INDICA SI EL THREAD SE HA BLOQUEADO */
-  t_thread_state current_state; /* Current state of thread (15/02/2005) */
+  // t_thread_state current_state; /* Current state of thread (15/02/2005) */
 
   t_boolean      idle_block;  /* True if the thread has entered on NULL block */
 };

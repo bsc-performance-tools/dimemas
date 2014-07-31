@@ -98,8 +98,7 @@ DimemasSDDFTranslator::DimemasSDDFTranslator(string SDDFTraceName,
   this->OutputTraceName = OutputTraceName;
 }
 
-bool
-DimemasSDDFTranslator::InitTranslator(void)
+bool DimemasSDDFTranslator::InitTranslator(void)
 {
   if (!Parser->InitTraceParsing())
   {

@@ -99,8 +99,7 @@ ParaverTraceTranslator::ParaverTraceTranslator(FILE* ParaverTraceFile,
   WrongRecordsFound = 0;
 }
 
-bool
-ParaverTraceTranslator::InitTranslator(void)
+bool ParaverTraceTranslator::InitTranslator(void)
 {
   cout << "INITIALIZING PARSER... ";
   if (!Parser->InitTraceParsing())
@@ -116,8 +115,7 @@ ParaverTraceTranslator::InitTranslator(void)
   return true;
 }
 
-bool
-ParaverTraceTranslator::EndTranslator(void)
+bool ParaverTraceTranslator::EndTranslator(void)
 {
   if (this->ParaverTraceFile != NULL)
   {

@@ -62,7 +62,7 @@ void SEMAPHORE_Init()
   int             sem_id;
   size_t  tasks_it;
 
-  printf ("-> Loding initial semaphores status\n");
+  info ("-> Loding initial semaphores status\n");
 
 
   for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);

@@ -112,7 +112,7 @@ void MEMORY_init()
 {
   struct t_node  *node;
 
-  printf ("-> Loding initial memory status\n");
+  info ("-> Loding initial memory status\n");
 
 #ifdef USE_EQUEUE
   for (node  = (struct t_node*) head_Equeue (&Node_queue);
@@ -865,7 +865,7 @@ os_post (struct t_thread *thread, struct t_mpi_os *mpi_os, struct t_window *win)
     if (there_is_an_open_post (thread, win) )
     {
       panic ("Invalid RMA post operation. Recursive post not allowed\n");
-      exit (1);
+      exit (EXIT_FAILURE);
     }
     copy_thread = duplicate_thread (thread);
     inFIFO_queue (&win->post_done, (char *) copy_thread);
@@ -887,7 +887,7 @@ os_post (struct t_thread *thread, struct t_mpi_os *mpi_os, struct t_window *win)
     if (there_is_an_open_start (thread, win) )
     {
       panic ("Invalid RMA start operation. Recursive start not allowed\n");
-      exit (1);
+      exit (EXIT_FAILURE);
     }
 
     if (there_is_a_post_for_this_start (thread, mpi_os, win) )

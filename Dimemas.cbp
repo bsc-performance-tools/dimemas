@@ -95,7 +95,13 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Simulator/input/file_data_access.h" />
-		<Unit filename="Simulator/input/lex.l" />
+		<Unit filename="Simulator/input/lex.l">
+			<Option compile="1" />
+		</Unit>
+		<Unit filename="Simulator/input/new_configuration.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Simulator/input/new_configuration.h" />
 		<Unit filename="Simulator/input/read.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -106,7 +112,9 @@
 		<Unit filename="Simulator/input/sddf.h" />
 		<Unit filename="Simulator/input/sddf_records.h" />
 		<Unit filename="Simulator/input/ts.h" />
-		<Unit filename="Simulator/input/yacc.y" />
+		<Unit filename="Simulator/input/yacc.y">
+			<Option compile="1" />
+		</Unit>
 		<Unit filename="Simulator/io/dimemas_io.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -10,6 +10,39 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/07/31 - jgonzale - All - 5.2.7
+	CHANGES:	Release 5.2.7
+
+2014/07/31 - jgonzale - GUI
+	CHANGES:	Cosmetic changes in 'records_definition.txt' file, that
+				contains the header of the configuration files generated
+				by the GUI
+
+2014/07/31 - jgonzale - prv2dim
+	BUGFIX:		Changed the order of the ApplicationList parsing, to
+				correctly capture the number of communicators
+
+2014/07/31 - jgonzale - Simulator
+	BUGFIX:		Check the existence of the nodes when creating and
+				allocating tasks
+
+	CHANGES:	Added a 'printf' wrapper named 'info' that checks the
+				verbosity level of the simulator when printing the
+				information 
+
+	CHANGES:	Changed the different numbers on 'exit' calls to 
+				'EXIT_FAILURE'. NOTE: in the 'venusclient.cc' it used a
+				exit value of 100, this change may cause a interconnection
+				issue.
+
+	CHANGES:	The 'thread_state' structure and source files and references
+				in different structures has been eliminated. This struct
+				was never used. Will be deprecated in future cleanings
+
+2014/06/03 - jgonzale - Simulator
+	BUGFIX:		Bug in the allocation of the Machine Flight times (single
+				malloc changed to loop of mallocs in file 'simulator.c')
+
 2014/05/28 - jgonzale - All - 5.2.6
 	CHANGES:	Release 5.2.6
 

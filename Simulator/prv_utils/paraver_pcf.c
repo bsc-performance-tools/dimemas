@@ -247,7 +247,7 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
         if(ferror(output_pcf))
         {
             printf("Error writing destination file when including the cfg file\n");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
       }
       fprintf(output_pcf, "\n\n");
@@ -289,7 +289,7 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
             if(ferror(output_pcf))
             {
                 printf("Error writing destination file when including the cfg file\n");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
           }
           fprintf(output_pcf, "\n\n");
@@ -583,7 +583,7 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
       if(ferror(output_pcf))
       {
           printf("Error writing destination file when including the cfg file\n");
-          exit(1);
+          exit(EXIT_FAILURE);
       }
     }
     fprintf(output_pcf, "\n\n");
@@ -671,7 +671,7 @@ static t_boolean PCF_write_header_and_states(FILE* output_pcf)
   if(ferror(output_pcf))
   {
       printf("Error writing destination file when including the cfg file\n");
-      exit(1);
+      exit(EXIT_FAILURE);
   }
 
   return TRUE;

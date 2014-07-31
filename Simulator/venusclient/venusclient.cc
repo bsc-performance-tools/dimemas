@@ -127,7 +127,7 @@ void VC_Init(void) {
   if (!channelSocket)
   {
     die ("Could not connect to Venus, exiting\n");
-    exit(-100); // Why -100?
+    exit(EXIT_FAILURE); // Why -100?
   }
   venusmsgs_in_flight = 0;
   venus_account_bytes_sent = 0;
@@ -237,7 +237,7 @@ int print_event (struct t_event *event) {
     return 1;
 
   TIMER_TO_FLOAT (event->event_time, tmp_timer2);
-  printf ("\t\tTIME IN EVENT: %f us\n", tmp_timer2);
+  printf ("\t\tTIME IN EVENT: %f ns\n", tmp_timer2);
   printf ("\t\tMODULE: ");
   switch (event->module) {
   case M_SCH:

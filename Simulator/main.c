@@ -116,7 +116,7 @@ void segfaultHandler(int sigtype)
 {
     printf("Segmentation fault \n");
     print_backtrace(sigtype);
-    exit(-1);
+    exit(EXIT_FAILURE);
 }
 */
 
@@ -299,13 +299,13 @@ void parse_arguments(int argc, char *argv[])
   if (argc == 1)
   {
     fprintf (stderr, USAGE, argv[0]);
-    exit (1);
+    exit (EXIT_FAILURE);
   }
 
   if ((argc == 2) && (strcmp (argv[1], "-v") == 0))
   {
     show_version (argv[0]);
-    exit (0);
+    exit (EXIT_SUCCESS);
   }
 
   if ((argc == 2) &&
@@ -313,7 +313,7 @@ void parse_arguments(int argc, char *argv[])
       (strcmp(argv[1], "-help") == 0)))
   {
     help_message(argv[0]);
-    exit (0);
+    exit (EXIT_SUCCESS);
   }
 
   j = 1;
@@ -362,7 +362,7 @@ void parse_arguments(int argc, char *argv[])
               break;
             default:
               fprintf (stderr, USAGE, argv[0]);
-              exit (1);
+              exit (EXIT_FAILURE);
               break;
           }
           break;
@@ -394,7 +394,7 @@ void parse_arguments(int argc, char *argv[])
               break;
             default:
               fprintf (stderr, USAGE, argv[0]);
-              exit (1);
+              exit (EXIT_FAILURE);
           }
           break;
 #ifdef VENUS_ENABLED
@@ -460,7 +460,7 @@ void parse_arguments(int argc, char *argv[])
           if (reload_limit < 0) {
               fprintf (stderr, "# reloads must be >= 0, given: -r %d\n", reload_limit);
               fprintf (stderr, USAGE, argv[0]);
-              exit (1);
+              exit (EXIT_FAILURE);
           }
           break;
         case 'O':
@@ -550,7 +550,7 @@ void parse_arguments(int argc, char *argv[])
           else
           {
             fprintf (stderr, USAGE, argv[0]);
-            exit (1);
+            exit (EXIT_FAILURE);
           }
           break;
 
@@ -568,23 +568,23 @@ void parse_arguments(int argc, char *argv[])
                 j++;
                 if(eee_enabled){
                     eee_config_file = argv[j];
-                } else {fprintf (stderr, USAGE, argv[0]); exit(1);}
+                } else {fprintf (stderr, USAGE, argv[0]); exit(EXIT_FAILURE);}
                 break;
               case 'f':
                 j++;
                 if(eee_enabled){
                     eee_frame_header_size = atof(argv[j]);
                     printf("Frame Header Size:%d\n",eee_frame_header_size);
-                } else {fprintf (stderr, USAGE, argv[0]); exit(1);}
+                } else {fprintf (stderr, USAGE, argv[0]); exit(EXIT_FAILURE);}
                 break;
               default:
-                {fprintf (stderr, USAGE, argv[0]); exit(1);}
+                {fprintf (stderr, USAGE, argv[0]); exit(EXIT_FAILURE);}
           }
           break;
 
         default:
           fprintf (stderr, USAGE, argv[0]);
-          exit (1);
+          exit (EXIT_FAILURE);
       }
     }
   }
@@ -592,7 +592,7 @@ void parse_arguments(int argc, char *argv[])
   if (j >= argc)
   {
     fprintf (stderr, USAGE, argv[0]);
-    exit (1);
+    exit (EXIT_FAILURE);
   }
 
   config_file = argv[j];
@@ -633,7 +633,7 @@ static long long int read_size(char *c)
   if (i == 0)
   {
     fprintf(stderr,"Incorrect minimum message size to use Rendez vous!\n");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   else if (i==1)
   {
@@ -718,7 +718,7 @@ int main (int argc, char *argv[])
     {
       fprintf (stderr, USAGE, argv[0]);
       printf ("Can't open %s for Output\n", fichero_salida);
-      exit (1);
+      exit (EXIT_FAILURE);
     }
   }
   else
@@ -731,13 +731,13 @@ int main (int argc, char *argv[])
     if (paraver_priorities)
     {
       fprintf (stderr, USAGE, argv[0]);
-      exit (1);
+      exit (EXIT_FAILURE);
     }
 
     if ((paraver_initial_timer) || (paraver_final_timer))
     {
       fprintf (stderr, USAGE, argv[0]);
-      exit (1);
+      exit (EXIT_FAILURE);
     }
   }
 
@@ -752,7 +752,7 @@ int main (int argc, char *argv[])
         fprintf (stderr,
                 "Can't open %s for Event monitor\n",
                 file_for_event_to_monitorize);
-        exit (1);
+        exit (EXIT_FAILURE);
       }
     }
     else
@@ -894,10 +894,12 @@ int main (int argc, char *argv[])
     event_manager(current_event);
   }
 
-  printf ("\n");
-  PRINT_TIMER (current_time);
-  printf (": END SIMULATION\n\n");
-
+  if (!short_out_info)
+  {
+    printf ("\n");
+    PRINT_TIMER (current_time);
+    printf (": END SIMULATION\n\n");
+  }
   /* Modules final routines */
   FS_End ();
   PORT_end ();

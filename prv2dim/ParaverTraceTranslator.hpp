@@ -77,7 +77,7 @@ class ParaverTraceTranslator: public Error
 
   public:
 
-    ParaverTraceTranslator(){};
+    ParaverTraceTranslator(void){};
 
     ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName);
 

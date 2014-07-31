@@ -266,7 +266,7 @@ SCH_boost_info(int info, struct t_thread *th_s, struct t_thread *th_r)
 
     default:
       panic ("Info invalid", "SCH_boost_info", "SCH_boost.c");
-      exit (1);
+      exit (EXIT_FAILURE);
       break;
   }
   /* Bounded priority */

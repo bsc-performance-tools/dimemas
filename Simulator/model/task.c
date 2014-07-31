@@ -388,6 +388,8 @@ void TASK_New_Ptask(char *trace_name,
 
     for (synth_task = 0; synth_task < Ptask->tasks_count; synth_task++)
     {
+
+
       TASK_New_Task(Ptask, synth_task, synth_task);
     }
   }
@@ -401,6 +403,7 @@ void TASK_New_Ptask(char *trace_name,
     {
       TASK_New_Task(Ptask, new_taskid, tasks_mapping[new_taskid]);
     }
+
   }
 
   insert_queue(&Ptask_queue, (char*) Ptask, (t_priority) Ptask->Ptaskid);
@@ -469,6 +472,10 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
   // assert(taskid < 0 || taskid >= Ptask->tasks_count);
 
   node = get_node_by_id(nodeid);
+  if (node == N_NIL)
+  {
+    panic("Trying to map task %d to unknown node %d\n", taskid, nodeid);
+  }
 
   task = &(Ptask->tasks[taskid]);
 

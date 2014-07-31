@@ -314,7 +314,7 @@ void CONFIGURATION_Load_Communications_Configuration(void)
   }
   else
   {
-    printf ("   * Loading default communications configuration\n");
+    info  ("   * Loading default communications configuration\n");
   }
 
   /*
@@ -338,7 +338,7 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
 
   if (sch_conf_file != NULL)
   {
-    printf ("-> Loading scheduler configuration from file %s\n",
+    info ("-> Loading scheduler configuration from file %s\n",
             sch_conf_filename);
 
     if ( getline(&current_line, &length, sch_conf_file) == -1)
@@ -363,18 +363,18 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
     /* TODO: The same policy is applied to all machines! */
     if ( (policy = SCHEDULER_get_policy (policy_str)) != -1)
     {
-      printf ("   * Scheduling policy selected %s\n", policy_str);
+      info ("   * Scheduling policy selected %s\n", policy_str);
     }
     else
     {
-      printf ("   * Invalid policy %s defined on file %s. Using default\n",
+      info ("   * Invalid policy %s defined on file %s. Using default\n",
               policy_str,
               sch_conf_filename);
     }
   }
   else
   {
-    printf ("-> Loading default scheduler configuration\n");
+    info ("-> Loading default scheduler configuration\n");
 
   }
 
@@ -389,7 +389,7 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
 
     /* Initialize the scheduler using the 'SCH' function table */
     (*SCH[Machines[machine_it].scheduler.policy].scheduler_init) (sch_conf_filename, &Machines[machine_it]);
-    printf ("   * Machine %zu. Policy: %s\n",
+    info ("   * Machine %zu. Policy: %s\n",
             machine_it,
             SCH[Machines[machine_it].scheduler.policy].name);
   }
@@ -404,7 +404,7 @@ void CONFIGURATION_Load_Random_Configuration(void)
 
   if (random_conf_file != NULL)
   {
-    printf ("-> Loading random configuration from file %s\n",
+    info ("-> Loading random configuration from file %s\n",
             random_conf_filename);
 
     if ( fscanf (random_conf_file,
@@ -543,7 +543,7 @@ void CONFIGURATION_Load_Random_Configuration(void)
   }
   else
   {
-    printf ("-> Loading default random values\n");
+    info ("-> Loading default random values\n");
   }
 }
 
@@ -551,8 +551,8 @@ void CONFIGURATION_Load_FS_Configuration(void)
 {
   if (fs_conf_file != NULL)
   {
-    printf ("-> Loading file system configuration from file %s. NOT IMPLEMENTED YET\n",
-            fs_conf_filename);
+    info ("-> Loading file system configuration from file %s. NOT IMPLEMENTED YET\n",
+          fs_conf_filename);
 
     if (IO_fclose(fs_conf_file) == EOF)
     {
@@ -563,7 +563,7 @@ void CONFIGURATION_Load_FS_Configuration(void)
   }
   else
   {
-    printf ("-> Loading default file sytem configuration\n");
+    info ("-> Loading default file sytem configuration\n");
   }
 
   return;
@@ -2020,8 +2020,8 @@ void new_mod_info  (struct t_queue *q, struct t_entry* en)
                               const_burst_duration);
 
     /* DEBUG
-    printf("New Const Burst Duration Module");
-    printf("(%d:%d): %le\n", module_type, module_value, const_burst_duration);
+    info ("New Const Burst Duration Module");
+    info ("(%d:%d): %le\n", module_type, module_value, const_burst_duration);
     */
     /*
     near_line ();

@@ -119,7 +119,7 @@ bool ParaverTraceParser::InitTraceParsing(void)
   FirstCommunicatorOffset = ftello(ParaverTraceFile);
 
   /* Initialization of structures needed to trace parsing
-   * (task handlers, thread handlers, ecc) */
+   * (task handlers, thread handlers, etc) */
 
   Header = new ParaverHeader(StrHeader, HeaderLength);
 
@@ -279,8 +279,7 @@ bool ParaverTraceParser::Reload(void)
  * Private functions
  ****************************************************************************/
 
-bool
-ParaverTraceParser::GetAppCommunicators(ApplicationDescription_t AppDescription)
+bool ParaverTraceParser::GetAppCommunicators(ApplicationDescription_t AppDescription)
 {
   char  *TraceLine;
   INT32  CurrentLineSize;
@@ -517,8 +516,6 @@ ParaverRecord_t ParaverTraceParser::NextTraceRecord(UINT32 RecordTypeMask)
       else
       {
         char CurrentError[128];
-
-        printf("LineLength = %d\n", LineLength);
 
         SetError(true);
         sprintf(CurrentError,

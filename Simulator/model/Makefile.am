@@ -35,7 +35,5 @@ libDimemasModel_la_SOURCES = \
 	simulator.c \
 	simulator.h \
 	task.c \
-	task.h \
-	thread_states.c \
-	thread_states.h 
+	task.h 
 

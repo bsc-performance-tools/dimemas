@@ -50,7 +50,7 @@ t_nano eee_calc_nw_bw_lat(struct t_thread *thread, int mess_size)
     if((node_s_id < 0) || (node_r_id < 0))
     {
         printf("EEE ERROR::::NOT POSSIBLE for Node ID to be Negative\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
     double eee_bandwidth, eee_latency;
@@ -83,7 +83,8 @@ t_nano eee_calc_nw_bw_lat(struct t_thread *thread, int mess_size)
         } else eee_nw_delay = eee_latency ; // Infinite Bandwidth
 
     } else {
-        printf("EEE_ERROR::eee_calc_nw_bw_lat::Cant be here\n");exit(0);
+        printf("EEE_ERROR::eee_calc_nw_bw_lat::Cant be here\n");
+        exit(EXIT_FAILURE);
     }
 
     if(EEE_DEBUG) {
@@ -126,7 +127,7 @@ t_nano link_transmit(struct t_thread *thread) // Step 1
     node_r_id = (node_r->nodeid - 1);
     if((node_s_id < 0) || (node_r_id < 0)) {
         printf("EEE ERROR::::NOT POSSIBLE for Node ID to be Negative\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
     int mess_size, fh_size; //Bytes
@@ -144,11 +145,11 @@ t_nano link_transmit(struct t_thread *thread) // Step 1
 
     if (!eee_enabled) {
         printf("Cannot be inside EEE code! EEE not enabled\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     if (eee_frame_header_size < 0) {
         printf("eee_frame_header_size cannot be negative!\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     if(EEE_DEBUG) {
         PRINT_TIMER(current_time);
@@ -177,7 +178,7 @@ t_nano link_transmit(struct t_thread *thread) // Step 1
         if(node_s_id == node_r_id) {
                 printf("Warning: Same node communication - Not expected - Not sure why!\n");
                 thread->eee_send_done = TRUE;
-                //exit(0);
+                //exit(EXIT_FAILURE);
                 return(0);
         }
         thread->messages_in_flight++;//Test Code!
@@ -283,13 +284,13 @@ t_nano link_transmit(struct t_thread *thread) // Step 1
                 if(eee_nw_delay == 0) {
                     PRINT_TIMER(current_time);
                     printf(":::::::Next Call cannot be Zero!\n");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
             }
 
         } else if (thread->current_level == (N_levels-1)) {
             printf("EEE Error: Current Level cannot be Last when routing is UP\n");
-            exit(0);
+            exit(EXIT_FAILURE);
         } else {
             if(eee_switches[thread->current_level][thread->eee_switchid]
                 .out_links[thread->eee_linkid].outlink_next_free_time
@@ -496,7 +497,7 @@ t_nano link_transmit(struct t_thread *thread) // Step 1
 
     } else {
             printf("EEE Error: Routing Dir incorrect: Not supposed to be here\n");
-            exit(0);
+            exit(EXIT_FAILURE);
     }
 
     // The transmission is always from one level to next
@@ -531,7 +532,7 @@ t_nano link_transmit(struct t_thread *thread) // Step 1
         // Transmission is possible
         if((thread->link_transmit_done == TRUE) || (thread->nw_switch_done == FALSE)) {
             if((org_current_level != -1) && (thread->routing_dir == EEE_UP)) {
-                printf("Cannot Be HERE!!!!\n"); exit(0);
+                printf("Cannot Be HERE!!!!\n"); exit(EXIT_FAILURE);
             }
         }
         thread->link_transmit_done = TRUE;
@@ -575,7 +576,7 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
     node_r_id = (node_r->nodeid - 1);
     if((node_s_id < 0) || (node_r_id < 0)) {
         printf("EEE ERROR::::NOT POSSIBLE for Node ID to be Negative\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
     // LOGIC for changing routing dir goes here
@@ -593,7 +594,8 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
             thread->routing_dir = EEE_DOWN;
         } else {
             if(thread->current_level != (N_levels-1)) {
-                printf("NW_SWITCH ERROR!!! Cant be here!\n");exit(0);
+                printf("NW_SWITCH ERROR!!! Cant be here!\n");
+                exit(EXIT_FAILURE);
             }
         }
     } else {} // Continue in same dir
@@ -625,7 +627,7 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
          int temp_i;
          if(thread->current_level == (N_levels-1)) {
              printf("ERROR! Not supposed to be here\n");
-             exit(0);
+             exit(EXIT_FAILURE);
          }
                  // Assigning NEXT link and switch
                  // Static route based on receiving node!!
@@ -675,7 +677,7 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
                                    ,eee_switches[thread->current_level][thread->eee_switchid]
                                     .in_links[thread->eee_linkid].partner_link->switch_id
                                    ,node_r_mod_nodes);
-                    exit(0);
+                    exit(EXIT_FAILURE);
              }
          }
          if (EEE_DEBUG) {
@@ -688,12 +690,12 @@ t_nano nw_switch(struct t_thread *thread) // Step 2
 
      } else {
          printf("EEE_ERROR::Cant be here!\n");
-         exit(0);
+         exit(EXIT_FAILURE);
      }
 
     if((thread->nw_switch_done == TRUE) || (thread->link_transmit_done == FALSE)) {
         printf("EEE_ERROR:Cannot Be Here!!!\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     thread->nw_switch_done = TRUE;
     thread->link_transmit_done = FALSE;
@@ -728,12 +730,12 @@ t_nano eee_network(struct t_thread *thread)
             eee_nw_delay = nw_switch(thread);
         } else {
             printf("Error in fn eee-network: Not supposed to be here\n");
-            exit(0);
+            exit(EXIT_FAILURE);
         }
 
     } else {
         printf("Inside network but sending was over!\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
     return (eee_nw_delay);

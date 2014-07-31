@@ -349,7 +349,7 @@ configure_switches()
                     if ( eee_i == (N_levels-1)) { // Last level
 
                         printf("Error:: CANNOT BE HERE\n");
-                        exit(0);
+                        exit(EXIT_FAILURE);
 
                     } else if (eee_i != (N_levels-2)) { // all expect 2nd last level
                             if (EEE_DEBUG) {
@@ -394,7 +394,7 @@ configure_switches()
             --- THIS IS TO MAKE SURE THEIR STATES ARE ALIGNED
     */
 
-//    printf("Exit Code!!!\n\n\n"); exit(0);
+//    printf("Exit Code!!!\n\n\n"); exit(EXIT_FAILURE);
 
     if(EEE_DEBUG) printf("Testing Configuration\n");
     int eee_config_test;
@@ -425,7 +425,7 @@ configure_switches()
                                             .partner_link->partner_link) {
                         eee_config_test = 1;
                     } else {
-                        printf("Test Unsuccessful!!!!!!!\n"); exit(0);
+                        printf("Test Unsuccessful!!!!!!!\n"); exit(EXIT_FAILURE);
                     }
             }
         }
@@ -467,7 +467,7 @@ configure_switches()
                                         .partner_link->partner_link) {
                     eee_config_test = 1;
                 } else {
-                    printf("Test Unsuccessful!!!!!!!\n"); exit(0);
+                    printf("Test Unsuccessful!!!!!!!\n"); exit(EXIT_FAILURE);
                 }
                 }
             }
@@ -476,7 +476,7 @@ configure_switches()
     }
 
     if (eee_config_test){ if(EEE_DEBUG) printf("LINK CONFIGURATION TEST Passed\n");}
-    else {printf("Test Unsuccessful!\n"); exit(0);}
+    else {printf("Test Unsuccessful!\n"); exit(EXIT_FAILURE);}
 
     if (EEE_DEBUG) printf("OUTPUT LINKS configuration Over\n");
 

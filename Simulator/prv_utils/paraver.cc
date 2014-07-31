@@ -291,7 +291,7 @@ void PARAVER_init(const char   *output_trace,
     {
       die("Final paraver time must be greater than initial\n");
       // fprintf (stderr, USAGE, argv[0]);
-      // exit (1);
+      // exit (EXIT_FAILURE);
     }
   }
   paraver_priorities = priorities;

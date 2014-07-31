@@ -37,6 +37,7 @@
 /**
  * External routines defined in file subr.c
  **/
+extern void info   (const char *fmt, ...);
 extern void die    (const char *fmt, ...);
 extern void warning(const char *fmt, ...);
 extern void panic  (const char *fmt, ...);

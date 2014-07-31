@@ -51,13 +51,13 @@ ParaverHeader::ParaverHeader(char* ASCIIHeader, INT32 HeaderLength)
   char  FinalTimeStr[25];   /* Can produce an overflow! */
   char* RsrcList = (char*) calloc((size_t) HeaderLength, sizeof(char));
   char* AppList  = (char*) calloc((size_t) HeaderLength, sizeof(char));
-  
+
   /* Internal copy of ASCII header */
   InternalHeader[HeaderLength] = '\0';
   strcpy(InternalHeader, ASCIIHeader);
-  
+
   /* strtok(InternalHeader, ')'); */
-  
+
   matches = sscanf(ASCIIHeader,
                    "#Paraver (%[^)]):%[^:]:%[^:]:%d:%s\n",
                    TraceCreationDate,
@@ -65,29 +65,29 @@ ParaverHeader::ParaverHeader(char* ASCIIHeader, INT32 HeaderLength)
                    RsrcList,
                    &AppNumber,
                    AppList);
-  
+
   if (matches != 5)
   {
     SetError(true);
     SetErrorMessage ("Unknown trace format", "header not readable");
     return;
   }
-  
+
   /*
   cout << "Creation date: " << TraceCreationDate << endl;
   */
-  
+
   if (!ProcessFinalTime(FinalTimeStr))
   {
     SetError(true);
     SetErrorMessage ("Paraver trace header error", "final time not readable");
     return;
   }
-  
+
   /*
   cout << "Final Time: " << FinalTime << " (" << TimeUnits << ")" << endl;
   */
-  
+
   ResourceDescriptionPresent = false;
   RsrcList[strlen(RsrcList)] = '\0';
   if (!ProcessResourceList(RsrcList))
@@ -95,18 +95,18 @@ ParaverHeader::ParaverHeader(char* ASCIIHeader, INT32 HeaderLength)
     SetError(true);
     return;
   }
-  
+
   /*
   cout << "Resources: " << ResourceNumber;
   cout << " (" << ResourceDescription.size() << ")" << endl;
   */
-  
+
   if (!ProcessApplicationList(AppList))
   {
     SetError(true);
     return;
   }
-  
+
   /*
   cout << "Number of applications: " << AppNumber;
   cout << " (" << AppsDescription.size() << ")" << endl;
@@ -136,20 +136,21 @@ ParaverHeader::ProcessFinalTime(char* ASCIIFinalTime)
     FinalTime = strtoull(ASCIIFinalTime, NULL, 0);
     TimeUnits = MICROSECONDS;
   }
-  
+
   return true;
 }
 
-bool
-ParaverHeader::ProcessResourceList (char* ASCIIRsrcList)
+bool ParaverHeader::ProcessResourceList (char* ASCIIRsrcList)
 {
   char* ResourceInfoStr = (char*) calloc(strlen(ASCIIRsrcList)+1,
                                           sizeof(char));
   char* CurrentCPUNum;
-  
+
   if (ResourceInfoStr == NULL)
+  {
     return false;
-  
+  }
+
   if (sscanf(ASCIIRsrcList,
              "%d(%[^)])",
              &ResourceNumber,
@@ -157,18 +158,19 @@ ParaverHeader::ProcessResourceList (char* ASCIIRsrcList)
   {
     /* ResourceInforStr parsing */
     ResourceDescriptionPresent = true;
-    
+
     CurrentCPUNum = strtok(ResourceInfoStr, ",");
     while (CurrentCPUNum != NULL)
     {
       ResourceDescription.push_back((INT32) atoi(CurrentCPUNum));
       CurrentCPUNum = strtok(NULL, ",");
     }
-    
     return true;
   }
-  else  if (sscanf(ASCIIRsrcList, "%d", &ResourceNumber) == 1)
+  else if (sscanf(ASCIIRsrcList, "%d", &ResourceNumber) == 1)
+  {
     return true; /* No info about resources */
+  }
   else
   {
     SetErrorMessage ("Paraver trace header error",
@@ -187,10 +189,10 @@ ParaverHeader::ProcessApplicationList (char* ASCIIAppList)
   char *OtherApps = (char*) calloc(strlen(ASCIIAppList)+1, sizeof(char));
   char *CurrentAppStr;
 
-  
+
   INT32 AppCount, CurrentTaskId, TaskCount, CommunicatorCount;
   INT32 ThreadCount, Node;
-  
+
   AppCount = 0;
   CurrentAppStr = ASCIIAppList;
   while (!end)
@@ -212,6 +214,8 @@ ParaverHeader::ProcessApplicationList (char* ASCIIAppList)
                         CurrentApp->GetLastError().c_str());
         return false;
       }
+
+      CurrentAppStr = OtherApps;
       AppCount++;
     }
     else if (sscanf(CurrentAppStr,
@@ -231,6 +235,26 @@ ParaverHeader::ProcessApplicationList (char* ASCIIAppList)
         return false;
       }
       end = true;
+      AppCount++;
+    }
+    else if (sscanf(CurrentAppStr,
+                    "%d(%[^)]),%s",
+                    &TaskCount,
+                    CurrentAppInfo,
+                    OtherApps) == 3)
+    {
+      CurrentApp = new ApplicationDescription(AppCount+1,
+                                              TaskCount,
+                                              0,
+                                              CurrentAppInfo);
+      if (CurrentApp->GetError())
+      {
+        SetErrorMessage("Error parsing aaplication "+AppCount,
+                        CurrentApp->GetLastError().c_str());
+        return false;
+      }
+
+      CurrentAppStr = OtherApps;
       AppCount++;
     }
     else if (sscanf(CurrentAppStr,
@@ -254,11 +278,12 @@ ParaverHeader::ProcessApplicationList (char* ASCIIAppList)
     else
     {
       char ErrorMessage[128];
-      
+
       sprintf(ErrorMessage, "Error parsing application %d", AppCount);
       SetErrorMessage(ErrorMessage);
       return false;
     }
+
     AppsDescription.push_back(CurrentApp);
     if (AppCount == AppNumber)
       end = true;
@@ -266,6 +291,6 @@ ParaverHeader::ProcessApplicationList (char* ASCIIAppList)
 
   if (AppCount != AppNumber)
     return false;
-  
+
   return true;
 }

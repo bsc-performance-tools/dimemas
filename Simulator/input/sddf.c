@@ -827,7 +827,7 @@ void SDDF_do()
   {
     printf ("Can't open source file %s\n", c);
     perror ((char *) 0);
-    exit (2);
+    exit (EXIT_FAILURE);
   }
 
   sddf_file = IO_fopen (sddf_filename, "w");
@@ -835,7 +835,7 @@ void SDDF_do()
   {
     printf ("Can't open destination file %s\n", sddf_filename);
     perror ((char *) 0);
-    exit (2);
+    exit (EXIT_FAILURE);
   }
 
   SDDF_Header ();

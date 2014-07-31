@@ -988,7 +988,7 @@ double external_network_general_traffic (dimemas_timer temps)
 
   fprintf (stderr, "\nFunction disabled (external_network_general_traffic) because of compilation problem - Vladimir,14-07-2009!\n\n");
 
-  exit (1);
+  exit (EXIT_FAILURE);
   return 0;
 
   /* traffic = (sin(aux * 2 * M_PI) + 1) / 2; /* Aqui traffic esta entre 0 i 1
@@ -5989,7 +5989,7 @@ static void global_op_get_all_in_links (struct t_thread *thread)
   if (others == TH_NIL)
   {
     panic("Unable to locate root T%02d for global operation\n", root_task);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   */
 
@@ -6055,7 +6055,7 @@ void calcula_fan (t_nano bandw,     /* MB/s */
     break;
   default:
     panic ("Invalid size FIN/OUT %d for global operation\n", size_type);
-    exit (1);
+    exit (EXIT_FAILURE);
     break;
   }
 
@@ -6083,7 +6083,7 @@ void calcula_fan (t_nano bandw,     /* MB/s */
 
     default:
       panic ("Invalid model FIN/OUT %d for global operation\n", model);
-      exit (1);
+      exit (EXIT_FAILURE);
   }
 }
 
@@ -7378,7 +7378,7 @@ void GLOBAL_operation (struct t_thread *thread,
   if (others == TH_NIL)
   {
     panic("Unable to locate root %d for global operation\n", root_task);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   /* El thread 'others' pertany a la 'root_task'
   root_th = others;

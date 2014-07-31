@@ -1547,14 +1547,14 @@ t_boolean more_actions (struct t_thread *thread)
     if (((Simulator.finished_threads_count * 100) / Simulator.threads_count) == (unsigned) progress + 10)
     {
       progress = ((Simulator.finished_threads_count * 100) / Simulator.threads_count);
-      printf("..%d%%..   ", progress);
+      info ("..%d%%..   ", progress);
 
 
       if (progress == 100)
       {
-        printf("\n");
+        info ("\n");
       }
-      fflush(stdout);
+      // fflush(stdout);
     }
 
     return (FALSE);

@@ -43,6 +43,18 @@ extern char      yy_error_string[];
 extern t_boolean yy_error_filled;
 extern t_boolean dimemas_GUI;
 
+void info   (const char *fmt, ...)
+{
+  if (!short_out_info)
+  {
+    va_list args;
+    va_start (args, fmt);
+    vfprintf (stdout, fmt, args);
+    va_end (args);
+    fflush(stdout);
+  }
+}
+
 void die (const char *fmt, ...)
 {
   va_list args;

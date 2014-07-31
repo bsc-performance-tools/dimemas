@@ -123,8 +123,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition(char* comm_conf_filename,
   double contention;  /* Per motius historics. Actualment no s'utilitza. */
 
   // PRINT_TIMER (current_time);
-  printf ("   * Loading communications configuration from file %s\n",
-          comm_conf_filename);
+  info ("   * Loading communications configuration from file %s\n",
+        comm_conf_filename);
 
 
   /* New parsing using 'getline'
@@ -368,7 +368,7 @@ void COMM_CONFIGURATION_Load_External_Network_Parameters(void)
     die ("Unable to open 'traffic_parameters.cfg' file: %s\n", IO_get_error());
   }
 
-  printf ("-> Loading external network traffic parameters file (parametres_traffic.cfg)\n");
+  info ("-> Loading external network traffic parameters file (parametres_traffic.cfg)\n");
 
 
   /* Es llegeixen caracters suficients per tots els parametres */
@@ -422,7 +422,7 @@ void COMM_CONFIGURATION_Load_External_Network_Parameters(void)
   IO_fclose(fd);
 
   /* Es mosta com han quedat els parametres */
-  printf (
+  info (
     "   * External network traffic parameters: alfa=%.2f, periode=%.2f, beta=%.2f, gamma=%.2f\n",
     param_external_net_alfa,
     param_external_net_periode,
@@ -450,14 +450,14 @@ void COMM_CONFIGURATION_Load_P2P_Fine_Tuning(void)
     die ("Unable to open 'p2p_tuning.cfg' file: %s\n", IO_get_error());
   }
 
-  printf ("-> Loading P2P fine tuning file (p2p_tuning.cfg)\n");
+  info ("-> Loading P2P fine tuning file (p2p_tuning.cfg)\n");
 
   { /* LIBRARY COPY LATENCY */
   i = fscanf (special_cfg, "copy:%d%c\n", &size, &units);
 
   if (i == -1)
   {
-    printf("   * Warning: copy latency not present\n");
+    info ("   * Warning: copy latency not present\n");
   }
 
   if (i == 1)
@@ -499,7 +499,7 @@ void COMM_CONFIGURATION_Load_P2P_Fine_Tuning(void)
   i = fscanf (special_cfg, "rtt:%d\n", &time);
   if (i <= 0 || i > 1)
   {
-    printf("  * Warning: round trip time not present\n");
+    info ("  * Warning: round trip time not present\n");
   }
   else /* i == 1 */
   {
@@ -515,7 +515,7 @@ void COMM_CONFIGURATION_Load_P2P_Fine_Tuning(void)
 
   if (i != 2)
   {
-    printf("   * Warning: preemptions info not present\n");
+    info ("   * Warning: preemptions info not present\n");
   }
   else
   {
@@ -547,7 +547,7 @@ t_boolean load_machine_comm_policy(int       machine_id,
   {
     if (strcmp (policy_str, COMMUNIC[scheduling_types].name) == 0)
     {
-      printf ("   * Machine %d Communication policy selected %s\n",
+      info  ("   * Machine %d Communication policy selected %s\n",
                   machine_id,
                   policy_str);
 

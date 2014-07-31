@@ -36,10 +36,9 @@
 
 #include "thread_states.h"
 
-t_boolean
-init_thread_state (struct t_thread* thread, int state)
+t_boolean init_thread_state (struct t_thread* thread, int state)
 {
-  t_thread_state new_state;
+  // t_thread_state new_state;
   t_boolean      result;
 
   result = TRUE;
