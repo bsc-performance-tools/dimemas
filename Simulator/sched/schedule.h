@@ -38,9 +38,9 @@
  * External routines defined in file schedule.c
  **/
 
-void SCHEDULER_init(void);
+void SCHEDULER_Init(void);
 
-void SCHEDULER_end(void);
+void SCHEDULER_End(void);
 
 struct t_cpu* select_free_cpu(struct t_node   *node,
                                      struct t_thread *thread);

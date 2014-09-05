@@ -92,8 +92,7 @@ void SEMAPHORE_Init()
   }
 }
 
-void
-SEMAPHORE_end()
+void SEMAPHORE_End()
 {
   struct t_Ptask     *Ptask;
   struct t_task      *task;

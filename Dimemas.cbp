@@ -126,6 +126,7 @@
 		<Unit filename="Simulator/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="Simulator/main.cpp" />
 		<Unit filename="Simulator/model/communic.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -269,10 +270,13 @@
 		</Unit>
 		<Unit filename="common_utilities/EventEncoding.h" />
 		<Unit filename="common_utilities/ParaverColors.h" />
+		<Unit filename="common_utilities/bsc_utils" />
+		<Unit filename="common_utilities/bsc_utils.cpp" />
 		<Unit filename="common_utilities/error.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="common_utilities/error.h" />
+		<Unit filename="common_utilities/ezOptionParser.hpp" />
 		<Unit filename="include/Macros.h" />
 		<Unit filename="include/basic_types.h" />
 		<Unit filename="include/data_types.h" />

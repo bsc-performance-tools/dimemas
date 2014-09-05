@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -35,13 +35,15 @@
 #ifndef __semaphore_h
 #define __semaphore_h
 /**
- * External routines defined in file semaphore.c
+ * Routines defined in file semaphore.c
  **/
-extern void SEMAPHORE_general(int value, struct t_thread *thread);
-extern void SEMAPHORE_init(void);
-extern void SEMAPHORE_end(void);
-extern void SEMAPHORE_signal(int sem_id, struct t_thread *thread);
-extern void SEMAPHORE_wait(int sem_id, struct t_thread *thread);
-extern void SEMAPHORE_signal_n(int sem_id, int n, struct t_thread *thread);
+void SEMAPHORE_general(int value, struct t_thread *thread);
+
+void SEMAPHORE_Init(void);
+void SEMAPHORE_End(void);
+
+void SEMAPHORE_signal(int sem_id, struct t_thread *thread);
+void SEMAPHORE_wait(int sem_id, struct t_thread *thread);
+void SEMAPHORE_signal_n(int sem_id, int n, struct t_thread *thread);
 
 #endif

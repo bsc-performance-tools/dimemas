@@ -108,6 +108,11 @@ void IO_Init(void)
   sprintf(IO_error_string, "no I/O error");
 }
 
+void IO_End(void)
+{
+  return;
+}
+
 size_t IO_available_streams(void)
 {
   return (IO_MaximumFileDescriptors - IO_OpenedFileDescriptors);

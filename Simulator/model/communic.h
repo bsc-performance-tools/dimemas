@@ -66,8 +66,8 @@ extern double param_external_net_gamma;   /* la influencia dels traffics*/
  * Public functions
  *****************************************************************************/
 
-void COMMUNIC_init(void);
-void COMMUNIC_end(void);
+void COMMUNIC_Init(void);
+void COMMUNIC_End(void);
 
 void COMMUNIC_general(int value, struct t_thread *thread);
 void COMMUNIC_send(struct t_thread *thread);

@@ -54,7 +54,7 @@ using std::cout;
 #include <sstream>
 using std::ostringstream;
 
-// #define DEBUG 1
+//#define DEBUG 1
 
 /*****************************************************************************
  * Public functions
@@ -69,6 +69,7 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
                                          bool    BurstCounterGeneration,
                                          INT32   BurstCounterType,
                                          double  BurstCounterFactor,
+                                         bool    GenerateMPIInitBarrier,
                                          char*   TemporaryFileName,
                                          FILE*   TemporaryFile)
 {
@@ -81,6 +82,9 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
   this->BurstCounterGeneration = BurstCounterGeneration;
   this->BurstCounterType       = BurstCounterType;
   this->BurstCounterFactor     = BurstCounterFactor;
+
+  this->GenerateMPIInitBarrier = GenerateMPIInitBarrier;
+  MPIInitBarrierWritten        = false;
 
   if (TemporaryFile == NULL)
   {
@@ -151,15 +155,9 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
     cout << endl;
 #endif
 
-#ifdef NEW_DIMEMAS_TRACE
     if (Dimemas_Block_Begin(TemporaryFile,
                             TaskId-1, 0,
                             (INT64) 0, (INT64) 1) < 0)
-#else
-    if (Dimemas_Block_Begin(TemporaryFile,
-                            TaskId-1, 0,
-                            (INT64) BLOCK_ID_NULL) < 0)
-#endif
     {
       SetError(true);
       SetErrorMessage("error writing output trace", strerror(errno));
@@ -628,24 +626,12 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
     if (ClusterEventEncoding_Is_BlockBegin(Value))
     {
       /* It's a cluster block begin */
-#ifndef NEW_DIMEMAS_TRACE
-      CurrentBlock = ClusterEventEncoding_DimemasBlockId(Value);
-#endif
-
       if( MPIBlockIdStack.size() == 0 )
       { /* No MPI call in proces */
-#ifdef NEW_DIMEMAS_TRACE
         if (Dimemas_Block_Begin(TemporaryFile,
                                 TaskId,
                                 ThreadId,
                                 (INT64) Type, (INT64)Value) < 0)
-#else
-
-        if (Dimemas_Block_Begin(TemporaryFile,
-                                TaskId,
-                                ThreadId,
-                                (INT64) CurrentBlock) < 0)
-#endif
         {
           SetError(true);
           SetErrorMessage("error writing output trace", strerror(errno));
@@ -661,11 +647,8 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       }
 
       /* Block management */
-#ifdef NEW_DIMEMAS_TRACE
       ClusterBlockIdStack.push_back(std::make_pair(Type,Value));
-#else
-      ClusterBlockIdStack.push_back(CurrentBlock);
-#endif
+
       FirstClusterRead = true;
       /* In order to generate burst at block end */
       LastBlockEnd = Timestamp;
@@ -697,17 +680,10 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             return false;
           }
 
-#ifdef NEW_DIMEMAS_TRACE
           if (Dimemas_Block_End(TemporaryFile,
                                 TaskId,
                                 ThreadId,
                                 (INT64) Type) < 0)
-#else
-          if (Dimemas_Block_End(TemporaryFile,
-                                TaskId,
-                                ThreadId,
-                                (INT64) CurrentBlock) < 0)
-#endif
           {
             SetError(true);
             SetErrorMessage("error writing output trace", strerror(errno));
@@ -734,21 +710,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       }
 
       MPIVal MPIValue = (MPIVal) Value;
-#ifndef NEW_DIMEMAS_TRACE
-      CurrentBlock = MPIEventEncoding_DimemasBlockId(MPIValue);
-
-#ifdef DEBUG
-      fprintf(
-          stdout,
-          "[%03d:%02d %lld] Opening Block %03d (%s)\n",
-          CurrentEvent->GetTaskId(),
-          CurrentEvent->GetThreadId(),
-          CurrentEvent->GetTimestamp(),
-          (INT64) CurrentBlock,
-          MPIEventEncoding_GetBlockLabel((MPIVal)BLOCK_TRF2PRV_VALUE(CurrentBlock)));
-#endif
-
-#else
       CurrentBlock.first  = Type;
       CurrentBlock.second = Value;
 
@@ -762,10 +723,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
           (INT64) CurrentBlock.second,
           MPIEventEncoding_GetBlockLabel((MPIVal) (CurrentBlock.second)));
 #endif
-
-#endif
-
-
 
       /* CPU Burst */
       if (Value != MPI_IPROBE_VAL || !IprobeBurstFlushed)
@@ -797,17 +754,10 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       cout << "Printing Block Begin " << *CurrentEvent;
 #endif
 
-#ifdef NEW_DIMEMAS_TRACE
       if (Dimemas_Block_Begin(TemporaryFile,
                               TaskId,
                               ThreadId,
                               (INT64) Type, (INT64)Value) < 0)
-#else
-      if (Dimemas_Block_Begin(TemporaryFile,
-                              TaskId,
-                              ThreadId,
-                              (INT64) CurrentBlock) < 0)
-#endif
       {
         SetError(true);
         SetErrorMessage("error writing output trace", strerror(errno));
@@ -851,7 +801,25 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       CurrentBlock = MPIBlockIdStack.back();
       MPIBlockIdStack.pop_back();
 
-#ifdef NEW_DIMEMAS_TRACE
+      if ( (MPIVal) CurrentBlock.second == MPI_INIT_VAL && GenerateMPIInitBarrier)
+      {
+        if (Dimemas_Global_OP(TemporaryFile,
+                              CurrentEvent->GetTaskId()-1,
+                              CurrentEvent->GetThreadId()-1,
+                              GLOP_ID_MPI_Barrier, // BARRIER ID?,
+                              1,    // Check this communicator!!
+                              0, 0, // RootRank | RootThread = 0
+                              0, 0) < 0) // No send/recv sizes
+        {
+          SetError(true);
+          SetErrorMessage("error writing output trace", strerror(errno));
+          return false;
+        }
+
+        MPIInitBarrierWritten         = true;
+        CommunicationPrimitivePrinted = true;
+      }
+
 
 #ifdef DEBUG
       fprintf(
@@ -862,21 +830,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
         CurrentEvent->GetTimestamp(),
         (INT64) CurrentBlock.second,
         MPIEventEncoding_GetBlockLabel( (MPIVal) CurrentBlock.second));
-#endif
-
-#else
-
-#ifdef DEBUG
-      fprintf(
-        stdout,
-        "[%03d:%02d %lld] Closing Block %03lld (%s)\n",
-        CurrentEvent->GetTaskId(),
-        CurrentEvent->GetThreadId(),
-        CurrentEvent->GetTimestamp(),
-        (INT32) CurrentBlock,
-        MPIEventEncoding_GetBlockLabel((MPIVal)BLOCK_TRF2PRV_VALUE(CurrentBlock)));
-#endif
-
 #endif
 
       /* CurrentBlock = MPIEventEncoding_DimemasBlockId(MPIValue); */
@@ -897,17 +850,10 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
         }
       }
 
-#ifdef NEW_DIMEMAS_TRACE
       if (Dimemas_Block_End(TemporaryFile,
                             TaskId,
                             ThreadId,
                             (INT64) Type) < 0)
-#else
-      if (Dimemas_Block_End(TemporaryFile,
-                            TaskId,
-                            ThreadId,
-                            (INT64) CurrentBlock) < 0)
-#endif
       {
         SetError(true);
         SetErrorMessage("error writing output trace", strerror(errno));
@@ -918,18 +864,12 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 
       if( FlushClusterStack )
       {
-#ifdef NEW_DIMEMAS_TRACE
         if (Dimemas_Block_Begin(TemporaryFile,
                                 TaskId,
                                 ThreadId,
                                 (INT64) ClusterBlockIdStack.back().first,
                                 (INT64) ClusterBlockIdStack.back().second) < 0)
-#else
-        if (Dimemas_Block_Begin(TemporaryFile,
-                                TaskId,
-                                ThreadId,
-                                (INT64) ClusterBlockIdStack.back()) < 0)
-#endif
+
         {
           SetError(true);
           SetErrorMessage("error writing output trace", strerror(errno));
@@ -945,10 +885,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
   { /* It's a User function */
     if (MPIEventEncoding_Is_BlockBegin(Value))
     { /* It's a Dimemas User block begin */
-
-#ifndef NEW_DIMEMAS_TRACE
-      CurrentBlock = (DimBlock) MPIEventEncoding_UserBlockId(Type, Value);
-#endif
 
       /* Iprobe checks! */
       if ( OngoingIprobe )
@@ -973,17 +909,11 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       #endif
 
       /* Print the Block Begin */
-#ifdef NEW_DIMEMAS_TRACE
       if (Dimemas_Block_Begin(TemporaryFile,
                               TaskId,
                               ThreadId,
                               (INT64) Type, (INT64)Value) < 0)
-#else
-      if (Dimemas_Block_Begin(TemporaryFile,
-                              TaskId,
-                              ThreadId,
-                              CurrentBlock) < 0)
-#endif
+
       {
         SetError(true);
         SetErrorMessage("error writing output trace", strerror(errno));
@@ -991,11 +921,8 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       }
 
       /* Block management */
-#ifdef NEW_DIMEMAS_TRACE
       UserBlockIdStack.push_back(std::make_pair(Type, Value));
-#else
-      UserBlockIdStack.push_back(CurrentBlock);
-#endif
+
     }
     else
     { /* It's a Dimemas User block end */
@@ -1026,17 +953,11 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
       #endif
 
       /* Print the Block Begin */
-#ifdef NEW_DIMEMAS_TRACE
       if (Dimemas_Block_End(TemporaryFile,
                             TaskId,
                             ThreadId,
                             Type) < 0)
-#else
-      if (Dimemas_Block_End(TemporaryFile,
-                            TaskId,
-                            ThreadId,
-                            CurrentBlock) < 0)
-#endif
+
       {
         SetError(true);
         SetErrorMessage("error writing output trace", strerror(errno));
@@ -1073,12 +994,8 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
     return true;
   }
 
-#ifdef NEW_DIMEMAS_TRACE
   CurrentBlock      = MPIBlockIdStack.back();
   CurrentBlockValue = MPIEventEncoding_DimemasBlockId((MPIVal) CurrentBlock.second);
-#else
-  CurrentBlockValue = MPIBlockIdStack.back();
-#endif
 
   TaskId        = CurrentComm->GetTaskId()-1;
   ThreadId      = CurrentComm->GetThreadId()-1;
@@ -1381,12 +1298,8 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
       }
       break;
     default:
-#ifdef NEW_DIMEMAS_TRACE
+
       MPIVal CurrentBlockMPIVal = (MPIVal) CurrentBlock.second;
-#else
-      MPIVal CurrentBlockMPIVal =
-        (MPIVal) BLOCK_TRF2PRV_VALUE(CurrentBlockValue);
-#endif
 
       fprintf(
         stdout,

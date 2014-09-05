@@ -244,7 +244,7 @@ static t_nano compute_copy_latency (struct t_thread *thread,
  * Initialization/Finalization of the communications module
  ****************************************************************************/
 
-void COMMUNIC_init (void)
+void COMMUNIC_Init (void)
 {
   struct t_machine *machine;
   size_t            machines_it;
@@ -370,7 +370,7 @@ void COMMUNIC_init (void)
   }
 }
 
-void COMMUNIC_end()
+void COMMUNIC_End()
 {
 
   struct t_Ptask  *Ptask;
@@ -6059,26 +6059,62 @@ void calcula_fan (t_nano bandw,     /* MB/s */
     break;
   }
 
+  if (debug & D_COMM)
+  {
+    PRINT_TIMER(current_time);
+    printf(": FAN_CALCULATION Message size used %d\n", mess_size);
+    PRINT_TIMER(current_time);
+    printf(": FAN_CALCULATION startup %.9lf bandw %lf\n", startup, bandw);
+  }
+
   switch (model)
   {
     case GOP_MODEL_0:
       *temps    = 0;
       *latencia = 0;
+
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER(current_time);
+        printf(": FAN_CALCULATION Model 0\n");
+      }
+
       break;
     case GOP_MODEL_CTE:
       factor    = 1.0;
       *temps    = startup + mess_size * bandw;
       *latencia = startup;
+
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER(current_time);
+        printf(": FAN_CALCULATION CT Model\n");
+      }
+
       break;
     case GOP_MODEL_LIN:
       factor    = (t_nano) num_partners - 1;
       *temps    = (startup + mess_size * bandw) * factor;
       *latencia = startup * factor;
+
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER(current_time);
+        printf(": FAN_CALCULATION LIN Model\n");
+      }
+
       break;
     case GOP_MODEL_LOG:
       factor    = compute_contention_stage (num_partners, num_busos);
       *temps    = (startup + mess_size * bandw) * factor;
       *latencia = startup * factor;
+
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER(current_time);
+        printf(": FAN_CALCULATION LOG Model. Factor %d\n", factor);
+      }
+
       break;
 
     default:

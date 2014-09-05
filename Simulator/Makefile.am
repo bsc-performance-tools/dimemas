@@ -23,7 +23,7 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = Dimemas DimemasUpdateCFG
 
 Dimemas_SOURCES = \
-	main.c 
+	main.cpp
 
 Dimemas_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
 Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include

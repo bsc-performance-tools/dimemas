@@ -50,6 +50,8 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
+#include <types.h>
+
 #ifdef CHECK
 #define T(x) x,
 #define L(x) x
@@ -184,3 +186,4 @@ extern void free_reserved_pointer(void);
 /* File SCH_prio_fifo.c */
 /* File SCH_svr4.c */
 /* File SCH_boost.c */
+

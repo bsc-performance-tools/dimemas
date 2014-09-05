@@ -164,7 +164,7 @@ void PORT_general (int value, struct t_thread *thread)
   }
 }
 
-void PORT_init()
+void PORT_Init()
 {
   struct t_node  *node;
 
@@ -190,7 +190,7 @@ void PORT_init()
   }
 }
 
-void PORT_end()
+void PORT_End()
 {
   struct t_port   *port;
   struct t_node   *node;

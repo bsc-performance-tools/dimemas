@@ -30,49 +30,240 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include "ParaverTraceTranslator.hpp"
-#include "PCFGeneration.hpp"
+#include <cstdlib>
+#include <cstdio>
+#include <cerrno>
+#include <cstring>
 
+#include <string>
 
 #include <iostream>
 using std::cout;
 using std::cerr;
 using std::endl;
 
+#include <ezOptionParser.hpp>
+
+#include <bsc_utils>
+#include "ParaverTraceTranslator.hpp"
+#include "PCFGeneration.hpp"
+
 /* Main variables */
-char *PrvTraceName;          /* Paraver (input) trace name */
-char *TrfTraceName;          /* Dimemas (output) trace name */
+std::string PrvTraceName;          /* Paraver (input) trace name */
+std::string DimTraceName;          /* Dimemas (output) trace name */
 
 bool  GenerateFirstIdle;
+bool  GenerateMPIInitBarrier;
 
 double IprobeMissesThreshold; /* Maximun iprobe misses to discard iprobe burst */
 
 INT32  BurstCounterType;
 double BurstCounterFactor;
 
-#define HELP \
-"Usage:\n"\
-"  %s -i <iprobe_miss_threshold> -b <hw_counter_type>,<factor>\n"\
-"  <paraver_trace> <dimemas_trace>\n\n"\
-"  -h                            This help\n"\
-"  -n                            No generate initial idle states\n"\
-"  -i <iprobe_miss_threshold>    MPI_Iprobe miss rate (per milisecond) to \n"\
-"                                discard Iprobe area CPU burst\n"\
-"  -b <hw_counter_type>,<factor> Hardware counter type and factor used to\n"\
-"                                generate burst durations\n"
-
-
-void PrintUsage(char* ApplicationName)
+void Usage(ez::ezOptionParser& opt)
 {
-  cout << "Usage: " << ApplicationName << " -n -i <iprobe_miss_threshold> ";
-  cout << "-b <hw_counter_type>,<factor> ";
-  cout << "<paraver_trace> <dimemas_trace>" << endl;
+  std::string usage;
+  opt.getUsage(usage);
+  std::cout << usage;
+};
+
+bool ReadArgsNew(const int argc, const char *argv[])
+{
+  ez::ezOptionParser opt;
+
+  opt.overview = "Paraver to Dimemas trace translator";
+  opt.syntax = "prv2dim [OPTIONS] input_paraver_trace output_dimemas_trace";
+  opt.example = "prv2dim -b 42000059,4,656e-7 trace_paraver.prv trace_dimemas.dim\n";
+
+  opt.add(
+      "", // Default.
+      0, // Required?
+      0, // Number of args expected.
+      0, // Delimiter if expecting multiple args.
+      "Display usage instructions.", // Help description.
+      "-h",     // Flag token.
+      "-help",  // Flag token.
+      "--help", // Flag token.
+      "--usage" // Flag token.
+    );
+
+
+  opt.add(
+      "0",
+      false,
+      0,
+      0,
+      "Do not generate an initial idle state",
+      "-n",
+      "--initial-idle");
+
+  opt.add(
+      "",
+      false,
+      0,
+      0,
+      "Do not generate a synchronization primitive on MPI_Init calls",
+      "-s",
+      "--init-sync");
+
+  ez::ezOptionValidator* vD = new ez::ezOptionValidator("d");
+  opt.add(
+      "",
+      false,
+      1,
+      0,
+      "MPI_Iprobe miss rate (per milisecond) to discard Iprobe area CPU burst\n",
+      "-i",
+      "--iprobe-miss-rate",
+      vD);
+
+  opt.add(
+      "",
+      false,
+      2,
+      ',',
+      "Hardware counter type and factor used to generate burst durations",
+      "-b",
+      "--burst-counter-factor",
+      vD);
+
+  opt.parse(argc, argv);
+
+  if (opt.isSet("-h"))
+  {
+    Usage(opt);
+
+    exit(EXIT_SUCCESS);
+  }
+
+  std::vector<std::string> badOptions;
+
+  if(!opt.gotRequired(badOptions))
+  {
+    for(int i=0; i < badOptions.size(); ++i)
+    {
+      std::cerr << "ERROR: Missing required option " << badOptions[i] << ".\n\n";
+    }
+    Usage(opt);
+
+    return false;
+  }
+
+  if(!opt.gotExpected(badOptions))
+  {
+    for(int i=0; i < badOptions.size(); ++i)
+    {
+      std::cerr << "ERROR: Got unexpected number of arguments for option " << badOptions[i] << ".\n\n";
+    }
+
+    Usage(opt);
+
+    return false;
+  }
+
+  std::vector<std::string> badArgs;
+  if(!opt.gotValid(badOptions, badArgs))
+  {
+    for(int i=0; i < badOptions.size(); ++i)
+    {
+      std::cerr << "ERROR: Got invalid argument \"" << badArgs[i] << "\" for option " << badOptions[i] << ".\n\n";
+    }
+    //Usage(opt);
+
+    return false;
+  }
+
+  if (opt.isSet("-n"))
+  {
+    GenerateFirstIdle = false;
+  }
+  else
+  {
+    GenerateFirstIdle = true;
+  }
+
+  if (opt.isSet("-s"))
+  {
+    GenerateMPIInitBarrier = false;
+  }
+  else
+  {
+    GenerateMPIInitBarrier = true;
+  }
+
+  if (opt.isSet("-i"))
+  {
+    std::string IprobeMissesThresholdStr;
+    opt.get("-i")->getString(IprobeMissesThresholdStr);
+
+    if (bsc_tools::isDouble(IprobeMissesThresholdStr))
+    {
+      opt.get("-i")->getDouble(IprobeMissesThreshold);
+    }
+    else
+    {
+      std::cerr << "ERROR: Got invalid argument \"" << IprobeMissesThresholdStr << "\" for option \"-i\".\n\n";
+      return false;
+    }
+    /* Only valid in C++11
+    try
+    {
+      IprobeMissesThreshold = std::stod(IprobeMissesThresholdStr);
+    }
+    catch (std:exception &e)
+    {
+      std::cerr << "ERROR: Got invalid argument \"" << IprobeMissesThresholdStr << "\" for option \"-i\".\n\n";
+    }
+    */
+  }
+
+  if (opt.isSet("-b"))
+  {
+    vector<string> Values;
+    opt.get("-b")->getStrings(Values);
+
+    if (Values.size() != 2)
+    {
+      std::cerr << "ERROR: Invalid number of arguments (" << Values.size() << ")";
+      std::cerr << " for option \"-b\".\n\n";
+    }
+
+    if (bsc_tools::isLongInt(Values[0]))
+    {
+      BurstCounterType = (INT32) bsc_tools::getLongInt(Values[0]);
+    }
+    else
+    {
+      std::cerr << "ERROR: Got invalid argument \"" << Values[0] << "\" for option \"-b\".\n\n";
+      return false;
+    }
+
+    if (bsc_tools::isDouble(Values[1]))
+    {
+      BurstCounterFactor = bsc_tools::getDouble(Values[1]);
+    }
+    else
+    {
+      std::cerr << "ERROR: Got invalid argument \"" << Values[1] << "\" for option \"-b\".\n\n";
+      return false;
+    }
+  }
+
+  if (opt.lastArgs.size() != 2) {
+    std::cerr << "ERROR: Missing input/output trace names\n\n";
+    Usage(opt);
+    return false;
+  }
+  else
+  {
+    PrvTraceName = *(opt.lastArgs[0]);
+    DimTraceName = *(opt.lastArgs[1]);
+  }
+
+  return true;
 }
 
+/*
 void ReadArgs(int argc, char *argv[])
 {
   int   j = 1;
@@ -99,10 +290,10 @@ void ReadArgs(int argc, char *argv[])
     {
       switch (argv[j][1])
       {
-        case 'n': /* No generate initial idles */
+        case 'n': /* No generate initial idles *
           GenerateFirstIdle = false;
           break;
-        case 'i': /* Iprobe misses threshold */
+        case 'i': /* Iprobe misses threshold
           j++;
           IprobeMissesThreshold = atof(argv[j]);
 
@@ -112,7 +303,7 @@ void ReadArgs(int argc, char *argv[])
             exit (EXIT_FAILURE);
           }
           break;
-        case 'b': /* Burst duration counter */
+        case 'b': /* Burst duration counter *
           j++;
 
           BurstCounterTypeStr = strtok(argv[j], " ,\n");
@@ -151,13 +342,14 @@ void ReadArgs(int argc, char *argv[])
     exit (EXIT_FAILURE);
   }
 
-  /* Read Input & Output file names */
+  /* Read Input & Output file names *
   PrvTraceName = argv[j];
   j = j+1;
-  TrfTraceName = argv[j];
+  DimTraceName = argv[j];
 
   return;
 }
+*/
 
 void CopyRowFile(string InputTraceName, string OutputTraceName)
 {
@@ -237,9 +429,15 @@ void CopyRowFile(string InputTraceName, string OutputTraceName)
   return;
 }
 
-int main(int argc, char *argv[])
+int main(const int argc, const char *argv[])
 {
   ParaverTraceTranslator *Translator;
+
+
+
+  std::string CounterFactorStr;
+
+
 
   IprobeMissesThreshold = 0.0;
   BurstCounterType      = -1;
@@ -247,9 +445,12 @@ int main(int argc, char *argv[])
 
   PCFGeneration *PCFGenerator;
 
-  ReadArgs(argc, argv);
+  if (!ReadArgsNew(argc, argv))
+  {
+    exit(EXIT_FAILURE);
+  }
 
-  Translator = new ParaverTraceTranslator(PrvTraceName, TrfTraceName);
+    Translator = new ParaverTraceTranslator(PrvTraceName, DimTraceName);
 
   if (Translator->GetError())
   {
@@ -274,7 +475,8 @@ int main(int argc, char *argv[])
   if (!Translator->Translate(GenerateFirstIdle,
                              IprobeMissesThreshold,
                              BurstCounterType,
-                             BurstCounterFactor))
+                             BurstCounterFactor,
+                             GenerateMPIInitBarrier))
   {
     cerr << endl;
     cerr << "Error: " << Translator->GetLastError() << endl;
@@ -289,11 +491,11 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  PCFGenerator = new PCFGeneration(PrvTraceName, TrfTraceName);
+  PCFGenerator = new PCFGeneration(PrvTraceName, DimTraceName);
 
   PCFGenerator->GeneratePCF(string(""));
 
-  CopyRowFile(PrvTraceName, TrfTraceName);
+  CopyRowFile(PrvTraceName, DimTraceName);
 
-  exit (EXIT_SUCCESS);
+  return EXIT_SUCCESS;
 }

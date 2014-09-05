@@ -78,6 +78,9 @@ class TaskTranslationInfo: public Error
 
     double IprobeMissesThreshold;
 
+    bool   GenerateMPIInitBarrier;
+    bool   MPIInitBarrierWritten;
+
     bool   BurstCounterGeneration;
     INT32  BurstCounterType;
     double BurstCounterFactor;
@@ -97,6 +100,7 @@ class TaskTranslationInfo: public Error
                         bool    BurstCounterGeneration,
                         INT32   BurstCounterType,
                         double  BurstCounterFactor,
+                        bool    GenerateMPIInitBarrier,
                         char*   TemporaryFileName = NULL,
                         FILE*   TemporaryFile = NULL);
 
@@ -121,6 +125,8 @@ class TaskTranslationInfo: public Error
     bool GetNonDeterministicComms(void) { return NonDeterministicComms; };
 
     bool GetDisorderedRecords(void)     { return DisorderedRecords; };
+
+    bool GetMPIInitBarrierWritten(void) { return MPIInitBarrierWritten; };
 
   private:
     bool ReorderAndFlush(void);

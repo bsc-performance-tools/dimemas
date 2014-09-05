@@ -60,9 +60,9 @@ extern struct t_queue  Ptask_queue;
  * Public functions
  *****************************************************************************/
 
-void TASK_init(int sintetic_io_applications);
+void TASK_Init(int sintetic_io_applications);
 
-void TASK_end (void);
+void TASK_End (void);
 
 void TASK_New_Ptask(char *trace_name,
                     int   tasks_count,

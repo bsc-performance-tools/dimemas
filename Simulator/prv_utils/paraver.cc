@@ -248,7 +248,7 @@ static ostringstream to_ascii;
  * Initialization of Paraver trace generation structures
  *
  */
-void PARAVER_init(const char   *output_trace,
+void PARAVER_Init(const char   *output_trace,
                   const char   *pcf_insert,
                   dimemas_timer start_time,
                   dimemas_timer end_time,
@@ -301,7 +301,7 @@ void PARAVER_init(const char   *output_trace,
 
 }
 
-void PARAVER_end(void)
+void PARAVER_End(void)
 {
   bool end;
 

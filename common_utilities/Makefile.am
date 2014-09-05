@@ -18,4 +18,8 @@ libCommonUtilities_la_SOURCES = \
 	EventEncoding.h \
 	ParaverColors.h \
 	error.c \
-	error.h
+	error.h \
+	bsc_utils.cpp \
+	ezOptionParser.hpp
+
+EXTRA_DIST = bsc_utils	

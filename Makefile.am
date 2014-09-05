@@ -6,9 +6,7 @@ if HAVE_JAVA
 SUBDIRS += GUI
 endif
 
-if HAVE_BOOST
 SUBDIRS += trf2dim
-endif
 
 EXTRA_DIST = 
 

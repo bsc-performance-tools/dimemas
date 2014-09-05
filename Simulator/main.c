@@ -32,6 +32,19 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <time.h>
+#include <errno.h>
+
+#include <execinfo.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <float.h>
+
+#include <sys/time.h>
+#include <sys/resource.h>
+
+#include <ezOptionParser.hpp>
+
 #include "define.h"
 #include "subr.h"
 #include "types.h"
@@ -70,16 +83,7 @@
 #include "venusclient.h"
 #endif
 
-#include <time.h>
-#include <errno.h>
 
-#include <execinfo.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <float.h>
-
-#include <sys/time.h>
-#include <sys/resource.h>
 
 // Compute time differences
 double ddiff(struct timespec start, struct timespec end)
@@ -212,6 +216,7 @@ int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
 
 #endif
 
+static void
 
 static void
 show_version(char *name)
@@ -518,7 +523,9 @@ void parse_arguments(int argc, char *argv[])
               die("Wrong latency (--lat) value: %s\n", argv[j]);
             }
 
-            parameter_lat = parameter_lat*1e9; // Internally, in nanoseconds!
+            /* This adjustment is done internally!!
+             parameter_lat = parameter_lat*1e9;
+            */
           }
           else if (strncmp(argv[j], "--ppn", 5) == 0)
           {

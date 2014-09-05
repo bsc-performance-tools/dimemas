@@ -264,7 +264,7 @@ typedef enum
   MPI_INIT_THREAD_VAL,                    /* 140 */
 
   MPI_TYPE_VECTOR_VAL                     /* 141 */
-}MPIVal;
+} MPIVal;
 
 #define NUM_MPICALLS  (MPI_TYPE_VECTOR_VAL+1)
 

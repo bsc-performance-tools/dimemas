@@ -266,7 +266,7 @@ void TASK_Init(int sintetic_io_applications)
   }
 }
 
-void TASK_end()
+void TASK_End()
 {
   struct t_Ptask  *Ptask;
   struct t_task   *task;

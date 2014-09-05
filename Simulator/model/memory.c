@@ -108,7 +108,7 @@ void MEMORY_general (int value, struct t_thread *thread)
   }
 }
 
-void MEMORY_init()
+void MEMORY_Init()
 {
   struct t_node  *node;
 
@@ -129,7 +129,7 @@ void MEMORY_init()
   }
 }
 
-void MEMORY_end()
+void MEMORY_End()
 {
   /*
   if (debug)
@@ -138,6 +138,7 @@ void MEMORY_end()
     printf (": MEMORY final routine called\n");
   }
   */
+  return;
 }
 
 void

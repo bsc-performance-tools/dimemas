@@ -66,7 +66,7 @@ static int SCH_prio          = 0;
 t_boolean monitorize_event    = FALSE;
 int       event_to_monitorize = 0;
 
-void SCHEDULER_init()
+void SCHEDULER_Init()
 {
   struct t_node    *node;
   struct t_Ptask   *Ptask;
@@ -151,7 +151,7 @@ void SCHEDULER_init()
   }
 }
 
-void SCHEDULER_end()
+void SCHEDULER_End()
 {
   struct t_cpu   *cpu;
   struct t_node  *node;

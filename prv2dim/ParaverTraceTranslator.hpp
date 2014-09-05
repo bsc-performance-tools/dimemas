@@ -92,7 +92,8 @@ class ParaverTraceTranslator: public Error
     bool Translate(bool   GenerateFirstIdle,
                    double IprobeMissesThreshold,
                    INT32  BurstCounterType,
-                   double BurstCounterFactor);
+                   double BurstCounterFactor,
+                   bool   GenerateMPIInitBarrier);
 
   private:
 
@@ -101,7 +102,8 @@ class ParaverTraceTranslator: public Error
                                    bool   GenerateFirstIdle,
                                    double IprobeMissesThreshold,
                                    INT32  BurstCounterType,
-                                   double BurstCounterFactor);
+                                   double BurstCounterFactor,
+                                   bool   GenerateMPIInitBarrier);
 
     bool TranslateCommunicators(ApplicationDescription_t AppDescription);
 

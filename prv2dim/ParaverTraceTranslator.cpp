@@ -416,7 +416,8 @@ bool
 ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
                                   double IprobeMissesThreshold,
                                   INT32  BurstCounterType,
-                                  double BurstCounterFactor)
+                                  double BurstCounterFactor,
+                                  bool   GenerateMPIInitBarrier)
 {
   /* unsigned int CurrentCommunication; */
   vector<ApplicationDescription_t> AppsDescription;
@@ -523,7 +524,8 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
                                  GenerateFirstIdle,
                                  IprobeMissesThreshold,
                                  BurstCounterType,
-                                 BurstCounterFactor))
+                                 BurstCounterFactor,
+                                 GenerateMPIInitBarrier))
     return false;
 
   if (DescriptorShared)
@@ -558,88 +560,10 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
 
   cout << "WRITING HEADER...";
 
-#ifdef NEW_DIMEMAS_TRACE
   /* Temporary header! */
   if(!WriteNewFormatHeader(AppsDescription[0]))
     return false;
 
-#else
-
-  DimemasHeader_WriteHeader(DimemasTraceFile);
-
-  /* Obtaining pcf labels for clustering */
-  /* Check the PCF file name */
-  string::size_type SubstrPos = ParaverTraceName.rfind(".prv");
-
-  if (SubstrPos == string::npos)
-  {
-    InputPCFName = ParaverTraceName+".pcf";
-  }
-  else
-  {
-    string InputPCFBaseName;
-
-    InputPCFBaseName = ParaverTraceName.substr(0, SubstrPos);
-    InputPCFName     = InputPCFBaseName+".pcf";
-
-  }
-
-  try
-  {
-    bool ClusterEvents, UserFunctions;
-    pcfTrace           = new UIParaverTraceConfig(InputPCFName);
-
-    vector<unsigned int> AvailableEvents = pcfTrace->getEventTypes();
-
-    for (size_t i = 0; i < AvailableEvents.size(); i++)
-    {
-      if (AvailableEvents[i] == CLUSTER_ID_EV)
-      {
-        ClusteringValues   = pcfTrace->getEventValuesFromEventTypeKey(CLUSTER_ID_EV);
-      }
-      else if (AvailableEvents[i] == USER_FUNCTION)
-      {
-        UserFunctionValues = pcfTrace->getEventValuesFromEventTypeKey(USER_FUNCTION);
-      }
-    }
-
-    /*
-    pcfValues = new int   [ClusteringValues.size()+UserFunctionValues.size()];
-    pcfLabels = new char *[ClusteringValues.size()+UserFunctionValues.size()];
-    */
-
-    /* Add Cluster Labels and Values */
-    for (size_t i = 0; i < ClusteringValues.size(); i++)
-    {
-      /*
-      pcfValues[i] = ClusteringValues[i];
-      pcfLabels[i] = new char[(pcfTrace->getEventValue(CLUSTER_ID_EV, ClusteringValues[i])).size()+1];
-      strcpy(pcfLabels[i], (pcfTrace->getEventValue(CLUSTER_ID_EV, ClusteringValues[i])).c_str());
-      */
-      Dimemas_Block_Definition(DimemasTraceFile,
-                               MPIEventEncoding_UserBlockId( CLUSTER_ID_EV, ClusteringValues[i]),
-                               pcfTrace->getEventValue(CLUSTER_ID_EV, ClusteringValues[i]).c_str());
-    }
-
-    /* Add User Functions Labels and Values */
-    for (size_t i = 0; i < UserFunctionValues.size(); i++)
-    {
-      /*
-      pcfValues[ClusteringValues.size()+i] = UserFunctionValues[i];
-      pcfLabels[ClusteringValues.size()+i] = new char[(pcfTrace->getEventValue(USER_FUNCTION, UserFunctionValues[i])).size()+1];
-      strcpy(pcfLabels[ClusteringValues.size()+i], (pcfTrace->getEventValue(USER_FUNCTION, UserFunctionValues[i])).c_str());
-      */
-      Dimemas_Block_Definition(DimemasTraceFile,
-                               MPIEventEncoding_UserBlockId( USER_FUNCTION, UserFunctionValues[i]),
-                               pcfTrace->getEventValue(USER_FUNCTION, UserFunctionValues[i]).c_str());
-    }
-  }
-  catch(exception & e)
-  {
-    DimemasHeader_WriteHeader(DimemasTraceFile);
-  }
-
-#endif
   cout << " OK" << endl;
 
   cout << "TRANSLATING COMMUNICATORS...";
@@ -681,7 +605,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     {
 
 #ifdef DEBUG
-     // cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
+      cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
 #endif
 
       /* GlobalOp_t CurrentGlobalOp; */
@@ -786,6 +710,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
 
   cout << endl;
   cout << "MERGING PARTIAL OUTPUT TRACES" << endl;
+  int TotalMPIInitBarriersWritten = 0;
   for (UINT32 i = 0; i < TranslationInfo.size(); i++)
   {
     if (!(TranslationInfo[i]->LastFlush()))
@@ -800,9 +725,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
       return false;
     }
 
-#ifdef NEW_DIMEMAS_TRACE
     OutputOffsets.push_back(ftello(DimemasTraceFile));
-#endif
 
     if (!(TranslationInfo[i]->Merge(DimemasTraceFile)))
     {
@@ -838,6 +761,11 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     {
       DisorderedRecordsPresent = true;
       TasksWithDisorderedRecords.push_back(TranslationInfo[i]->GetTaskId());
+    }
+
+    if (TranslationInfo[i]->GetMPIInitBarrierWritten())
+    {
+      TotalMPIInitBarriersWritten++;
     }
   }
   printf("   * All task merged!         \r\n");
@@ -935,6 +863,19 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     cout << endl;
   }
 
+  if (TotalMPIInitBarriersWritten != TranslationInfo.size() && GenerateMPIInitBarrier)
+  {
+    cout << "********************************************************************************" << endl;
+    cout << "*                               ERROR                                          *" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << "ERROR: The 'MPI_Init' primitive does not appear at the beggining of the all" << endl;
+    cout << "ERROR: tasks in this trace. Current translation will fail" << endl;
+    cout << endl;
+    cout << "ERROR: Please, re-run the translator using the '-s' flags" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << endl;
+  }
+
 
 #ifdef NEW_DIMEMAS_TRACE
 
@@ -1006,8 +947,8 @@ ParaverTraceTranslator::InitTranslationStructures(
   bool                     GenerateFirstIdle,
   double                   IprobeMissesThreshold,
   INT32                    BurstCounterType,
-  double                   BurstCounterFactor
-)
+  double                   BurstCounterFactor,
+  bool                     GenerateMPIInitBarrier)
 {
   vector<TaskDescription_t> TaskInfo;
   vector<Communicator_t>    TraceCommunicators;
@@ -1129,6 +1070,7 @@ ParaverTraceTranslator::InitTranslationStructures(
                                 BurstCounterGeneration,
                                 BurstCounterType,
                                 BurstCounterFactor,
+                                GenerateMPIInitBarrier,
                                 TemporaryFileName);
     }
     else if (TemporaryFile == NULL)
@@ -1152,6 +1094,7 @@ ParaverTraceTranslator::InitTranslationStructures(
                                 BurstCounterGeneration,
                                 BurstCounterType,
                                 BurstCounterFactor,
+                                GenerateMPIInitBarrier,
                                 TemporaryFileName,
                                 TemporaryFile);
     }

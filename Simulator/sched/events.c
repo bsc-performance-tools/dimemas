@@ -198,7 +198,7 @@ void EVENT_extract_timer (int              module,
 /*
  * Local routines and simulator routines
  */
-void EVENT_init()
+void EVENT_Init()
 {
   if (debug & D_EV)
   {
@@ -212,7 +212,7 @@ void EVENT_init()
 #endif
 }
 
-void EVENT_end()
+void EVENT_End()
 {
   if (debug & D_EV)
   {

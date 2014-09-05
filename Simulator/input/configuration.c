@@ -98,10 +98,10 @@ static FILE *random_conf_file     = NULL;
 /*
  * Configuration elemets that can be overridden per parameter
  */
-static char  *CONFIGURATION_parameter_tracefile = (char*) 0;
-static double CONFIGURATION_parameter_bw;
-static double CONFIGURATION_parameter_lat;
-static int    CONFIGURATION_parameter_predefined_map;
+static char  *CONFIGURATION_parameter_tracefile       = (char*) 0;
+static double CONFIGURATION_parameter_bw              = DBL_MIN;
+static double CONFIGURATION_parameter_lat             = DBL_MIN;
+static int    CONFIGURATION_parameter_predefined_map  = MAP_NO_PREDEFINED;
 static int    CONFIGURATION_parameter_tasks_per_node;
 
 static int    CONFIGURATION_mappings_read   = 0;
@@ -1333,7 +1333,7 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
 
   if (CONFIGURATION_parameter_lat != DBL_MIN)
   {
-    remote_startup = CONFIGURATION_parameter_lat;
+    remote_startup = CONFIGURATION_parameter_lat*1e9;
   }
 
   SIMULATOR_set_node_definition (node_id,
@@ -1735,7 +1735,7 @@ void new_OLD_node_info (struct t_queue *q, struct t_entry* en)
 
   if (CONFIGURATION_parameter_lat != DBL_MIN)
   {
-    remote_startup = CONFIGURATION_parameter_lat;
+    remote_startup = CONFIGURATION_parameter_lat*1e9;
   }
 
   SIMULATOR_set_node_definition (node_id,

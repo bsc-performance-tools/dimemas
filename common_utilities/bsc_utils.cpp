@@ -1,8 +1,8 @@
 /*****************************************************************************\
  *                        ANALYSIS PERFORMANCE TOOLS                         *
- *                                  Dimemas                                  *
- *       Simulation tool for the parametric analysis of the behaviour of     *
- *       message-passing applications on a configurable parallel platform    *
+ *                             ClusteringSuite                               *
+ *   Infrastructure and tools to apply clustering analysis to Paraver and    *
+ *                              Dimemas traces                               *
  *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
@@ -25,38 +25,81 @@
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+  $Id:: Error.cpp 23 2011-05-17 09:47:12Z jgonzal#$:  Id
+  $Rev:: 23                                       $:  Revision of last commit
+  $Author:: jgonzale                              $:  Author of last commit
+  $Date:: 2011-05-17 11:47:12 +0200 (Tue, 17 May #$:  Date of last commit
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef __events_h
-#define __events_h
-/**
- * External routines defined in file events.c
- **/
+#include "bsc_utils"
 
-extern void EVENT_Init(void);
+#include <cstdlib>
 
-extern void EVENT_End(void);
+bool bsc_tools::isDouble(const char* str)
+{
+  char* endptr = 0;
+  strtod(str, &endptr);
 
-extern struct t_event* EVENT_timer(dimemas_timer    when,
-                                   int              daemon,
-                                   int              module,
-                                   struct t_thread *thread,
-                                   int              info);
+  if(*endptr != '\0' || endptr == str)
+  {
+    return false;
+  }
+  return true;
+};
 
-extern void EVENT_extract_timer(int              module,
-                                struct t_thread *thread,
-                                dimemas_timer   *when);
+bool bsc_tools::isDouble(const std::string& str)
+{
+  return bsc_tools::isDouble(str.c_str());
+}
 
+double bsc_tools::getDouble(const char* str)
+{
+  char* endptr = 0;
+  double result = strtod(str, &endptr);
 
-extern t_boolean events_for_thread (struct t_thread *thread);
+  if(*endptr != '\0' || endptr == str)
+  {
+    return 0;
+  }
+  return result;
+};
 
-extern void reload_events(void);
+double bsc_tools::getDouble(const std::string& str)
+{
+  return bsc_tools::getDouble(str.c_str());
+}
 
-extern void event_manager(struct t_event *event);
+bool bsc_tools::isLongInt(const char* str)
+{
+  char *p ;
 
-#endif
+  if(str == NULL || ((!isdigit(str[0])) && (str[0] != '-') && (str[0] != '+'))) return false ;
+
+  strtol(str, &p, 10);
+
+  return (*p == 0);
+}
+
+bool bsc_tools::isLongInt(const std::string& str)
+{
+  return bsc_tools::isLongInt(str.c_str());
+}
+
+long int bsc_tools::getLongInt(const char* str)
+{
+  if (isLongInt(str))
+  {
+    return (str, NULL, 10);
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+long int bsc_tools::getLongInt(const std::string& str)
+{
+  return bsc_tools::getLongInt(str.c_str());
+}
+

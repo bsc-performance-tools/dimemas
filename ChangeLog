@@ -10,6 +10,26 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/09/05 - jgonzale - Simulator | prv2dim - 5.2.8
+	BUGFIX:		The management of parameter '--lat' was incorrect when
+				using the new configuration files
+
+	CHANGES:	Added a barrier synchronization primitive inside each
+				'MPI_Init' call when translating it. Also added the
+				parameter '-s' in the translator to avoid the generation
+				of this synchronization point.
+
+	CHANGES:	Added the 'ezOptionsParser' header to manage the parameters
+				in 'prv2dim'. It is an easy solution to deal with 
+				positional parameters and flags, but does not check the
+				types at all. It is planned to add it to the rest of the
+				package.
+
+	CHANGES:	Added the 'bsc_utils' to check if a string or char pointer
+				codifies a double or a long int, and the corresponding
+				translators. This class could be extended. Other option is
+				to use the C++11 'strtod' and similars.
+
 2014/07/31 - jgonzale - All - 5.2.7
 	CHANGES:	Release 5.2.7
 

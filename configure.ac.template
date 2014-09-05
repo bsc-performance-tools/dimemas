@@ -73,7 +73,7 @@ if test -z "$YACC"; then
   AC_MSG_WARN(bison or yacc not found. Please install bison before continuing) 
   ac_cv_errcount=$((ac_cv_errcount + 1)) 
 fi 
-	 
+
 if test -z "$LEXLIB"; then 
   AC_MSG_WARN(flex or lex not found. Please install flex before continuing) 
   ac_cv_errcount=$((ac_cv_errcount + 1)) 
@@ -234,14 +234,14 @@ dnl ========================================================================
 have_boost="yes"
 BOOST_REQUIRE(1.36,
 [
-  echo "------------------------------------------------------------"
-  echo " Boost libraries not found. 'trf2dim' will not be compiled"
-  echo "------------------------------------------------------------"
-  have_boost="no"
+  AC_MSG_ERROR(Boost libraries not found. Please install them or point its
+               location by using '--with-boost')
 ]
 )
 
 AM_CONDITIONAL(HAVE_BOOST, test x$have_boost = xyes)
+
+
 
 dnl =======================================================================
 dnl Java checks
@@ -450,18 +450,18 @@ dnl =======================================================================
 echo "
   $PACKAGE_NAME version $PACKAGE_VERSION
 
-  IBM Venus Module Enabled.......: ${venus_enabled:-no}
-  Simulation Time Limit..........: ${time_limit} nanoseconds
+  IBM Venus Module Enabled.........: ${venus_enabled:-no}
+  Simulation Time Limit............: ${time_limit} nanoseconds
 
-  Installation Prefix............: $prefix
-  C Compiler Flags...............: $CFLAGS
-  C++ Compiler Flags.............: $CXXFLAGS $CPPFLAGS
-  Linker flags...................: ${LDFLAGS:-none}
-  Required libraries.............: ${LIBS:-}
+  Installation Prefix..............: $prefix
+  C Compiler Flags.................: $CFLAGS
+  C++ Compiler Flags...............: $CXXFLAGS $CPPFLAGS
+  Linker flags.....................: ${LDFLAGS:-none}
+  Required libraries...............: ${LIBS:-}
 
-  Java VM........................: ${JAVA:-none}
-  Java Compiler..................: ${JAVAC:-none} $JAVACFLAGS
-  Jar Utility....................: ${JAR:-none} $JARFLAGS
-  Boost Includes.................: ${have_boost:-default} $BOOST_CPPFLAGS
+  Java VM..........................: ${JAVA:-none}
+  Java Compiler....................: ${JAVAC:-none} $JAVACFLAGS
+  Jar Utility......................: ${JAR:-none} $JARFLAGS
+  Boost Includes...................: ${have_boost:-default} $BOOST_CPPFLAGS
 "
 

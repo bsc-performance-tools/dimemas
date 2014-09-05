@@ -149,13 +149,13 @@ typedef char    p_ids;
 
 extern void PARAVER_Enable_Trace_Generation (void);
 
-extern void PARAVER_init(const char   *output_paraver_trace,
+extern void PARAVER_Init(const char   *output_paraver_trace,
                          const char   *pcf_name,
                          dimemas_timer paraver_start_time,
                          dimemas_timer paraver_end_time,
                          t_boolean     paraver_priorities);
 
-extern void PARAVER_end(void);
+extern void PARAVER_End(void);
 
 /* Hints to avoid 'over-collapsing' of events */
 extern void PARAVER_Start_Op (int cpu, int ptask, int task, int thread,

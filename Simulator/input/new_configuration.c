@@ -56,15 +56,15 @@
 static int   current_line;
 static char *error_message;
 
-static char      *NEW_CONFIGURATION_parameter_tracefile = (char*) 0;
-static double     NEW_CONFIGURATION_parameter_bw;
-static double     NEW_CONFIGURATION_parameter_lat;
-static int        NEW_CONFIGURATION_parameter_predefined_map;
-static int        NEW_CONFIGURATION_parameter_tasks_per_node;
+static char   *NEW_CONFIGURATION_parameter_tracefile      = (char*) 0;
+static double  NEW_CONFIGURATION_parameter_bw             = DBL_MIN;
+static double  NEW_CONFIGURATION_parameter_lat            = DBL_MIN;
+static int     NEW_CONFIGURATION_parameter_predefined_map = MAP_NO_PREDEFINED;
+static int     NEW_CONFIGURATION_parameter_tasks_per_node;
 
 
-static int        NEW_CONFIGURATION_mappings_read   = 0;
-t_boolean         NEW_CONFIGURATION_old_nodes_defined = FALSE;
+static int     NEW_CONFIGURATION_mappings_read   = 0;
+t_boolean      NEW_CONFIGURATION_old_nodes_defined = FALSE;
 
 /*
  * Private function definitions
@@ -122,6 +122,7 @@ t_boolean NEW_CONFIGURATION_parse(FILE  *configuration_file,
   {
     NEW_CONFIGURATION_parameter_tracefile = strdup(parameter_tracefile);
   }
+
   NEW_CONFIGURATION_parameter_bw             = parameter_bw;
   NEW_CONFIGURATION_parameter_lat            = parameter_lat;
   NEW_CONFIGURATION_parameter_predefined_map = parameter_predefined_map;
