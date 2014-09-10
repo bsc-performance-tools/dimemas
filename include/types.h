@@ -79,6 +79,7 @@ typedef struct
 
 #else   /* !PACA */
 typedef double  dimemas_timer;
+//stypedef unsigned long long dimemas_timer;
 #endif  /* PACA */
 
 typedef int Equeue;

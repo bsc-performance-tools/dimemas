@@ -42,7 +42,7 @@ using std::string;
 typedef unsigned long long prv_time_t;
 
 #define TIMER_TO_PRV_TIME_T(x,y) \
-        y = static_cast<unsigned long long> (TIMER_TO_DOUBLE(x))
+        y = static_cast<unsigned long long> (round(TIMER_TO_DOUBLE(x)))
 
 /*
  * Class to store the ASCII records before flushing them to disc

@@ -36,6 +36,8 @@
 extern "C" {
 #endif
 
+#include <math.h>
+
 #include <EventEncoding.h>
 
 #include <define.h>
@@ -920,6 +922,7 @@ void NewState(int cpu, int ptask, int task, int thread,
     SUB_TIMER (init_time, start_paraver, init_time);
     SUB_TIMER (end_time,  start_paraver, end_time);
   }
+
 
   TIMER_TO_PRV_TIME_T (init_time, init_prv);
   TIMER_TO_PRV_TIME_T (end_time,  end_prv);

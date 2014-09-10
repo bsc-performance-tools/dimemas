@@ -38,6 +38,7 @@
  *
  */
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>

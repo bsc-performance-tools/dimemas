@@ -417,10 +417,10 @@
         x = (y)
 
 #define PRINT_TIMER(x) \
-        printf("%.9f",x/1e9)
+        printf("%.9f", round (x) /1e9)
 
 #define FPRINT_TIMER(x,y) \
-        fprintf (x,"%.9f",y/1e9)
+        fprintf (x,"%.9f",round (y) / 1e9)
 
 #define OUT_OF_LIMIT(x) \
         (x > TIME_LIMIT)
