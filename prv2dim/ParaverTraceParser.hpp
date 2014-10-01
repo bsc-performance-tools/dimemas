@@ -40,6 +40,9 @@ using std::string;
 using std::vector;
 
 #include <stdio.h>
+// Required for 'off_t' in modern GNU compilers 
+#include <sys/types.h>
+
 #include "ParaverRecord.hpp"
 #include "ParaverHeader.hpp"
 

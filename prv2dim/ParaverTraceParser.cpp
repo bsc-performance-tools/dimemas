@@ -52,33 +52,28 @@ using std::endl;
 ParaverTraceParser::ParaverTraceParser(string ParaverTraceName,
                                        FILE* ParaverTraceFile)
 {
-  if (ParaverTraceFile != NULL)
-  {
-    this->ParaverTraceFile = ParaverTraceFile;
-    this->ParaverTraceName = ParaverTraceName;
-    return;
-  }
 
-  if ( (ParaverTraceFile = fopen(ParaverTraceName.c_str(), "r")) == NULL)
-  {
-    SetError(true);
-    SetErrorMessage("Unable to open Paraver trace", strerror(errno));
-    return;
-  }
 
   this->ParaverTraceName = ParaverTraceName;
 
+  if (ParaverTraceFile != NULL)
+  {
+    this->ParaverTraceFile = ParaverTraceFile;
+  }
+  else
+  {
+    if ( (ParaverTraceFile = fopen(ParaverTraceName.c_str(), "r")) == NULL)
+    {
+      SetError(true);
+      SetErrorMessage("Unable to open Paraver trace", strerror(errno));
+      return;
+    }
+  }
+
   CurrentLine        = 1;
   ParsingInitialized = false;
+  return;
 
-  /* Now disabled
-  if ( (DimemasTraceFile = fopen(DimemasTraceName.c_str(), "w")) == NULL)
-  {
-    Error     = true;
-    SetErrorMessage("Unable to create Dimemas trace", strerror(errno));
-    return;
-  }
-  */
 }
 
 bool ParaverTraceParser::InitTraceParsing(void)
@@ -96,6 +91,7 @@ bool ParaverTraceParser::InitTraceParsing(void)
 
   if (fstat(fileno(ParaverTraceFile), &FileStat) < 0)
   {
+    SetError(true);
     SetErrorMessage("Error reading Paraver trace statistics",
                     strerror(errno));
     return false;
@@ -104,6 +100,7 @@ bool ParaverTraceParser::InitTraceParsing(void)
 
   if (fseeko(ParaverTraceFile, 0, SEEK_SET) == -1)
   {
+    SetError(true);
     SetErrorMessage("Error locating header position",
                     strerror(errno));
     return false;
@@ -111,6 +108,7 @@ bool ParaverTraceParser::InitTraceParsing(void)
 
   if ( (HeaderLength = GetLongLine(&StrHeader)) < 0 )
   {
+    SetError(true);
     SetErrorMessage("Error reading Paraver header",
                     strerror(errno));
     return false;
@@ -128,12 +126,14 @@ bool ParaverTraceParser::InitTraceParsing(void)
 
   if (Header->GetError())
   {
+    SetError(true);
     LastError = Header->GetLastError();
     return false;
   }
 
   if (fseeko (ParaverTraceFile, FirstCommunicatorOffset, SEEK_SET) == -1)
   {
+    SetError(true);
     SetErrorMessage("Unable to seek on first communicator",
                     strerror(errno));
     return false;
@@ -266,6 +266,7 @@ bool ParaverTraceParser::Reload(void)
 
   if (fseeko (ParaverTraceFile, FirstRecordOffset, SEEK_SET) == -1)
   {
+    SetError(true);
     SetErrorMessage("Unable to seek on first record",
                     strerror(errno));
     return false;

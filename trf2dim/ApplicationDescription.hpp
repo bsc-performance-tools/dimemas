@@ -47,6 +47,8 @@ using std::endl;
 using std::vector;
 
 #include <cstdio>
+// Required for 'off_t' in modern GNU compilers 
+#include <sys/types.h>
 
 /*****************************************************************************
  * class TaskDescription
