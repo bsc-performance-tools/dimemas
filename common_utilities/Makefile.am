@@ -17,9 +17,14 @@ libCommonUtilities_la_SOURCES = \
 	EventEncoding.c \
 	EventEncoding.h \
 	ParaverColors.h \
-	error.c \
-	error.h \
+	generate_error.c \
+	generate_error.h \
+	bsc_utils.hpp \
 	bsc_utils.cpp \
 	ezOptionParser.hpp
 
-EXTRA_DIST = bsc_utils	
+if OPEN_MEMSTREAM_MISSING
+libCommonUtilities_la_SOURCES += open_memstream.c\
+	verify.h
+endif
+

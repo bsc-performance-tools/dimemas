@@ -2,7 +2,7 @@
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                               Dimemas GUI                                 *
  *                  GUI for the Dimemas simulation tool                      *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -53,7 +53,7 @@ import java.awt.event.*;
 public class AboutWindow extends JFrame implements ActionListener
 {
   public static final long serialVersionUID = 1L;
-  
+
   private JButton b_close = createButton("Close");
   private Container panelPrincipal = getContentPane();
 
@@ -94,7 +94,7 @@ public class AboutWindow extends JFrame implements ActionListener
       new JLabel(
         "DIMEMAS is a performance analysis tool for message passing",
         JLabel.CENTER));
-    
+
     panel.add(
       new JLabel(
         "programs.  It is designed,  developed  and  maintained  by  the",
@@ -106,11 +106,11 @@ public class AboutWindow extends JFrame implements ActionListener
         JLabel.CENTER));
 
     panel.add(new JLabel(""));
-    
+
     panel.add(new JLabel("Contact:  tools@bsc.es",JLabel.CENTER));
 
     panel.add(new JLabel(""));
-    
+
     return panel;
   }
 
@@ -121,11 +121,11 @@ public class AboutWindow extends JFrame implements ActionListener
     setTitle("About DIMEMAS");
     setResizable(false);
     setLocation(200,200);
-    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource(Data.ICON_IMAGE)));
+    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource(Data.BSC_LOGO)));
     panelPrincipal.setLayout(new BorderLayout());
 
     // Se añaden los elementos de la ventana.
-    panelPrincipal.add("North",new JLabel(new ImageIcon(getClass().getClassLoader().getResource(Data.ICON_IMAGE))));
+    panelPrincipal.add("North",new JLabel(new ImageIcon(getClass().getClassLoader().getResource(Data.BSC_LOGO))));
     panelPrincipal.add("Center",aboutPanel());
     panelPrincipal.add("South",b_close);
 

@@ -4,7 +4,8 @@ defaults_FILES= \
   defaults/Dimemas \
   defaults/Gui \
   defaults/header.txt \
-  defaults/icon.jpg \
+  defaults/bsc_logo.jpg \
+  defaults/dimemas_icon.png \
   defaults/machines.db \
   defaults/Makefile.sources \
   defaults/networks.db

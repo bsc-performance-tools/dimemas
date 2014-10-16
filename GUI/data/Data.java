@@ -60,7 +60,8 @@ public class Data
   public String instrumentedArchitecture = "";
 
   // Files included in the 'resource' directory of the JAR file
-  static public final String  ICON_IMAGE              = "resources/icon.jpg";
+  static public final String  ICON_IMAGE              = "resources/dimemas_icon.png";
+  static public final String  BSC_LOGO                = "resources/bsc_logo.jpg";
   static public final String  RECORDS_DEFINITION_FILE = "resources/records_definition.txt";
   // static public boolean       UNDEFINED_HOME  = false;
   // static public final String  HOME            = os();
@@ -70,27 +71,27 @@ public class Data
   // 'Magic numbers' of the two Dimemas configuration files versions
   static final public String SDDFA_MAGIC       = "SDDFA";
   static final public String DIMEMAS_CFG_MAGIC = "#DIMEMAS_CONFIGURATION";
-  
+
   // To check type of configuration file loaded
   static public final int NO_CFG_LOADED = -1;
   static public final int SDDFA         = 0;
   static public final int DIMEMAS_CFG   = 1;
   int ConfigurationFileType = Data.NO_CFG_LOADED;
-  
+
   // Mapping constants
   static public final int NO_MAP                = -1;
   static public final int UNKNOWN_MAP           =  0;
   static public final int FILL_NODE_MAP         =  1;
   static public final int N_TASKS_PER_NODE_MAP  =  2;
   static public final int INTERLEAVE_MAP        =  3;
-  
+
   static public final int NO_TASKS_DETECTED     = -1;
-  
+
   // Mapping constants strings
   public static final String FILL_NODE_MAP_STR        = "FILL_NODES";
   public static final String N_TASKS_PER_NODE_MAP_STR = "TASKS_PER_NODE";
   public static final String INTERLEAVE_MAP_STR       = "INTERLEAVED";
-  
+
   // Número de elementos que componen las COLLECTIVE OPERATIONS.
   static public final int DEFAULT_MPI_ITEMS = 14;
 
@@ -116,15 +117,15 @@ public class Data
   public FileSystemData          fileSys           = new FileSystemData();
   public SimulatorCallData       simOptions        = new SimulatorCallData();
   public BlockData               block             = new BlockData();
-  
+
   // To check if there are multiple mappings defined on the configuration file
   int MapsOnDisk = 0;
-  
+
   // To check if multiple 'wan definition' records appear on the trace
   boolean wan_defined = false;
-  
-  
-  
+
+
+
   /*
   * El método os genera una cadena con el path correcto para llegar a los
   * ficheros requeridos.
@@ -165,7 +166,7 @@ public class Data
     {
       return System.getProperty("user.home") + "/.DIMEMAS_defaults/";
     }
-    
+
   }
   */
   // Constructor de la clase Data.
@@ -177,9 +178,9 @@ public class Data
   }
 
   public static boolean checkConfigurationFiles()
-  {  
+  {
     /* Check if the application ICON and the RECORDS_DEFINITION file are
-     * available */  
+     * available */
 
     return true;
   }
@@ -337,19 +338,19 @@ public class Data
     try
     {
       source = new RandomAccessFile(new File(filename),"r");
-      
+
       if (source.length() == 0)
       {
         Tools.showInformationMessage("The configuration file selected is empty");
         return;
       }
-     
+
       // Check file type
       line = source.readLine();
       lineCount++;
       seek     = source.getFilePointer();
       lineSeek = lineCount;
-      
+
       if(!validFile)
       {
         if(line.equalsIgnoreCase(Data.SDDFA_MAGIC) || line.equalsIgnoreCase(Data.DIMEMAS_CFG_MAGIC))
@@ -364,7 +365,7 @@ public class Data
           config.initialValues();
           fileSys.initialValues();
           block.destroyFactors();
-          
+
           if (line.equalsIgnoreCase(Data.SDDFA_MAGIC))
           {
             ConfigurationFileType = Data.SDDFA;
@@ -379,9 +380,9 @@ public class Data
           Tools.showInformationMessage("The file you selected is not a valid Dimemas configuration file");
           return;
         }
-        
-        /* Now, the configuration file must always have the magic number 
-         * at the very beginning 
+
+        /* Now, the configuration file must always have the magic number
+         * at the very beginning
         else if(!Tools.blanks(line).equalsIgnoreCase(""))
         {
           Tools.showInformationMessage("The file you selected is not a valid Dimemas configuration file");
@@ -392,7 +393,7 @@ public class Data
 
       /* Traverse the possible SDDF definition records or DIMEMAS_CONFIGURATION
        * records description */
-      
+
       line = source.readLine().trim();
       while(source.getFilePointer() != source.length())
       {
@@ -462,7 +463,7 @@ public class Data
       {
         line = source.readLine().trim();
         lineCount++;
-        
+
         if(line.startsWith(WAN))              // Datos de WAN.
         {
           if (!wan_defined)
@@ -498,7 +499,7 @@ public class Data
           }
         }
         else if(line.startsWith(ENVIRONMENT)) // Datos de MACHINES.
-        {        
+        {
           environment.setNumberOfMachines(Integer.parseInt(wan.getMachines()));
 
           if(instrumentedArchitecture.equalsIgnoreCase(""))
@@ -555,7 +556,7 @@ public class Data
           // nodes_information.createNodes(environment,machineDB.machine);
           nodes_information.createNodes(environment);
 
-          /* JGG (10/01/2014): This assumes that all node definitions come 
+          /* JGG (10/01/2014): This assumes that all node definitions come
              consecutive, change to line by line load!
           for(int i = 0; i < nodes_information.getNumberOfNodes(); i++)
           {
@@ -595,7 +596,7 @@ public class Data
               malformedFile = true;
             }
           }
-          
+
           MapsOnDisk++;
         }
         else if (line.startsWith(PREDEF_MAP))
@@ -607,7 +608,7 @@ public class Data
               malformedFile = true;
             }
           }
-          
+
           MapsOnDisk++;
         }
         else if(line.startsWith(CONFIG))      // Datos de EXTRA CONFIG FILES.
@@ -670,7 +671,7 @@ public class Data
         Tools.showInformationMessage("Current configuration file has multiple applications defined.\n\n"+
                                      "Only first application will be loaded");
       }
-      
+
       for (int i = environment.getNumberOfMachines()-1; i >= 0; i--)
       {
         // Los nodos de una máquina tendrán su misma arquitectura.
@@ -714,23 +715,23 @@ public class Data
     RandomAccessFile target;
 
     String cfgCheckResult = checkCorrectConfiguration();
-    
+
     if (cfgCheckResult != null)
     {
       Tools.showErrorDialog(cfgCheckResult+"\n\n"+
                             "Configuration file won't be saved");
       return false;
     }
-    
+
     try
     {
       // source = new RandomAccessFile(new File(HEADER_FILE),"r");
       target = new RandomAccessFile(new File(filename),"rw");
       target.setLength(0);
       InputStream is = getClass().getClassLoader().getResourceAsStream(Data.RECORDS_DEFINITION_FILE);
-      
+
       target.writeBytes(Data.DIMEMAS_CFG_MAGIC+"\n\n");
-      
+
       if (is == null)
       {
         Tools.showInformationMessage("Unable to open record description file, it won't be included in configuration file\n"+
@@ -833,23 +834,23 @@ public class Data
       Tools.showErrorDialog("Error creating default values, configuration file not written\n"+exc.toString());
       return false;
     }
-    
-    
+
+
     return true;
   }
-  
+
   private String checkCorrectConfiguration()
   {
     if (nodes_information.getNumberOfNodes() == 0)
     {
       return "No nodes defined in current machine!";
     }
-    
+
     if (map.getMapInfo() == Data.NO_MAP)
     {
       return "No tasks mapping defined!";
     }
-    
+
     return null;
   }
 }

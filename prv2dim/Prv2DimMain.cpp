@@ -44,7 +44,7 @@ using std::endl;
 
 #include <ezOptionParser.hpp>
 
-#include <bsc_utils>
+#include <bsc_utils.hpp>
 #include "ParaverTraceTranslator.hpp"
 #include "PCFGeneration.hpp"
 
@@ -230,6 +230,7 @@ bool ReadArgsNew(const int argc, const char *argv[])
 
     if (bsc_tools::isLongInt(Values[0]))
     {
+      cout << "'-b' Values[0] = " << Values[0] << endl;
       BurstCounterType = (INT32) bsc_tools::getLongInt(Values[0]);
     }
     else
@@ -247,6 +248,9 @@ bool ReadArgsNew(const int argc, const char *argv[])
       std::cerr << "ERROR: Got invalid argument \"" << Values[1] << "\" for option \"-b\".\n\n";
       return false;
     }
+
+    cout << "BurstCounterType = " << BurstCounterType << endl;
+    cout << "BurstCounterFactor = " << BurstCounterFactor << endl;
   }
 
   if (opt.lastArgs.size() != 2) {

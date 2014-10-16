@@ -42,6 +42,7 @@ package tools;
  * @version 1.0
  */
 
+import org.apache.commons.io.FilenameUtils;
 import java.awt.*;
 import javax.swing.*;
 
@@ -55,21 +56,12 @@ public class Tools
   {
     public boolean accept(java.io.File file)
     {
-      String extension = "";
-
-      if(file.getPath().lastIndexOf('.') > 0)
+      if (file.isDirectory())
       {
-        extension = file.getPath().substring(file.getPath().lastIndexOf('.')+1).toLowerCase();
+        return true;
       }
 
-      if(extension != "")
-      {
-        return extension.equals("cfg");
-      }
-      else
-      {
-        return file.isDirectory();
-      }
+      return FilenameUtils.getExtension(file.getPath()).equals("cfg");
     }
 
     public String getDescription()
@@ -84,21 +76,13 @@ public class Tools
   {
     public boolean accept(java.io.File file)
     {
-      String extension = "";
-
-      if(file.getPath().lastIndexOf('.') > 0)
+      if (file.isDirectory())
       {
-        extension = file.getPath().substring(file.getPath().lastIndexOf('.')+1).toLowerCase();
+        return true;
       }
 
-      if(extension != "")
-      {
-        return extension.equals("out");
-      }
-      else
-      {
-        return file.isDirectory();
-      }
+      return FilenameUtils.getExtension(file.getPath()).equals("out");
+
     }
 
     public String getDescription()
@@ -112,21 +96,12 @@ public class Tools
   {
     public boolean accept(java.io.File file)
     {
-      String extension = "";
-
-      if(file.getPath().lastIndexOf('.') > 0)
+      if (file.isDirectory())
       {
-        extension = file.getPath().substring(file.getPath().lastIndexOf('.')+1).toLowerCase();
+        return true;
       }
 
-      if(extension != "")
-      {
-        return extension.equals("opt");
-      }
-      else
-      {
-        return file.isDirectory();
-      }
+      return FilenameUtils.getExtension(file.getPath()).equals("opt");
     }
 
     public String getDescription()
@@ -140,21 +115,12 @@ public class Tools
   {
     public boolean accept(java.io.File file)
     {
-      String extension = "";
-
-      if(file.getPath().lastIndexOf('.') > 0)
+      if (file.isDirectory())
       {
-        extension = file.getPath().substring(file.getPath().lastIndexOf('.')+1).toLowerCase();
+        return true;
       }
 
-      if(extension != "")
-      {
-        return extension.equals("dim");
-      }
-      else
-      {
-        return file.isDirectory();
-      }
+      return FilenameUtils.getExtension(file.getPath()).equals("dim");
     }
 
     public String getDescription()
@@ -468,5 +434,5 @@ public class Tools
         return "MAX";
       }
     }
-  }  
+  }
 }

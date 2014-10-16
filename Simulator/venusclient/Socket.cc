@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -40,6 +40,12 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+
+#if defined(__APPLE__) || defined(__MACH__)
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL SO_NOSIGPIPE
+#endif
+#endif
 
 Socket::Socket() :
   m_sock ( -1 )

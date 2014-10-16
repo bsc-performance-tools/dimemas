@@ -10,6 +10,20 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/10/16 - jgonzale - GUI
+	BUGFIX:		Solved the bug that prevente the selection of directorios
+				with dots in the name. I added the Apache 'commons-io' to
+				easily extract file extensions.
+
+	CHANGES:	Modified the packaging of the GUI, now the .jar, plus the
+				'commons-io' jar are installed in $DIMEMAS_HOME/lib/GUI.
+
+	CHANGES:	Added the first version of the new BSC tools icons :)
+
+2014/10/16 - jgonzale - prv2dim
+	BUGFIX:		Fixed a regression introduced in 5.2.9 when parsing '-b'
+				parameter. It was located at 'bsc_utils.cpp'
+
 2014/10/01 - jgonzale - prv2dim - 5.2.9
 	CHANGES:	Release 5.2.9
 

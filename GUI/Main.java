@@ -40,7 +40,7 @@
  * @version 1.0
  */
 
-import gui.*; 
+import gui.*;
 import data.Data;
 import javax.swing.*;
 import java.awt.*;
@@ -59,7 +59,7 @@ public class Main extends JFrame
   {
     super("DIMEMAS");
 
-    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource((Data.ICON_IMAGE))));          
+    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource((Data.ICON_IMAGE))));
     setResizable(false);
     setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 

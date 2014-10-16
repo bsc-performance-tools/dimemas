@@ -33,12 +33,8 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #include <stdio.h>
+#include <float.h>
 
-#if defined(OS_MACOSX) || defined(OS_CYGWIN)
-#include "macosx_limits.h"
-#else
-#include <values.h>
-#endif
 
 #include "define.h"
 #include "types.h"
@@ -111,8 +107,8 @@ double RANDOM_GenerateRandom(struct t_rand_type *rt)
   {
     case NORMAL_DISTRIBUTION:
       result =  ((double)rnorm((float) rt->parameters.normal.mean,
-                               (float) -MAXINT,
-                               (float)  MAXINT,
+                               (float) -INT_MAX,
+                               (float)  INT_MAX,
                                (float) rt->parameters.normal.stdev));
       return result;
     case UNIFORM_DISTRIBUTION:

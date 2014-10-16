@@ -1,6 +1,6 @@
 #!/bin/sh
 #export DIMEMAS_HOME=
-export DIMEMAS_GUI_JAR=$DIMEMAS_HOME/bin/@@JARFILE@@
+export DIMEMAS_GUI_JAR=$DIMEMAS_HOME/lib/GUI/@@JARFILE@@
 
 if [ -z $DIMEMAS_HOME ] ; then
 	echo "Please set DIMEMAS_HOME to the Dimemas installation root directory"
@@ -19,5 +19,4 @@ else
     exit 1
 fi
 
-
-$JAVA_BIN -jar -DDIMEMAS_HOME=$DIMEMAS_HOME $DIMEMAS_GUI_JAR >/dev/null
+$JAVA_BIN -DDIMEMAS_HOME=$DIMEMAS_HOME -jar $DIMEMAS_GUI_JAR >/dev/null

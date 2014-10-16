@@ -32,7 +32,7 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include "bsc_utils"
+#include "bsc_utils.hpp"
 
 #include <cstdlib>
 
@@ -90,7 +90,7 @@ long int bsc_tools::getLongInt(const char* str)
 {
   if (isLongInt(str))
   {
-    return (str, NULL, 10);
+    return strtol(str, NULL, 10);
   }
   else
   {

@@ -21,7 +21,7 @@
             "system"
   4: int    "function that models influence of traffic in the non dedicated"
             "network."
-            "OPTION: 1 EXPONENTIAl, 2 LOGARITHMIC, 3 LINEAR, 4 CONSTANT"
+            "options: 1 EXPONENTIAl, 2 LOGARITHMIC, 3 LINEAR, 4 CONSTANT"
   5: double "maximal value of traffic in the network"
   6: double "external net bandwidth (MBps)"
   7: int    "external network collective communications model"

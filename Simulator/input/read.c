@@ -57,11 +57,7 @@
 #include "yacc.h"
 #include "paraver.h"
 
-#if defined(OS_MACOSX) || defined(OS_CYGWIN)
-#include "macosx_limits.h"
-#else
-#include <values.h> /* Ho necessito per la constant MAXDOUBLE */
-#endif
+#include <float.h>
 #include <math.h>   /* Per l'arrel quadrada */
 
 struct t_Ptask        *Ptask_current;
@@ -576,8 +572,8 @@ void calculate_execution_end_time()
   bzero(totals,sizeof(double)*NUM_COLS_EST*NUM_ESTADISTICS); \
   for(i=0;i<NUM_COLS_EST;i++) \
   { \
-    totals[i][SP_MIN_INDEX]=MAXDOUBLE; \
-    totals[i][SP_MAX_INDEX]=-MAXDOUBLE; \
+    totals[i][SP_MIN_INDEX]=DBL_MAX; \
+    totals[i][SP_MAX_INDEX]=-DBL_MAX; \
   } \
 }
 

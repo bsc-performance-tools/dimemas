@@ -40,6 +40,7 @@
 #include <float.h>
 
 #include <list.h>
+#include <generate_error.h>
 
 #include "sddf_records.h"
 #include "configuration.h"

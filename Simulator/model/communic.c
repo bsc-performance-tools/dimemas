@@ -38,11 +38,7 @@
 #include <assert.h>
 #include <dlfcn.h>
 
-#if defined(OS_MACOSX) || defined(OS_CYGWIN)
-#include <macosx_limits.h>
-#else
-#include <values.h>
-#endif
+#include <float.h>
 #include <math.h>
 
 #include "communic.h"

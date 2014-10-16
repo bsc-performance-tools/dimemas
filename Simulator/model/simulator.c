@@ -36,7 +36,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <error.h>
+#include <generate_error.h>
 #include <list.h>
 
 #include "dimemas_io.h"

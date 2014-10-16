@@ -228,6 +228,13 @@ AC_CHECK_LIB([m],[sqrt])
 AC_CHECK_LIB([dl],[dlopen])
 
 dnl ========================================================================
+dnl Check availability of 'open_memstream' and 'funopen'
+dnl ========================================================================
+AC_CHECK_FUNCS(open_memstream funopen)
+AC_CHECK_FUNC(open_memstream, have_open_memstream=yes, have_open_memstream=no)
+AM_CONDITIONAL(OPEN_MEMSTREAM_MISSING, test x$have_open_memstream = xno)
+
+dnl ========================================================================
 dnl BOOST
 dnl ========================================================================
 

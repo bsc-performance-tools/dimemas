@@ -37,14 +37,9 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include <float.h>
 
 #include <EventEncoding.h>
-
-#if defined(OS_MACOSX) || defined(OS_CYGWIN)
-#include "macosx_limits.h"
-#else
-#include <values.h>
-#endif
 
 #include "define.h"
 #include "types.h"
