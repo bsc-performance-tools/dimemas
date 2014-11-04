@@ -34,7 +34,7 @@ include tools/Makefile.sources
 #include defaults/Makefile.sources
 
 
-dist_noinst_DATA = manifest.mf DimemasGUI.in resources/bsc_logo.jpg resources/dimemas_icon.png resources/records_definition.txt
+dist_noinst_DATA = manifest.mf DimemasGUI.in resources/bsc_logo.jpg resources/dimemas_icon.png resources/records_definition.txt lib/commons-io-2.4.jar
 
 # The sleep command is to guarantee the compilation before the packaging
 
