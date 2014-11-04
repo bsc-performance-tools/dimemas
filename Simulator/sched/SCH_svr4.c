@@ -118,7 +118,7 @@ static tsdpent_t           config_ts_dptbl[] = {
 
 static svr4_t sch_svr4_params[MAX_MACHINES];
 
-#define SCH_SVR4_PARAMS sch_svr4_params[machine->id-1]
+#define SCH_SVR4_PARAMS sch_svr4_params[machine->id]
 
 #include "simulator.h"
 #include "machine.h"

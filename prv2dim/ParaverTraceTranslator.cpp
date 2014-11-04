@@ -863,7 +863,9 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     cout << endl;
   }
 
-  if (TotalMPIInitBarriersWritten != TranslationInfo.size() && GenerateMPIInitBarrier)
+  if (TotalMPIInitBarriersWritten != 0 &&
+      TotalMPIInitBarriersWritten != TranslationInfo.size() &&
+      GenerateMPIInitBarrier)
   {
     cout << "********************************************************************************" << endl;
     cout << "*                               ERROR                                          *" << endl;

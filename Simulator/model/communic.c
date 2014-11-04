@@ -982,10 +982,10 @@ double external_network_general_traffic (dimemas_timer temps)
 {
   double traffic;
 
-  fprintf (stderr, "\nFunction disabled (external_network_general_traffic) because of compilation problem - Vladimir,14-07-2009!\n\n");
+  // fprintf (stderr, "\nFunction disabled (external_network_general_traffic) because of compilation problem - Vladimir,14-07-2009!\n\n");
 
-  exit (EXIT_FAILURE);
-  return 0;
+  // exit (EXIT_FAILURE);
+  // return 0;
 
   /* traffic = (sin(aux * 2 * M_PI) + 1) / 2; /* Aqui traffic esta entre 0 i 1
   /* Aquesta funcio ha de retornar un numero entre 0 i
@@ -1028,6 +1028,7 @@ double external_network_general_traffic (dimemas_timer temps)
 //   }
 //  return(traffic);
 
+  return 0;
 
 }
 
@@ -4743,8 +4744,9 @@ void transferencia (long long int                  size,
       temps = (bandw * size);
 
       node_partner = get_node_of_task (task_partner);
+
       temps +=
-        Simulator.wan.flight_times[node->machine->id-1][node_partner->machine->id-1];
+        Simulator.wan.flight_times[node->machine->id][node_partner->machine->id];
 
       /* Es calcula el temps d'utilització dels recursos amb l'ample
          de banda maxim possible */
@@ -6261,7 +6263,7 @@ static void calcula_maxim_flight_times (struct t_thread *thread,
 
   node         = get_node_of_thread (thread);
   machine      = node->machine;
-  index_origen = machine->id - 1;
+  index_origen = machine->id;
 
   max_flight_in  = 0;
   max_flight_out = 0;
@@ -6280,9 +6282,9 @@ static void calcula_maxim_flight_times (struct t_thread *thread,
 
     /* S'agafen els flight times */
     flight_time_in  =
-      Simulator.wan.flight_times[machine->id-1][index_origen];
+      Simulator.wan.flight_times[machine->id][index_origen];
     flight_time_out =
-      Simulator.wan.flight_times[index_origen][machine->id-1];
+      Simulator.wan.flight_times[index_origen][machine->id];
 
     /* S'agafen els maxims */
     if (flight_time_in > max_flight_in)

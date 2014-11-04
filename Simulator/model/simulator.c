@@ -262,6 +262,7 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
 
   /* Flight times matrix */
   Simulator.wan.flight_times = (double**) malloc(number_of_machines*sizeof(double*));
+
   for (i = 0; i < number_of_machines; i++)
   {
     Simulator.wan.flight_times[i] = (double*) malloc (number_of_machines*sizeof(double));

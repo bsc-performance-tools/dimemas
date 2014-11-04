@@ -40,9 +40,7 @@
 		<Unit filename="GUI/data/DedicatedConnectionData.java" />
 		<Unit filename="GUI/data/EnvironmentData.java" />
 		<Unit filename="GUI/data/FileSystemData.java" />
-		<Unit filename="GUI/data/MachineDataBase.java" />
 		<Unit filename="GUI/data/MappingData.java" />
-		<Unit filename="GUI/data/NetworkDataBase.java" />
 		<Unit filename="GUI/data/Node.java" />
 		<Unit filename="GUI/data/NodeData.java" />
 		<Unit filename="GUI/data/SimulatorCallData.java" />
@@ -59,16 +57,13 @@
 		<Unit filename="GUI/gui/FlightTimeWindow.java" />
 		<Unit filename="GUI/gui/GUIWindow.java" />
 		<Unit filename="GUI/gui/InitialMachineWindow.java" />
-		<Unit filename="GUI/gui/MachineDBAddWindow.java" />
-		<Unit filename="GUI/gui/MachineDBWindow.java" />
-		<Unit filename="GUI/gui/MappingWindow.java" />
-		<Unit filename="GUI/gui/NetworkDBAddWindow.java" />
-		<Unit filename="GUI/gui/NetworkDBWindow.java" />
 		<Unit filename="GUI/gui/NodeWindow.java" />
 		<Unit filename="GUI/gui/OptionsMenu.java" />
 		<Unit filename="GUI/gui/ResultsWindow.java" />
 		<Unit filename="GUI/gui/SimulatorCallWindow.java" />
 		<Unit filename="GUI/gui/WideAreaNetworkWindow.java" />
+		<Unit filename="GUI/resources/header.txt" />
+		<Unit filename="GUI/resources/records_definition.txt" />
 		<Unit filename="GUI/tools/Tools.java" />
 		<Unit filename="Simulator/Dimemas_updateCFGs.cpp" />
 		<Unit filename="Simulator/eee_model/eee_communic.c">
@@ -270,8 +265,8 @@
 		</Unit>
 		<Unit filename="common_utilities/EventEncoding.h" />
 		<Unit filename="common_utilities/ParaverColors.h" />
-		<Unit filename="common_utilities/bsc_utils" />
 		<Unit filename="common_utilities/bsc_utils.cpp" />
+		<Unit filename="common_utilities/bsc_utils.hpp" />
 		<Unit filename="common_utilities/error.c">
 			<Option compilerVar="CC" />
 		</Unit>

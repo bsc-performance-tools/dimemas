@@ -10,6 +10,19 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/11/04 - jgonzale - Simulator
+	BUGFIX:		Solved a bug when checking the inter-machine flight times.
+				Changed all references to 'machine->id' to 'machine->id-1'.
+
+	CHANGES:	Erase the 'Vladimir' panic when recomputing the external
+				network bandwidth. Now it is not used, but the simulation
+				works.
+
+2014/11/04 - jgonzale - prv2dim
+	BUGFIX:		Solved an wrong error message in the translator when none
+				of the MPI ranks execute the MPI_Init
+
+
 2014/10/16 - jgonzale - GUI
 	BUGFIX:		Solved the bug that prevente the selection of directorios
 				with dots in the name. I added the Apache 'commons-io' to

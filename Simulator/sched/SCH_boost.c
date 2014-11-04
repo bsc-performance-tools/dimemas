@@ -56,7 +56,7 @@ static struct t_boost boost[MAX_MACHINES];
 
 extern t_boolean paraver_priorities;
 
-#define BOOST boost[machine->id-1]
+#define BOOST boost[machine->id]
 
 void
 SCH_boost_thread_to_ready(struct t_thread *thread)
