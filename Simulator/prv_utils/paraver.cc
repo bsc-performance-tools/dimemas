@@ -796,7 +796,6 @@ void PARAVER_P2P_Comm (int cpu_s,  int ptask_s, int task_s, int thread_s,
   TIMER_TO_PRV_TIME_T (log_r, log_r_prv);
   TIMER_TO_PRV_TIME_T (phy_r, phy_r_prv);
 
-
   /* JGG: DEBUG DE LA GENERACIÓN DE LAS COMUNICACIONES PARAVER */
   if (debug&D_PRV)
   {
@@ -829,7 +828,6 @@ void PARAVER_Event (int cpu, int ptask, int task, int thread,
                     unsigned long long value)
 {
   prv_time_t time_prv;
-  unsigned long long   tipus_final, valor_final;
 
   VERIFICA_GENERACIO_PARAVER;
 
@@ -882,6 +880,64 @@ void PARAVER_Event (int cpu, int ptask, int task, int thread,
            value);
 }
 
+void PARAVER_Multievent (int cpu, int ptask, int task, int thread,
+                         dimemas_timer       time,
+                         unsigned int        event_count,
+                         unsigned long long *types,
+                         unsigned long long *values)
+{
+  prv_time_t time_prv;
+  int i;
+
+  VERIFICA_GENERACIO_PARAVER;
+
+  if (paraver_final_timer)
+  {
+    if (GT_TIMER (time, stop_paraver))
+    {
+      return;
+    }
+  }
+
+  if (paraver_initial_timer)
+  {
+    if (GT_TIMER (start_paraver, time))
+    {
+      return;
+    }
+
+    SUB_TIMER (time, start_paraver, time);
+  }
+
+  TIMER_TO_PRV_TIME_T (time, time_prv);
+
+  /* fprintf (paraver, PA_EVENT_STRING, cpu, ptask, task, thread,
+           temps_final, tipus_final, valor_final); */
+
+  if (debug&D_PRV)
+  {
+    PRINT_TIMER (current_time);
+    printf (": Paraver Multievent Printed\n\tOBJECT   CPU %d P%02d T%02d (t%02d)\n",
+           cpu, ptask, task, thread);
+
+  }
+
+  for (i = 0; i < event_count; i++)
+  {
+    NewEvent(cpu, ptask, task, thread,
+             time_prv,
+             types[i],
+             values[i]);
+
+    if (debug&D_PRV)
+    {
+      printf("\tTime: %llu Final Type: %llu Final Value: %llu\n",
+             time_prv,
+             types[i],
+             values[i]);
+    }
+  }
+}
 
 /*****************************************************************************
  * Private functions implementation

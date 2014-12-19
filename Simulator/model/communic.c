@@ -235,6 +235,14 @@ static t_nano compute_copy_latency (struct t_thread *thread,
                                      struct t_node   *node,
                                      int              mess_size);
 
+static dimemas_timer get_logical_receive(struct t_thread *thread,
+                                         struct t_queue  *irecv_not_queue,
+                                         int              ori,
+                                         int              ori_thread,
+                                         int              mess_tag,
+                                         long long int    mess_size,
+                                         int              communic_id,
+                                         dimemas_timer    stored_logical_recv);
 
 /*****************************************************************************
  * Initialization/Finalization of the communications module
@@ -718,6 +726,105 @@ t_nano compute_copy_latency (struct t_thread *thread,
   }
 
   return (copy_latency);
+}
+
+static dimemas_timer get_logical_receive(struct t_thread *thread,
+                                         struct t_queue  *irecv_not_queue,
+                                         int              ori,
+                                         int              ori_thread,
+                                         int              mess_tag,
+                                         long long int    mess_size,
+                                         int              communic_id,
+                                         dimemas_timer    stored_logical_recv)
+{
+  /* Check if the partner IRecv to detect the actual 'logical_receive'
+   * time */
+  dimemas_timer  result;
+  struct t_recv* irecv_not;
+
+  if (wait_logical_recv)
+  {
+    result = stored_logical_recv;
+  }
+  else
+  {
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": \t\tP%02d T%02d (t%02d) Looking for a possible IRecv notification \n",
+        IDENTIFIERS (thread));
+      PRINT_TIMER(current_time);
+      printf (
+        ": \t\tLookup Sender: T%02d (t%02d) Tag: %d Size: %lld Comm.Id: %d\n",
+        ori,
+        ori_thread,
+        mess_tag,
+        mess_size,
+        communic_id);
+    }
+
+    for (irecv_not  = (struct t_recv*) head_queue(irecv_not_queue);
+         irecv_not != NULL;
+         irecv_not  = (struct t_recv*) next_queue(irecv_not_queue))
+    {
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER (current_time);
+        printf (
+          ": \t\t\tCurrent: Sender: T%02d (t%02d) Tag: %d Size: %lld Comm.Id: %d",
+          irecv_not->ori,
+          irecv_not->ori_thread,
+          irecv_not->mess_tag,
+          irecv_not->mess_size,
+          irecv_not->communic_id);
+      }
+
+      if ( ((irecv_not->ori         == ori)        || (irecv_not->ori        == -1)) &&
+           ((irecv_not->ori_thread  == ori_thread) || (irecv_not->ori_thread == -1)) &&
+           ( irecv_not->mess_tag    == mess_tag)                                     &&
+           ( irecv_not->communic_id == communic_id))
+      {
+        if (debug & D_COMM)
+        {
+          printf(" <- Found!\n");
+        }
+        break;
+      }
+      else
+      {
+        if (debug & D_COMM)
+        {
+          printf("\n");
+        }
+      }
+    }
+
+    if (irecv_not != NULL)
+    {
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER (current_time);
+        printf (
+          ": \t\tP%02d T%02d (t%02d) IRecv notification Comm.Id: %d restored. LOGICAL RECEIVE = ",
+          IDENTIFIERS (thread),
+          communic_id);
+      }
+      PRINT_TIMER(irecv_not->logical_recv);
+      printf("\n");
+
+      result = irecv_not->logical_recv;
+
+      extract_from_queue(irecv_not_queue, (char*) irecv_not);
+      free(irecv_not);
+    }
+    else
+    {
+      result = stored_logical_recv;
+    }
+  }
+
+  return result;
 }
 
 /******************************************************************************
@@ -1343,7 +1450,7 @@ static void message_received (struct t_thread *thread)
   struct t_send    *mess;
   struct t_thread  *partner;
   struct t_account *account;
-  dimemas_timer     tmp_timer;
+  dimemas_timer     tmp_timer, actual_logical_recv;
   struct t_recv    *mess_recv;
   struct t_cpu     *cpu_partner, *cpu;
 
@@ -1440,13 +1547,33 @@ static void message_received (struct t_thread *thread)
             account->n_bytes_recv += mess->mess_size;
             cpu = get_cpu_of_thread (thread);
 
+            /**
+             * Look for a possible IRecv notification!
+             */
+            actual_logical_recv = get_logical_receive(thread,
+                                                      &(task_partner->irecvs_executed),
+                                                      mess_recv->ori,
+                                                      mess_recv->ori_thread,
+                                                      mess_recv->mess_tag,
+                                                      mess_recv->mess_size,
+                                                      mess_recv->communic_id,
+                                                      partner->logical_recv);
+
+            if (debug & D_PRV)
+            {
+              PRINT_TIMER(current_time);
+              printf(": COMMUNIC_send\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n",
+                     IDENTIFIERS(thread),
+                     mess->communic_id);
+            }
+
             PARAVER_P2P_Comm (cpu->unique_number,
                               IDENTIFIERS (thread),
                               thread->logical_send,
                               thread->physical_send,
                               cpu_partner->unique_number,
                               IDENTIFIERS (partner),
-                              partner->logical_recv,
+                              actual_logical_recv,
                               thread->physical_recv,
                               mess->mess_size,
                               mess->mess_tag);
@@ -1534,13 +1661,35 @@ static void message_received (struct t_thread *thread)
     cpu = get_cpu_of_thread (thread);
     cpu_partner = get_cpu_of_thread (partner);
 
+
+
+    /**
+     * Look for a possible IRecv notification!
+     */
+    actual_logical_recv = get_logical_receive(thread,
+                                              &(partner->task->irecvs_executed),
+                                              thread->task->taskid,
+                                              thread->threadid,
+                                              mess->mess_tag,
+                                              mess->mess_size,
+                                              mess->communic_id,
+                                              partner->logical_recv);
+
+    if (debug & D_PRV)
+    {
+      PRINT_TIMER(current_time);
+      printf(": COMMUNIC_send\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n",
+             IDENTIFIERS(thread),
+             mess->communic_id);
+    }
+
     PARAVER_P2P_Comm (cpu->unique_number,
                       IDENTIFIERS (thread),
                       thread->logical_send,
                       thread->physical_send,
                       cpu_partner->unique_number,
                       IDENTIFIERS (partner),
-                      partner->logical_recv,
+                      actual_logical_recv,
                       thread->physical_recv,
                       mess->mess_size,
                       mess->mess_tag );
@@ -1587,17 +1736,28 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
   struct t_send    *mess_source;
   struct t_account *account;
   struct t_node    *s_node, *r_node;
-  struct t_cpu     *cpu, *cpu_partner;
+  struct t_cpu     *cpu, *cpu_source;
   t_boolean         result = FALSE, found;
 
   assert (mess->ori_thread == -1);
 
-  for (
-    thread_source = (struct t_thread *) head_queue (& (task->mess_recv) ),
-    found = FALSE;
-    thread_source != TH_NIL && !found;
-    thread_source = (struct t_thread *) next_queue (& (task->mess_recv) )
-  )
+  if (debug & D_COMM)
+  {
+    PRINT_TIMER (current_time);
+    printf (
+      ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %lld, Comm.Id: %d\n",
+      IDENTIFIERS (thread),
+      mess->ori,
+      mess->mess_tag,
+      mess->mess_size,
+      mess->communic_id);
+    PRINT_TIMER (current_time);
+    printf(": COMMUNIC_wait/recv\t** Inspecting received messaged queue **\n");
+  }
+
+  for (thread_source = (struct t_thread *) head_queue (& (task->mess_recv) ), found = FALSE;
+       thread_source != TH_NIL && !found;
+       thread_source = (struct t_thread *) next_queue (& (task->mess_recv) ))
   {
     task_source = thread_source->task;
     action      = thread_source->action;
@@ -1607,8 +1767,7 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
     {
       PRINT_TIMER (current_time);
       printf (
-        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %lld, Communicator: %d -  this is only matching - looking for the correct message\n",
-        IDENTIFIERS (thread),
+        ": \t\t\t-> Message Sender: T%02d Tag(%02d)  Size: %lld, Comm.Id: %d\n",
         task_source->taskid,
         mess_source->mess_tag,
         mess_source->mess_size,
@@ -1620,11 +1779,10 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
     // assert(mess_source->dest > 0);
     assert (mess_source->dest_thread == -1);
     assert (mess_source->dest == thread->task->taskid);
-    if ( ( (thread_source->threadid  == mess->ori_thread)     || (mess->ori_thread == -1) )          &&
-         ( (task_source->taskid      == mess->ori)            || (mess->ori == -1) )                 &&
-         (mess->mess_tag           == mess_source->mess_tag)                                      &&
-         (mess->communic_id        == mess_source->communic_id)                                   &&
-         /*      ((mess_source->dest        == thread->task->taskid) || (mess_source->dest == -1))         &&   */
+    if ( ( (thread_source->threadid  == mess->ori_thread)     || (mess->ori_thread == -1)         ) &&
+         ( (task_source->taskid      == mess->ori)            || (mess->ori == -1)                ) &&
+         (  mess->mess_tag           == mess_source->mess_tag                                     ) &&
+         (  mess->communic_id        == mess_source->communic_id                                  ) &&
          ( (mess_source->dest_thread == thread->threadid)     || (mess_source->dest_thread == -1) ) )
     {
       dimemas_timer actual_logical_recv;
@@ -1634,56 +1792,77 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
       s_node = get_node_of_thread (thread_source);
       r_node = get_node_of_thread (thread);
 
-      SCHEDULER_info (
-        COMMUNICATION_INFO,
-        SCH_INFO_RECV_HIT,
-        thread_source, thread
-      );
-      cpu         = get_cpu_of_thread (thread_source);
-      cpu_partner = get_cpu_of_thread (thread);
+      SCHEDULER_info (COMMUNICATION_INFO,
+                      SCH_INFO_RECV_HIT,
+                      thread_source,
+                      thread);
 
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-      /* Check if the partner IRecv to detect the actual 'logical_receive'
-       * time */
-      struct t_recv* irecv_not;
+      cpu        = get_cpu_of_thread (thread);
+      cpu_source = get_cpu_of_thread (thread_source);
 
-      for (irecv_not  = (struct t_recv*) head_queue(& (task->irecvs_executed));
-           irecv_not != NULL;
-           irecv_not  = (struct t_recv*) next_queue(& (task->irecvs_executed)))
+
+      actual_logical_recv = get_logical_receive(thread,
+                                                &(task->irecvs_executed),
+                                                mess->ori,
+                                                mess->ori_thread,
+                                                mess->mess_tag,
+                                                mess->mess_size,
+                                                mess->communic_id,
+                                                thread->logical_recv);
+
+      if (debug & D_PRV)
       {
-        if ( ((irecv_not->ori_thread  == mess->ori_thread) || (mess->ori_thread == -1) ) &&
-             ((irecv_not->ori         == mess->ori)        || (mess->ori == -1) )        &&
-              (irecv_not->mess_tag    == mess_source->mess_tag)                          &&
-              (irecv_not->communic_id == mess_source->communic_id))
-        {
-          break;
-        }
+        PRINT_TIMER(current_time);
+        printf(": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n",
+               IDENTIFIERS(thread),
+               mess_source->communic_id);
       }
 
-      if (irecv_not != NULL)
-      {
-        extract_from_queue(&(task->irecvs_executed), (char*) irecv_not);
-        actual_logical_recv = irecv_not->logical_recv;
-        free(irecv_not);
-      }
-      else
-      {
-        actual_logical_recv = thread->logical_recv;
-      }
-#else
-      actual_logical_recv = thread->logical_recv;
-#endif
-
-      PARAVER_P2P_Comm (cpu->unique_number,
+      PARAVER_P2P_Comm (cpu_source->unique_number,
                         IDENTIFIERS (thread_source),
                         thread_source->logical_send,
                         thread_source->physical_send,
-                        cpu_partner->unique_number,
+                        cpu->unique_number,
                         IDENTIFIERS (thread),
                         actual_logical_recv,
-                        thread_source->physical_recv,
+                        thread_source->physical_recv, // The physical recv. is only annotated in the sender
                         mess_source->mess_size,
                         mess_source->mess_tag);
+
+      /* In order to guarantee the cyclic simulation, we have to
+         generate a special event to warn the 'prv2dim' translator the
+         communication match (the PHYSICAL_RECV side appears in the
+         middle of a computation burst) */
+
+
+      /*
+      CPU             = DstCPU;
+      AppId           = DstAppId;
+      TaskId          = DstTaskId;
+      ThreadId        = DstThreadId;
+      PartnerCPU      = SrcCPU;
+      PartnerAppId    = SrcAppId;
+      PartnerTaskId   = SrcTaskId;
+      PartnerThreadId = SrcThreadId;
+      */
+
+      /*
+      long long int types[7]  = { 10, 11, 12, 13, 14, 15, 16 };
+      long long int values[7] = { cpu_source->unique_number,
+                                  thread_source->task->Ptask->Ptaskid+1,
+                                  thread_source->task->taskid+1,
+                                  thread_source->threadid+1,
+                                  mess_source->communic_id,
+                                  mess_source->mess_size,
+                                  mess_source->mess_tag };
+
+      PARAVER_Multievent(cpu->unique_number,
+                         IDENTIFIERS(thread),
+                         current_time,
+                         7,
+                         types,
+                         values);
+      */
 
       new_cp_relation (thread, thread_source);
       thread->last_paraver = current_time;
@@ -1695,6 +1874,13 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
     }
     /* else
        printf("messages NOT matching\n");*/
+  }
+
+  if (!found)
+  {
+    /***************************************************/
+    /* Say, the asynchronous message was not received! */
+
   }
 
   task_source   = locate_task (task->Ptask, mess->ori);
@@ -1730,12 +1916,10 @@ static t_boolean is_message_awaiting_dependency_synchronization (
   assert (mess->ori_thread != -1);
   assert (mess->ori == task->taskid);
 
-  for (
-    thread_source = (struct t_thread *) head_queue (& (thread->mess_recv) ),
-    found = FALSE;
-    thread_source != TH_NIL && !found;
-    thread_source = (struct t_thread *) next_queue (& (thread->mess_recv) )
-  )
+  for ( thread_source = (struct t_thread *) head_queue (& (thread->mess_recv) ),
+        found = FALSE;
+        thread_source != TH_NIL && !found;
+        thread_source = (struct t_thread *) next_queue (& (thread->mess_recv) ) )
   {
     task_source = thread_source->task;
     action      = thread_source->action;
@@ -1745,7 +1929,7 @@ static t_boolean is_message_awaiting_dependency_synchronization (
     {
       PRINT_TIMER (current_time);
       printf (
-        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %lld, Communicator: %d -  this is only matching - looking for the correct message\n",
+        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %lld, Comm.Id: %d -  this is only matching - looking for the correct message\n",
         IDENTIFIERS (thread),
         task_source->taskid,
         mess_source->mess_tag,
@@ -1756,10 +1940,11 @@ static t_boolean is_message_awaiting_dependency_synchronization (
 
     assert (mess_source->dest_thread != -1);
     assert (mess_source->dest == task->taskid);
+
     if ( ( (thread_source->threadid  == mess->ori_thread)     || (mess->ori_thread == -1) )          &&
          ( (task_source->taskid      == mess->ori)            || (mess->ori == -1) )                 &&
-         (mess->mess_tag           == mess_source->mess_tag)                                      &&
-         (mess->communic_id        == mess_source->communic_id)                                   &&
+           (mess->mess_tag           == mess_source->mess_tag)                                       &&
+           (mess->communic_id        == mess_source->communic_id)                                    &&
          /*      ((mess_source->dest        == thread->task->taskid) || (mess_source->dest == -1))         &&   */
          ( (mess_source->dest_thread == thread->threadid)     || (mess_source->dest_thread == -1) ) )
     {
@@ -1778,37 +1963,59 @@ static t_boolean is_message_awaiting_dependency_synchronization (
       cpu         = get_cpu_of_thread (thread_source);
       cpu_partner = get_cpu_of_thread (thread);
 
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-      /* Check if the partner IRecv to detect the actual 'logical_receive'
-       * time */
-      struct t_recv* irecv_not;
+      actual_logical_recv = get_logical_receive(thread,
+                                                &(thread->irecvs_executed),
+                                                mess->ori,
+                                                mess->ori_thread,
+                                                mess->mess_tag,
+                                                mess->mess_size,
+                                                mess->communic_id,
+                                                thread->logical_recv);
 
-      for (irecv_not  = (struct t_recv*) head_queue(& (thread->irecvs_executed));
-           irecv_not != NULL;
-           irecv_not  = (struct t_recv*) next_queue(& (thread->irecvs_executed)))
-      {
-        if ( ((irecv_not->ori_thread  == mess->ori_thread) || (mess->ori_thread == -1) ) &&
-             ((irecv_not->ori         == mess->ori)        || (mess->ori == -1) )        &&
-              (irecv_not->mess_tag    == mess_source->mess_tag)                          &&
-              (irecv_not->communic_id == mess_source->communic_id))
-        {
-          break;
-        }
-      }
-
-      if (irecv_not != NULL)
-      {
-        extract_from_queue(&(thread->irecvs_executed), (char*) irecv_not);
-        actual_logical_recv = irecv_not->logical_recv;
-        free(irecv_not);
-      }
-      else
+      /*
+      if (wait_logical_recv)
       {
         actual_logical_recv = thread->logical_recv;
       }
-#else
-      actual_logical_recv = thread->logical_recv;
-#endif
+      else
+      {
+        /* Check if the partner IRecv to detect the actual 'logical_receive'
+         * time
+        struct t_recv* irecv_not;
+
+        for (irecv_not  = (struct t_recv*) head_queue(& (thread->irecvs_executed));
+             irecv_not != NULL;
+             irecv_not  = (struct t_recv*) next_queue(& (thread->irecvs_executed)))
+        {
+          if ( ((irecv_not->ori_thread  == mess->ori_thread) || (mess->ori_thread == -1) ) &&
+               ((irecv_not->ori         == mess->ori)        || (mess->ori == -1) )        &&
+                (irecv_not->mess_tag    == mess_source->mess_tag)                          &&
+                (irecv_not->communic_id == mess_source->communic_id))
+          {
+            break;
+          }
+        }
+
+        if (irecv_not != NULL)
+        {
+          extract_from_queue(&(thread->irecvs_executed), (char*) irecv_not);
+          actual_logical_recv = irecv_not->logical_recv;
+          free(irecv_not);
+        }
+        else
+        {
+          actual_logical_recv = thread->logical_recv;
+        }
+      }
+      */
+
+      if (debug & D_PRV)
+      {
+        PRINT_TIMER(current_time);
+        printf(": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n",
+               IDENTIFIERS(thread),
+               mess->communic_id);
+      }
 
       PARAVER_P2P_Comm ( cpu->unique_number,
                          IDENTIFIERS (thread_source),
@@ -1950,13 +2157,11 @@ Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (
       un altre thread, per tant, no s'ha de generar res a la traça. */
   if (sender->original_thread)
   {
-    PARAVER_Wait (
-      0,
-      IDENTIFIERS (sender),
-      sender->last_paraver,
-      current_time,
-      PRV_BLOCKING_RECV_ST
-    );
+    PARAVER_Wait ( 0,
+                   IDENTIFIERS (sender),
+                   sender->last_paraver,
+                   current_time,
+                   PRV_BLOCKING_RECV_ST );
 
 //    printf("start communication if there is the original thread on the sends list\n");
 
@@ -3326,7 +3531,7 @@ void COMMUNIC_send (struct t_thread *thread)
    if (debug&D_COMM)
    {
     PRINT_TIMER (current_time);
-    printf (":----calling COMMUNIC_send   P%02d T%02d (t%02d) -> T%02d Tag(%d) Size: %lld  Communicator: %d \n",
+    printf (":----calling COMMUNIC_send   P%02d T%02d (t%02d) -> T%02d Tag(%d) Size: %lld  Comm.Id: %d \n",
             IDENTIFIERS (thread),
             mess->dest,
             mess->mess_tag,
@@ -3595,7 +3800,7 @@ void COMMUNIC_send (struct t_thread *thread)
   {
     PRINT_TIMER (current_time);
     printf (
-      ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d t%d Tag: %d Communicator: %d Size: %lldb\n",
+      ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d t%d Tag: %d Comm.Id: %d Size: %lldb\n",
       IDENTIFIERS (thread),
       action->desc.send.dest,
       action->desc.send.dest_thread,
@@ -3794,7 +3999,7 @@ void COMMUNIC_recv (struct t_thread *thread)
   {
     PRINT_TIMER (current_time);
     printf (
-      ":----calling COMMUNIC_recv   P%02d T%02d (t%02d) <- T%02d (t%02d) Tag: %d Communicator: %d size: %lld\n",
+      ":----calling COMMUNIC_recv   P%02d T%02d (t%02d) <- T%02d (t%02d) Tag: %d Comm.Id: %d size: %lld\n",
       IDENTIFIERS (thread),
       action->desc.recv.ori,
       action->desc.recv.ori_thread,
@@ -3948,7 +4153,7 @@ void COMMUNIC_recv (struct t_thread *thread)
     {
       PRINT_TIMER (current_time);
       printf (
-        ": COMMUNIC_recv_reached\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d size: %lld (Local Message)\n",
+        ": COMMUNIC_recv_reached\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d size: %lld (Local Message)\n",
         IDENTIFIERS (thread),
         action->desc.recv.ori,
         action->desc.recv.ori_thread,
@@ -3987,7 +4192,7 @@ void COMMUNIC_recv (struct t_thread *thread)
       {
         PRINT_TIMER (current_time);
         printf (
-          ": COMMUNIC_recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d  Size1: %lld  Size2: %lld (Waiting)\n",
+          ": COMMUNIC_recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d  Size1: %lld  Size2: %lld (Waiting)\n",
           IDENTIFIERS (thread),
           action->desc.recv.ori,
           action->desc.recv.ori_thread,
@@ -4027,6 +4232,7 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   struct t_action  *action;
   struct t_recv    *mess;
   struct t_task    *task;
+  struct t_recv    *irecv_notification;
 #ifdef STARTUP_ALS_IRECV
   struct t_task    *task_source;
   struct t_account *account;
@@ -4053,7 +4259,7 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   if (debug & D_COMM)
   {
     PRINT_TIMER (current_time);
-    printf (":-----calling COMMUNIC_Irecv   P%02d T%02d (t%02d)  <- T%02d (t%02d)  Tag: %d  Communicator: %d  Size: %lld \n",
+    printf (":-----calling COMMUNIC_Irecv   P%02d T%02d (t%02d)  <- T%02d (t%02d)  Tag: %d  Comm.Id: %d  Size: %lld \n",
             IDENTIFIERS (thread),
             action->desc.recv.ori,
             action->desc.recv.ori_thread,
@@ -4109,10 +4315,10 @@ void COMMUNIC_Irecv (struct t_thread *thread)
 
     if (startup > (t_nano) 0) /* Change != with > */
     { /* Positive startup time. Thread must be re-scheduled */
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-      /* Tan aviat ho volen als Irecv com als Wait */
-      thread->logical_recv = current_time;
-#endif /* LOGICAL_RECEIVE_ALS_WAIT */
+      if (!wait_logical_recv)
+      {
+        thread->logical_recv = current_time;
+      }
 
       thread->loose_cpu     = FALSE;
       thread->doing_startup = TRUE;
@@ -4136,10 +4342,10 @@ void COMMUNIC_Irecv (struct t_thread *thread)
     }
     else if (startup == (t_nano) 0)
     {
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-      /* Tan aviat ho volen als Irecv com als Wait */
-      thread->logical_recv = current_time;
-#endif /* LOGICAL_RECEIVE_ALS_WAIT */
+      if (!wait_logical_recv)
+      {
+        thread->logical_recv = current_time;
+      }
       thread->startup_done = TRUE;
     }
   }
@@ -4187,22 +4393,35 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   thread->copy_done    = FALSE;
 
   account = current_account (thread);
+#endif /* ! STARTUP_ALS_IRECV */
 
-#else /* ! STARTUP_ALS_IRECV */
+// #else
 
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-  /* Tan aviat ho volen als Irecv com als Wait */
-  thread->logical_recv = current_time;
+/*
+  if (!wait_logical_recv)
+  {
+    thread->logical_recv = current_time;
+  }
+*/
 
-#endif /* LOGICAL_RECEIVE_ALS_WAIT */
 
-#endif /* STARTUP_ALS_IRECV ***************************************************/
+// #endif /* STARTUP_ALS_IRECV ***************************************************/
 
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-  struct t_recv *irecv_notification = (struct t_recv*) malloc(sizeof(struct t_recv));
-  memcpy(irecv_notification, mess, sizeof(struct t_recv));
-  irecv_notification->logical_recv = current_time;
-#endif
+  if (!wait_logical_recv)
+  {
+    irecv_notification = (struct t_recv*) malloc(sizeof(struct t_recv));
+    memcpy(irecv_notification, mess, sizeof(struct t_recv));
+    irecv_notification->logical_recv = current_time;
+
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": COMMUNIC_Irecv\tP%02d T%02d (t%02d) IRecv notification Comm.Id: %d saved\n",
+        IDENTIFIERS (thread),
+        mess->communic_id);
+    }
+  }
 
   /* FEC: S'avisa que s'ha arribat a aquest Irecv i s'obte si
    * cal desbloqejar un send o no. */
@@ -4210,17 +4429,21 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   {
     /* this is a real MPI transfer */
     hi_ha_send_sync = COMMUNIC_recv_reached_real_MPI_transfer (thread, mess);
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-    inFIFO_queue(&(thread->task->irecvs_executed), (char*) irecv_notification);
-#endif
+
+    if (!wait_logical_recv)
+    {
+      inFIFO_queue(&(thread->task->irecvs_executed), (char*) irecv_notification);
+    }
   }
   else
   {
     /* this is a dependency synchronization */
     hi_ha_send_sync = COMMUNIC_recv_reached_dependency_synchronization (thread, mess);
-#ifndef LOGICAL_RECEIVE_ALS_WAIT
-    inFIFO_queue(&(thread->irecvs_executed), (char*) irecv_notification);
-#endif
+
+    if (!wait_logical_recv)
+    {
+      inFIFO_queue(&(thread->irecvs_executed), (char*) irecv_notification);
+    }
   }
 
   if (hi_ha_send_sync)
@@ -4230,10 +4453,13 @@ void COMMUNIC_Irecv (struct t_thread *thread)
      * el Irecv ja hagi rebut el missatge a traves d'un send asincron i,
      * per tant, estariem desbloquejant el send corresponent a algun Irecv
      * futur. */
-    if (mess->ori_thread == -1) {
+    if (mess->ori_thread == -1)
+    {
       /* this is for a real MPI transfer */
       Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (thread, mess);
-    } else {
+    }
+    else
+    {
       /* this is for a dependency synchronization */
       Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization (thread, mess);
     }
@@ -4284,7 +4510,7 @@ void COMMUNIC_wait (struct t_thread *thread)
   {
     PRINT_TIMER (current_time);
     printf (
-      ":----calling COMMUNIC_wait   P%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d size: %lld\n",
+      ":----calling COMMUNIC_wait   P%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d size: %lld\n",
       IDENTIFIERS (thread),
       action->desc.recv.ori,
       action->desc.recv.ori_thread,
@@ -4403,16 +4629,21 @@ void COMMUNIC_wait (struct t_thread *thread)
   account->n_recvs++;
   account = current_account (thread);
 
-#ifdef LOGICAL_RECEIVE_ALS_WAIT
-  /* Tan aviat ho volen als Irecv com als Wait */
-  thread->logical_recv = current_time;
-#endif /* LOGICAL_RECEIVE_ALS_WAIT */
+  if (wait_logical_recv)
+  {
+    thread->logical_recv = current_time;
+  }
 
   t_boolean Is_message_awaiting;
+
   if (mess->ori_thread == -1)
+  {
     Is_message_awaiting = is_message_awaiting_real_MPI_transfer (task, mess, thread);
+  }
   else
+  {
     Is_message_awaiting = is_message_awaiting_dependency_synchronization (task, mess, thread);
+  }
 
   if (Is_message_awaiting)                      /* 'is_message_awaiting'      */
   {
@@ -4425,7 +4656,7 @@ void COMMUNIC_wait (struct t_thread *thread)
     {
       PRINT_TIMER (current_time);
       printf (
-        ": COMMUNIC_recv_wait\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d (Local message)\n",
+        ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d (Local message)\n",
         IDENTIFIERS (thread),
         action->desc.recv.ori,
         action->desc.recv.ori_thread,
@@ -4446,13 +4677,17 @@ void COMMUNIC_wait (struct t_thread *thread)
   {
     /* Start_communication_if_partner_ready_for_rendez_vous assumes
      * thread is receiver, so locate receiver task */
-    if (mess->ori_thread == -1) {
+    if (mess->ori_thread == -1)
+    {
       /* this is for a real MPI transfer */
       Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (thread, mess);
-    } else {
+    }
+    else
+    {
       /* this is for a dependency synchronization */
       Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization (thread, mess);
     }
+
     if (node_r->machine->scheduler.busywait_before_block)
     {
       SCHEDULER_thread_to_busy_wait (thread);
@@ -4465,7 +4700,7 @@ void COMMUNIC_wait (struct t_thread *thread)
       {
         PRINT_TIMER (current_time);
         printf (
-          ": COMMUNIC_recv_wait\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Communicator: %d (Waiting)\n",
+          ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d (Waiting)\n",
           IDENTIFIERS (thread),
           action->desc.recv.ori,
           action->desc.recv.ori_thread,
@@ -7096,11 +7331,13 @@ static void close_global_communication (struct t_thread *thread)
     others->last_paraver = current_time;
     cpu                  = get_cpu_of_thread (others);
 
+    /* JGG (2014/12/18): What is this event????
     PARAVER_Event (cpu->unique_number,
                    IDENTIFIERS (others),
                    current_time,
                    PARAVER_GROUP_FREE,
                    glop_id);
+    */
 
     action         = others->action;
     others->action = action->next;
@@ -7326,11 +7563,14 @@ void GLOBAL_operation (struct t_thread *thread,
      * simply block */
 
     cpu = get_cpu_of_thread (thread);
+
+    /* JGG (2014/12/18): What is this event????
     PARAVER_Event (cpu->unique_number,
                    IDENTIFIERS (thread),
                    current_time,
                    PARAVER_GROUP_BLOCK,
                    glop_id );
+    */
     thread->last_paraver = current_time;
 
     inFIFO_queue (&communicator->threads, (char *) thread);
@@ -7367,11 +7607,14 @@ void GLOBAL_operation (struct t_thread *thread,
   }
 
   cpu = get_cpu_of_thread (thread);
+
+    /* JGG (2014/12/18): What is this event????
   PARAVER_Event (cpu->unique_number,
                  IDENTIFIERS (thread),
                  current_time,
                  PARAVER_GROUP_LAST,
                  glop_id);
+  */
 
   thread->number_buses = 0;
   thread->last_paraver = current_time;

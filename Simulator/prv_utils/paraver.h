@@ -225,6 +225,12 @@ extern void PARAVER_Event (int cpu, int ptask, int task, int thread,
                            unsigned long long type,
                            unsigned long long value);
 
+extern void PARAVER_Multievent (int cpu, int ptask, int task, int thread,
+                                dimemas_timer       time,
+                                unsigned int        event_count,
+                                unsigned long long *types,
+                                unsigned long long *values);
+
 #ifdef __cplusplus
 }
 #endif

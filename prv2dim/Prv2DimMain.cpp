@@ -437,11 +437,7 @@ int main(const int argc, const char *argv[])
 {
   ParaverTraceTranslator *Translator;
 
-
-
   std::string CounterFactorStr;
-
-
 
   IprobeMissesThreshold = 0.0;
   BurstCounterType      = -1;

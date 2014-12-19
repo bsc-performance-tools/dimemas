@@ -54,7 +54,7 @@ using std::cout;
 #include <sstream>
 using std::ostringstream;
 
-//#define DEBUG 1
+// #define DEBUG 1
 
 /*****************************************************************************
  * Public functions
@@ -70,6 +70,7 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
                                          INT32   BurstCounterType,
                                          double  BurstCounterFactor,
                                          bool    GenerateMPIInitBarrier,
+                                         bool    PreviouslySimulatedTrace,
                                          char*   TemporaryFileName,
                                          FILE*   TemporaryFile)
 {
@@ -79,12 +80,14 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
   this->TaskId = TaskId;
 
   /* Burst Counter initialization */
-  this->BurstCounterGeneration = BurstCounterGeneration;
-  this->BurstCounterType       = BurstCounterType;
-  this->BurstCounterFactor     = BurstCounterFactor;
+  this->BurstCounterGeneration   = BurstCounterGeneration;
+  this->BurstCounterType         = BurstCounterType;
+  this->BurstCounterFactor       = BurstCounterFactor;
 
-  this->GenerateMPIInitBarrier = GenerateMPIInitBarrier;
-  MPIInitBarrierWritten        = false;
+  this->GenerateMPIInitBarrier   = GenerateMPIInitBarrier;
+  MPIInitBarrierWritten          = false;
+
+  this->PreviouslySimulatedTrace = PreviouslySimulatedTrace;
 
   if (TemporaryFile == NULL)
   {
@@ -369,8 +372,10 @@ TaskTranslationInfo::Merge(FILE* DimemasFile)
     if (EffectiveBytes != sizeof(Buffer) && ferror(TemporaryFile))
     {
       LastError = strerror(errno);
-      if (!FilePointerAvailable);
+      if (!FilePointerAvailable)
+      {
         fclose(TemporaryFile);
+      }
       return false;
     }
 
@@ -381,7 +386,9 @@ TaskTranslationInfo::Merge(FILE* DimemasFile)
     {
       LastError = strerror(errno);
       if (!FilePointerAvailable)
+      {
         fclose(TemporaryFile);
+      }
       return false;
     }
 
@@ -533,6 +540,19 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
   /* We must ensure that current event only has one type/value pair */
   if (CurrentEvent->GetTypeValueCount() != 1)
     return false;
+
+  /* Pseudo logical receive events must be erased during the translation */
+  if (CurrentEvent->GetFirstType() == 9  ||
+      CurrentEvent->GetFirstType() == 10 ||
+      CurrentEvent->GetFirstType() == 11 ||
+      CurrentEvent->GetFirstType() == 12 ||
+      CurrentEvent->GetFirstType() == 13 ||
+      CurrentEvent->GetFirstType() == 14 ||
+      CurrentEvent->GetFirstType() == 15 ||
+      CurrentEvent->GetFirstType() == 16  )
+  {
+    return true;
+  }
 
   TaskId    = CurrentEvent->GetTaskId()-1;
   ThreadId  = CurrentEvent->GetThreadId()-1;
@@ -990,6 +1010,33 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
     return false;
     */
 
+#ifdef DEBUG
+    fprintf(stdout,
+            "Comm: [%03d:%02d] T:%lld ",
+            CurrentComm->GetTaskId(),
+            CurrentComm->GetThreadId(),
+            CurrentComm->GetTimestamp());
+
+    switch(CurrentComm->GetType())
+    {
+      case LOGICAL_SEND:
+        fprintf(stdout, "LOGICAL_SEND ");
+        break;
+      case PHYSICAL_SEND:
+        fprintf(stdout, "PHYSICAL_SEND ");
+        break;
+      case LOGICAL_RECV:
+        fprintf(stdout, "LOGICAL_RECV ");
+        break;
+      case PHYSICAL_RECV:
+        fprintf(stdout, "PHYSICAL_RECV ");
+        break;
+    }
+
+    fprintf(stdout, "outside a block!");
+
+#endif // DEBUG
+
     OutsideComms = true;
     return true;
   }
@@ -997,9 +1044,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
   CurrentBlock      = MPIBlockIdStack.back();
   CurrentBlockValue = MPIEventEncoding_DimemasBlockId((MPIVal) CurrentBlock.second);
 
+
+
   TaskId        = CurrentComm->GetTaskId()-1;
   ThreadId      = CurrentComm->GetThreadId()-1;
-  PartnerTaskId = CurrentComm->GetPartnerTaskId()-1;
+  if (PreviouslySimulatedTrace)
+  {
+    PartnerTaskId = CurrentComm->GetPartnerTaskId();
+  }
+  else
+  {
+    PartnerTaskId = CurrentComm->GetPartnerTaskId()-1;
+  }
   CommId        = CurrentComm->GetCommId();
   Size          = CurrentComm->GetSize();
   Tag           = CurrentComm->GetTag();
@@ -1016,6 +1072,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         cout << "Printing NX Recv " << *CurrentComm;
 #endif
         CommunicationPrimitivePrinted = true;
+
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
 
         if (Dimemas_NX_Recv(TemporaryFile,
                             TaskId, ThreadId,
@@ -1046,6 +1114,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 #endif
         CommunicationPrimitivePrinted = true;
 
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_SEND,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_BlockingSend(TemporaryFile,
                                     TaskId, ThreadId,
                                     PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1059,6 +1139,19 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
       else if (CurrentComm->GetType() == PHYSICAL_RECV)
       { /* Not common case, when translation comes from a simulated trace
            Wait synchronizations may appear inside a reception operation */
+
+        if (!PrintPseudoCommunicationEndpoint(PHYSICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
                             PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1087,6 +1180,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 #endif
         CommunicationPrimitivePrinted = true;
 
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_SEND,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_ImmediateSend(TemporaryFile,
                                      TaskId, ThreadId,
                                      PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1100,6 +1205,19 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
       else if (CurrentComm->GetType() == PHYSICAL_RECV)
       { /* Not common case, when translation comes from a simulated trace
            Wait synchronizations may appear inside a reception operation */
+
+        if (!PrintPseudoCommunicationEndpoint(PHYSICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
                             PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1126,6 +1244,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 #endif
         CommunicationPrimitivePrinted = true;
 
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_Irecv(TemporaryFile,
                              TaskId, ThreadId,
                              PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1135,6 +1265,12 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+      }
+      else if (CurrentComm->GetType() == PHYSICAL_RECV)
+      {
+        #ifdef DEBUG
+        cout << "PHYSICAL_RECV inside an Irecv" << *CurrentComm;
+        #endif
       }
       else if (CurrentComm->GetType() != PHYSICAL_RECV)
       {
@@ -1151,6 +1287,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         cout << "Printing NX Wait " << *CurrentComm;
 #endif
         CommunicationPrimitivePrinted = true;
+
+        if (!PrintPseudoCommunicationEndpoint(PHYSICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
 
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
@@ -1185,6 +1333,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 #endif
         CommunicationPrimitivePrinted = true;
 
+        if (!PrintPseudoCommunicationEndpoint(PHYSICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
                             PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1214,6 +1374,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 #endif
         CommunicationPrimitivePrinted = true;
 
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_Irecv(TemporaryFile,
                              TaskId, ThreadId,
                              PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1231,6 +1403,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 #endif
         CommunicationPrimitivePrinted = true;
 
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_SEND,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_Send(TemporaryFile,
                             TaskId, ThreadId,
                             PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1247,6 +1431,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         cout << "Printing NX Wait " << *CurrentComm;
 #endif
         CommunicationPrimitivePrinted = true;
+
+        if (!PrintPseudoCommunicationEndpoint(PHYSICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
 
         if (Dimemas_NX_Wait(TemporaryFile,
                             TaskId, ThreadId,
@@ -1268,6 +1464,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 #endif
         CommunicationPrimitivePrinted = true;
 
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_SEND,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
+
         if (Dimemas_NX_BlockingSend(TemporaryFile,
                                     TaskId, ThreadId,
                                     PartnerTaskId, -1, /* That should be corrected eventually */
@@ -1284,6 +1492,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
         cout << "Printing NX Recv " << *CurrentComm;
 #endif
         CommunicationPrimitivePrinted = true;
+
+        if (!PrintPseudoCommunicationEndpoint(LOGICAL_RECV,
+                                              TaskId,
+                                              ThreadId,
+                                              PartnerTaskId,
+                                              -1,
+                                              Size,
+                                              Tag,
+                                              CommId))
+        {
+          return false;
+        }
 
         if (Dimemas_NX_Irecv(TemporaryFile,
                              TaskId, ThreadId,
@@ -1678,6 +1898,87 @@ bool TaskTranslationInfo::GenerateBurst(INT32  TaskId,
   if (Dimemas_CPU_Burst(TemporaryFile,
                         TaskId, ThreadId,
                         OnTraceTime) < 0)
+  {
+    SetError(true);
+    SetErrorMessage("error writing output trace", strerror(errno));
+    return false;
+  }
+
+  return true;
+}
+
+bool TaskTranslationInfo::PrintPseudoCommunicationEndpoint(INT32 CommType,
+                                                           INT32 TaskId,
+                                                           INT32 ThreadId,
+                                                           INT32 PartnerTaskId,
+                                                           INT32 PartnerThreadId,
+                                                           INT32 Size,
+                                                           INT32 Tag,
+                                                           INT32 CommId)
+{
+  if (Dimemas_User_Event(TemporaryFile,
+                       TaskId,
+                       ThreadId,
+                       (INT64) 9,
+                       CommType) < 0)
+  {
+    SetError(true);
+    SetErrorMessage("error writing output trace", strerror(errno));
+    return false;
+  }
+
+  if (Dimemas_User_Event(TemporaryFile,
+                         TaskId,
+                         ThreadId,
+                         (INT64) 10,
+                         PartnerTaskId) < 0)
+  {
+    SetError(true);
+    SetErrorMessage("error writing output trace", strerror(errno));
+    return false;
+  }
+
+  if (PartnerThreadId != -1)
+  {
+    if (Dimemas_User_Event(TemporaryFile,
+                           TaskId,
+                           ThreadId,
+                           (INT64) 11,
+                           PartnerThreadId) < 0)
+    {
+      SetError(true);
+      SetErrorMessage("error writing output trace", strerror(errno));
+      return false;
+    }
+  }
+
+  if (Dimemas_User_Event(TemporaryFile,
+                         TaskId,
+                         ThreadId,
+                         (INT64) 12,
+                         Size) < 0)
+  {
+    SetError(true);
+    SetErrorMessage("error writing output trace", strerror(errno));
+    return false;
+  }
+
+  if (Dimemas_User_Event(TemporaryFile,
+                         TaskId,
+                         ThreadId,
+                         (INT64) 13,
+                         Tag) < 0)
+  {
+    SetError(true);
+    SetErrorMessage("error writing output trace", strerror(errno));
+    return false;
+  }
+
+  if (Dimemas_User_Event(TemporaryFile,
+                         TaskId,
+                         ThreadId,
+                         (INT64) 14,
+                         CommId) < 0)
   {
     SetError(true);
     SetErrorMessage("error writing output trace", strerror(errno));

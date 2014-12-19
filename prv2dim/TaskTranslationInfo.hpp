@@ -81,6 +81,8 @@ class TaskTranslationInfo: public Error
     bool   GenerateMPIInitBarrier;
     bool   MPIInitBarrierWritten;
 
+    bool   PreviouslySimulatedTrace;
+
     bool   BurstCounterGeneration;
     INT32  BurstCounterType;
     double BurstCounterFactor;
@@ -101,6 +103,7 @@ class TaskTranslationInfo: public Error
                         INT32   BurstCounterType,
                         double  BurstCounterFactor,
                         bool    GenerateMPIInitBarrier,
+                        bool    PreviouslySimulatedTrace,
                         char*   TemporaryFileName = NULL,
                         FILE*   TemporaryFile = NULL);
 
@@ -140,6 +143,15 @@ class TaskTranslationInfo: public Error
     void FinalizeGlobalOp(void);
     bool CheckIprobeCounters(Event_t CurrentEvent);
     bool GenerateBurst(INT32 TaskId, INT32 ThreadId, UINT64 Timestamp);
+
+    bool PrintPseudoCommunicationEndpoint(INT32 CommType,
+                                          INT32 TaskId,
+                                          INT32 ThreadId,
+                                          INT32 PartnerTaskId,
+                                          INT32 PartnerThreadId,
+                                          INT32 Size,
+                                          INT32 Tag,
+                                          INT32 CommId);
 
     void PrintStack(void);
 };

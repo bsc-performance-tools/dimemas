@@ -102,7 +102,8 @@ extern int       reload_limit;
 extern t_boolean reload_done;
 
 extern t_boolean full_out_info;
-extern t_boolean short_out_info; /* defined on 'main.c' */
+extern t_boolean short_out_info;
+extern t_boolean wait_logical_recv; /* defined on 'main.cpp' */
 
 extern char     message_buffer[];
 
