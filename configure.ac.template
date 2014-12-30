@@ -445,6 +445,7 @@ AC_CONFIG_FILES([
   Simulator/venusclient/Makefile
   Simulator/eee_model/Makefile
   GUI/Makefile
+  GUI/src/Makefile
   prv2dim/Makefile
   trf2dim/Makefile
 ])

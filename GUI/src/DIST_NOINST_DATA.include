@@ -1,0 +1,4 @@
+dist_noinst_DATA =  \
+resources/bsc_logo.jpg \
+resources/dimemas_icon.png \
+resources/records_definition.txt

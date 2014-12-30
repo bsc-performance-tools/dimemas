@@ -1,0 +1,34 @@
+dist_noinst_JAVA =  \
+es/bsc/cepbatools/dimemas/gui/Main.java \
+es/bsc/cepbatools/dimemas/data/BlockData.java \
+es/bsc/cepbatools/dimemas/data/ConfigurationData.java \
+es/bsc/cepbatools/dimemas/data/Data.java \
+es/bsc/cepbatools/dimemas/data/DedicatedConnectionData.java \
+es/bsc/cepbatools/dimemas/data/EnvironmentData.java \
+es/bsc/cepbatools/dimemas/data/FileSystemData.java \
+es/bsc/cepbatools/dimemas/data/MappingData.java \
+es/bsc/cepbatools/dimemas/data/NodeData.java \
+es/bsc/cepbatools/dimemas/data/Node.java \
+es/bsc/cepbatools/dimemas/data/SimulatorCallData.java \
+es/bsc/cepbatools/dimemas/data/WideAreaNetworkData.java \
+es/bsc/cepbatools/dimemas/gui/AboutWindow.java \
+es/bsc/cepbatools/dimemas/gui/BlockFactorsWindow.java \
+es/bsc/cepbatools/dimemas/gui/CollectiveOpWindow.java \
+es/bsc/cepbatools/dimemas/gui/CommunicationWindow.java \
+es/bsc/cepbatools/dimemas/gui/ConfigurationFilesWindow.java \
+es/bsc/cepbatools/dimemas/gui/ConfigurationOptionsWindow.java \
+es/bsc/cepbatools/dimemas/gui/DedicatedConnectionWindow.java \
+es/bsc/cepbatools/dimemas/gui/EnvironmentWindow.java \
+es/bsc/cepbatools/dimemas/gui/FileSystemWindow.java \
+es/bsc/cepbatools/dimemas/gui/FlightTimeWindow.java \
+es/bsc/cepbatools/dimemas/gui/GUIWindow.java \
+es/bsc/cepbatools/dimemas/gui/InitialMachineWindow.java \
+es/bsc/cepbatools/dimemas/gui/NodeWindow.java \
+es/bsc/cepbatools/dimemas/gui/OptionsMenu.java \
+es/bsc/cepbatools/dimemas/gui/ResultsWindow.java \
+es/bsc/cepbatools/dimemas/gui/SimulatorCallWindow.java \
+es/bsc/cepbatools/dimemas/gui/WideAreaNetworkWindow.java \
+es/bsc/cepbatools/dimemas/gui/PredefinedMapsWindow.java \
+es/bsc/cepbatools/dimemas/gui/GridMappingWindow.java \
+es/bsc/cepbatools/dimemas/tools/Tools.java
+

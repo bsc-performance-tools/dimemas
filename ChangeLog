@@ -10,6 +10,16 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/12/30 - jgonzale - GUI
+	CHANGES:	Complete restructuration of GUI directory. Now, it includes
+				a NetBeans project definition and it follows the classic code
+				distribution of Java applications (es.bsc.cepbatools.dimemas 
+				packages in the corresponding directories.
+
+				In addition, the manifest file to create the 'jar' is created
+				dynamically, and the build is more robust (avoid the fata 'sleep
+				5' from previous implementation.
+
 2014/12/30 - jgonzale - prv2dim
 	BUGFIX:		Solved a bug when translating Paraver traces with MPI_Iprobe
 				events and cluster events that caused a bad generation of the
