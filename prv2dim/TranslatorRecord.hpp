@@ -99,7 +99,8 @@ ostream& operator<< (ostream& os, const PartialCommunication& Comm);
  * class TranslationRecordCompare
  ****************************************************************************/
 
-class OutBlockComparison {
+class OutBlockComparison
+{
 
   public:
     bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) {
@@ -143,15 +144,34 @@ class OutBlockComparison {
              EventR2->IsDimemasBlockEnd())
           return true;
 
-        /* Special case for PROBE counters
+        /* Special case for PROBE counters */
         if (EventR1->GetFirstType() == MPITYPE_PROBE_SOFTCOUNTER &&
             EventR2->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER)
+        {
           return true;
+        }
 
         if (EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER &&
             EventR2->GetFirstType() == MPITYPE_PROBE_SOFTCOUNTER)
+        {
           return false;
-        */
+        }
+        
+        if ( (EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER || 
+              EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER) 
+              &&
+              EventR2->GetFirstType() == CLUSTER_ID_EV)
+        {
+          return true;
+        }
+
+        if (EventR1->GetFirstType() == CLUSTER_ID_EV
+            &&
+            (EventR2->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER ||
+             EventR2->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER))
+        {
+          return false;
+        }
 
         /* Preserve trace order */
         return EventR1->GetFirstTraceOrder() < EventR2->GetFirstTraceOrder();
@@ -292,7 +312,8 @@ class OutBlockComparison {
     }
 };
 
-class InBlockComparison {
+class InBlockComparison
+{
 
   public:
     bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) {

@@ -1119,7 +1119,7 @@ ParaverTraceTranslator::InitTranslationStructures(
     SHOW_PROGRESS(stdout,
                   "CREATING TRANSLATION STRUCTURES ",
                   CurrentTask+1,
-                  TaskInfo.size());
+                  (int) TaskInfo.size());
 
     if (TemporaryFileName == NULL)
     {
@@ -1230,15 +1230,12 @@ ParaverTraceTranslator::InitTranslationStructures(
   }
   SHOW_PROGRESS_END(stdout,
                     "CREATING TRANSLATION STRUCTURES ",
-                    TaskInfo.size());
+                    (int) TaskInfo.size());
 
   return true;
 }
 
-bool
-ParaverTraceTranslator::TranslateCommunicators(
-  ApplicationDescription_t AppDescription
-)
+bool ParaverTraceTranslator::TranslateCommunicators(ApplicationDescription_t AppDescription)
 {
   unsigned int           Index;
   vector<Communicator_t> Communicators;

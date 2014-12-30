@@ -51,10 +51,12 @@ using std::sort;
 #include <iostream>
 using std::cout;
 
+#include <iomanip>
+
 #include <sstream>
 using std::ostringstream;
 
-// #define DEBUG 1
+#define DEBUG 1
 
 /*****************************************************************************
  * Public functions
@@ -465,6 +467,8 @@ bool TaskTranslationInfo::ReorderAndFlush(void)
     }
   }
 
+    
+  
   for (i = 0; i < RecordStack.size(); i++)
   {
     ParaverRecord_t CurrentRecord;
@@ -537,10 +541,16 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
   UINT64 Timestamp;
   double OnTraceTime;
 
+#ifdef DEBUG
+    cout << "Processing User Event: " << *CurrentEvent;
+#endif
+  
   /* We must ensure that current event only has one type/value pair */
   if (CurrentEvent->GetTypeValueCount() != 1)
     return false;
 
+  
+  
   /* Pseudo logical receive events must be erased during the translation */
   if (CurrentEvent->GetFirstType() == 9  ||
       CurrentEvent->GetFirstType() == 10 ||
@@ -700,17 +710,17 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             return false;
           }
 
-          if (Dimemas_Block_End(TemporaryFile,
-                                TaskId,
-                                ThreadId,
-                                (INT64) Type) < 0)
-          {
-            SetError(true);
-            SetErrorMessage("error writing output trace", strerror(errno));
-            return false;
-          }
-
           LastBlockEnd = Timestamp;
+        }
+
+        if (Dimemas_Block_End(TemporaryFile,
+                              TaskId,
+                              ThreadId,
+                              (INT64) Type) < 0)
+        {
+          SetError(true);
+          SetErrorMessage("error writing output trace", strerror(errno));
+          return false;
         }
       }
     }
@@ -1764,8 +1774,13 @@ bool TaskTranslationInfo::CheckIprobeCounters(Event_t CurrentEvent)
 
         cout.width(2);
         cout.fill('0');
-        cout << ThreadId+1 << "]:" << Value/TimeFactor;
+        cout << ThreadId+1 << "]: ";
+        cout << std::setprecision(9);
+        cout << std::fixed;
+        cout << Value/TimeFactor;
+        cout << " (IProbe timecounter) ";
         cout << endl;
+        
 #endif
         if (Dimemas_CPU_Burst(TemporaryFile,
                               TaskId, ThreadId,
@@ -1813,7 +1828,10 @@ bool TaskTranslationInfo::CheckIprobeCounters(Event_t CurrentEvent)
 
         cout.width(2);
         cout.fill('0');
-        cout << ThreadId+1 << "]:" << OnTraceTime;
+        cout << ThreadId+1 << "]: ";
+        cout << std::setprecision(9);
+        cout << std::fixed;
+        cout << OnTraceTime;
         cout << endl;
 #endif
         if (Dimemas_CPU_Burst(TemporaryFile,
@@ -1844,7 +1862,9 @@ bool TaskTranslationInfo::GenerateBurst(INT32  TaskId,
   if (FirstPrint || !BurstCounterGeneration)
   {
     if (FirstPrint)
+    {
       FirstPrint = false;
+    }
 
     OnTraceTime = (double) 1.0*(Timestamp-LastBlockEnd)*TimeFactor;
   }
@@ -1858,7 +1878,9 @@ bool TaskTranslationInfo::GenerateBurst(INT32  TaskId,
       CurrentEvent = dynamic_cast<Event_t>(RecordStack[i]);
 
       if (CurrentEvent == NULL)
+      {
         continue;
+      }
 
       if (CurrentEvent->GetFirstType() == BurstCounterType)
       {
@@ -1891,7 +1913,10 @@ bool TaskTranslationInfo::GenerateBurst(INT32  TaskId,
 
   cout.width(2);
   cout.fill('0');
-  cout << ThreadId+1 << "]:" << OnTraceTime;
+  cout << ThreadId+1 << "]: ";
+  cout << std::setprecision(9);
+  cout << std::fixed;
+  cout << OnTraceTime;
   cout << endl;
 #endif
 

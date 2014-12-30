@@ -10,6 +10,22 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2014/12/30 - jgonzale - prv2dim
+	BUGFIX:		Solved a bug when translating Paraver traces with MPI_Iprobe
+				events and cluster events that caused a bad generation of the
+				CPU bursts duration. Solved by changing the 'OutBlockComparison'
+				not to preserve the original events sorting (the last revsion),
+				but pushing the MPI_Iprobe related events (duration and number
+				of probes) before the cluster events.
+
+	BUGFIX:		Probably the trace useg to solved the previous problem (a
+				Linpack execution in ARM from Nikola) was clustered using a 
+				previous version of the clustering tool, because it generates an
+				excess of clusters' burst closing events. The translator did
+				not translate correctly these events, as it manages the cluster
+				events to detect the old blocks. NOTE: This block management should 
+				be changed (erased!).
+
 2014/12/19 - jgonzale - prv2dim
 	CHANGES:	Added support for 'cyclic simulations', i.e. simulations of
 				Paraver traces that were previously simulated. So far, we

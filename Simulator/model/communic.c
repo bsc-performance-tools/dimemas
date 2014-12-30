@@ -399,17 +399,13 @@ void COMMUNIC_End()
   /* PENDING LINKS INFORMATION */
 
 #ifdef USE_EQUEUE
-  for (
-    node  = (struct t_node *) head_Equeue (&Node_queue);
-    node != N_NIL;
-    node  = (struct t_node *) next_Equeue (&Node_queue)
-  )
+  for (node  = (struct t_node *) head_Equeue (&Node_queue);
+       node != N_NIL;
+       node  = (struct t_node *) next_Equeue (&Node_queue))
 #else
-  for (
-    node  = (struct t_node *) head_queue (&Node_queue);
-    node != N_NIL;
-    node  = (struct t_node *) next_queue (&Node_queue)
-  )
+  for (node  = (struct t_node *) head_queue (&Node_queue);
+       node != N_NIL;
+       node  = (struct t_node *) next_queue (&Node_queue))
 #endif
   {
     if (count_queue (& (node->th_for_in) ) != 0)
@@ -809,9 +805,9 @@ static dimemas_timer get_logical_receive(struct t_thread *thread,
           ": \t\tP%02d T%02d (t%02d) IRecv notification Comm.Id: %d restored. LOGICAL RECEIVE = ",
           IDENTIFIERS (thread),
           communic_id);
+        PRINT_TIMER(irecv_not->logical_recv);
+        printf("\n");
       }
-      PRINT_TIMER(irecv_not->logical_recv);
-      printf("\n");
 
       result = irecv_not->logical_recv;
 
@@ -3550,8 +3546,10 @@ void COMMUNIC_send (struct t_thread *thread)
 
 
   if (mess->dest_thread == -1)
+  {
     /* real MPI transfer - we look for it at the level of tasks  */
     thread_partner = TH_NIL;
+  }
   else
   {
     /* real MPI transfer - we look for it at the level of threads  */
@@ -3828,38 +3826,42 @@ void COMMUNIC_send (struct t_thread *thread)
   if (VC_is_enabled() && (kind == INTERNAL_NETWORK_COM_TYPE) ) {
     double dtime;
     TIMER_TO_FLOAT (current_time, dtime);
-    if (mess->rendez_vous) {
-      VC_command_rdvz_send (dtime, node_s->nodeid, node_r->nodeid, mess->mess_tag, mess->mess_size, task->Ptask->Ptaskid, task_partner->Ptask->Ptaskid);
+    if (mess->rendez_vous)
+    {
+      VC_command_rdvz_send (dtime,
+                            node_s->nodeid,
+                            node_r->nodeid,
+                            mess->mess_tag,
+                            mess->mess_size,
+                            task->Ptask->Ptaskid,
+                            task_partner->Ptask->Ptaskid);
     }
   }
 #endif
 
 
-  if (mess->dest_thread == -1) {
+  if (mess->dest_thread == -1)
+  {
     /* real MPI transfer
        look for it at task->recv   */
-    partner =
-      locate_receiver_real_MPI_transfer (
-        & (task_partner->recv),
-        task->taskid,
-        thread->threadid,
-        mess->dest_thread,
-        mess->mess_tag,
-        mess->communic_id
-      );
-  } else  {
+    partner = locate_receiver_real_MPI_transfer (&(task_partner->recv),
+                                                 task->taskid,
+                                                 thread->threadid,
+                                                 mess->dest_thread,
+                                                 mess->mess_tag,
+                                                 mess->communic_id);
+  }
+  else
+  {
     /* real MPI transfer
        look for it at thread->recv   */
     assert (thread_partner != TH_NIL);
-    partner =
-      locate_receiver_dependencies_synchronization (
-        & (thread_partner->recv),
-        task->taskid,
-        thread->threadid,
-        mess->dest_thread,
-        mess->mess_tag,
-        mess->communic_id
-      );
+    partner = locate_receiver_dependencies_synchronization ( &(thread_partner->recv),
+                                                            task->taskid,
+                                                            thread->threadid,
+                                                            mess->dest_thread,
+                                                            mess->mess_tag,
+                                                            mess->communic_id);
   }
 
 
@@ -3890,10 +3892,13 @@ void COMMUNIC_send (struct t_thread *thread)
         /* El Rendez vous s'ha de fer en "background". Cal utilitzar
          * una copia del thread */
         copy_thread = duplicate_thread (thread);
-        if (mess->dest_thread == -1) {
+        if (mess->dest_thread == -1)
+        {
           /* this is for a real MPI transfer */
           inFIFO_queue (& (task->send), (char *) copy_thread);
-        } else {
+        }
+        else
+        {
           /* this is for a dependency synchronization */
           inFIFO_queue (& (thread->send), (char *) copy_thread);
         }
@@ -3902,7 +3907,7 @@ void COMMUNIC_send (struct t_thread *thread)
         action = thread->action;
         thread->action = action->next;
         READ_free_action(action);
-        if (more_actions (thread) )
+        if (more_actions (thread))
         {
           thread->loose_cpu = FALSE;
           SCHEDULER_thread_to_ready (thread);
@@ -3911,10 +3916,13 @@ void COMMUNIC_send (struct t_thread *thread)
       else
       {
         /* El thread s'ha de bloquejar per esperar el Irecv/recv */
-        if (mess->dest_thread == -1) {
+        if (mess->dest_thread == -1)
+        {
           /* this is for a real MPI transfer */
           inFIFO_queue (& (task->send), (char *) thread);
-        } else {
+        }
+        else
+        {
           /* this is for a dependency synchronization */
           inFIFO_queue (& (thread->send), (char *) thread);
         }
