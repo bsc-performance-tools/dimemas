@@ -11,12 +11,17 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 	CHANGES:  	explanation of codification changes
 
 2015/01/07 - jgonzale - GUI
+
 	CHANGES:	Added support to get a configuration file name as a command
 				line parameter and also to print on the standard output the
 				configuration file name saved.
 
 				This changes are useful to ease the Paraver integration, as the
 				communication between the two interfaces get clarified.
+
+				NOTE: in some cases, the compilation still files due to the
+				classpath (where is mixed the Apache Commons IO JAR and the
+				pure source of the GUI).
 
 2014/12/30 - jgonzale - GUI
 	CHANGES:	Complete restructuration of GUI directory. Now, it includes

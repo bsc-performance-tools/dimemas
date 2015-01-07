@@ -26,7 +26,8 @@ include DIST_NOINST_JAVA.include
 DEPENDENCIES=$(top_builddir)/GUI/lib/commons-io-2.4.jar
 EXTRA_DIST=$(DEPENDENCIES)
 
-JAVACFLAGS = -Xlint -encoding utf8 -cp $(DEPENDENCIES) -cp $(JAVAROOT)
+#JAVACFLAGS = -Xlint -encoding utf8 -cp $(DEPENDENCIES) -cp $(JAVAROOT)
+JAVACFLAGS=-Xlint -encoding utf8 -cp $(DEPENDENCIES)
 
 $(jarfile): $(dist_noinst_JAVA) $(dist_noinst_DATA) $(MANIFEST)
 	$(JAR) cfm $@ $(MANIFEST) $(JARFLAGS) $(RESOURCES) `find . -name "*.class"`
