@@ -1,5 +1,4 @@
 dist_noinst_JAVA =  \
-es/bsc/cepbatools/dimemas/gui/Main.java \
 es/bsc/cepbatools/dimemas/data/BlockData.java \
 es/bsc/cepbatools/dimemas/data/ConfigurationData.java \
 es/bsc/cepbatools/dimemas/data/Data.java \
@@ -30,5 +29,6 @@ es/bsc/cepbatools/dimemas/gui/SimulatorCallWindow.java \
 es/bsc/cepbatools/dimemas/gui/WideAreaNetworkWindow.java \
 es/bsc/cepbatools/dimemas/gui/PredefinedMapsWindow.java \
 es/bsc/cepbatools/dimemas/gui/GridMappingWindow.java \
-es/bsc/cepbatools/dimemas/tools/Tools.java
+es/bsc/cepbatools/dimemas/tools/Tools.java \
+es/bsc/cepbatools/dimemas/gui/Main.java
 

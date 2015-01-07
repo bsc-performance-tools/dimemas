@@ -1,7 +1,7 @@
 JAVAROOT = $(top_builddir)/GUI/src
 
 if HAVE_JAVA
-all: $(jarfile) runscript
+all: $(jarfile) $(RUNSCRIPT)
 else
 all: 
 endif
@@ -16,16 +16,22 @@ JAVAC=@JAVAC@
 JAVA=@JAVA@
 JAR=@JAR@
 
+# In 'DIST_NOINST_DATA.include' we define 'RESOURCES' variable (PNGs/TXTs)
+# and the 'dist_noinst_DATA' variable that includes the RESOURCEs plus
+# the 'DimemasGUI.in' 
 include DIST_NOINST_DATA.include
 include DIST_NOINST_JAVA.include
 
 # List all the dependencies required by the GUI
 DEPENDENCIES=$(top_builddir)/GUI/lib/commons-io-2.4.jar
+EXTRA_DIST=$(DEPENDENCIES)
 
-$(jarfile): $(dist_noinst_JAVA) $(dist_noinst_DATA)
-	$(JAR) cfm $@ $(MANIFEST) $(JARFLAGS) $(dist_noinst_DATA) `find . -name "*.class"`
+JAVACFLAGS = -Xlint -encoding utf8 -cp $(DEPENDENCIES) -cp $(JAVAROOT)
+
+$(jarfile): $(dist_noinst_JAVA) $(dist_noinst_DATA) $(MANIFEST)
+	$(JAR) cfm $@ $(MANIFEST) $(JARFLAGS) $(RESOURCES) `find . -name "*.class"`
 	
-$(dist_noinst_JAVA): updateAndCheckJavaFilesList manifest
+$(dist_noinst_JAVA): updateAndCheckJavaFilesList $(MANIFEST)
 
 updateAndCheckJavaFilesList:
 	rm $(JAVAROOT)/new_DIST_NOINST_JAVA.include; \
@@ -51,23 +57,20 @@ rmclassfiles:
 	find $(JAVAROOT) -name "*.class" -exec rm {} \;
 
 MANIFEST=$(JAVAROOT)/MANIFEST.MF
+$(MANIFEST):
+	echo "Manifest-Version: 1.0"                           > $(MANIFEST)
+	echo "Main-Class: es.bsc.cepbatools.dimemas.gui.Main" >> $(MANIFEST)
+	echo "Class-path: commons-io-2.4.jar"                 >> $(MANIFEST)
 
 RUNSCRIPT=$(top_builddir)/GUI/DimemasGUI
-runscript: DimemasGUI.in
+$(RUNSCRIPT): DimemasGUI.in
 	sed s/@@JARFILE@@/$(basejarfile)/ < DimemasGUI.in > $(RUNSCRIPT)
 
-install-exec-am: $(runscript)
-
-manifest:
-	echo "Manifest-Version: 1.0" > $(MANIFEST); \
-	echo "Main-Class: es.bsc.cepbatools.dimemas.gui.Main" >> $(MANIFEST); \
-	echo "Class-path: commons-io-2.4.jar" >> $(MANIFEST)
-
-JAVACFLAGS = -Xlint -encoding utf8 -cp $(DEPENDENCIES)
+install-exec-am: $(RUNSCRIPT)
 
 CLEANFILES = $(jarfile) $(MANIFEST) $(RUNSCRIPT) new_DIST_NOINST_JAVA.include
 
-install-exec-am: $(jarfile) $(runscript) $(DEPENDENCIES)
+install-exec-am: $(jarfile) $(RUNSCRIPT) $(DEPENDENCIES)
 	mkdir -p $(libdir)/GUI
 	cp $(jarfile) $(libdir)/GUI
 	cp $(DEPENDENCIES) $(libdir)/GUI

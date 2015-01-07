@@ -338,7 +338,19 @@ public class Data
     try
     {
       source = new RandomAccessFile(new File(filename),"r");
+    }
+    catch(Throwable exc)
+    {
+      String message = "Unable to open configuration file \""+filename+"\"\n";
+      message += exc.getMessage();
+      
+      Tools.showInformationMessage(message);
+      return;
+    }
 
+    try
+    {
+      
       if (source.length() == 0)
       {
         Tools.showInformationMessage("The configuration file selected is empty");
@@ -640,13 +652,14 @@ public class Data
           }
         }
       } // END while()
-
-      source.close();
     }
-    catch(Throwable exc)
+    catch (Exception exc)
     {
-      Tools.showInformationMessage(exc.getMessage());
-      exc.printStackTrace();
+      String message = "Unable to open configuration file \""+filename+"\"\n";
+      message += exc.getMessage();
+      
+      Tools.showInformationMessage(message);
+      return;
     }
 
     if (malformedFile)
@@ -823,6 +836,9 @@ public class Data
       // FILE SYSTEM INFO record
       fileSys.saveData(target);
       target.close();
+      
+      // To ease Paraver <-> DimemasGUI communication
+      System.out.println("Configuration file saved: "+filename);
     }
     catch(IOException exc)
     {

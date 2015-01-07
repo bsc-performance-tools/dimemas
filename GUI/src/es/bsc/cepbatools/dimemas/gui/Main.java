@@ -52,14 +52,14 @@ public class Main extends JFrame
 {
   public static final long serialVersionUID = 1000L;
 
-  JTextField currentConfigurationFile = new JTextField("");
-  Data data                           = new Data(currentConfigurationFile);
-  OptionsMenu menu                    = new OptionsMenu(data);
-  Container panelPrincipal            = getContentPane();
+  JTextField  currentConfigurationFile = new JTextField("");
+  Data        data                     = new Data(currentConfigurationFile);
+  OptionsMenu menu                     = new OptionsMenu(data);
+  Container   panelPrincipal           = getContentPane();
 
   public Main()
   {
-    super("DIMEMAS");
+    super("Dimemas");
 
     setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource((Data.ICON_IMAGE))));
     setResizable(false);
@@ -74,6 +74,11 @@ public class Main extends JFrame
     setResizable(false);
     setVisible(true);
   }
+  
+  public void loadCommandLineConfigurationFile(String configurationFile)
+  {
+    data.loadFromDisk(configurationFile);
+  }
 
   public static void main(String[] args)
   {
@@ -81,8 +86,13 @@ public class Main extends JFrame
     {
       System.exit(-1);
     }
-
-    final JFrame ventanaPrincipal = new Main();
+    
+    final Main ventanaPrincipal = new Main();
+    
+    if (args.length == 1)
+    {
+      ventanaPrincipal.loadCommandLineConfigurationFile(args[0]);
+    }
 
     ventanaPrincipal.addWindowListener(new WindowAdapter()
       {
