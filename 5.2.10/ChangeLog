@@ -10,6 +10,16 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2015/01/08 - jgonzale - GUI
+	BUGFIX:		Major compilation problems solved. Previous distribution 
+				failed ('jar' file did not include the 'es/bsc/...' directory).
+				Now, the compilation system also generates the 'Version.java'
+				file and the 'updateAndCheck...' from the 'Makefile.am' of
+				the GUI works properly.
+
+	CHANGES:	New About Window in the GUI
+
+
 2015/01/07 - jgonzale - All - 5.2.10
 	CHANGES:	5.2.10 Release!
 

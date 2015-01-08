@@ -34,12 +34,7 @@
 package es.bsc.cepbatools.dimemas.gui;
 
 /**
- * Título:       dimemas
- * Descripcion:
- * Copyright:    Copyright (c) 2001
- * Empresa:
- * @author Óscar Bardillo Luján
- * @version 1.0
+ * @author Oscar Bardillo Luján
  */
 
 import es.bsc.cepbatools.dimemas.data.*;
@@ -69,15 +64,15 @@ public class InitialMachineWindow extends GUIWindow
   private JButton b_select = createButton("Select tracefile");
   private JButton b_close  = createButton("Close");
 
-  // Constructor de la clase InitialMachineWindow.
+  // Constructor
   public InitialMachineWindow(Data d)
   {
     super(d);
 
-    // Propiedades de la ventana.
+    // Window properties
     setTitle("Application information");
 
-    // Añadiendo información.
+    // Adding information
     tf_tracefile.setText(data.map.getTracefile(false));
     // tf_instrumentedArch.setText(data.instrumentedArchitecture);
     if (data.map.getTasks() == Data.NO_TASKS_DETECTED)
@@ -89,7 +84,7 @@ public class InitialMachineWindow extends GUIWindow
       tf_tasks.setText(String.valueOf(data.map.getTasks()));
     }
 
-    // Añadiendo los componentes a la ventana.
+    // Window components
     drawLine(new Component[] {new JLabel("Input tracefile name"),tf_tracefile});
     tf_tracefile.setEditable(false);
 
@@ -105,17 +100,16 @@ public class InitialMachineWindow extends GUIWindow
 
     drawButtons(new Component[] {b_save,b_select,b_close},20,5);
 
-    // Más propiedades de ventana.
+    // Window size
     setBounds(25,150,getWidth()+20,getHeight());
     pack();
     setVisible(true);
   }
 
-  /*
-  * El método dataOK comprueba algunos aspectos que deben cumplir los datos que
-  * se muestran en ese momento en pantalla (no puede haber campos vacíos, el
-  * valor 0 no esta permitido en algunos casos, etc).
-  */
+  /**
+   * Checks the status of some data
+   */
+  
   private boolean dataOK()
   {
     if(tf_tracefile.getText().equalsIgnoreCase(""))
@@ -139,10 +133,9 @@ public class InitialMachineWindow extends GUIWindow
     }
   }
 
-  /*
-  * La clase workUnit facilita el cálculo del número de tareas ubicadas en un
-  * fichero de trazas.
-  */
+  /**
+   * Checks the number of MPI processes in a trace
+   */
   class workUnit extends Thread
   {
     String line;
@@ -152,8 +145,7 @@ public class InitialMachineWindow extends GUIWindow
     // progress prog;
     RandomAccessFile sourceFile;
 
-    // Constructor de la clase workUnit.
-    // public workUnit(File file, progress p)
+    // Constructor
     public workUnit(File file)
     {
       // prog = p;
@@ -169,7 +161,6 @@ public class InitialMachineWindow extends GUIWindow
       }
     }
 
-    // Método que permite acceder al número de tareas desde fuera de la clase.
     public String getNumberOfTasks()
     {
       return String.valueOf(nTasks);
@@ -278,12 +269,9 @@ public class InitialMachineWindow extends GUIWindow
         
   }
 
-  
-  
-  /*
-  * La clase progress crea y mantiene la barra de progreso que indica el proceso
-  * de cálculo del número de tareas de un fichero de trazas.
-  */
+  /**
+   * Progress bar when reading a trace file
+   */
   class progress extends Thread
   {
     int current;
@@ -331,8 +319,6 @@ public class InitialMachineWindow extends GUIWindow
     }
   }
 
-  // En este método se ejecutan las respuestas del GUI a las acciones del
-  // usuario al interactuar con los elementos de la ventana.
   public void actionPerformed(ActionEvent e)
   {
     /*
@@ -404,14 +390,11 @@ public class InitialMachineWindow extends GUIWindow
         }
       }
 
-      /* JGG: not needed any more
-              Check the trace format and the number of tasks
+      /* JGG: not needed any more Check the trace format and the number of tasks
       File source = new File(tf_tracefile.getText());
       workUnit wu = new workUnit(source);
       wu.start();
       */
-
-      
 
       Tools.fc.resetChoosableFileFilters();
     }
