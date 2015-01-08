@@ -54,7 +54,7 @@ import javax.swing.*;
 /*
 * La clase Data ofrece acceso a todos los datos de la GUI.
 */
-public class Data
+public class Data implements Version 
 {
   private JTextField currentConfigurationFile;
   public String instrumentedArchitecture = "";

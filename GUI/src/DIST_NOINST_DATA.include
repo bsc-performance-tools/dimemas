@@ -3,4 +3,4 @@ resources/bsc_logo.jpg \
 resources/dimemas_icon.png \
 resources/records_definition.txt
 
-dist_noinst_DATA= $(RESOURCES) DimemasGUI.in
+dist_noinst_DATA=$(RESOURCES) DimemasGUI.in
