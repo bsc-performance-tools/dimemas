@@ -223,8 +223,6 @@ public class NodeWindow extends GUIWindow
   */
   private boolean storeInformation(int index, boolean reply)
   {
-    String result;
-    
     if(!dataOK())
     {
       return false;
@@ -232,8 +230,6 @@ public class NodeWindow extends GUIWindow
 
     try
     {
-      
-      
       if(!reply)
       {
         data.nodes_information.node[index].setNode_id(tf_node_id.getText());
@@ -254,15 +250,10 @@ public class NodeWindow extends GUIWindow
 
       data.nodes_information.node[index].setWANStartup(tf_wan_startup.getText());
 
-    } catch(Exception exc)
-      {
-        return false;
-      }
-    
-    if ( (result = data.map.changeAtNodes()) != null)
+    }
+    catch(Exception exc)
     {
-      Tools.showWarningMessage(result+"\n"+
-              "Please check the \"Mapping information\" to verify your task mapping");
+      return false;
     }
     
     return true;
@@ -467,26 +458,45 @@ public class NodeWindow extends GUIWindow
   // usuario al interactuar con los elementos de la ventana.
   public void actionPerformed(ActionEvent e)
   {
+    String mapNodeChangeResult;
+    
     if(e.getSource() == b_left)
     {
-      if(storeInformation(Integer.parseInt(tf_number.getText())-1,false))
+      if(storeInformation(Integer.parseInt(tf_number.getText())-1, false))
       {
+        if ( (mapNodeChangeResult = data.map.changeAtNodes()) != null)
+        {
+          Tools.showWarningMessage(mapNodeChangeResult+"\n"+
+                  "Please check the \"Mapping information\" to verify your task mapping");
+        }
         tf_number.setText(decrease(tf_number.getText()));
         fillInformation(Integer.parseInt(tf_number.getText())-1);
       }
     }
     if(e.getSource() == b_right)
     {
-      if(storeInformation(Integer.parseInt(tf_number.getText())-1,false))
+      if(storeInformation(Integer.parseInt(tf_number.getText())-1, false))
       {
+        if ( (mapNodeChangeResult = data.map.changeAtNodes()) != null)
+        {
+          Tools.showWarningMessage(mapNodeChangeResult+"\n"+
+                  "Please check the \"Mapping information\" to verify your task mapping");
+        }
+        
         tf_number.setText(increase(tf_number.getText()));
         fillInformation(Integer.parseInt(tf_number.getText())-1);
       }
     }
     else if(e.getSource() == b_save)
     {
-      if(storeInformation(Integer.parseInt(tf_number.getText())-1,false))
+      if(storeInformation(Integer.parseInt(tf_number.getText())-1, false))
       {
+        if ( (mapNodeChangeResult = data.map.changeAtNodes()) != null)
+        {
+          Tools.showWarningMessage(mapNodeChangeResult+"\n"+
+                  "Please check the \"Mapping information\" to verify your task mapping");
+        }
+        
         dispose();
       }
     }
@@ -496,11 +506,21 @@ public class NodeWindow extends GUIWindow
     }
     else if(e.getSource() == b_same)
     {
+      boolean wrongNodeData = false;
       for(int i = data.nodes_information.getNumberOfNodes()-1; i >= 0; i--)
       {
         if(!storeInformation(i,true))
         {
+          wrongNodeData = true;
           break;
+        }
+      }
+      if (!wrongNodeData)
+      {
+        if ( (mapNodeChangeResult = data.map.changeAtNodes()) != null)
+        {
+          Tools.showWarningMessage(mapNodeChangeResult+"\n"+
+                  "Please check the \"Mapping information\" to verify your task mapping");
         }
       }
     }

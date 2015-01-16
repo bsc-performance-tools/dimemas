@@ -132,6 +132,12 @@ public class MappingData
        * 4: Array representing the map */
       
       tracefile       = mapMatcher.group(1);
+      
+      if (!checkNumberOfTasks(tracefile))
+      {
+        Tools.showInformationMessage("Unable to access to tracefile '"+tracefile+"'. The number of tasks read from may be incorrect");
+      }
+      
       nTasks          = Integer.parseInt(mapMatcher.group(2));
       int mapLength   = Integer.parseInt(mapMatcher.group(3));
       String[] mapStr = mapMatcher.group(4).split(",");
@@ -156,6 +162,8 @@ public class MappingData
           return true;
         }
       }
+      
+      
       
     }
     else
@@ -220,6 +228,7 @@ public class MappingData
       
       if (!checkNumberOfTasks(tracefile))
       {
+        Tools.showInformationMessage("Unable to access to tracefile '"+tracefile+"'. The number of taks remains unknown to compute the mappings");
         nTasks = DEFAULT_TASKS;
       }
     }
@@ -414,6 +423,11 @@ public class MappingData
         generateMap();
       }
     }
+    else
+    {
+      Tools.showInformationMessage("Unable to access to tracefile '"+tracefile+"'. The number of taks remains unknown to compute the mappings");
+      nTasks = DEFAULT_TASKS;
+    }
   }
 
   public void setTasks(int value)
@@ -521,7 +535,7 @@ public class MappingData
 
     try
     {
-      sourceFileRead = new RandomAccessFile(sourceFile,"r");
+      sourceFileRead = new RandomAccessFile(sourceFile, "r");
     }
     catch(FileNotFoundException fnfe)
     {

@@ -10,6 +10,13 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2015/01/15 - jgonzale - GUI
+	BUGFIX:		Solved a bug that created multiple mapping warning
+				messages when doing a bulk modificacion of 'Target Machine'
+				nodes ('Do all the same' button on the 'NodeWindow.java').
+				Now, when pressing this button, the correctness of the application
+				mapping is checked when all modifications have taken place.
+
 2015/01/08 - jgonzale - GUI
 	BUGFIX:		Major compilation problems solved. Previous distribution 
 				failed ('jar' file did not include the 'es/bsc/...' directory).
