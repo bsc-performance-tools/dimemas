@@ -450,17 +450,21 @@ int main(const int argc, const char *argv[])
     exit(EXIT_FAILURE);
   }
 
-    Translator = new ParaverTraceTranslator(PrvTraceName, DimTraceName);
+  Translator = new ParaverTraceTranslator(PrvTraceName, DimTraceName);
 
   if (Translator->GetError())
   {
     cerr << Translator->GetLastError() << endl;
+
+    delete Translator;
     exit(EXIT_FAILURE);
   }
 
   if (!Translator->InitTranslator())
   {
     cerr << Translator->GetLastError() << endl;
+
+    delete Translator;
     exit(EXIT_FAILURE);
   }
 
@@ -468,7 +472,11 @@ int main(const int argc, const char *argv[])
   {
     cerr << Translator->GetLastError() << endl;
     if (!Translator->EndTranslator())
+    {
       cerr << Translator->GetLastError() << endl;
+    }
+
+    delete Translator;
     exit(EXIT_FAILURE);
   }
 
@@ -480,14 +488,21 @@ int main(const int argc, const char *argv[])
   {
     cerr << endl;
     cerr << "Error: " << Translator->GetLastError() << endl;
+
     if (!Translator->EndTranslator())
+    {
       cerr << Translator->GetLastError() << endl;
+    }
+
+    delete Translator;
     exit(EXIT_FAILURE);
   }
 
   if (!Translator->EndTranslator())
   {
     cerr << Translator->GetLastError() << endl;
+
+    delete Translator;
     exit(EXIT_FAILURE);
   }
 
@@ -496,6 +511,8 @@ int main(const int argc, const char *argv[])
   PCFGenerator->GeneratePCF(string(""));
 
   CopyRowFile(PrvTraceName, DimTraceName);
+
+  delete Translator;
 
   return EXIT_SUCCESS;
 }

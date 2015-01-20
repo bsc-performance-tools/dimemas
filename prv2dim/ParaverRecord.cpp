@@ -41,17 +41,30 @@ using std::endl;
  * class ParaverRecord
  ****************************************************************************/
 
+UINT64 ParaverRecord::CurrentRecordCount = 0;
+
+ParaverRecord::ParaverRecord()
+{
+  this->RecordCount = NewRecordCount();
+}
+
 ParaverRecord::ParaverRecord(UINT64 Timestamp,
                              INT32  CPU,
                              INT32  AppId,
                              INT32  TaskId,
                              INT32  ThreadId)
 {
-  this->Timestamp = Timestamp;
-  this->CPU       = CPU;
-  this->AppId     = AppId;
-  this->TaskId    = TaskId;
-  this->ThreadId  = ThreadId;
+  this->Timestamp   = Timestamp;
+  this->CPU         = CPU;
+  this->AppId       = AppId;
+  this->TaskId      = TaskId;
+  this->ThreadId    = ThreadId;
+  this->RecordCount = NewRecordCount();
+}
+
+UINT64 ParaverRecord::NewRecordCount(void)
+{
+  return CurrentRecordCount++;
 }
 
 ostream& operator<< (ostream& os, const ParaverRecord& Rec)
@@ -314,7 +327,7 @@ ostream& operator<< (ostream& os, const Event& Evt)
  * class Communication
  ****************************************************************************/
 
-INT64 Communication::CurrentTraceOrder = 0;
+UINT64 Communication::CurrentTraceOrder = 0;
 
 Communication::Communication(UINT64 LogSend, UINT64 PhySend,
                              UINT64 LogRecv, UINT64 PhyRecv,
@@ -377,7 +390,7 @@ void Communication::Write(ostream& os) const
   os << "Size: " << Size << " Tag: " << Tag << endl;
 }
 
-INT64 Communication::NewTraceOrder(void)
+UINT64 Communication::NewTraceOrder(void)
 {
   return CurrentTraceOrder++;
 }

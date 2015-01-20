@@ -935,14 +935,6 @@ next_op:
 
             cpu = get_cpu_of_thread(thread);
 
-            /* DEBUG
-            PRINT_TIMER(current_time);
-            printf(": Printing event: P%02d T%02d (t%02d) Type: %lld Val: %lld\n",
-                   IDENTIFIERS(thread),
-                   action->desc.even.type,
-                   action->desc.even.value);
-            */
-
             PARAVER_Event (cpu->unique_number,
                            IDENTIFIERS (thread),
                            current_time,

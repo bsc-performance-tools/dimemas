@@ -185,7 +185,7 @@ extern void PARAVER_Busy_Wait (int cpu, int ptask, int task, int thread,
 
 extern void PARAVER_Waiting_Links (int cpu, int ptask, int task, int thread,
                                    dimemas_timer init_time,
-                                  dimemas_timer end_time);
+                                   dimemas_timer end_time);
 
 extern void PARAVER_Ctx_Switch (int cpu, int ptask, int task, int thread,
                                 dimemas_timer init_time,
@@ -201,7 +201,7 @@ extern void PARAVER_RTT (int cpu, int ptask, int task, int thread,
 
 extern void PARAVER_IO_Op (int cpu, int ptask, int task, int thread,
                            dimemas_timer init_time,
-                          dimemas_timer end_time);
+                           dimemas_timer end_time);
 
 extern void PARAVER_IO_Blocked (int cpu, int ptask, int task, int thread,
                                 dimemas_timer init_time,

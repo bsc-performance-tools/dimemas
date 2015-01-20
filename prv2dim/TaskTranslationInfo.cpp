@@ -56,7 +56,7 @@ using std::cout;
 #include <sstream>
 using std::ostringstream;
 
-#define DEBUG 1
+// #define DEBUG 1
 
 /*****************************************************************************
  * Public functions
@@ -467,8 +467,8 @@ bool TaskTranslationInfo::ReorderAndFlush(void)
     }
   }
 
-    
-  
+
+
   for (i = 0; i < RecordStack.size(); i++)
   {
     ParaverRecord_t CurrentRecord;
@@ -544,13 +544,13 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 #ifdef DEBUG
     cout << "Processing User Event: " << *CurrentEvent;
 #endif
-  
+
   /* We must ensure that current event only has one type/value pair */
   if (CurrentEvent->GetTypeValueCount() != 1)
     return false;
 
-  
-  
+
+
   /* Pseudo logical receive events must be erased during the translation */
   if (CurrentEvent->GetFirstType() == 9  ||
       CurrentEvent->GetFirstType() == 10 ||
@@ -1780,7 +1780,7 @@ bool TaskTranslationInfo::CheckIprobeCounters(Event_t CurrentEvent)
         cout << Value/TimeFactor;
         cout << " (IProbe timecounter) ";
         cout << endl;
-        
+
 #endif
         if (Dimemas_CPU_Burst(TemporaryFile,
                               TaskId, ThreadId,

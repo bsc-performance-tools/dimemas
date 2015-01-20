@@ -326,7 +326,7 @@ ParaverTraceTranslator::SplitCommunications(void)
                                                               CurrentEvent->GetTimestamp(),
                                                               SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
                                                               DstCPU, DstAppId, DstTaskId, DstThreadId,
-                                                              Size, Tag, CommId);
+                                                              Size, Tag, CommId, CurrentEvent->GetRecordCount());
           Communications.push_back(SplittedCommunication);
         }
       }
@@ -902,7 +902,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     */
     cout << "tasks have communications records outside a communication block" << endl;
     cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
-    cout << "NOTE: If the Paraver trace comes from a trace clock, check the cut limtis" << endl;
+    cout << "NOTE: If the Paraver trace comes from a trace cut, check the cut limtis" << endl;
     cout << "********************************************************************************" << endl;
     cout << endl;
   }
@@ -940,8 +940,8 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
       cout << ", " << TasksWithOutsideComms[i];
     cout << endl; */
-    cout << "This application execute 'non-deterministic' communications primitives" << endl;
-    cout << " (MPI_Test[*] | MPI_Waitany | MPI_Waitall | MPI_Waitsome)" << endl;
+    cout << "tasks of this application execute 'non-deterministic' communications " << endl;
+    cout << "primitives (MPI_Test[*] | MPI_Waitany | MPI_Waitall | MPI_Waitsome)" << endl;
     cout << "The simulation of this trace will not capture the possible indeterminism " << endl;
     // cout << "NOTE: Pleasy check the Paraver trace time resolution" << endl;
     cout << "********************************************************************************" << endl;

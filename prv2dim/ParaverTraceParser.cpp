@@ -32,7 +32,7 @@
 
 #include "ParaverTraceParser.hpp"
 
-// #define _GNU_SOURCE
+#define _GNU_SOURCE
 #include <stdio.h>
 
 #include <errno.h>
@@ -368,12 +368,15 @@ INT32 ParaverTraceParser::GetLongLine(char** Line)
     return (INT32) LineLength;
   }
 
+  /*
   InitialPosition = ftello(ParaverTraceFile);
 
   if (feof(ParaverTraceFile))
+  {
     return 0;
+  }
 
-  /* To avoid initial position on CR */
+  /* To avoid initial position on CR
   if (fgetc(ParaverTraceFile) == '\n')
   {
     InitialPosition++;
@@ -400,6 +403,7 @@ INT32 ParaverTraceParser::GetLongLine(char** Line)
   }
   */
 
+  /*
   while ( (CharReaded = fgetc(ParaverTraceFile)) != '\n' )
   {
     if (CharReaded == EOF && LineLength < 1)
@@ -414,6 +418,7 @@ INT32 ParaverTraceParser::GetLongLine(char** Line)
 
   /* cout << "Header size: " << HeaderLength << endl;; */
 
+  /*
   *Line = (char*) calloc(sizeof(char), LineLength+2);
 
   if ( fseeko(ParaverTraceFile, InitialPosition, SEEK_SET) < 0)
@@ -435,6 +440,7 @@ INT32 ParaverTraceParser::GetLongLine(char** Line)
 
   CurrentLine++;
   return LineLength;
+  */
 }
 
 bool

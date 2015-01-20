@@ -55,11 +55,15 @@ using std::ostream;
 class ParaverRecord
 {
   protected:
+    UINT64 RecordCount;
     UINT64 Timestamp;
     INT32  CPU, AppId, TaskId, ThreadId;
+
+    static UINT64 CurrentRecordCount;
+
   public:
 
-    ParaverRecord(void){};
+    ParaverRecord(void);
 
     ParaverRecord(UINT64 Timestamp,
                   INT32  CPU,
@@ -101,11 +105,14 @@ class ParaverRecord
       */
     };
 
-    virtual UINT64 GetTimestamp(void) { return Timestamp; };
-    virtual INT32  GetCPU(void)       { return CPU; };
-    virtual INT32  GetAppId(void)     { return AppId; };
-    virtual INT32  GetTaskId(void)    { return TaskId; };
-    virtual INT32  GetThreadId(void)  { return ThreadId; };
+    virtual UINT64 GetRecordCount(void) { return RecordCount; };
+    virtual UINT64 GetTimestamp(void)   { return Timestamp; };
+    virtual INT32  GetCPU(void)         { return CPU; };
+    virtual INT32  GetAppId(void)       { return AppId; };
+    virtual INT32  GetTaskId(void)      { return TaskId; };
+    virtual INT32  GetThreadId(void)    { return ThreadId; };
+
+    static  UINT64 NewRecordCount(void);
 
     virtual void Write(ostream& os) const {};
 };
@@ -246,9 +253,10 @@ class Communication: public virtual ParaverRecord
     UINT64 PhysicalSend, LogicalRecv, PhysicalRecv;
     INT32  Size;
     INT32  Tag;
-    INT64  TraceOrder;
+    UINT64 TraceOrder;
 
-    static INT64 CurrentTraceOrder;
+    static UINT64 CurrentTraceOrder;
+
   public:
     Communication(UINT64 LogSend, UINT64 PhySend,
                   UINT64 LogRecv, UINT64 PhyRecv,
@@ -276,7 +284,7 @@ class Communication: public virtual ParaverRecord
     INT32  GetTag(void)          { return Tag; };
     INT64  GetTraceOrder(void)   { return TraceOrder; };
 
-    static INT64 NewTraceOrder(void);
+    static UINT64 NewTraceOrder(void);
 
     void Write(ostream& os) const;
 };

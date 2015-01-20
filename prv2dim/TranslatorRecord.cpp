@@ -42,14 +42,15 @@ using std::endl;
  * Public functions
  ****************************************************************************/
 
-PartialCommunication::PartialCommunication(INT32 Type,
+PartialCommunication::PartialCommunication(INT32  Type,
                                            UINT64 Timestamp,
-                                           INT32 SrcCPU,    INT32 SrcAppId,
-                                           INT32 SrcTaskId, INT32 SrcThreadId,
-                                           INT32 DstCPU,    INT32 DstAppId,
-                                           INT32 DstTaskId, INT32 DstThreadId,
-                                           INT32 Size,      INT32 Tag,
-                                           INT32 CommId)
+                                           INT32  SrcCPU,    INT32 SrcAppId,
+                                           INT32  SrcTaskId, INT32 SrcThreadId,
+                                           INT32  DstCPU,    INT32 DstAppId,
+                                           INT32  DstTaskId, INT32 DstThreadId,
+                                           INT32  Size,      INT32 Tag,
+                                           INT32  CommId,
+                                           UINT64 TraceOrder)
 {
   this->Type      = Type;
   this->Timestamp = Timestamp;
@@ -57,9 +58,10 @@ PartialCommunication::PartialCommunication(INT32 Type,
   InitFields(SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
              DstCPU, DstAppId, DstTaskId, DstThreadId);
 
-  this->Size   = Size;
-  this->Tag    = Tag;
-  this->CommId = CommId;
+  this->Size       = Size;
+  this->Tag        = Tag;
+  this->CommId     = CommId;
+  this->TraceOrder = TraceOrder;
 }
 
 PartialCommunication::PartialCommunication(INT32           Type,
@@ -119,10 +121,10 @@ PartialCommunication::PartialCommunication(INT32           Type,
   InitFields(SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
              DstCPU, DstAppId, DstTaskId, DstThreadId);
 
-  this->Size   = ReadedSize;
-  this->Tag    = ReadedTag;
-  this->CommId = CommId;
-
+  this->Size       = ReadedSize;
+  this->Tag        = ReadedTag;
+  this->CommId     = CommId;
+  this->TraceOrder = Comm->GetRecordCount();
 }
 
 void PartialCommunication::Write ( ostream & os ) const

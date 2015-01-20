@@ -53,11 +53,12 @@ using std::cout;
 class PartialCommunication: virtual public ParaverRecord
 {
   private:
-    INT32 Type;
-    INT32 PartnerCPU, PartnerAppId, PartnerTaskId, PartnerThreadId;
-    INT32 Size;
-    INT32 Tag;
-    INT32 CommId; /* Pseudo-Communicator ID for Dimemas coherence */
+    INT32  Type;
+    INT32  PartnerCPU, PartnerAppId, PartnerTaskId, PartnerThreadId;
+    INT32  Size;
+    INT32  Tag;
+    INT32  CommId; /* Pseudo-Communicator ID for Dimemas coherence */
+    UINT64 TraceOrder;
 
   public:
     PartialCommunication(INT32  Type,
@@ -67,16 +68,18 @@ class PartialCommunication: virtual public ParaverRecord
                          INT32  DstCPU,    INT32 DstAppId,
                          INT32  DstTaskId, INT32 DstThreadId,
                          INT32  Size,      INT32 Tag,
-                         INT32  CommId);
+                         INT32  CommId,
+                         UINT64 TraceOrder);
 
     PartialCommunication(INT32 Type, Communication_t Comm, INT32 CommId);
 
-    INT32 GetType(void)            { return Type; };
-    INT32 GetPartnerTaskId(void)   { return PartnerTaskId; };
-    INT32 GetPartnerThreadId(void) { return PartnerThreadId; };
-    INT32 GetCommId(void)          { return CommId; };
-    INT32 GetSize(void)            { return Size; };
-    INT32 GetTag(void)             { return Tag; };
+    INT32  GetType(void)            { return Type; };
+    INT32  GetPartnerTaskId(void)   { return PartnerTaskId; };
+    INT32  GetPartnerThreadId(void) { return PartnerThreadId; };
+    INT32  GetSize(void)            { return Size; };
+    INT32  GetTag(void)             { return Tag; };
+    INT32  GetCommId(void)          { return CommId; };
+    UINT64 GetTraceOrder(void)      { return TraceOrder; };
 
     void Write ( ostream & os ) const;
 
@@ -156,9 +159,9 @@ class OutBlockComparison
         {
           return false;
         }
-        
-        if ( (EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER || 
-              EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER) 
+
+        if ( (EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER ||
+              EventR1->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER)
               &&
               EventR2->GetFirstType() == CLUSTER_ID_EV)
         {
@@ -396,13 +399,15 @@ class InBlockComparison
             (CommR1->GetType() == PHYSICAL_SEND &&
              CommR2->GetType() == PHYSICAL_SEND))
         {
-          return CommR1->GetTaskId() < CommR2->GetTaskId();
+          return CommR1->GetTraceOrder() < CommR2->GetTraceOrder();
+          // return CommR1->GetTaskId() < CommR2->GetTaskId();
         }
 
         if (CommR1->GetType() == PHYSICAL_SEND &&
             CommR2->GetType() == PHYSICAL_SEND)
         {
-          return CommR1->GetTaskId() < CommR2->GetTaskId();
+          return CommR1->GetTraceOrder() < CommR2->GetTraceOrder();
+          // return CommR1->GetTaskId() < CommR2->GetTaskId();
         }
 
         if (CommR1->GetType() == LOGICAL_RECV)
