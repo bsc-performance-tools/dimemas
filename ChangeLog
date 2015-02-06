@@ -13,6 +13,8 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 2015/02/06 - jgonzale - Simulador
 	CHANGES:	Added missing 'main.cpp' file
 
+	CHANGES:	Added all missing files from 'common_utilities' directory
+
 2015/01/20 - jgonzale - prv2dim
 	BUGFIX:		Solved bug in the translation 'InBlockComparison' that
 				caused different translated traces due to a random comparison
