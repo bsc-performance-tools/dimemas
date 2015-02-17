@@ -264,8 +264,17 @@ int print_event (struct t_event *event) {
     case COM_TIMER_GROUP_RESOURCES:
       printf ("COM_TIMER_GROUP_RESOURCES ");
       break;
-    case COM_TIMER_OUT_RESOURCES:
-      printf ("COM_TIMER_OUT_RESOURCES ");
+    case COM_TIMER_OUT_RESOURCES_MEM:
+      printf ("COM_TIMER_OUT_RESOURCES_MEM ");
+      break;
+    case COM_TIMER_OUT_RESOURCES_NET:
+      printf ("COM_TIMER_OUT_RESOURCES_NET ");
+      break;
+    case COM_TIMER_OUT_RESOURCES_WAN:
+      printf ("COM_TIMER_OUT_RESOURCES_WAN ");
+      break;
+    case COM_TIMER_OUT_RESOURCES_DED:
+      printf ("COM_TIMER_OUT_RESOURCES_DED ");
       break;
     default:
       printf ("Unknown INFO: %d", event->info);

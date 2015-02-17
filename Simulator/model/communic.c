@@ -2753,7 +2753,8 @@ static void COMMUNIC_mem_resources_COM_TIMER_OUT (struct t_thread *thread)
 
     if (bus_utilization == BU_NIL)
     {
-      panic ("Unable to locate in bus utilization queue\n");
+      abort();
+      panic ("Unable to locate in memory bus utilization queue\n");
     }
 
     extract_from_queue (&node->threads_in_memory, (char*) bus_utilization);
@@ -2761,7 +2762,7 @@ static void COMMUNIC_mem_resources_COM_TIMER_OUT (struct t_thread *thread)
     free (bus_utilization);
   }
 
-  if (thread->local_link != L_NIL && thread->partner_link != L_NIL)
+  if (thread->local_link != L_NIL)
   {
     if (debug & D_COMM)
     {
@@ -2773,7 +2774,10 @@ static void COMMUNIC_mem_resources_COM_TIMER_OUT (struct t_thread *thread)
     }
 
     LINKS_free_mem_link(thread->local_link, thread);
+  }
 
+  if (thread->partner_link != L_NIL)
+  {
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
@@ -2892,25 +2896,31 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT (struct t_thread *thread)
     free (bus_utilization);
   }
 
-  if (debug & D_COMM)
+  if (thread->local_link != L_NIL)
   {
-    PRINT_TIMER (current_time);
-    printf (
-      ": COMMUNIC\tP%02d T%02d (t%02d) Free Local Link\n",
-      IDENTIFIERS (thread)
-    );
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": COMMUNIC\tP%02d T%02d (t%02d) Free Local Link\n",
+        IDENTIFIERS (thread)
+      );
+    }
+
+    LINKS_free_network_link(thread->local_link, thread);
   }
 
-  LINKS_free_network_link(thread->local_link, thread);
-
-  if (debug & D_COMM)
+  if (thread->partner_link != L_NIL)
   {
-    PRINT_TIMER (current_time);
-    printf (": COMMUNIC\tP%02d T%02d (t%02d) Free Remote Link\n",
-            IDENTIFIERS (thread) );
-  }
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (": COMMUNIC\tP%02d T%02d (t%02d) Free Remote Link\n",
+              IDENTIFIERS (thread) );
+    }
 
-  LINKS_free_network_link(thread->partner_link, thread);
+    LINKS_free_network_link(thread->partner_link, thread);
+  }
 
   if (machine->network.curr_on_network > 0)
   {
@@ -3126,12 +3136,26 @@ void COMMUNIC_general (int value, struct t_thread *thread)
     COMMUNIC_COM_TIMER_OUT (thread);
     break;
 
-  case COM_TIMER_OUT_RESOURCES:
-    /* L'operació punt a punt encara no s'ha acabat, però ja es poden
-        alliberar els recursos que té reservats. */
-    COMMUNIC_resources_COM_TIMER_OUT (thread);
+  case COM_TIMER_OUT_RESOURCES_MEM:
+    COMMUNIC_mem_resources_COM_TIMER_OUT(thread);
+    break;
+  case COM_TIMER_OUT_RESOURCES_NET:
+    COMMUNIC_internal_resources_COM_TIMER_OUT(thread);
+    break;
+  case COM_TIMER_OUT_RESOURCES_WAN:
+    COMMUNIC_external_network_COM_TIMER_OUT(thread);
+    break;
+  case COM_TIMER_OUT_RESOURCES_DED:
+    COMMUNIC_dedicated_connection_COM_TIMER_OUT(thread);
     break;
 
+/*
+  case COM_TIMER_OUT_RESOURCES:
+    /* L'operació punt a punt encara no s'ha acabat, però ja es poden
+        alliberar els recursos que té reservats. *
+    COMMUNIC_resources_COM_TIMER_OUT (thread);
+    break;
+*/
   case COM_TIMER_GROUP_RESOURCES:
     /* L'operació col.lectiva encara no s'ha acabat, però ja es poden
        alliberar els recursos que té reservats. */
@@ -5298,7 +5322,7 @@ void really_send_memory_message (struct t_thread *thread)
     FLOAT_TO_TIMER (ti, tmp_timer2);
     ADD_TIMER (current_time, tmp_timer2, tmp_timer2);
 
-    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
+    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_MEM);
     thread->event = EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
 
   }
@@ -5454,7 +5478,7 @@ void really_send_internal_network(struct t_thread *thread)
 
 #ifdef VENUS_ENABLED
     if ( (!VC_is_enabled() ) || (mess->comm_type != INTERNAL_NETWORK_COM_TYPE) ) {
-      EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
+      EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_NET);
       thread->event =
         EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
     }
@@ -5463,7 +5487,7 @@ void really_send_internal_network(struct t_thread *thread)
       double dtime;
       struct t_event *out_resources_ev;
 
-      out_resources_ev = EVENT_venus_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
+      out_resources_ev = EVENT_venus_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_NET);
       thread->event =
         EVENT_venus_timer (tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
 
@@ -5480,7 +5504,7 @@ void really_send_internal_network(struct t_thread *thread)
     }
 #else
 //      printf("\n\n And to put the event stating when the communication finishes\n");
-    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
+    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_NET);
     thread->event =
       EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
 #endif
@@ -5579,7 +5603,7 @@ void really_send_external_network (struct t_thread *thread)
        mateix instant de temps. */
     FLOAT_TO_TIMER (t_recursos, tmp_timer);
     ADD_TIMER (current_time, tmp_timer, tmp_timer);
-    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES);
+    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_WAN);
     /* Es programa el final de la comunicació punt a punt. */
     FLOAT_TO_TIMER (ti, tmp_timer);
     ADD_TIMER (current_time, tmp_timer, tmp_timer);
@@ -5645,7 +5669,7 @@ void really_send_dedicated_connection (struct t_thread               *thread,
     EVENT_timer (tmp_timer,
                  NOT_DAEMON,
                  M_COM, thread,
-                 COM_TIMER_OUT_RESOURCES);
+                 COM_TIMER_OUT_RESOURCES_DED);
 
     /* Es programa el final de la comunicació punt a punt. */
     FLOAT_TO_TIMER (ti, tmp_timer);
@@ -5701,16 +5725,15 @@ void really_send_external_model_comm_type (struct t_thread *thread)
   {
     panic("resources > transmission time!\n");
   }
-  /* Abans de programar la fi de la comunicacio, es programa la fi de la
-     utilització dels recursos reservats. Però, de moment, ho deixo al
-     mateix instant de temps. */
+
+
   FLOAT_TO_TIMER (t_recursos, tmp_timer);
   ADD_TIMER (current_time, tmp_timer, tmp_timer);
   EVENT_timer (
     tmp_timer,
     NOT_DAEMON,
     M_COM, thread,
-    COM_TIMER_OUT_RESOURCES
+    COM_TIMER_OUT_RESOURCES_EXT_MODEL
   );
   /* Es programa el final de la comunicació punt a punt. */
   FLOAT_TO_TIMER (ti, tmp_timer);

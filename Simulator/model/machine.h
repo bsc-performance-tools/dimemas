@@ -80,6 +80,7 @@ struct t_machine
 
   struct t_external_net /* Dades variables de l'estat de la xarxa externa */
   {
+    t_boolean       infinite_links;       /* TRUE if there are infinite links */
     t_boolean       half_duplex_links; /* TRUE if links are half duplex */
     struct t_queue  free_in_links;     /* Free input links */
     struct t_queue  free_out_links;    /* Free output links */

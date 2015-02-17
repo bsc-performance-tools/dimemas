@@ -49,6 +49,9 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
   create_queue (&(node->Cpus));
   create_queue (&(node->ready));
 
+  node->infinite_mem_links = FALSE;
+  node->infinite_net_links = FALSE;
+
   /* Internal network management queues */
   create_queue (&(node->free_out_links));
   create_queue (&(node->free_in_links));
@@ -56,12 +59,6 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
   create_queue (&(node->busy_in_links));
   create_queue (&(node->th_for_in));
   create_queue (&(node->th_for_out));
-
-  // create_queue (&(node->free_mem_links));
-  // create_queue (&(node->busy_mem_links));
-  // create_queue (&(node->wait_for_mem_link));
-  // create_queue (&(node->wait_for_mem_in));
-  // create_queue (&(node->wait_for_mem_out));
 
   /* Memory message queue */
   create_queue (&(node->wait_for_mem_bus));
@@ -127,7 +124,12 @@ void NODE_Fill_Node_Fields(struct t_node *node,
     insert_queue (&(node->Cpus), (char *) cpu, (t_priority) (j + 1));
   }
 
-  if ((no_input == 0) || (no_output == 0))
+  if (no_input == 0 && no_output == 0)
+  {
+    node->infinite_net_links = TRUE;
+  }
+
+  if (no_input == 0 || no_output == 0)
   {
     node->half_duplex_links = TRUE;
     j = MAX(no_input, no_output);

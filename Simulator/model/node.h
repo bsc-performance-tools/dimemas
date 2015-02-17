@@ -54,6 +54,7 @@ struct t_node
   struct t_queue    ready;
 
   /* Network links */
+  t_boolean         infinite_net_links;   /* TRUE if there are infinite links */
   t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
   struct t_queue    free_in_links;        /* Free input links */
   struct t_queue    free_out_links;       /* Free output link */
@@ -68,6 +69,7 @@ struct t_node
   struct t_queue    wait_for_mem_bus;
   struct t_queue    threads_in_memory;
 
+  t_boolean         infinite_mem_links;
   int               in_mem_links;
   int               out_mem_links;
 

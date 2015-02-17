@@ -43,6 +43,16 @@ AC_PROG_CPP
 AM_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
+if test -z "$CC"; then 
+  AC_MSG_WARN(C compiler not found. Please provide one before continuing) 
+  ac_cv_errcount=$((ac_cv_errcount + 1)) 
+fi
+
+if test -z "$CXX"; then 
+  AC_MSG_WARN(C++ compiler not found. Please provide one before continuing) 
+  ac_cv_errcount=$((ac_cv_errcount + 1)) 
+fi
+
 AM_CONFIG_HEADER(config.h)
 
 dnl ========================================================================

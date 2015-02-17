@@ -10,6 +10,14 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2015/02/17 - jgonzale - Dimemas
+	CHANGES:	Setting input and output links to 0 (memory and	network)
+				will be simulated as having infinite links
+
+2015/02/09 - jgonzale - Other
+	CHANGES:	Added a check in 'configure.ac.template' to ensure that 
+				C/C++ compilers are installed in the system
+
 2015/02/06 - jgonzale - Simulador
 	CHANGES:	Added missing 'main.cpp' file
 
@@ -72,7 +80,7 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 				but pushing the MPI_Iprobe related events (duration and number
 				of probes) before the cluster events.
 
-	BUGFIX:		Probably the trace useg to solved the previous problem (a
+	BUGFIX:		Probably the trace use to solved the previous problem (a
 				Linpack execution in ARM from Nikola) was clustered using a 
 				previous version of the clustering tool, because it generates an
 				excess of clusters' burst closing events. The translator did

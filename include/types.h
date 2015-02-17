@@ -297,6 +297,7 @@ struct t_dedicated_connection
    * cada sentit. Pero actulament podrien ser punters perque nomes hi
    * ha un link d'entrada i un de sortida.
    */
+  t_boolean      infinite_links;       /* TRUE if there are infinite links */
   t_boolean      half_duplex;    /* Half duplex connection? */
   struct t_queue free_in_links;  /* Free input links (destination -> source) */
   struct t_queue free_out_links; /* Free output links (source -> destination) */
@@ -742,7 +743,9 @@ struct t_task
 
   struct t_queue  semaphores;
 
+  t_boolean         infinite_links;       /* TRUE if there are infinite links */
   t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
+
 
   struct t_queue    free_in_links;        /* Free input links */
   struct t_queue    free_out_links;       /* Free output link */

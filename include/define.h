@@ -276,12 +276,17 @@
 #define SCH_TIMER_OUT 1
 #define SCH_NEW_JOB   2
 
-#define COM_TIMER_OUT             1
-#define COM_TIMER_GROUP           2
-#define RMA_TIMER_OUT             3
-#define COM_EXT_NET_TRAFFIC_TIMER 4
-#define COM_TIMER_GROUP_RESOURCES 5
-#define COM_TIMER_OUT_RESOURCES   6
+#define COM_TIMER_OUT                     1
+#define COM_TIMER_GROUP                   2
+#define RMA_TIMER_OUT                     3
+#define COM_EXT_NET_TRAFFIC_TIMER         4
+#define COM_TIMER_GROUP_RESOURCES         5
+#define COM_TIMER_OUT_RESOURCES_MEM       6
+#define COM_TIMER_OUT_RESOURCES_NET       7
+#define COM_TIMER_OUT_RESOURCES_WAN       8
+#define COM_TIMER_OUT_RESOURCES_DED       9
+#define COM_TIMER_OUT_RESOURCES_EXT_MODEL 10
+
 
 #define FS_OPERATION        1
 #define FS_TIMER_OUT        2

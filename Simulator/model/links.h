@@ -45,7 +45,7 @@ extern void mem_link_busy(struct t_thread *thread,
                           int              in_out);
 */
 
-extern t_boolean LINKS_get_mem_links(struct t_thread *thread,
+extern t_boolean LINKS_get_mem_links(struct t_thread *thread_snd,
                                      struct t_task   *task_snd,
                                      struct t_task   *task_rcv);
 
@@ -63,8 +63,8 @@ extern void link_busy(struct t_thread *thread,
 */
 
 extern t_boolean LINKS_get_network_links(struct t_thread *thread,
-                           struct t_node   *node,
-                           struct t_node   *node_partner);
+                                         struct t_node   *node,
+                                         struct t_node   *node_partner);
 
 extern t_boolean LINKS_get_port_links(struct t_thread *thread_s,
                                 struct t_node   *node_s,
