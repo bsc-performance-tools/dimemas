@@ -127,6 +127,7 @@ void ExternalSort::NewRecord(int        TYPE,
 {
   if (TYPE == PRV_EVENT)
   {
+    /* Event records should be flush directly to a secondary file */
     CurrentEvent.FillRecord(TYPE,
                             CPU,
                             Ptask,
@@ -145,7 +146,6 @@ void ExternalSort::NewRecord(int        TYPE,
       FlushRecords();
     }
 
-    /* Event records should be flush directly to a secondary file */
     Records[CurrentRecord].FillRecord(TYPE,
                                       CPU,
                                       Ptask,

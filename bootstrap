@@ -4,7 +4,7 @@
 
 MAJOR=5
 MINOR=2
-REV=11
+REV=12
 
 # 'svnversion' no longer needed. Always use the manual version
 #sh -c "svnversion -n . | cut -d: -f2 | cut -dS -f1 | tr -d '\n'" > ./SVN_VERSION

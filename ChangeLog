@@ -10,6 +10,9 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2015/03/03 - jgonzale - All - 5.2.12
+	CHANGES:	5.2.12 Release!!
+
 2015/02/17 - jgonzale - Dimemas
 	CHANGES:	Setting input and output links to 0 (memory and	network)
 				will be simulated as having infinite links
@@ -23,7 +26,7 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:	Added all missing files from 'common_utilities' directory
 
-2015/01/20 - jgonzale - prv2dim
+2015/01/20 - jgonzale - prv2dim - 5.2.11
 	BUGFIX:		Solved bug in the translation 'InBlockComparison' that
 				caused different translated traces due to a random comparison
 				results. Now, when most fields of two Paraver Records are the
