@@ -46,6 +46,8 @@
 #endif
 
 
+#include<assert.h>
+
 /*
  * Create empty queue
  */
@@ -731,5 +733,30 @@ struct t_queue* new_queue_accounter()
   res = (struct t_queue *) malloc (sizeof (struct t_queue));
   create_queue (res);
   return (res);
+}
+
+void remove_queue_elements(struct t_queue * queue)
+{
+  if (queue->count == 0) return;
+
+  char * element;
+  while ((element = outFIFO_queue(queue)) != NULL)
+  {
+    //free(element);
+  }
+
+  queue->first = NULL;
+  queue->last = NULL;
+  queue->curr = NULL;
+  assert(queue->count == 0);
+
+}
+
+void move_queue_elements(struct t_queue * from, struct t_queue * to)
+{
+  while (from->count > 0)
+  {
+    inFIFO_queue(to,outFIFO_queue(from));
+  }
 }
 

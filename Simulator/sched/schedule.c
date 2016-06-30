@@ -1514,6 +1514,11 @@ t_boolean more_actions (struct t_thread *thread)
   if (action == NULL)
   {
 
+    if (with_deadlock_analysis)
+    {
+      DEADLOCK_thread_finalized(thread);
+    }
+
     if (debug&D_SCH)
     {
       PRINT_TIMER (current_time);

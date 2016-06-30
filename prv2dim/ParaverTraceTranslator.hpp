@@ -56,10 +56,12 @@ class ParaverTraceTranslator: public Error
 
     string ParaverTraceName;
     string DimemasTraceName;
+    string ExtraStatsName;
 
     FILE* ParaverTraceFile;
     FILE* DimemasTraceFile;
 
+    bool withExtraStats;
     bool  DescriptorShared;
 
     char* CommunicationsFileName;
@@ -80,6 +82,8 @@ class ParaverTraceTranslator: public Error
   public:
 
     ParaverTraceTranslator(void){};
+
+    ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName, string ExtraStatsName);
 
     ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName);
 

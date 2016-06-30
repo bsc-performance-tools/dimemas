@@ -54,8 +54,8 @@ class ExternalSort
     static string         EventsFileName;
     static string         StatesAndCommsFileName;
 
-    FILE                       *EventsFile;
-    FILE                       *StatesAndCommsFile;
+    //FILE                       *EventsFile;
+    //FILE                       *StatesAndCommsFile;
 
     size_t                      TotalRecords;
 
@@ -70,6 +70,9 @@ class ExternalSort
     ostringstream               TemporalFileNames;
 
   public:
+    FILE                       *EventsFile;
+    FILE                       *StatesAndCommsFile;
+
     ExternalSort() {};
 
     void Init();

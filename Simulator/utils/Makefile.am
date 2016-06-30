@@ -27,7 +27,11 @@ libDimemasUtils_la_SOURCES = \
 	listE.h \
 	listE.cc \
 	modules_map.h \
-	modules_map.cc 
+	modules_map.cc \
+	deadlock_analysis.c \
+	deadlock_analysis.h \
+	graph.c \
+	graph.h
 
 #if USE_EQUEUE
 #libDimemasUtils_la_SOURCES += \

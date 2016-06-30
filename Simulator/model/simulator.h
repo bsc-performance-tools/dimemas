@@ -193,4 +193,9 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
 void SIMULATOR_check_correct_definitions(void);
 
 char* SIMULATOR_get_last_error(void);
+
+void SIMULATOR_reset_state();
+
 #endif
+
+

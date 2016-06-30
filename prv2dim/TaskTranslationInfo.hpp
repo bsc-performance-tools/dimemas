@@ -92,6 +92,10 @@ class TaskTranslationInfo: public Error
     bool  FilePointerAvailable;
     bool  FirstPrint;
 
+    /* Needed to access counters from others TaskTranslators */
+    vector<TaskTranslationInfo*> * AllTranslationInfo;
+
+
   public:
     TaskTranslationInfo(INT32   TaskId,
                         double  TimeFactor,
@@ -104,6 +108,7 @@ class TaskTranslationInfo: public Error
                         double  BurstCounterFactor,
                         bool    GenerateMPIInitBarrier,
                         bool    PreviouslySimulatedTrace,
+                        vector<TaskTranslationInfo*> * AllTranslationInfo,
                         char*   TemporaryFileName = NULL,
                         FILE*   TemporaryFile = NULL);
 
@@ -130,6 +135,18 @@ class TaskTranslationInfo: public Error
     bool GetDisorderedRecords(void)     { return DisorderedRecords; };
 
     bool GetMPIInitBarrierWritten(void) { return MPIInitBarrierWritten; };
+
+    /* Some other statistics */
+    unsigned int send_counter;
+    unsigned int isend_counter;
+    unsigned int recv_counter;
+    unsigned int irecv_counter;
+    unsigned int wait_counter;
+    unsigned int glop_counter;
+
+    unsigned int pendent_i_Send_counter;
+    unsigned int pendent_i_Recv_counter;
+    unsigned int pendent_Glop_counter;
 
   private:
     bool ReorderAndFlush(void);

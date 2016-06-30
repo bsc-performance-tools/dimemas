@@ -40,8 +40,11 @@
 
 #include <ezOptionParser.hpp>
 
+#include <assert.h>
+
 extern "C"
 {
+#include <deadlock_analysis.h>
 
 #include <execinfo.h>
 #include <sys/types.h>
@@ -209,6 +212,7 @@ int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
 "\t[-w] [-ES] [-Eo eee_network_definition] [-Ef eee_frame_size]\n"\
 "\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
 "\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
+"\t[--clean-deadlocks <until-trace-progression> ]\n"\
 "\tconfig-file\n"
 #else
 #define USAGE \
@@ -218,9 +222,15 @@ int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
 "\t[-w] [-ES] [-Eo eee_network_definition] [-Ef eee_frame_size]\n"\
 "\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
 "\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
+"\t[--clean-deadlocks <until-trace-progression> ]\n"\
 "\t config-file\n"
 
 #endif
+
+int with_deadlock_analysis = 0;
+int reboots_counter = 0;
+float danalysis_deactivation_percent = 1;
+t_boolean simulation_rebooted = FALSE;
 
 static bool ParseArguments(const int argc, const char* argv)
 {
@@ -297,6 +307,7 @@ help_message(char *tname)
   printf ("\t--fill\tSet node filling task mapping (overrides the configuration file)\n");
   printf ("\t--ppn tasks_per_node\tSet 'n' tasks per node mapping (overrides the configuration file)\n");
   printf ("\t--interlvd\tSet interleaved node tasks mapping (overrides the configuration file)\n");
+  printf ("\t--clean-deadlocks <until-trace-progression> \tA deadlock analysis is performed and if detects, tries to solve it.");
 
 
 
@@ -508,7 +519,13 @@ void parse_arguments(int argc, char *argv[])
           wait_logical_recv = TRUE;
           break;
         case '-':
-          if (strncmp(argv[j], "--dim", 5) == 0)
+          if (strncmp(argv[j], "--clean-deadlocks", 11) == 0)
+          {
+            with_deadlock_analysis = 1;
+            j++;
+            danalysis_deactivation_percent = atof(argv[j]);
+          }
+          else if (strncmp(argv[j], "--dim", 5) == 0)
           {
             j++;
             parameter_tracefile = argv[j];
@@ -823,7 +840,7 @@ int main (int argc, char *argv[])
 
   EVENT_Init ();
   SCHEDULER_Init ();
-  COMMUNIC_Init ();
+  COMMUNIC_Init (parameter_tracefile, danalysis_deactivation_percent);
   MEMORY_Init ();
   SEMAPHORE_Init ();
   FS_Init();
@@ -845,20 +862,22 @@ int main (int argc, char *argv[])
   clock_gettime(CLOCK_MONOTONIC, &time_start);
 #endif
 
+REBOOT:
+
 #ifdef USE_EQUEUE
 
 #ifdef VENUS_ENABLED
-  while ((top_Eevent (&Event_queue) != E_NIL) || (VC_is_enabled() && (top_Eevent(&Interactive_event_queue) != E_NIL)))
+  while ((top_Eevent (&Event_queue) != E_NIL) || (VC_is_enabled() && (top_Eevent(&Interactive_event_queue) != E_NIL)) && !simulation_rebooted)
 #else /* !VENUS_ENABLED */
-  while (top_Eevent (&Event_queue) != E_NIL)
+  while (top_Eevent (&Event_queue) != E_NIL && !simulation_rebooted)
 #endif
 
 #else /* !USE_EQUEUE */
 
 #ifdef VENUS_ENABLED
-  while ((top_event (&Event_queue) != E_NIL) || (VC_is_enabled() && (top_event(&Interactive_event_queue) != E_NIL)))
+  while ((top_event (&Event_queue) != E_NIL) || (VC_is_enabled() && (top_event(&Interactive_event_queue) != E_NIL)) && !simulation_rebooted)
 #else /* !VENUS_ENABLED */
-  while (top_event (&Event_queue) != E_NIL)
+  while (top_event (&Event_queue) != E_NIL && !simulation_rebooted)
 #endif
 
 #endif /* USE_EQUEUE */
@@ -913,6 +932,75 @@ int main (int argc, char *argv[])
     event_manager(current_event);
   }
 
+  /*** TO ERASE ***/
+  /*if (danalysis_deactivation_time != -1)
+  {
+	if (current_time > danalysis_deactivation_time and with_deadlock_analysis > 0)
+	{
+	  printf("-> Deadlock analysis deactivation time reached...\n"\
+			 "   Deadlock analysis deactivated.\n");
+
+	  with_deadlock_analysis = 0;
+	}
+  }*/
+
+  if (with_deadlock_analysis)
+  {
+    if (simulation_rebooted || DEADLOCK_check_end())
+    {
+      // this events must be freed
+      remove_queue_elements(&Event_queue);
+
+      SIMULATOR_reset_state();
+      COMMUNIC_reset_deadlock();
+
+      reboots_counter++;
+
+      /*if (reboots_counter == 0)
+      {
+        char * to = strstr(paraver_file, ".prv");
+        int name_size = (to-paraver_file);
+
+        char * new_paraver_file;
+
+        new_paraver_file = (char *)calloc(sizeof(char),name_size+18);
+        memcpy(new_paraver_file, paraver_file, (to-paraver_file));
+        char * extension = ".undeadlocked.prv\0";
+        memcpy(new_paraver_file+name_size, extension, 18);
+        paraver_file = new_paraver_file;
+      }*/
+
+      // Ends the actual erroneous paraver trace
+      // Starts new paraver trace with ".undeadlocked."
+
+      PARAVER_End(FALSE);
+      PARAVER_Init(paraver_file,
+                 paraver_pcf_insert,
+                 paraver_start,
+                 paraver_end,
+                 paraver_priorities);
+#if DEBUG
+      printf("\n-> " ANSI_COLOR_RED "RESTARTING SIMULATION(%d) " ANSI_COLOR_RESET "\n\n", reboots_counter);
+#endif
+
+      // This call load the events that threads have in actions
+      // for this reason, before this we have to read the new actions
+      reload_events();
+
+      simulation_rebooted = FALSE;
+      goto REBOOT;
+    }
+  }
+
+  if (reboots_counter > 0)
+  {
+	  printf("\n**** Deadlocks ****\n\n");
+	  printf("%d deadlocks has been successfully cleaned.\n", reboots_counter);
+	  printf("\n");
+  }
+
+  // Finalizing simulation
+
   if (!short_out_info)
   {
     printf ("\n");
@@ -949,7 +1037,7 @@ int main (int argc, char *argv[])
     show_CP_graph();
   }
 
-  PARAVER_End();
+  PARAVER_End(TRUE);
   TASK_End ();
 
 

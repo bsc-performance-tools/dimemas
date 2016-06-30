@@ -155,7 +155,7 @@ extern void PARAVER_Init(const char   *output_paraver_trace,
                          dimemas_timer paraver_end_time,
                          t_boolean     paraver_priorities);
 
-extern void PARAVER_End(void);
+extern void PARAVER_End(int print);
 
 /* Hints to avoid 'over-collapsing' of events */
 extern void PARAVER_Start_Op (int cpu, int ptask, int task, int thread,

@@ -43,6 +43,11 @@
 #include <sys/stat.h>
 #include <assert.h>
 
+// For tell()
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <string.h>
 #include <errno.h>
 
@@ -104,6 +109,7 @@
 #define RECVTYPE_RECV  0
 #define RECVTYPE_IRECV 1
 #define RECVTYPE_WAIT  2
+#define RECVTYPE_WAITALL  3
 
 #define DATA_ACCESS_ERROR -1
 #define DATA_ACCESS_OK     1
@@ -168,24 +174,27 @@ typedef struct _fp_share
  */
 typedef struct _app_struct
 {
-  int             ptask_id;
-  char           *app_name;
-  char           *trace_file_name;
-  count_t         tasks_count;
-  count_t        *threads_count;
-  count_t         total_threads_count;
-  int             offset_type;
-  off_t           offsets_offset;
-  off_t           records_offset;
-  off_t         **threads_offsets;
+  int ptask_id;
+  char *app_name;
+  char *trace_file_name;
+  count_t tasks_count;
+  count_t *threads_count;
+  count_t total_threads_count;
+  int offset_type;
+  off_t offsets_offset;
+  off_t records_offset;
+  off_t **threads_offsets;
 
-  count_t         streams_count;
-  fp_share       *streams;
-  size_t        **streams_idxs; // Index of the 'fp_share' assigned to each thread
-  off_t         **current_threads_offsets;
+  count_t streams_count;
+  fp_share *streams;
+  size_t **streams_idxs; // Index of the 'fp_share' assigned to each thread
+  off_t **current_threads_offsets;
+  off_t **last_current_threads_offsets;
 
-  count_t         comms_count;
-  struct t_queue  comms;
+  count_t comms_count;
+  struct t_queue comms;
+
+  int * thread_trace_sizes;
 
 } app_struct;
 
@@ -844,6 +853,7 @@ t_boolean DAP_initialize_app (app_struct *app,
   /* Allocate space for the threads offsets positions */
   app->threads_offsets         = (off_t**)  malloc(tasks_count*sizeof(off_t*));
   app->current_threads_offsets = (off_t**)  malloc(tasks_count*sizeof(off_t*));
+  app->last_current_threads_offsets = (off_t**)  malloc(tasks_count*sizeof(off_t*));
 
   for (i = 0; i < tasks_count; i++)
   {
@@ -851,6 +861,9 @@ t_boolean DAP_initialize_app (app_struct *app,
       (off_t*) malloc(threads_count[i]*sizeof(off_t));
 
     app->current_threads_offsets[i] =
+      (off_t*) malloc(threads_count[i]*sizeof(off_t));
+
+    app->last_current_threads_offsets[i] =
       (off_t*) malloc(threads_count[i]*sizeof(off_t));
   }
 
@@ -1194,6 +1207,8 @@ t_boolean DAP_read_offsets (app_struct *app)
   char*   threads_offsets_str;
   char*   current_thread_offset_str;
 
+  app->thread_trace_sizes = (int *)malloc(sizeof(int)*app->total_threads_count);
+
   // Set the stream to the offsets offset position
   if ( IO_fseeko(main_struct.current_stream, app->offsets_offset, SEEK_SET) < 0)
   {
@@ -1257,6 +1272,20 @@ t_boolean DAP_read_offsets (app_struct *app)
 
     current_thread = 0;
     current_thread_offset_str  = strtok(threads_offsets_str, ":");
+
+
+    int index = app->threads_count[current_task]*current_task + current_thread;
+    app->thread_trace_sizes[index] = atoi(current_thread_offset_str);
+
+    if (index > 0 )
+    {
+    	app->thread_trace_sizes[index-1] = app->thread_trace_sizes[index]-app->thread_trace_sizes[index-1];
+    }
+    if (index == app->total_threads_count-1)
+    {
+    	app->thread_trace_sizes[index] = app->offsets_offset - app->thread_trace_sizes[index];
+    }
+
     while (current_thread_offset_str != NULL)
     {
       if (current_thread >= app->threads_count[current_task])
@@ -1774,6 +1803,7 @@ FILE* DAP_get_stream (app_struct* app, int task_id, int thread_id)
       }
 
       result = assigned_fp->fp;
+      assert(ftell(result) == app->current_threads_offsets[task_id][thread_id]);
 
       assigned_fp->last_task_id   = task_id;
       assigned_fp->last_thread_id = thread_id;
@@ -1836,6 +1866,50 @@ t_boolean DAP_read_action (app_struct       *app,
   }
 
   empty_line = TRUE;
+
+  struct t_thread * thread = get_thread_by_task_id(task_id);
+
+  /* Si hay operaciones para inyectar, se ha de hacer al inicio de la traza que es
+   * donde potencialmente hemos cortado algo */
+  if (/*with_deadlock_analysis == 2 && */thread->counter_ops_already_injected < count_queue(&thread->ops_to_be_injected))
+  {
+    struct t_action * actfq = NULL;
+    struct t_action * action_to_inject = NULL;
+
+    actfq = (struct t_action *)query_prio_queue(&thread->ops_to_be_injected, (double)thread->counter_ops_already_injected);
+    action_to_inject = (struct t_action *)malloc(sizeof(struct t_action));
+
+    if (thread->counter_ops_already_injected == 0)
+    {
+      action_to_inject->action = WORK;
+      action_to_inject->desc.compute.cpu_time = 0;
+
+      action_to_inject->next = (struct t_action *)malloc(sizeof(struct t_action));
+      memcpy(action_to_inject->next, actfq, sizeof(struct t_action));
+    }
+    else
+    {
+      memcpy(action_to_inject, actfq, sizeof(struct t_action));
+    }
+    *action = action_to_inject;
+    thread->counter_ops_already_injected++;
+
+    return TRUE;
+  }
+  else if (/*with_deadlock_analysis == 1 && */thread->counter_ops_already_ignored < count_queue(&thread->ops_to_be_ignored))
+  {
+    off_t actual_offset = ftell(stream);
+    struct trace_operation * op_to_be_ignored = query_prio_queue(&thread->ops_to_be_ignored, actual_offset);
+
+    if (op_to_be_ignored != NULL)
+    {
+      bytes_read = getline(&line, &line_length, stream);
+      app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
+      app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
+
+      ++thread->counter_ops_already_ignored;
+    }
+  }
 
   while (empty_line)
   {
@@ -1921,6 +1995,7 @@ t_boolean DAP_read_action (app_struct       *app,
         (*action)->next   = NULL;
         (*action)->action = NOOP;
 
+        app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
         app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
 
         free(op_fields);
@@ -2009,6 +2084,7 @@ t_boolean DAP_read_action (app_struct       *app,
     }
     else
     {
+      app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
       app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
 
       /* DEBUG
@@ -2292,4 +2368,43 @@ void DAP_print_app_structure(app_struct *app)
   return;
 }
 
+unsigned int DAP_get_offset(int Ptaskid, int taskid, int threadid)
+{
+  app_struct * this_app = DAP_locate_app_struct(Ptaskid);
+  FILE * fp = DAP_get_stream(this_app, taskid, threadid);
 
+  long int off1 = this_app->last_current_threads_offsets[taskid][threadid];
+  //long int off2 = lseek(fileno(fp), 0, SEEK_CUR);
+
+  return off1;
+}
+
+void DAP_restart_fps(int Ptaskid, int taskid, int threadid)
+{
+    app_struct * this_app = DAP_locate_app_struct(Ptaskid);
+
+    int fpid = this_app->streams_idxs[taskid][threadid];
+
+    // It will be the new offset
+    long int original_offset = this_app->threads_offsets[taskid][threadid];
+
+    this_app->current_threads_offsets[taskid][threadid] = original_offset;
+    this_app->last_current_threads_offsets[taskid][threadid] = original_offset;
+
+    DAP_reset_app_stream_fps(this_app);
+
+    //FILE * assigned_fp = this_app->streams[fpid].fp;
+    //fseek(assigned_fp, original_offset, SEEK_SET);
+}
+
+float DAP_get_progression(int Ptaskid, int taskid, int threadid)
+{
+	app_struct * this_app = DAP_locate_app_struct(Ptaskid);
+
+	long int original_offset = this_app->threads_offsets[taskid][threadid];
+	long int progress_fp = this_app->current_threads_offsets[taskid][threadid] - original_offset;
+
+	float progression = ((float)progress_fp)/this_app->thread_trace_sizes[this_app->threads_count[taskid]*taskid + threadid];
+
+	return progression;
+}

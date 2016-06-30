@@ -73,9 +73,12 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
                                          double  BurstCounterFactor,
                                          bool    GenerateMPIInitBarrier,
                                          bool    PreviouslySimulatedTrace,
+                                         vector<TaskTranslationInfo*> * AllTranslationInfo,
                                          char*   TemporaryFileName,
                                          FILE*   TemporaryFile)
 {
+  this->AllTranslationInfo = AllTranslationInfo;
+
   const char* tmp_dir_default = "/tmp";
   char* tmp_dir;
 
@@ -238,6 +241,17 @@ TaskTranslationInfo::TaskTranslationInfo(INT32   TaskId,
   NonDeterministicComms = false;
   DisorderedRecords     = false;
   // RecordStack.empty();
+
+  send_counter  = 0;
+  isend_counter = 0;
+  recv_counter  = 0;
+  irecv_counter = 0;
+  wait_counter  = 0;
+  glop_counter  = 0;
+
+  pendent_i_Send_counter = 0;
+  pendent_i_Recv_counter = 0;
+  pendent_Glop_counter = 0;
 }
 
 
@@ -1105,11 +1119,18 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->recv_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter == 0)
+          this->pendent_i_Recv_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter--;
       }
       else if (CurrentComm->GetType() != PHYSICAL_RECV)
       {
         WrongComms = true;
       }
+
       break;
     case BLOCK_ID_MPI_Rsend:
     case BLOCK_ID_MPI_Send:
@@ -1145,6 +1166,13 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+
+        this->send_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter == 0)
+          this->pendent_i_Send_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter--;
       }
       else if (CurrentComm->GetType() == PHYSICAL_RECV)
       { /* Not common case, when translation comes from a simulated trace
@@ -1171,6 +1199,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->wait_counter++;
       }
       else /* if (CurrentComm->GetType() != PHYSICAL_SEND) */
       {
@@ -1211,6 +1240,12 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->isend_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter == 0)
+          this->pendent_i_Send_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter--;
       }
       else if (CurrentComm->GetType() == PHYSICAL_RECV)
       { /* Not common case, when translation comes from a simulated trace
@@ -1237,6 +1272,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->wait_counter++;
       }
       else /* (CurrentComm->GetType() != PHYSICAL_SEND) */
       {
@@ -1275,6 +1311,12 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->irecv_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter == 0)
+          this->pendent_i_Recv_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter--;
       }
       else if (CurrentComm->GetType() == PHYSICAL_RECV)
       {
@@ -1319,7 +1361,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
-
+        this->wait_counter++;
       }
       else if (CurrentComm->GetType() != LOGICAL_RECV)
       {
@@ -1364,6 +1406,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->wait_counter++;
 
         NonDeterministicComms = true;
       }
@@ -1405,6 +1448,12 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->irecv_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter == 0)
+          this->pendent_i_Recv_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter--;
       }
       else if (CurrentComm->GetType() == LOGICAL_SEND)
       {
@@ -1434,6 +1483,12 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->send_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter == 0)
+          this->pendent_i_Send_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter--;
       }
       else if (CurrentComm->GetType() == PHYSICAL_RECV)
       {
@@ -1463,6 +1518,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", "");
           return false;
         }
+        this->wait_counter++;
       }
       break;
     case BLOCK_ID_MPI_Start:
@@ -1495,6 +1551,12 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->send_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter == 0)
+          this->pendent_i_Send_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Recv_counter--;
       }
       else if (CurrentComm->GetType() == LOGICAL_RECV)
       {
@@ -1525,6 +1587,13 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
           SetErrorMessage("error writing output trace", strerror(errno));
           return false;
         }
+        this->irecv_counter++;
+
+        if ((*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter == 0)
+          this->pendent_i_Recv_counter++;
+        else
+          (*AllTranslationInfo)[PartnerTaskId]->pendent_i_Send_counter--;
+
       }
       break;
     default:
@@ -1588,9 +1657,12 @@ TaskTranslationInfo::ToDimemas(GlobalOp_t CurrentGlobOp)
     return false;
   }
 
+  this->glop_counter++;
+
   /* DEBUG
   fprintf(stdout, "GlobalOP printed!!\n");
   */
+
   return true;
 }
 

@@ -66,7 +66,7 @@ extern double param_external_net_gamma;   /* la influencia dels traffics*/
  * Public functions
  *****************************************************************************/
 
-void COMMUNIC_Init(void);
+void COMMUNIC_Init(char * parameter_tracefile, float end_analysis_tpercent);
 void COMMUNIC_End(void);
 
 void COMMUNIC_general(int value, struct t_thread *thread);
@@ -106,6 +106,8 @@ extern void global_op_reserva_links (struct t_thread *thread);
 /* JGG: Constantes para marcar el FAN_IN y el FAN_OUT */
 #define FAN_IN  0
 #define FAN_OUT 1
+
+void COMMUNIC_reset_deadlock();
 
 
 

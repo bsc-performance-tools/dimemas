@@ -51,6 +51,8 @@ using std::endl;
 /* Main variables */
 std::string PrvTraceName;          /* Paraver (input) trace name */
 std::string DimTraceName;          /* Dimemas (output) trace name */
+std::string ExtraStatisticsName;   /* File that keeps some extra statistics */
+bool extraStatistics = false;
 
 bool  GenerateFirstIdle;
 bool  GenerateMPIInitBarrier;
@@ -105,6 +107,16 @@ bool ReadArgsNew(const int argc, const char *argv[])
       "Do not generate a synchronization primitive on MPI_Init calls",
       "-s",
       "--init-sync");
+
+  opt.add(
+      "0",
+      false,
+      0,
+      0,
+      "Generates a file with extra statistics",
+      "--extra-statistics",
+      "-e"
+      );
 
   ez::ezOptionValidator* vD = new ez::ezOptionValidator("d");
   opt.add(
@@ -262,6 +274,18 @@ bool ReadArgsNew(const int argc, const char *argv[])
   {
     PrvTraceName = *(opt.lastArgs[0]);
     DimTraceName = *(opt.lastArgs[1]);
+  }
+
+  if (opt.isSet("--extra-statistics"))
+  {
+    string ChoppedFileName;
+    int SubstrPosition = DimTraceName.rfind(".dim");
+
+    ChoppedFileName = DimTraceName.substr(0, SubstrPosition);
+    ExtraStatisticsName = ChoppedFileName+".estats";
+
+    cout << "Extra statistic file = " << ExtraStatisticsName << endl;
+    extraStatistics = true;
   }
 
   return true;
@@ -450,7 +474,7 @@ int main(const int argc, const char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  Translator = new ParaverTraceTranslator(PrvTraceName, DimTraceName);
+  Translator = new ParaverTraceTranslator(PrvTraceName, DimTraceName, ExtraStatisticsName);
 
   if (Translator->GetError())
   {

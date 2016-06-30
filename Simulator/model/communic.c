@@ -71,6 +71,8 @@
 #define VENUS_PERIODIC_TRAFFIC 1e9
 #endif
 
+#include <deadlock_analysis.h>
+
 /******************************************************************************
  * Global variables                                                           *
  *****************************************************************************/
@@ -248,7 +250,7 @@ static dimemas_timer get_logical_receive(struct t_thread *thread,
  * Initialization/Finalization of the communications module
  ****************************************************************************/
 
-void COMMUNIC_Init (void)
+void COMMUNIC_Init (char * parameter_tracefile, float end_analysis_tpercent)
 {
   struct t_machine *machine;
   size_t            machines_it;
@@ -277,6 +279,14 @@ void COMMUNIC_Init (void)
     ASS_ALL_TIMER (machine->network.last_actualization, current_time);
     machine->network.curr_on_network     = 0;
     machine->communication.policy        = COMMUNIC_FIFO;
+  }
+
+  /* JFM: Initialization of deadlock analyzer */
+  if (with_deadlock_analysis)
+  {
+    struct t_Ptask * Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+    DEADLOCK_init_deadlock_analysis(/*Machines[0].number_of_nodes*/ Ptask->tasks_count,
+    		parameter_tracefile, end_analysis_tpercent);
   }
 
   /*
@@ -3540,7 +3550,7 @@ void COMMUNIC_send (struct t_thread *thread)
 
   action = thread->action;
   if (action->action != SEND)
-{
+  {
     panic ("Calling COMMUNIC_send and action is not Send (%d)\n",
            action->action);
   }
@@ -3812,6 +3822,11 @@ void COMMUNIC_send (struct t_thread *thread)
   thread->eee_send_done = FALSE;
   // Karthikeyan EEE Code END
 
+  if (with_deadlock_analysis)
+  {
+    if (DEADLOCK_new_communic_event(thread))
+        return;
+  }
 
   account = current_account (thread);
   account->n_sends++;
@@ -4159,6 +4174,12 @@ void COMMUNIC_recv (struct t_thread *thread)
   thread->startup_done = FALSE;
   thread->copy_done    = FALSE;
 
+  if (with_deadlock_analysis)
+  {
+    if (DEADLOCK_new_communic_event(thread))
+        return;
+  }
+
   account = current_account (thread);
   account->n_recvs++;
 
@@ -4388,7 +4409,8 @@ void COMMUNIC_Irecv (struct t_thread *thread)
   {
     if (thread->copy_done == FALSE)
     {
-      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size);
+
+      dimemas_timer copy_latency = compute_copy_latency (thread, node_s, mess->mess_size);
 
       if (copy_latency != (t_nano) 0)
       {
@@ -4438,6 +4460,12 @@ void COMMUNIC_Irecv (struct t_thread *thread)
 
 
 // #endif /* STARTUP_ALS_IRECV ***************************************************/
+
+  if (with_deadlock_analysis)
+  {
+    if (DEADLOCK_new_communic_event(thread))
+        return;
+  }
 
   if (!wait_logical_recv)
   {
@@ -4656,6 +4684,12 @@ void COMMUNIC_wait (struct t_thread *thread)
   /* Startup and Copy checks reset */
   thread->startup_done = FALSE;
   thread->copy_done    = FALSE;
+
+  if (with_deadlock_analysis)
+  {
+    if (DEADLOCK_new_communic_event(thread))
+        return;
+  }
 
   account = current_account (thread);
   account->n_recvs++;
@@ -7456,6 +7490,11 @@ void GLOBAL_operation (struct t_thread *thread,
   int root_task;
   int i, kind;
 
+  if (with_deadlock_analysis)
+  {
+    if (DEADLOCK_new_communic_event(thread))
+        return;
+  }
 
   /* not very clever mostly to eliminate warnings */
   assert (root_thid >= 0);
@@ -7817,4 +7856,9 @@ void GLOBAL_operation (struct t_thread *thread,
   /* Aqui se suposa que ja haura intentat reservar tot el que cal i si
    * ho ha pogut fer, ja haura comenc,at la col.lectiva.  */
 
+}
+
+void COMMUNIC_reset_deadlock()
+{
+  DEADLOCK_reset();
 }

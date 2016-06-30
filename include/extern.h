@@ -162,6 +162,11 @@ extern t_boolean synthetic_bursts;
 /* File pointer reserving facility */
 extern void free_reserved_pointer(void);
 
+/* Deadlock analysis */
+extern int with_deadlock_analysis;
+extern t_boolean simulation_rebooted;
+extern int reboots_counter;
+
 /*
  * Prototypes
  */

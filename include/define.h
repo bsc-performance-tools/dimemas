@@ -149,6 +149,28 @@
 #define WAIT            15  /* Block until wait */
 #define WAIT_FOR_SEND   16  /* Added by Vladimir */
 
+#define NOOP            -1
+#define DEAD             0
+#define WORK             1
+#define SEND             2
+#define RECV             4
+#define EVENT            8
+#define PRIO             16
+#define FS               32
+#define SEM              64
+#define PORT_SEND        128
+#define PORT_RECV        256
+#define MEMORY_COPY      512
+#define GLOBAL_OP        1024
+#define MPI_IO           2048
+#define MPI_OS           4096
+#define IRECV            8192
+#define WAIT             16384
+#define WAIT_FOR_SEND    32768
+
+#define WAIT_NORMAL 0
+#define WAIT_ALL 1
+
 
 /*
  * JGG (29/12/2004): Communication types for notifications
@@ -156,7 +178,7 @@
 
 #define ISEND 1001
 #define BSEND 1002
-/* #define IRECV 1003 --> Para no entrar en contradicción con el anterior */
+/* #define IRECV 1003 --> Para no entrar en contradiccion con el anterior */
 #define BRECV 1004
 /* #define WAIT 1005 --> Igual que con el IRECV */
 

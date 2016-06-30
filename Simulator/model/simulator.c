@@ -1141,3 +1141,133 @@ t_boolean d_conn_check_condition(char cond, int *out_cond)
 
   return TRUE;
 }
+
+void SIMULATOR_reset_state()
+{
+  current_time = 0;
+  remove_queue_elements(&Simulator.wan.threads_on_network);
+  Simulator.finished_threads_count = 0;
+
+  // Reset nodes info
+  int node_id;
+  for (node_id = 0; node_id < count_queue(&Node_queue); node_id++)
+  {
+    struct t_node * node = (struct t_node*) query_prio_queue(&Node_queue, (t_priority) node_id);
+
+    move_queue_elements(&node->busy_in_links, &node->free_in_links);
+    move_queue_elements(&node->busy_out_links, &node->free_out_links);
+
+    remove_queue_elements(&node->th_for_in);
+    remove_queue_elements(&node->th_for_out);
+
+    remove_queue_elements(&node->wait_for_mem_bus);
+    remove_queue_elements(&node->threads_in_memory);
+
+    remove_queue_elements(&node->ready);
+
+    struct t_cpu * cpu;
+    for (cpu = (struct t_cpu *)head_queue(&node->Cpus); cpu != C_NIL; cpu = (struct t_cpu *)next_queue(&node->Cpus))
+    {
+      cpu->current_thread = TH_NIL;
+    }
+  }
+
+  // Reset Ptask info
+  struct t_Ptask *Ptask;
+  for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+       Ptask != P_NIL;
+       Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+  {
+    struct t_communicator * communicator;
+    for (communicator  = (struct t_communicator *)head_queue(&Ptask->Communicator);
+         communicator != (struct t_communicator *)0;
+         communicator  = (struct t_communicator *)next_queue(&Ptask->Communicator))
+    {
+      communicator->in_flight_op = FALSE;
+      remove_queue_elements(&communicator->threads);
+    }
+
+    remove_queue_elements(&Ptask->global_operation);
+
+    int tasks_it;
+    for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
+    {
+      struct t_task * task = &(Ptask->tasks[tasks_it]);
+
+      move_queue_elements(&task->busy_in_links, &task->free_in_links);
+      move_queue_elements(&task->busy_out_links, &task->busy_out_links);
+
+      remove_queue_elements(&task->th_for_in);
+      remove_queue_elements(&task->th_for_out);
+
+      remove_queue_elements(&task->mess_recv);
+      remove_queue_elements(&task->recv);
+      remove_queue_elements(&task->send);
+      remove_queue_elements(&task->recv_without_send);
+      remove_queue_elements(&task->send_without_recv);
+      remove_queue_elements(&task->irecvs_executed);
+      remove_queue_elements(&task->semaphores); // ??
+
+      task->current_wait = T_NIL;
+
+      int th_id;
+      for (th_id = 0; th_id < task->threads_count; ++th_id)
+      {
+        struct t_thread * thread = task->threads[th_id];
+
+        remove_queue_elements(&thread->recv_without_send);
+        remove_queue_elements(&thread->send_without_recv);
+        remove_queue_elements(&thread->irecvs_executed);
+
+        if (thread->action != A_NIL)
+        {
+          if (thread->action->next != A_NIL)
+          {
+            free(thread->action->next);
+            thread->action->next = A_NIL;
+          }
+          free(thread->action);
+          thread->action = A_NIL;
+        }
+        if (thread->last_action != A_NIL)
+        {
+          free(thread->last_action);
+          thread->last_action = A_NIL;
+        }
+        /*if (thread->pending_action != A_NIL)
+        {
+          free(thread->pending_action);
+          thread->pending_action = A_NIL;
+        }*/
+
+        if (thread->original_thread && thread->twin_thread != TH_NIL)
+        {
+          free(thread->twin_thread);
+          thread->twin_thread = T_NIL;
+        }
+
+        thread->last_paraver = 0;
+        thread->loose_cpu = FALSE;
+        thread->doing_context_switch = FALSE;
+        thread->to_be_preempted = FALSE;
+        thread->doing_busy_wait = FALSE;
+        thread->doing_startup = FALSE;
+        thread->startup_done = FALSE;
+        thread->doing_copy = FALSE;
+        thread->copy_done = FALSE;
+        thread->doing_roundtrip = FALSE;
+        thread->roundtrip_done = FALSE;
+        thread->counter_ops_already_ignored = 0;
+        thread->counter_ops_already_injected = 0;
+
+        // Move the file pointer to the beggining of the operations of this thread
+        DAP_restart_fps(Ptask->Ptaskid, tasks_it, th_id);
+
+        // The file pointer is now at the beggining of operations. We can
+        // start again to read it.
+        READ_get_next_action(thread);
+        FIFO_thread_to_ready(thread);
+      }
+    }
+  }
+}

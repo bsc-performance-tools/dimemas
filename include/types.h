@@ -60,6 +60,10 @@
   #define t_off_fitxer off_t
 #endif /* ENABLE_LARGE_TRACES */
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 
 typedef int     t_boolean;
 typedef double  t_priority; /* priority for queue elements */
@@ -257,7 +261,7 @@ typedef struct mesg_notification* t_mesg_notification;
 
 /*****************************************************************************
  * JGG (15/02/2005): Estructura para gestionar el estado de los threads que se
- * ejecutan en la aplicación
+ * ejecutan en la aplicacion
  *
  * Los estados posibles se corresponden a los estados Paraver definidos en el
  * fichero 'pcf_defines.h'
@@ -343,6 +347,7 @@ struct t_recv
   long long int mess_size;   /* Size of message */
   int           communic_id; /* Communicator id */
   int           comm_type;   /* Communication type */
+  int		wait_type;
 
   struct t_thread *sender;
   dimemas_timer    logical_recv;
@@ -937,6 +942,14 @@ struct t_thread
   // t_thread_state current_state; /* Current state of thread (15/02/2005) */
 
   t_boolean      idle_block;  /* True if the thread has entered on NULL block */
+
+  // When a deadlock is detected some operations could be ignored.
+  struct t_queue ops_to_be_ignored;
+  int counter_ops_already_ignored;
+
+  // Or also the some operations can be injected.
+  struct t_queue ops_to_be_injected;
+  int counter_ops_already_injected;
 };
 
 struct t_semaphore
@@ -1121,5 +1134,14 @@ struct t_disk_action
   int             threadid;
   struct t_action action;
 };
+
+struct trace_operation                                                                                   
+{
+   unsigned int Ptask_id;
+   unsigned int task_id;
+   unsigned int thread_id;
+   unsigned int file_offset;
+};
+
 
 #endif

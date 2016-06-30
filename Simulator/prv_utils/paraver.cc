@@ -303,7 +303,7 @@ void PARAVER_Init(const char   *output_trace,
 
 }
 
-void PARAVER_End(void)
+void PARAVER_End(int print)
 {
   bool end;
 
@@ -311,6 +311,13 @@ void PARAVER_End(void)
 
   FILE *ParaverTraceFile;
 
+  if (!print)
+  {
+	  IO_fclose(ParaverTraceFile);
+	  IO_fclose(TraceMerger.EventsFile);
+	  IO_fclose(TraceMerger.StatesAndCommsFile);
+	  return;
+  }
   VERIFICA_GENERACIO_PARAVER;
 
   /* Open file for final trace */

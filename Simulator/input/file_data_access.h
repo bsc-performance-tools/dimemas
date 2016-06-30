@@ -74,4 +74,8 @@ extern t_boolean   DATA_ACCESS_init_index(int   ptask_id,
                                           char *trace_file_location,
                                            int   index);
 
+unsigned int DAP_get_offset(int Ptaskid, int taskid, int threadid);
+void DAP_restart_fps(int Ptaskid, int taskid, int threadid);
+
+float DAP_get_progression(int Ptaskid, int taskid, int threadid);
 

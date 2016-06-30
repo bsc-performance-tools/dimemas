@@ -1140,6 +1140,15 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   create_queue (&(thread->send_without_recv));
   create_queue (&(thread->irecvs_executed));
 
+  // Initialization of queue of operations to be ignored if a deadlock arises
+  if (with_deadlock_analysis)
+  {
+    thread->counter_ops_already_ignored = 0;
+    thread->counter_ops_already_injected = 0;
+    create_queue(&thread->ops_to_be_ignored);
+    create_queue(&thread->ops_to_be_injected);
+  }
+
 
   new_account (&(thread->account), task->nodeid);
 

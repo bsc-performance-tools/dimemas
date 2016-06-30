@@ -57,6 +57,45 @@ using std::ostringstream;
  ****************************************************************************/
 
 ParaverTraceTranslator::ParaverTraceTranslator(string ParaverTraceName,
+                                               string DimemasTraceName,
+                                               string ExtraStatsName)
+{
+  if ( (ParaverTraceFile = fopen(ParaverTraceName.c_str(), "r")) == NULL)
+  {
+    SetError(true);
+    SetErrorMessage("Unable to open Paraver trace", strerror(errno));
+    return;
+  }
+
+  Parser = new ParaverTraceParser(ParaverTraceName, ParaverTraceFile);
+
+  this->ParaverTraceName = ParaverTraceName;
+
+  if (Parser->GetError())
+  {
+    SetError(true);
+    LastError = Parser->GetLastError();
+  }
+
+  if ((DimemasTraceFile = fopen(DimemasTraceName.c_str(), "w")) == NULL)
+  {
+    SetError(true);
+    SetErrorMessage("Unable to create Dimemas trace", strerror(errno));
+    return;
+  }
+
+  this->DimemasTraceName = DimemasTraceName;
+
+  DescriptorShared         = false;
+  MultiThreadTrace         = false;
+  PreviouslySimulatedTrace = false;
+  WrongRecordsFound        = 0;
+
+  this->ExtraStatsName = ExtraStatsName;
+  this->withExtraStats = ExtraStatsName.size() > 0;
+}
+
+ParaverTraceTranslator::ParaverTraceTranslator(string ParaverTraceName,
                                                string DimemasTraceName)
 {
   if ( (ParaverTraceFile = fopen(ParaverTraceName.c_str(), "r")) == NULL)
@@ -85,6 +124,7 @@ ParaverTraceTranslator::ParaverTraceTranslator(string ParaverTraceName,
 
   this->DimemasTraceName = DimemasTraceName;
 
+  this->withExtraStats     = false;
   DescriptorShared         = false;
   MultiThreadTrace         = false;
   PreviouslySimulatedTrace = false;
@@ -809,6 +849,39 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     }
   }
 
+  if (this->withExtraStats)
+  {
+    /* Flush extra statistics on file */
+    FILE * extra_statistics_file = fopen(this->ExtraStatsName.c_str(), "w");
+    assert(extra_statistics_file != NULL);
+
+    fprintf(extra_statistics_file, "// #send,#isend,#recv, #irecv, #wait, #glop\n");
+
+    unsigned int min_glops = 10000000000;
+    for (int i=0; i < TranslationInfo.size(); ++i)
+    {
+      if (TranslationInfo[i]->glop_counter < min_glops)
+        min_glops = TranslationInfo[i]->glop_counter;
+    }
+
+    for (int i=0; i < TranslationInfo.size(); ++i)
+    {
+      fprintf(extra_statistics_file, "%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+              TranslationInfo[i]->send_counter,
+              TranslationInfo[i]->isend_counter,
+              TranslationInfo[i]->recv_counter,
+              TranslationInfo[i]->irecv_counter,
+              TranslationInfo[i]->wait_counter,
+              TranslationInfo[i]->glop_counter,
+              TranslationInfo[i]->pendent_i_Send_counter,
+              TranslationInfo[i]->pendent_i_Recv_counter,
+              TranslationInfo[i]->glop_counter - min_glops);
+              //TranslationInfo[i]->pendent_Glop_counter);
+    }
+
+    fclose(extra_statistics_file);
+  }
+
   if (Parser->GetError())
   {
     return false;
@@ -1190,7 +1263,8 @@ ParaverTraceTranslator::InitTranslationStructures(
                                 BurstCounterFactor,
                                 GenerateMPIInitBarrier,
                                 PreviouslySimulatedTrace,
-                                TemporaryFileName);
+                                &TranslationInfo,
+                                TemporaryFileName );
     }
     else if (TemporaryFile == NULL)
     { /* Other error */
@@ -1215,8 +1289,9 @@ ParaverTraceTranslator::InitTranslationStructures(
                                 BurstCounterFactor,
                                 GenerateMPIInitBarrier,
                                 PreviouslySimulatedTrace,
+                                &TranslationInfo,
                                 TemporaryFileName,
-                                TemporaryFile);
+                                TemporaryFile );
     }
 
     if (TaskInfo[CurrentTask]->GetThreadCount() > 1)
