@@ -307,7 +307,7 @@ help_message(char *tname)
   printf ("\t--fill\tSet node filling task mapping (overrides the configuration file)\n");
   printf ("\t--ppn tasks_per_node\tSet 'n' tasks per node mapping (overrides the configuration file)\n");
   printf ("\t--interlvd\tSet interleaved node tasks mapping (overrides the configuration file)\n");
-  printf ("\t--clean-deadlocks <until-trace-progression> \tA deadlock analysis is performed and if detects, tries to solve it.");
+  printf ("\t--clean-deadlocks <until-trace-progression> \tA deadlock analysis is performed and if detects, tries to solve it.\n");
 
 
 
