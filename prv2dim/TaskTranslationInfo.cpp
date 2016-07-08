@@ -533,8 +533,7 @@ bool TaskTranslationInfo::ToDimemas(ParaverRecord_t Record)
 
   if ( (CurrentEvent = dynamic_cast<Event_t>(Record)) != NULL)
     return ToDimemas(CurrentEvent);
-  else if (
-    (CurrentComm = dynamic_cast<PartialCommunication_t>(Record)) != NULL)
+  else if ((CurrentComm = dynamic_cast<PartialCommunication_t>(Record)) != NULL)
     return ToDimemas(CurrentComm);
   else if ( (CurrentGlobOp = dynamic_cast<GlobalOp_t>(Record)) != NULL)
     return ToDimemas(CurrentGlobOp);

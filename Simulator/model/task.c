@@ -2019,7 +2019,6 @@ void TASK_module_new_general (unsigned long int module_type,
   }
 
   return;
-  return;
 }
 
 void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)

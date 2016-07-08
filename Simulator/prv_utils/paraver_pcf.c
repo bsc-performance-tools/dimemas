@@ -100,8 +100,8 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
     strcat(output_pcf_name, ".pcf");
 
     output_row_name = (char*) malloc( (strlen(output_trace_name)+5)*sizeof(char) );
-    strcpy(output_pcf_name, output_trace_name);
-    strcat(output_pcf_name, ".row");
+    strcpy(output_row_name, output_trace_name);
+    strcat(output_row_name, ".row");
   }
   else
   {
@@ -113,8 +113,8 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
       strcat(output_pcf_name, ".pcf");
 
       output_row_name = (char*) malloc( (strlen(output_trace_name)+5)*sizeof(char) );
-      strcpy(output_pcf_name, output_trace_name);
-      strcat(output_pcf_name, ".row");
+      strcpy(output_row_name, output_trace_name);
+      strcat(output_row_name, ".row");
     }
     else
     {
@@ -185,7 +185,7 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
 
   if (input_pcf_file != NULL)
   {
-    PCF_generation_output = PCF_copy_existing(input_pcf_file, output_pcf_file, pcf_insert_file);
+        PCF_generation_output = PCF_copy_existing(input_pcf_file, output_pcf_file, pcf_insert_file);
   }
   else
   {

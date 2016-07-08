@@ -932,18 +932,6 @@ REBOOT:
     event_manager(current_event);
   }
 
-  /*** TO ERASE ***/
-  /*if (danalysis_deactivation_time != -1)
-  {
-	if (current_time > danalysis_deactivation_time and with_deadlock_analysis > 0)
-	{
-	  printf("-> Deadlock analysis deactivation time reached...\n"\
-			 "   Deadlock analysis deactivated.\n");
-
-	  with_deadlock_analysis = 0;
-	}
-  }*/
-
   if (with_deadlock_analysis)
   {
     if (simulation_rebooted || DEADLOCK_check_end())
@@ -994,9 +982,9 @@ REBOOT:
 
   if (reboots_counter > 0)
   {
-	  printf("\n**** Deadlocks ****\n\n");
-	  printf("%d deadlocks has been successfully cleaned.\n", reboots_counter);
-	  printf("\n");
+    printf("\n**** Deadlocks ****\n\n");
+    printf("%d deadlocks has been successfully cleaned.\n", reboots_counter);
+    printf("\n");
   }
 
   // Finalizing simulation
