@@ -1,5 +1,5 @@
 #!/bin/sh
-#export DIMEMAS_HOME=
+export DIMEMAS_HOME=@@DIMEMASHOME@@
 export DIMEMAS_GUI_JAR=$DIMEMAS_HOME/lib/GUI/@@JARFILE@@
 
 if [ -z $DIMEMAS_HOME ] ; then

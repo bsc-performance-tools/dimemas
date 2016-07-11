@@ -87,7 +87,8 @@ mkversion:
 
 RUNSCRIPT=$(GUIDIR)/DimemasGUI
 runscript: DimemasGUI.in
-	sed s/@@JARFILE@@/$(basejarfile)/ < DimemasGUI.in > $(RUNSCRIPT)
+	sed 's#@@DIMEMASHOME@@#$(exec_prefix)#' < DimemasGUI.in > $(RUNSCRIPT)_tmp
+	sed 's#@@JARFILE@@#$(basejarfile)#' < $(RUNSCRIPT)_tmp > $(RUNSCRIPT)
 
 install-exec-am: $(RUNSCRIPT)
 
