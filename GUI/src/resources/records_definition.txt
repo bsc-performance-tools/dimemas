@@ -35,7 +35,7 @@
   4: int    "number of nodes on virtual machine"
   5: double "data tranfer rate between nodes (MBps)"
             "0 means instantaneous communication"
-  6: int    "maximun number of messages on network"
+  6: int    "inter-node number of buses, i.e. max n. of concurrent messages"
             "0 means no limit"
             "1 means bus contention"
   7: int    "internal network collective communications model"
@@ -51,7 +51,7 @@
   5: double  "latency time (s) of intra-node communications model"
   6: double  "bandwidth (MBps) of intra-node communications model"
              "0 means instantaneous communication"
-  7: int     "maximum number of concurrent messages of intra-node"
+  7: int     "intra-node number of buses, i.e. max n. of concurrent messages"
              "communications model:"
              "0 means no limit"
              "1 means bus contention"
@@ -59,7 +59,7 @@
   9: int     "output links of intra-node communications model"
   10: double "latency time (s) of inter-node communications model"
   11: int    "input links of inter-node communications model"
-  12: int    "input links of intra-node communications model"
+  12: int    "output links of inter-node communications model"
   13: double "latency time (s) of inter-machines (WAN) communications model"
 };;
 
@@ -73,7 +73,7 @@
   6: double  "latency time (s) of intra-node communications model"
   7: double  "bandwidth (MBps) of intra-node communications model"
              "0 means instantaneous communication"
-  8: int     "maximum number of concurrent messages of intra-node"
+  8: int     "intra-node number of buses, i.e. max n. of concurrent messages"
              "communications model: "
              "0 means no limit"
              "1 means bus contention"
@@ -81,7 +81,7 @@
   10: int    "output links of intra-node communications model"
   11: double "latency time (s) of inter-node communications model"
   12: int    "input links of inter-node communications model"
-  13: int    "input links of intra-node communications model"
+  13: int    "output links of inter-node communications model"
   14: double "latency time (s) of inter-machines (WAN) communications model"
 };;
 
