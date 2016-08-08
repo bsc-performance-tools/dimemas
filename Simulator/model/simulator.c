@@ -1195,7 +1195,7 @@ void SIMULATOR_reset_state()
       struct t_task * task = &(Ptask->tasks[tasks_it]);
 
       move_queue_elements(&task->busy_in_links, &task->free_in_links);
-      move_queue_elements(&task->busy_out_links, &task->busy_out_links);
+      move_queue_elements(&task->busy_out_links, &task->free_out_links);
 
       remove_queue_elements(&task->th_for_in);
       remove_queue_elements(&task->th_for_out);
