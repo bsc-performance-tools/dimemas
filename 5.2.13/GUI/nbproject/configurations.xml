@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="90">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="common_utilities">
+        <in>Dimemas2Prv.c</in>
+        <in>Dimemas_Generation.c</in>
+        <in>Error.cpp</in>
+        <in>EventEncoding.c</in>
+        <in>error.c</in>
+      </df>
+      <df name="Simulator">
+        <df name="input">
+          <in>check.c</in>
+          <in>comm_configuration.c</in>
+          <in>configuration.c</in>
+          <in>lex.c</in>
+          <in>yacc.c</in>
+        </df>
+        <df name="io">
+          <in>dimemas_io.c</in>
+        </df>
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>Makefile</itemPath>
+      <itemPath>configure</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <compilerSet>CLang|CLang</compilerSet>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath></executablePath>
+          <cTool>
+            <preprocessorList>
+              <Elem>DIMEMAS_COMPILATION</Elem>
+              <Elem>HAVE_CONFIG_H</Elem>
+              <Elem>PIC</Elem>
+              <Elem>_FILE_OFFSET_BITS=64</Elem>
+              <Elem>_LARGEFILE64_SOURCE</Elem>
+              <Elem>__PIC__=2</Elem>
+              <Elem>__pic__=2</Elem>
+            </preprocessorList>
+          </cTool>
+          <ccTool>
+            <incDir>
+              <pElem>common_utilities</pElem>
+              <pElem>.</pElem>
+            </incDir>
+            <preprocessorList>
+              <Elem>DIMEMAS_COMPILATION</Elem>
+              <Elem>HAVE_CONFIG_H</Elem>
+              <Elem>NANOSECOND_TRACE</Elem>
+              <Elem>NEW_DIMEMAS_TRACE</Elem>
+              <Elem>PIC</Elem>
+              <Elem>_FILE_OFFSET_BITS=64</Elem>
+              <Elem>_LARGEFILE64_SOURCE</Elem>
+              <Elem>__PIC__=2</Elem>
+              <Elem>__pic__=2</Elem>
+            </preprocessorList>
+            <undefinedList>
+              <Elem>__GCC_HAVE_DWARF2_CFI_ASM=1</Elem>
+            </undefinedList>
+          </ccTool>
+        </makeTool>
+      </makefileType>
+      <item path="Simulator/input/check.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="Simulator/input/comm_configuration.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="Simulator/input/configuration.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="Simulator/input/lex.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="Simulator/input/yacc.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="Simulator/io/dimemas_io.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="common_utilities/Dimemas2Prv.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="common_utilities/Dimemas_Generation.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="common_utilities/Error.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="common_utilities/EventEncoding.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="common_utilities/error.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <folder path="0/Simulator/input">
+        <cTool>
+          <incDir>
+            <pElem>Simulator/input</pElem>
+            <pElem>.</pElem>
+            <pElem>common_utilities</pElem>
+            <pElem>include</pElem>
+            <pElem>Simulator/io</pElem>
+            <pElem>Simulator/model</pElem>
+            <pElem>Simulator/prv_utils</pElem>
+            <pElem>Simulator/sched</pElem>
+            <pElem>Simulator/utils</pElem>
+            <pElem>Simulator/venusclient</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/Simulator/io">
+        <cTool>
+          <incDir>
+            <pElem>Simulator/io</pElem>
+            <pElem>.</pElem>
+            <pElem>include</pElem>
+            <pElem>Simulator/input</pElem>
+            <pElem>Simulator/model</pElem>
+            <pElem>Simulator/prv_utils</pElem>
+            <pElem>Simulator/sched</pElem>
+            <pElem>Simulator/utils</pElem>
+            <pElem>Simulator/venusclient</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/common_utilities">
+        <cTool>
+          <incDir>
+            <pElem>common_utilities</pElem>
+            <pElem>.</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>NANOSECOND_TRACE</Elem>
+            <Elem>NEW_DIMEMAS_TRACE</Elem>
+          </preprocessorList>
+        </cTool>
+      </folder>
+    </conf>
+  </confs>
+</configurationDescriptor>

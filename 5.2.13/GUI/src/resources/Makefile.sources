@@ -1,0 +1,18 @@
+defaultsdir=$(datadir)/dimemas_defaults
+
+defaults_FILES= \
+  defaults/Dimemas \
+  defaults/Gui \
+  defaults/header.txt \
+  defaults/bsc_logo.jpg \
+  defaults/dimemas_icon.png \
+  defaults/machines.db \
+  defaults/Makefile.sources \
+  defaults/networks.db
+
+EXTRA_DIST = $(defaults_FILES)
+
+install-exec-hook:
+	$(mkdir_p) $(defaultsdir)
+	cp $(defaults_FILES) $(defaultsdir)
+
