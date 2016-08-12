@@ -67,11 +67,21 @@ public class Node
   static public final String DEFAULT_INTER_NODE_IN_LINKS  = "1";
   static public final String DEFAULT_INTER_NODE_OUT_LINKS = "1";
   static public final String DEFAULT_WAN_STARTUP          = "0.0";
-
+  
+  
+  static public final String DEFAULT_ACC_STARTUP		  = "0.0";
+  static public final String DEFAULT_ACC_MEM_STARTUP	  = "0.0";
+  static public final String DEFAULT_ACC_BANDWIDTH		  = "0.0";
+  static public final String DEFAULT_ACC_BUSES			  = DEFAULT_PROCESSORS;
+  static public final String DEFAULT_ACC_RATIO		  	  = "1.0";
+  static public final Boolean DEFAULT_ACC				  = false;
+  
 
   static public final int    NODE_RECORD_NO_INTRA_NODE_FIELD_COUNT = 11;
   static public final int    NODE_RECORD_WITH_NODE_ID_FIELD_COUNT  = 14;
   static public final int    NODE_RECORD_FIELD_COUNT               = 13;
+  
+  static public final int	 ACC_NODE_RECORD_FIELD_COUNT = 6;
 
   private String machine_id;           // Machine to which belongs the node.
   private String node_id;              // Node identificator.
@@ -90,6 +100,13 @@ public class Node
   private String inter_node_out_links; // Number of output links.
 
   private String wan_startup;          // External net startup.
+  
+  private Boolean acc;
+  private String acc_startup;
+  private String acc_mem_startup;
+  private String acc_bandwidth;
+  private String acc_buses;
+  private String acc_ratio;
 
   // Constructor de la clase Node.
   public Node(String identificator, String machineId)
@@ -119,6 +136,13 @@ public class Node
     inter_node_out_links = DEFAULT_INTER_NODE_OUT_LINKS;
 
     wan_startup          = DEFAULT_WAN_STARTUP;
+    
+    acc					 = DEFAULT_ACC;
+    acc_startup			 = DEFAULT_ACC_STARTUP;
+    acc_mem_startup 	 = DEFAULT_ACC_MEM_STARTUP;
+    acc_bandwidth		 = DEFAULT_ACC_BANDWIDTH;
+    acc_buses			 = DEFAULT_ACC_BUSES;
+    acc_ratio			 = DEFAULT_ACC_RATIO;
   }
 
   /*
@@ -143,7 +167,14 @@ public class Node
        inter_node_startup.equalsIgnoreCase(DEFAULT_INTER_NODE_STARTUP) &&
        inter_node_in_links.equalsIgnoreCase(DEFAULT_INTER_NODE_IN_LINKS) &&
        inter_node_out_links.equalsIgnoreCase(DEFAULT_INTER_NODE_OUT_LINKS) &&
-       wan_startup.equalsIgnoreCase(DEFAULT_WAN_STARTUP))
+       wan_startup.equalsIgnoreCase(DEFAULT_WAN_STARTUP) &&
+       
+       acc.equals(DEFAULT_ACC)							 &&
+       acc_startup.equalsIgnoreCase(DEFAULT_ACC_STARTUP) &&
+       acc_mem_startup.equalsIgnoreCase(DEFAULT_ACC_MEM_STARTUP) &&
+       acc_bandwidth.equalsIgnoreCase(DEFAULT_ACC_BANDWIDTH) &&
+       acc_buses.equalsIgnoreCase(DEFAULT_ACC_BUSES) &&
+       acc_ratio.equalsIgnoreCase(DEFAULT_ACC_RATIO))
     {
       return true;
     }
@@ -178,7 +209,13 @@ public class Node
            this.inter_node_startup.equals(otherNode.getInterNodeStartup())    &&
            this.inter_node_in_links.equals(otherNode.getInterNodeInLinks())   &&
            this.inter_node_out_links.equals(otherNode.getInterNodeOutLinks()) &&
-           this.wan_startup.equals(otherNode.getWANStartup()))
+           this.wan_startup.equals(otherNode.getWANStartup())				  &&
+           this.acc.equals(otherNode.getAcc())								  &&
+           this.acc_startup.equals(otherNode.getAccStartup())				  &&
+           this.acc_mem_startup.equals(otherNode.getAccMemStartup())		  &&
+           this.acc_bandwidth.equals(otherNode.getAccBandwidth())			  &&
+           this.acc_buses.equals(otherNode.getAccBuses())					  &&
+           this.acc_ratio.equals(otherNode.getAccRatio()))
       {
         return true;
       }
@@ -219,6 +256,22 @@ public class Node
     target.writeBytes(getInterNodeInLinks() + ", ");
     target.writeBytes(getInterNodeOutLinks() + ", ");
     target.writeBytes(getWANStartup() + "};;\n");
+  }
+  
+  
+  /*
+   * Prints accelerator information for this node.
+   * Node id needed for mapping accelerator tasks in these nodes
+   */
+  public void saveAccData(RandomAccessFile target) throws IOException
+  {
+	  target.writeBytes(Data.ACC_NODE);
+	  target.writeBytes(getNode_id() + ", ");
+	  target.writeBytes(getAccStartup() + ", ");
+	  target.writeBytes(getAccMemStartup() + ", ");
+	  target.writeBytes(getAccBandwidth() + ", ");
+	  target.writeBytes(getAccBuses() + ", ");
+	  target.writeBytes(getAccRatio() + "};;\n");
   }
 
   // MÃ©todos GET: permiten el acceso externo a los datos de un nodo.
@@ -295,6 +348,36 @@ public class Node
   public String getWANStartup()
   {
     return wan_startup;
+  }
+  
+  public Boolean getAcc()
+  {
+	  return acc;
+  }
+  
+  public String getAccStartup()
+  {
+	  return acc_startup;
+  }
+  
+  public String getAccMemStartup()
+  {
+	  return acc_mem_startup;
+  }
+  
+  public String getAccBandwidth()
+  {
+	  return acc_bandwidth;
+  }
+  
+  public String getAccBuses()
+  {
+	  return acc_buses;
+  }
+  
+  public String getAccRatio()
+  {
+	  return acc_ratio;
   }
 
   // MÃ©todos SET: permiten la modificaciÃ³n, de forma externa, de los datos de
@@ -479,6 +562,83 @@ public class Node
     } catch(NumberFormatException e)
       {
         Tools.showErrorMessage("WRONG INTER-MACHINES (WAN) COMMUNICATIONS STARTUP VALUE");
+        throw e;
+      }
+  }
+  
+  public void setAcc(Boolean value) throws Exception
+  {
+	  try 
+	  {
+		acc = value;
+	  } catch(ValueException e)
+	  {
+		Tools.showErrorMessage("WRONG ACCELERATOR NODE");
+	    throw e;
+	  }
+  }
+  
+  public void setAccStartup(String value) throws Exception
+  {
+    try
+    {
+      Double.parseDouble(value);
+      acc_startup = Tools.filterForDouble(value);
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG ACCELERATOR STARTUP VALUE");
+        throw e;
+      }
+  }
+  
+  public void setAccMemStartup(String value) throws Exception
+  {
+    try
+    {
+      Double.parseDouble(value);
+      acc_mem_startup = Tools.filterForDouble(value);
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG ACCELERATOR MEMORY STARTUP VALUE");
+        throw e;
+      }
+  }
+  
+  public void setAccBandwidth(String value) throws Exception
+  {
+    try
+    {
+      Double.parseDouble(value);
+      acc_bandwidth = Tools.filterForDouble(value);
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG ACCELERATOR BANDWIDTH VALUE");
+        throw e;
+      }
+  }
+  
+  public void setAccBuses(String value) throws Exception
+  {
+    try
+    {
+      Integer.parseInt(value);
+      acc_buses = value;
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG ACCELERATOR BUSES VALUE");
+        throw e;
+      }
+  }
+  
+  public void setAccRatio(String value) throws Exception
+  {
+    try
+    {
+      Double.parseDouble(value);
+      acc_ratio = Tools.filterForDouble(value);
+    } catch(NumberFormatException e)
+      {
+        Tools.showErrorMessage("WRONG ACCELERATOR SPEED RATIO");
         throw e;
       }
   }

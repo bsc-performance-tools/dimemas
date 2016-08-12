@@ -79,7 +79,16 @@ public class NodeWindow extends GUIWindow
   private JTextField tf_inter_node_out_links = new JTextField(18);
 
   private JTextField tf_wan_startup       = new JTextField(18);
-
+  
+  //Accelerator node info
+  private JCheckBox  cb_acc				  = new JCheckBox("Heterogenous node");
+  private JTextField tf_acc				  = new JTextField(18);
+  private JTextField tf_acc_startup	 	  = new JTextField(18);
+  private JTextField tf_acc_mem_startup	  = new JTextField(18);
+  private JTextField tf_acc_bandwidth     = new JTextField(18);
+  private JTextField tf_acc_buses         = new JTextField(18);
+  private JTextField tf_acc_ratio		  = new JTextField(18);
+  
   /*
   * El método createTextField genera un campo de texto Swing que actuará como
   * contador o indicador del #elemento que se está visualizando en ese momento.
@@ -136,6 +145,17 @@ public class NodeWindow extends GUIWindow
     tf_inter_node_out_links.setText(data.nodes_information.node[index].getInterNodeOutLinks());
 
     tf_wan_startup.setText(data.nodes_information.node[index].getWANStartup());
+    
+    cb_acc.setSelected(data.nodes_information.node[index].getAcc());
+    /* If nodes has accelerator information */
+    if (data.nodes_information.node[index].getAcc())
+    {
+	    tf_acc_startup.setText(data.nodes_information.node[index].getAccStartup());
+	    tf_acc_mem_startup.setText(data.nodes_information.node[index].getAccMemStartup());
+	    tf_acc_bandwidth.setText(data.nodes_information.node[index].getAccBandwidth());
+	    tf_acc_buses.setText(data.nodes_information.node[index].getAccBuses());
+	    tf_acc_ratio.setText(data.nodes_information.node[index].getAccRatio());
+    }
   }
 
   /*
@@ -205,6 +225,36 @@ public class NodeWindow extends GUIWindow
       Tools.showWarningMessage("Inter-machines (WAN) communications startup missing");
       return false;
     }
+    
+    /* If heterogenous node checkbox is enabled */
+    if (cb_acc.isSelected())
+    {
+	    if(tf_acc_startup.getText().equalsIgnoreCase(""))
+	    {
+	      Tools.showWarningMessage("Accelerator startup missing");
+	      return false;
+	    }
+	    else if(tf_acc_mem_startup.getText().equalsIgnoreCase(""))
+	    {
+	      Tools.showWarningMessage("Accelerator memory startup missing");
+	      return false;
+	    }
+	    else if(tf_acc_bandwidth.getText().equalsIgnoreCase(""))
+	    {
+	      Tools.showWarningMessage("Accelerator bandwidth missing");
+	      return false;
+	    }
+	    else if(tf_acc_buses.getText().equalsIgnoreCase(""))
+	    {
+	      Tools.showWarningMessage("Accelerator number of buses missing");
+	      return false;
+	    }
+	    else if(tf_acc_ratio.getText().equalsIgnoreCase(""))
+	    {
+	      Tools.showWarningMessage("Accelerator speed ratio missing");
+	      return false;
+	    }
+    }
 
     return true;
   }
@@ -249,6 +299,18 @@ public class NodeWindow extends GUIWindow
       data.nodes_information.node[index].setInterNodeOutLinks(tf_inter_node_out_links.getText());
 
       data.nodes_information.node[index].setWANStartup(tf_wan_startup.getText());
+      
+      data.nodes_information.node[index].setAcc(cb_acc.isSelected());
+      /* If heterogenous node checkbox is enabled */
+      if (cb_acc.isSelected())
+      {
+    	  data.nodes_information.node[index].setAccStartup(tf_acc_startup.getText());
+    	  data.nodes_information.node[index].setAccMemStartup(tf_acc_mem_startup.getText());
+    	  data.nodes_information.node[index].setAccBandwidth(tf_acc_bandwidth.getText());
+    	  data.nodes_information.node[index].setAccBuses(tf_acc_buses.getText());
+    	  data.nodes_information.node[index].setAccRatio(tf_acc_ratio.getText());
+      }
+      
 
     }
     catch(Exception exc)
@@ -284,6 +346,8 @@ public class NodeWindow extends GUIWindow
     drawIntraNodeCommsPanel();
     drawInterNodeCommsPanel();
     drawWANCommsPanel();
+    
+    drawAccPanel(nodeNumber);
 
     // drawLine(new Component[] {new JLabel("Startup [s]"),tf_local});
     // drawLine(new Component[] {new JLabel("Bandwidth [MByte/s]"),tf_memory});
@@ -404,6 +468,72 @@ public class NodeWindow extends GUIWindow
 
     super.addComponent(WANCommsPanel);
 
+    return;
+  }
+  
+  /*
+   * Creates the Accelerator parameters panel
+   */
+  private void drawAccPanel(int nodeid)
+  {
+    JPanel AccPanel = new JPanel();
+    AccPanel.setLayout(new GridLayout(6,2,5,5));
+    AccPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+                                                                   "Accelerator parameters"));
+    /* Checkbox for enabling accelerator information */
+    Boolean enable_acc = data.nodes_information.node[nodeid].getAcc();
+    AccPanel.add(new JLabel("Heterogenous node"));
+    cb_acc.setSelected(enable_acc);
+    AccPanel.add(cb_acc);
+    
+    cb_acc.addChangeListener(new ChangeListener() {
+		
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			// TODO Auto-generated method stub
+			if (cb_acc.isSelected())
+			{
+				//Enables params
+				tf_acc_startup.setEnabled(true);
+				tf_acc_mem_startup.setEnabled(true);
+				tf_acc_bandwidth.setEnabled(true);
+				tf_acc_buses.setEnabled(true);
+				tf_acc_ratio.setEnabled(true);
+			}
+			else if (!cb_acc.isSelected())
+			{
+				//Disable params
+				tf_acc_startup.setEnabled(false);
+				tf_acc_mem_startup.setEnabled(false);
+				tf_acc_bandwidth.setEnabled(false);
+				tf_acc_buses.setEnabled(false);
+				tf_acc_ratio.setEnabled(false);
+			}
+		}
+	});
+
+    //Accelerator params enabled only if checkbox enabled
+    AccPanel.add(new JLabel("Startup [s]"));
+    tf_acc_startup.setEnabled(enable_acc);
+    AccPanel.add(tf_acc_startup);
+    
+    AccPanel.add(new JLabel("Memory startup [s]"));
+    tf_acc_mem_startup.setEnabled(enable_acc);
+    AccPanel.add(tf_acc_mem_startup);
+    
+    AccPanel.add(new JLabel("Bandwidth [MByte/s]"));
+    tf_acc_bandwidth.setEnabled(enable_acc);
+    AccPanel.add(tf_acc_bandwidth);
+    
+    AccPanel.add(new JLabel("Buses"));
+    tf_acc_buses.setEnabled(enable_acc);
+    AccPanel.add(tf_acc_buses);
+    
+    AccPanel.add(new JLabel("Relative speed [%]"));
+    tf_acc_ratio.setEnabled(enable_acc);
+    AccPanel.add(tf_acc_ratio);
+    
+    super.addComponent(AccPanel);
     return;
   }
 

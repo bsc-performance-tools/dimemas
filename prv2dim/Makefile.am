@@ -7,7 +7,7 @@ AM_CPPFLAGS = \
 bin_PROGRAMS           = prv2dim
 
 # 'prv2dim' configuration
-prv2dim_CFLAGS         = -DNEW_DIMEMAS_TRACE $(BOOST_CPPFLAGS)
+prv2dim_CFLAGS         = -DNEW_DIMEMAS_TRACE $(BOOST_CPPFLAGS) 
 prv2dim_CXXFLAGS       = -DNEW_DIMEMAS_TRACE $(BOOST_CPPFLAGS)
 
 # Common list of sources

@@ -109,6 +109,6 @@ extern void global_op_reserva_links (struct t_thread *thread);
 
 void COMMUNIC_reset_deadlock();
 
-
+extern void ACCELERATOR_synchronization(struct t_thread* thread, int comm_id);
 
 #endif

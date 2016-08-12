@@ -207,3 +207,31 @@ void NODE_Fill_Node_Fields(struct t_node *node,
 
   return;
 }
+
+void NODE_set_acc(int node_id,
+									double latency,
+									double memory_latency,
+									double bandwith,
+									int num_acc_buses,
+									double relative)
+{
+	struct t_node *node = get_node_by_id(node_id);
+	if (node == N_NIL) {
+		panic("Wrong accelerator node id %d, does no exist. Check your configuration file\n", node_id);
+	}
+
+	node->accelerator				= TRUE;
+	node->acc.bandwidth			= (t_bandwidth) 	bandwith;
+	node->acc.startup 			= (dimemas_timer) latency;
+	node->acc.memory_startup= (dimemas_timer) memory_latency;
+	node->acc.max_messages 	= num_acc_buses;
+	node->acc_relative			= relative;
+
+	create_queue(&(node->acc.threads_in_link));
+	create_queue(&(node->acc.wait_for_link));
+}
+
+t_boolean NODE_get_acc(struct t_node *node)
+{
+	return node->accelerator;
+}

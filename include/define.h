@@ -148,15 +148,11 @@
 #define IRECV           14  /* Immediate recieve (without blocking) */
 #define WAIT            15  /* Block until wait */
 #define WAIT_FOR_SEND   16  /* Added by Vladimir */
+#define ACC_SYNC				17
+#define GPU_BURST			  18
 
-#define NOOP            -1
-#define DEAD             0
-#define WORK             1
-#define SEND             2
-#define RECV             4
-#define EVENT            8
-#define PRIO             16
-#define FS               32
+
+/*#define FS               32
 #define SEM              64
 #define PORT_SEND        128
 #define PORT_RECV        256
@@ -166,7 +162,7 @@
 #define MPI_OS           4096
 #define IRECV            8192
 #define WAIT             16384
-#define WAIT_FOR_SEND    32768
+#define WAIT_FOR_SEND    32768*/
 
 #define WAIT_NORMAL 0
 #define WAIT_ALL 1
@@ -253,18 +249,20 @@
 #define OUT_LINK  1
 #define IN_LINK   2
 
-/* Three kinds of links */
-#define MEM_LINK        1
-#define NODE_LINK       2
-#define MACHINE_LINK    3
-#define CONNECTION_LINK 4
+/* Five kinds of links */
+#define MEM_LINK        	1
+#define NODE_LINK       	2
+#define MACHINE_LINK    	3
+#define CONNECTION_LINK 	4
+#define ACCELERATOR_LINK 	5
 
-/* Five communication types */
+/* Six communication types */
 #define MEMORY_COMMUNICATION_TYPE      0
 #define INTERNAL_NETWORK_COM_TYPE      1
 #define EXTERNAL_NETWORK_COM_TYPE      2
 #define DEDICATED_CONNECTION_COM_TYPE  3
 #define EXTERNAL_MODEL_COM_TYPE        4 // Used by the external communications model
+#define	ACCELERATOR_COM_TYPE	 				 5
 
 /* Type of global Ops used by the external communications models */
 #define DIMEMAS_GLOBAL_OP_MODEL  0
@@ -308,6 +306,7 @@
 #define COM_TIMER_OUT_RESOURCES_WAN       8
 #define COM_TIMER_OUT_RESOURCES_DED       9
 #define COM_TIMER_OUT_RESOURCES_EXT_MODEL 10
+#define COM_TIMER_OUT_RESOURCES_ACC				11
 
 
 #define FS_OPERATION        1
@@ -594,5 +593,9 @@ static const char* Global_Ops_Labels[GLOBAL_OPS_COUNT] =
   "MPI_Reduce_Scatter",
   "MPI_Scan"
 };
+
+#define ACCELERATOR_NULL		0	//No accelerator tracing
+#define ACCELERATOR_HOST		1	//Accelerator host thread
+#define ACCELERATOR_KERNEL	2	//Accelerator kernel thread
 
 #endif

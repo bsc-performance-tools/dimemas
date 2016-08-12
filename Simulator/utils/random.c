@@ -64,6 +64,8 @@ void RANDOM_Init ()
   randomness.memory_latency.distribution             = NO_DISTRIBUTION;
   randomness.external_network_bandwidth.distribution = NO_DISTRIBUTION;
   randomness.external_network_latency.distribution   = NO_DISTRIBUTION;
+  randomness.acc_memory_latency.distribution				 = NO_DISTRIBUTION;
+  randomness.acc_memory_bandwith.distribution				 = NO_DISTRIBUTION;
 
   CONFIGURATION_Load_Random_Configuration();
 

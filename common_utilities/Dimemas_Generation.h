@@ -123,6 +123,10 @@ int Dimemas_User_EventValue_Definition( FILE *fd,
 
 int Dimemas_NOOP ( FILE *fd, int task, int thread );
 
+int Dimemas_GPU_Burst( FILE *fd,
+                       	 	 	 int task, int thread,
+														 double burst_time );
+
 #ifdef __cplusplus
 }
 #endif

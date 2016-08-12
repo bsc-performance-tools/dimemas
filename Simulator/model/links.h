@@ -132,4 +132,13 @@ extern t_boolean LINKS_get_dedicated_connection_links(struct t_thread           
 extern void LINKS_free_dedicated_connection_link(struct t_link   *link,
                                                  struct t_thread *thread);
 
+extern t_boolean LINKS_get_acc_links(struct t_thread *thread,
+                              struct t_task   *task_snd,
+                              struct t_task   *task_rcv);
+
+extern void LINKS_free_acc_link(struct t_link   *link,
+    														struct t_thread *thread);
+
+
+
 #endif

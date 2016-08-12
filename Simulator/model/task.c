@@ -333,6 +333,7 @@ void TASK_New_Ptask(char *trace_name,
 {
   struct t_Ptask *Ptask;
   size_t          new_taskid;
+  int 						i;
 
   Ptask = (struct t_Ptask*) malloc (sizeof (struct t_Ptask));
   Ptask->Ptaskid    = Ptask_ids++;
@@ -383,27 +384,35 @@ void TASK_New_Ptask(char *trace_name,
 
     for (synth_task = 0; synth_task < Ptask->tasks_count; synth_task++)
     {
-
-
-      TASK_New_Task(Ptask, synth_task, synth_task);
+      TASK_New_Task(Ptask, synth_task, synth_task, FALSE);
     }
   }
   else
   {
-
     Ptask->tasks_count = tasks_count;
     Ptask->tasks       = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
-    for (new_taskid = 0; new_taskid < tasks_count; new_taskid++)
-    {
-      TASK_New_Task(Ptask, new_taskid, tasks_mapping[new_taskid]);
-    }
+    /*	gets accelerator tasks info for mapping	*/
+    get_acc_tasks_info(Ptask);
 
+    for (new_taskid = 0; new_taskid < tasks_count; new_taskid++)
+    {	/*	find if any accelerator task is not going to map to an accelerator node	*/
+			for (i = 0; i < Ptask->acc_tasks_count && Ptask->acc_tasks != NULL; i++)
+			{
+				if (Ptask->acc_tasks[i] == new_taskid)
+				{
+					TASK_New_Task(Ptask, new_taskid, tasks_mapping[new_taskid], TRUE);
+					break;
+				}
+			}
+      if (i == Ptask->acc_tasks_count)
+      	TASK_New_Task(Ptask, new_taskid, tasks_mapping[new_taskid], FALSE);
+    }
   }
 
   insert_queue(&Ptask_queue, (char*) Ptask, (t_priority) Ptask->Ptaskid);
-  // return (Ptask);
 }
+
 
 /*
  * Create a new Ptask, using a predefined map information
@@ -437,6 +446,9 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
   Ptask->mmap_position         = 0;
   Ptask->synthetic_application = FALSE;
 
+  Ptask->acc_tasks_count			 = -1;	//-1:	search for acc_tasks not done, >= 0 otherwise
+  Ptask->acc_tasks						 = (int *) NULL;
+
   // create_queue (&(Ptask->tasks));
 
   create_queue (&(Ptask->global_operation));
@@ -457,7 +469,7 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
  * is not fully defined. When the tracefile is read each task definition is
  * completed with the rest of information (threads count, communicators, etc.)
  */
-void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
+void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid, t_boolean acc_task)
 {
   struct t_task *task;
   struct t_node *node;
@@ -467,10 +479,13 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
   // assert(taskid < 0 || taskid >= Ptask->tasks_count);
 
   node = get_node_by_id(nodeid);
-  if (node == N_NIL)
-  {
-    panic("Trying to map task %d to unknown node %d\n", taskid, nodeid);
+  if (acc_task && !NODE_get_acc(node))
+  { /*	when mapping a task with accelerator (indicated in Dimemas header)
+  	 *	in a non-accelerator node (indicated in configuration file)
+  	 */
+  	die("Error mapping accelerator task %d in non-accelerator node %d", taskid, nodeid);
   }
+
 
   task = &(Ptask->tasks[taskid]);
 
@@ -478,6 +493,7 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
   task->nodeid    = nodeid;
   task->Ptask     = Ptask;
   task->io_thread = FALSE;
+  task->accelerator	= acc_task;
 
   task->threads_count = 0;
   task->threads       = NULL;
@@ -544,6 +560,10 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid)
   create_queue (&(task->busy_out_links));
   create_queue (&(task->th_for_in));
   create_queue (&(task->th_for_out));
+
+	task->KernelSync 		= TH_NIL;	//Means no thread is waiting
+  task->HostSync	 		= TH_NIL;	//Means no root is waiting
+  task->KernelByComm	= -1;	//Means no root is waiting for kernel
 
   return;
 }
@@ -1165,6 +1185,34 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   /* and store it in the array of all threads in that task */
   assert(task->threads_count >= thread->threadid);
   task->threads[thread->threadid] = thread;
+
+  /* Accelerator variables */
+  if (task->accelerator && task->threads_count == thread_id + 1)
+	{	/*	Kernel thread in accelerator task it's always last	*/
+		thread->kernel = TRUE;
+		thread->host	 = FALSE;
+	}
+	else if (task->accelerator && thread_id == 0)
+	{	/*	It's not an accelerator task	*/
+		thread->kernel = FALSE;
+		thread->host	 = TRUE;
+	}
+	else
+	{
+		thread->kernel = FALSE;
+		thread->host	 = FALSE;
+	}
+
+	thread->accelerator_link 				= L_NIL;
+	thread->first_acc_event_read		= FALSE;
+	thread->acc_recv_sync						= FALSE;
+	thread->acc_sndr_sync 					= FALSE;
+	thread->doing_acc_comm					= FALSE;
+	thread->acc_in_block_event.type = 0;
+	thread->acc_in_block_event.value= 0;
+	thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
+	thread->blckd_in_global_op = FALSE;
+	/* Accelerator variables */
 }
 
 struct t_thread *locate_thread_of_task (struct t_task *task, int thid)
@@ -1328,6 +1376,18 @@ struct t_thread *duplicate_thread_fs (struct t_thread *thread)
   copy_thread->sstask_id                = thread->sstask_id;
   copy_thread->sstask_type              = thread->sstask_type;
 
+  /* Accelerator variables */
+  copy_thread->host											= thread->host;
+  copy_thread->kernel										= thread->kernel;
+	copy_thread->accelerator_link					= thread->accelerator_link;
+	copy_thread->first_acc_event_read			= thread->first_acc_event_read;
+	copy_thread->acc_in_block_event       = thread->acc_in_block_event;
+	copy_thread->acc_recv_sync						= thread->acc_recv_sync;
+	copy_thread->acc_sndr_sync        		= thread->acc_sndr_sync;
+	copy_thread->doing_acc_comm						= thread->doing_acc_comm;
+	copy_thread->blckd_in_global_op				= thread->blckd_in_global_op;
+	/* Accelerator variables */
+
   return (copy_thread);
 }
 
@@ -1400,6 +1460,15 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
   create_queue (&(copy_thread->account));
   new_account (&(copy_thread->account), node->nodeid);
 
+  copy_thread->host											= thread->host;
+  copy_thread->kernel										= thread->kernel;
+  copy_thread->accelerator_link					= thread->accelerator_link;
+  copy_thread->first_acc_event_read			= thread->first_acc_event_read;
+  copy_thread->acc_in_block_event				= thread->acc_in_block_event;
+  copy_thread->acc_recv_sync						= thread->acc_recv_sync;
+  copy_thread->acc_sndr_sync						= thread->acc_sndr_sync;
+  copy_thread->doing_acc_comm						= thread->doing_acc_comm;
+  copy_thread->blckd_in_global_op				= thread->blckd_in_global_op;
   return (copy_thread);
 }
 
@@ -2025,6 +2094,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
 {
   int  new_taskid, i;
   int *task_mapping;
+	int	 found;
   Ptask->tasks       = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
   if (Ptask->map_definition == MAP_FILL_NODES)
@@ -2072,19 +2142,42 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
          Ptask->map_definition);
   }
 
-  for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
-  {
-    TASK_New_Task(Ptask, new_taskid, task_mapping[new_taskid]);
+  if (Ptask->acc_tasks_count == -1)
+  {	// -1: search for acc_tasks not done yet
+  	get_acc_tasks_info(Ptask);
+
+  	if ( (Ptask->acc_tasks == NULL && Ptask->acc_tasks_count > 0) ||
+  			Ptask->acc_tasks_count < 0)
+  	{
+  		die ("Wrong accelerator tasks mapping definition in Ptask%d",
+  				Ptask->Ptaskid);
+  	}
   }
 
-  /* DEBUG
+  for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
+  {
+    for (i = 0; i < Ptask->acc_tasks_count; i++)
+		{
+			if (Ptask->acc_tasks[i] == new_taskid)
+			{
+				TASK_New_Task(Ptask, new_taskid, task_mapping[new_taskid], TRUE);
+				break;
+			}
+		}
+		if (i == Ptask->acc_tasks_count)
+		{
+			TASK_New_Task(Ptask, new_taskid, task_mapping[new_taskid], FALSE);
+		}
+  }
+
+#if DEBUG
   printf("Mapping = { ");
   for (i = 0; i < Ptask->tasks_count; i++)
   {
     printf("%d ", task_mapping[i]);
   }
   printf("}\n");
-  */
+#endif
 
   free(task_mapping);
 }
@@ -2480,4 +2573,26 @@ void user_event_value_name (struct t_Ptask *Ptask,
             type);
     free(name);
   }
+}
+
+/*
+ * Gets accelerator task mapping info and stores it in Ptask
+ */
+void get_acc_tasks_info(struct t_Ptask *Ptask)
+{
+	int		 *acc_tasks_mapping;
+	int			acc_tasks_count;
+	char *trace_file_name = Ptask->tracefile;
+
+	//acc_tasks_mapping = malloc(Ptask->tasks_count*sizeof(int));
+	acc_tasks_mapping = (int *) 0;
+	if (DATA_ACCES_get_acc_tasks(trace_file_name, &acc_tasks_count, &acc_tasks_mapping) == FALSE)
+	{
+		die("unable to retrieve accelerator tasks of trace '%s': %s",
+					 trace_file_name,
+					 DATA_ACCESS_get_error());
+	}
+
+	Ptask->acc_tasks_count = acc_tasks_count;
+	Ptask->acc_tasks = acc_tasks_mapping;
 }

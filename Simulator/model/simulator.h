@@ -194,6 +194,13 @@ void SIMULATOR_check_correct_definitions(void);
 
 char* SIMULATOR_get_last_error(void);
 
+void SIMULATOR_set_acc_nodes(int node_id,
+														 double latency,
+														 double memory_latency,
+														 double bandwith,
+														 int num_acc_buses,
+														 double relative);
+
 void SIMULATOR_reset_state();
 
 #endif

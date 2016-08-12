@@ -37,6 +37,18 @@
 
 #include <types.h>
 
+struct t_accelerator {
+	dimemas_timer		startup;
+	dimemas_timer		memory_startup;
+	t_bandwidth			bandwidth;
+	struct t_queue	threads_in_link;
+	struct t_queue	wait_for_link;
+	int							max_messages;
+	int 						cur_messages;
+};
+
+#define	ACCELERATOR_NIL (struct t_accelerator*) 0
+
 struct t_node
 {
   char             *arch;
@@ -86,6 +98,11 @@ struct t_node
 
   //EEE
   int messages_in_flight;
+
+  //accelerator
+  int										accelerator;
+  struct t_accelerator 	acc;
+  double								acc_relative;
 };
 
 void NODE_Init_Empty_Node(struct t_machine* machine,
@@ -109,5 +126,14 @@ void NODE_Fill_Node_Fields(struct t_node *node,
                            double         remote_port_startup,
                            double         local_memory_startup,
                            double         remote_memory_startup);
+
+void	NODE_set_acc(int node_id,
+									 double latency,
+									 double memory_latency,
+									 double bandwith,
+									 int num_acc_buses,
+									 double relative);
+
+t_boolean NODE_get_acc(struct t_node *node);
 
 #endif

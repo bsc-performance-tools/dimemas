@@ -34,7 +34,7 @@ extern "C"
  *************************************************************************/
 
 /* D'afegeix el fitxer on hi ha totes les constants */
-#include <EventEncoding.h>
+#include "EventEncoding.h"
 
 #define MPITYPE_FLAG_COLOR 9
 

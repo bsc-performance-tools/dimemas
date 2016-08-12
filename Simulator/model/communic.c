@@ -72,6 +72,7 @@
 #endif
 
 #include <deadlock_analysis.h>
+#include "EventEncoding.h"
 
 /******************************************************************************
  * Global variables                                                           *
@@ -137,7 +138,6 @@ void (* external_compute_global_operation_time) (int     comm_id,
                                                  int     bytes_recv,
                                                  t_nano *latency_time,
                                                  t_nano *op_time);
-
 
 /******************************************************************************
  * MACROS per accounting del temps esperant busos                             *
@@ -214,6 +214,10 @@ static int get_communication_type (struct t_task  *task,
 
 static int from_rank_to_taskid (struct t_communicator *comm, int root_rank);
 
+static t_bandwidth recompute_accelerator_bandwidth 	(struct t_thread *thread);
+
+static void COM_TIMER_OUT_free_accelerator_resources (struct t_thread *thread);
+
 // struct t_queue Global_op;
 
 /*
@@ -235,7 +239,8 @@ t_nano compute_startup (struct t_thread                 *thread,
 
 static t_nano compute_copy_latency (struct t_thread *thread,
                                      struct t_node   *node,
-                                     int              mess_size);
+                                     int              mess_size,
+																		 int							 mess_type);
 
 static dimemas_timer get_logical_receive(struct t_thread *thread,
                                          struct t_queue  *irecv_not_queue,
@@ -245,6 +250,20 @@ static dimemas_timer get_logical_receive(struct t_thread *thread,
                                          long long int    mess_size,
                                          int              communic_id,
                                          dimemas_timer    stored_logical_recv);
+
+/*
+ * Accelerator synchronization defines / private variables / private methods
+ */
+#if 0
+#define ACCELERATOR_SYNC_ALL_THREADS -1
+static struct t_thread* ACCELERATOR_SYNC_host_thread;
+static struct t_queue   ACCELERATOR_SYNC_device_threads;
+int                     ACCELERATOR_SYNC_required_threads;
+int                     ACCELERATOR_SYNC_required_threads_count;
+#endif
+
+static void ACCELERATOR_check_sync_status(struct t_thread* thread,
+                                          t_boolean        host);
 
 /*****************************************************************************
  * Initialization/Finalization of the communications module
@@ -433,11 +452,11 @@ void COMMUNIC_End()
            thread != TH_NIL;
            thread  = (struct t_thread *) next_queue (& (node->th_for_in) ) )
       {
-        PARAVER_Wait (0,
-                      IDENTIFIERS (thread),
-                      thread->last_paraver,
-                      current_time,
-                      PRV_BLOCKING_RECV_ST);
+      	PARAVER_Wait (0,
+											IDENTIFIERS (thread),
+											thread->last_paraver,
+											current_time,
+											PRV_WAITING_MESG_ST);
 
         new_cp_node (thread, CP_BLOCK);
 
@@ -464,10 +483,10 @@ void COMMUNIC_End()
            thread != TH_NIL;
            thread  = (struct t_thread *) next_queue (& (node->th_for_out) ) )
       {
-        PARAVER_Wait (0,
-                      IDENTIFIERS (thread),
-                      thread->last_paraver, current_time,
-                      PRV_BLOCKING_RECV_ST);
+      	PARAVER_Wait (0,
+											IDENTIFIERS (thread),
+											thread->last_paraver, current_time,
+											PRV_WAITING_MESG_ST);
 
         new_cp_node (thread, CP_BLOCK);
 
@@ -690,6 +709,27 @@ t_nano compute_startup (struct t_thread                 *thread,
                                 mess_size);
     break;
 
+  case ACCELERATOR_COM_TYPE:
+	/*	Es un missatge local al node, però entre CPU i GPU	*/
+		if (!send_node->accelerator)
+		{
+			panic("Error computing accelerator comm startup through a non-accelerator node\n");
+		}
+		/* Differenciated memory transfers latency and configuration/launch/sync latency */
+		if (CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) &&
+						mess_size == 0)
+					startup = send_node->acc.startup;
+
+		else if (CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) ||
+				OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event))
+			startup = send_node->acc.memory_startup;
+
+		else
+			startup = send_node->acc.startup;
+		startup += (dimemas_timer) RANDOM_GenerateRandom(&randomness.acc_memory_latency);
+
+		break;
+
   default:
     panic ("Error computing startup (P%02 T%02d t%02d): unknown comm type %d\n",
            IDENTIFIERS (thread),
@@ -712,7 +752,8 @@ t_nano compute_startup (struct t_thread                 *thread,
  *****************************************************************************/
 t_nano compute_copy_latency (struct t_thread *thread,
                               struct t_node   *node,
-                              int              mess_size)
+                              int              mess_size,
+															int							 mess_type)
 {
   t_nano bw;
   t_nano copy_latency = (t_nano) 0;
@@ -725,12 +766,20 @@ t_nano compute_copy_latency (struct t_thread *thread,
     panic ("Error computing copy latency: void node descriptor\n");
   }
 
-  if (node->bandwidth != (t_nano) 0)
+  if (mess_type == ACCELERATOR_COM_TYPE)
+	{
+		if (!node->accelerator)
+		{
+			panic("Communication is ACCELERATOR_TYPE in a non-accelerator node");
+		}
+		bw = bw_ns_per_byte(node->acc.bandwidth);
+	}
+  else
   {
     bw = bw_ns_per_byte(node->bandwidth);
-    copy_latency = bw * mess_size;
   }
 
+  copy_latency = (dimemas_timer)bw * mess_size;
   return (copy_latency);
 }
 
@@ -1226,6 +1275,55 @@ double external_network_bandwidth_ratio (double traffic)
 }
 
 
+/**
+ * Adapts the available accelerator or memory bandwidth (smaller one)
+ * considering the concurrent messages
+ *
+ * Accelerator bandwidth can be PCI-e bandwidth
+ * \param thread Thread that requires the bandwidth re-evaluation
+ *
+ * \return
+ */
+t_bandwidth recompute_accelerator_bandwidth (struct t_thread *thread)
+{
+  t_bandwidth bandw;
+  struct t_node *node;
+  double ratio;
+
+  node = get_node_of_thread (thread);
+  assert(node->accelerator);
+
+  bandw = node->acc.bandwidth;
+  bandw += RANDOM_GenerateRandom (&randomness.acc_memory_bandwith);
+
+  if (bandw != 0)
+  {
+    bandw = bw_ns_per_byte(bandw);
+  }
+
+  if (node->acc.cur_messages <= node->acc.max_messages)
+  {
+    ratio = 1.0;
+  }
+  else
+  {
+    ratio = ( (dimemas_timer) node->acc.max_messages) /
+            ( (dimemas_timer) node->acc.cur_messages);
+  }
+
+  if (ratio != 0)
+  {
+    bandw = bandw / ratio;
+  }
+  else
+  {
+    panic ("bandw = 0 !\n");
+  }
+
+  return bandw;
+}
+
+
 /******************************************************************************
  * FUNCIÓ 'bw_ns_per_byte'                                           *
  *****************************************************************************/
@@ -1656,18 +1754,38 @@ static void message_received (struct t_thread *thread)
       extract_from_queue (& (thread_partner->recv), (char *) partner);
     }
 
-    PARAVER_Wait (0,
-                  IDENTIFIERS (partner),
-                  partner->last_paraver,
-                  current_time,
-                  PRV_BLOCKING_RECV_ST);
+    if (!thread->host && !thread->kernel)
+    {
+			PARAVER_Wait (0,
+										IDENTIFIERS (partner),
+										partner->last_paraver,
+										current_time,
+										PRV_WAITING_MESG_ST);
+    }
 
     new_cp_node (partner, CP_BLOCK);
     new_cp_relation (partner, thread);
     cpu = get_cpu_of_thread (thread);
     cpu_partner = get_cpu_of_thread (partner);
 
+    struct t_thread *host_th, *kernel_th;
 
+		if (thread->host)
+		{
+			if (!thread->original_thread)
+				host_th = thread->twin_thread;
+			else
+				host_th = thread;
+			kernel_th = partner;
+		}
+		else if (partner->host)
+		{
+			if (!partner->original_thread)
+				host_th = partner->twin_thread;
+			else
+				host_th = partner;
+			kernel_th = thread;
+		}
 
     /**
      * Look for a possible IRecv notification!
@@ -1689,43 +1807,117 @@ static void message_received (struct t_thread *thread)
              mess->communic_id);
     }
 
-    PARAVER_P2P_Comm (cpu->unique_number,
-                      IDENTIFIERS (thread),
-                      thread->logical_send,
-                      thread->physical_send,
-                      cpu_partner->unique_number,
-                      IDENTIFIERS (partner),
-                      actual_logical_recv,
-                      thread->physical_recv,
-                      mess->mess_size,
-                      mess->mess_tag );
+    //When host continues doing other things, the original thread is in other
+		//blocks. After a NDRangeKernel, usually in MemRead, so transf_comm = 1
+		//And because comm_id == 0, comm is sometimes not painted in NDRangeKernel
+		//To solve it, use the thread and not host_th, because can be a copy
+		//And copy state (acc_in_block_event) must be correct
+		int transf_comm =
+				CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) ||
+				OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event);
+		/* If it's a sync_comm in a CUDAMem_Cpy block in the host, is ignored */
+		int sync_comm =	mess->communic_id == 0;
+		int cuda_comm = CUDAEventEncoding_Is_CUDAComm(mess->mess_tag);
+		int ocl_comm = OCLEventEncoding_Is_OCLComm(mess->mess_tag);
 
-    partner->last_paraver = current_time;
+		/* Paraver P2P communication has to be thrown */
+		int paraver_comm = !(sync_comm && cuda_comm && transf_comm)
+				&& !(ocl_comm && sync_comm && transf_comm);
 
-    action          = partner->action;
-    partner->action = action->next;
-    READ_free_action(action);
-    if (more_actions (partner) )
-    {
-      partner->loose_cpu = TRUE;
-      SCHEDULER_thread_to_ready (partner);
-      SCHEDULER_general (SCH_NEW_JOB, partner);
-    }
+		/* Partner communication loads next action */
+		int partner_next_action = !(partner->host && transf_comm && cuda_comm)
+															|| ocl_comm;
+
+		/* Host will compute a startup after the communication */
+		int host_startup = !ocl_comm && (cuda_comm && transf_comm && !sync_comm);
+
+		if (paraver_comm)
+		{
+			PARAVER_P2P_Comm (cpu->unique_number,
+												IDENTIFIERS (thread),
+												thread->logical_send,
+												thread->physical_send,
+												cpu_partner->unique_number,
+												IDENTIFIERS (partner),
+												actual_logical_recv,
+												thread->physical_recv,
+												mess->mess_size,
+												mess->mess_tag );
+			partner->last_paraver = current_time;
+		}
+
+		if (partner_next_action)
+		{
+			action          = partner->action;
+			partner->action = action->next;
+			READ_free_action(action);
+			if (more_actions (partner) )
+			{
+				partner->loose_cpu = TRUE;
+				SCHEDULER_thread_to_ready (partner);
+				SCHEDULER_general (SCH_NEW_JOB, partner);
+			}
+		}
+
     /* FEC: No es pot borrar el thread aqui perque encara es necessitara
             quan es retorni a la crida d'on venim. Nomes es marca com a
             pendent d'eliminar i ja s'esborrara mes tard. */
-    thread->marked_for_deletion = 1;
+		if (!thread->original_thread)
+		    	thread->marked_for_deletion = 1;
 
-    if (debug & D_COMM)
-    {
-      PRINT_TIMER (current_time);
-      printf (
-        ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) Receiver Unlocked\n",
-        IDENTIFIERS (thread),
-        mess->dest,
-        mess->mess_tag
-      );
-    }
+		if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (
+				": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d (t%02d) Tag(%d) CommID(%d) Receiver Unlocked\n",
+				IDENTIFIERS (thread),
+				mess->dest,
+				mess->dest_thread,
+				mess->mess_tag,
+				mess->communic_id
+			);
+		}
+
+    if (host_startup)
+		//If it's not a synchronization communication
+		{
+			dimemas_timer startup =
+					compute_startup (host_th,
+													 host_th->task->taskid,  /* Sender */
+													 kernel_th->task->taskid,  /* Receiver */
+													 node,
+													 node,
+													 0,
+													 0,
+													 ACCELERATOR_COM_TYPE,
+													 NULL);
+
+			if (startup != (dimemas_timer) 0)
+			{
+				host_th->loose_cpu     = FALSE;
+				//host_th->doing_startup = TRUE;
+				host_th->doing_acc_comm = TRUE;
+
+				account = current_account (host_th);
+				FLOAT_TO_TIMER (startup, tmp_timer);
+				ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
+				SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
+
+				dimemas_timer tmp_timer2;
+				FLOAT_TO_TIMER(current_time, tmp_timer2);
+				ADD_TIMER(tmp_timer2, tmp_timer, tmp_timer2);
+
+				host_th->event = (struct t_event*) EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, host_th, COM_TIMER_OUT);
+
+				if (debug & D_COMM)
+				{
+					PRINT_TIMER (current_time);
+					printf (": COMMUNIC_SEND\tP%02d T%02d (t%02d) Initiate end startup (%f)\n",
+									IDENTIFIERS (host_th),
+									(double) startup / 1e9);
+				}
+			}
+		}
   }
 }
 
@@ -2167,7 +2359,7 @@ Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (
                    IDENTIFIERS (sender),
                    sender->last_paraver,
                    current_time,
-                   PRV_BLOCKING_RECV_ST );
+									 PRV_WAITING_MESG_ST );
 
 //    printf("start communication if there is the original thread on the sends list\n");
 
@@ -2267,29 +2459,36 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
 
   assert (count_queue (& (thread_sender->send) ) > 0);
   extract_from_queue (& (thread_sender->send), (char *) sender);
+
+  if (sender->original_thread &&
+			(CUDAEventEncoding_Is_CUDATransferBlock(sender->acc_in_block_event) ||
+			 OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event)))
+	{
+		sender->acc_sndr_sync = TRUE;
+	}
+
   /*  Si el thread és una copia és que s'està fent el rendez vous en
-      un altre thread, per tant, no s'ha de generar res a la traça. */
-  if (sender->original_thread)
-  {
+        un altre thread, per tant, no s'ha de generar res a la traça. */
+	if (sender->original_thread && (!sender->host && !sender->kernel))
+	{
     PARAVER_Wait (
       0,
       IDENTIFIERS (sender),
       sender->last_paraver,
       current_time,
-      PRV_BLOCKING_RECV_ST
+			PRV_WAITING_MESG_ST
     );
-
-//    printf("start communication if there is the original thread on the sends list\n");
-
     sender->last_paraver = current_time;
-    copy_thread = duplicate_thread (sender);
   }
-  else
-  {
-    copy_thread = sender;
-//    printf("start communication if there is a copy thread on the sends list\n");
 
-  }
+	if (sender->original_thread && !sender->acc_sndr_sync)
+	{
+		copy_thread = duplicate_thread (sender);
+	}
+	else
+	{	/* Accelerator case or not more actions on thread to do (duplicated) */
+		copy_thread = sender;
+	}
 
   if (debug & D_COMM)
   {
@@ -2308,17 +2507,20 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
   really_send (copy_thread);
 
   /* En cas que el thread sigui una copia no hi haura mes accions */
-  if (sender->original_thread)
-  {
-    action = sender->action;
-    sender->action = action->next;
-    READ_free_action(action);
-    if (more_actions (sender) )
-    {
-      sender->loose_cpu = FALSE;
-      SCHEDULER_thread_to_ready (sender);
-    }
-  }
+	/* En cas que sigui un sender en OCL o CUDA s'ha d'esperar a realitzar
+	 * més accions a que arribi la comm al receiver per sincronisme.
+	 */
+	if (!sender->acc_sndr_sync && sender->original_thread)
+	{
+		action = sender->action;
+		sender->action = action->next;
+		READ_free_action(action);
+		if (more_actions (sender) )
+		{
+			sender->loose_cpu = FALSE;
+			SCHEDULER_thread_to_ready (sender);
+		}
+	}
 }
 
 /******************************************************************************
@@ -2608,8 +2810,75 @@ struct t_thread* COMMUNIC_dedicated_connection_COM_TIMER_OUT (struct t_thread *t
 void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
 {
   struct t_action *action;
+  struct t_thread *copy_thread;
 
-  /* JGG (2013/03/27): it is a self-message! */
+	if (thread->original_thread && !thread->doing_acc_comm)
+	{
+		copy_thread = duplicate_thread (thread);
+	}
+	/* FEC: Jo crec que actualment mai no es dóna aquest cas. Aixo nomes passaria
+	 * si els send realment siguesin sincrons durant la COMMUNIC_tx del missatge
+	 * i no simplement rendez vous. Es a dir, si estiguessin implementats els
+	 * casos RD_SYNC i NORD_SYNC. En aquest cas, jo crec que al final d'aquesta
+	 * funcio caldria posar el thread->local_link i el thread->partner_link a
+	 * L_NIL. Actualment no cal perque com que sempre es treballa amb una copia
+	 * del thread, s'acaba destruint. Es a dir, actualment el thread original mai
+	 * no te cap link assignat. */
+	else
+	{
+		copy_thread = thread;
+	}
+
+	switch (thread->action->action)
+	{
+		case SEND:
+			if (thread->doing_acc_comm)
+			{
+				thread->doing_acc_comm = FALSE;
+				break;
+			}
+			message_received (copy_thread);
+			break;
+		case MPI_OS:
+			os_completed (copy_thread);
+			break;
+		case GLOBAL_OP:
+		case RECV:
+			if (thread->doing_acc_comm)
+			{
+				thread->doing_acc_comm = FALSE;
+			}
+			break;
+		default:
+			break;
+	}
+
+	if ( (thread->acc_sndr_sync && !thread->doing_acc_comm) ||
+			 (thread->original_thread && !thread->doing_acc_comm) )
+	{
+		thread->acc_sndr_sync	= FALSE;
+		action         				= thread->action;
+		thread->action	= action->next;
+		READ_free_action(action);
+
+		if (more_actions (thread) )
+		{
+			thread->loose_cpu = FALSE;
+			SCHEDULER_thread_to_ready (thread);
+		}
+	}
+
+	else if (!thread->original_thread)
+	{
+		/* FEC: Com que al P2P_message_received no es pot eliminar el thread, si cal,
+		 * s'ha de fer aqui. */
+		if (thread->marked_for_deletion)
+		{
+			delete_duplicate_thread (thread);
+		}
+	}
+
+  /* JGG (2013/03/27): it is a self-message!
   if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NIL) )
   {
     COMMUNIC_memory_COM_TIMER_OUT (thread);
@@ -2647,7 +2916,7 @@ void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
     }
     return;
     */
-  }
+  //}
 
   /*
   if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NUL) )
@@ -2687,7 +2956,7 @@ void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
    * Per saber el tipus de comunicacio nomes cal que mirem el tipus de
    * qualsevol dels dos links: */
 
-  switch (thread->local_link->kind)
+  /*switch (thread->local_link->kind)
   {
     case MEM_LINK:
       COMMUNIC_memory_COM_TIMER_OUT (thread);
@@ -2698,7 +2967,7 @@ void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
       /*if (VC_is_enabled()) {
         venusmsgs_in_flight--;
       }*/
-      break;
+     /* break;
     case MACHINE_LINK:
       COMMUNIC_external_network_COM_TIMER_OUT (thread);
       break;
@@ -2725,11 +2994,11 @@ void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
   {
     /* FEC: Com que al message_received no es pot eliminar el thread, si cal,
      * s'ha de fer aqui. */
-    if (thread->marked_for_deletion)
+    /*if (thread->marked_for_deletion)
     {
       delete_duplicate_thread (thread);
     }
-  }
+  }*/
 }
 
 /******************************************************************************
@@ -3089,11 +3358,150 @@ static void COMMUNIC_dedicated_resources_COM_TIMER_OUT (struct t_thread *thread)
   }
 }
 
+/**
+ * Frees the accelerator resources used by the calling thread
+ *
+ * \param thread The thread that with the resources to be freed
+ */
+static void COM_TIMER_OUT_free_accelerator_resources (struct t_thread *thread)
+{
+
+	struct t_node 	*node;
+	register struct t_bus_utilization *bus_utilization;
+	struct t_thread	*wait_thread;
+	int aux;
+
+	node = get_node_of_thread (thread);
+	assert(node->accelerator);
+
+	if (node->acc.max_messages != 0)
+	{
+		for (bus_utilization  = (struct t_bus_utilization *)
+	                         head_queue (&node->acc.threads_in_link);
+	      bus_utilization != BU_NIL;
+	      bus_utilization  = (struct t_bus_utilization *)
+	                         next_queue (&node->acc.threads_in_link))
+		{
+			if (bus_utilization->sender == thread) break;
+		}
+
+		if (bus_utilization == BU_NIL)
+		{
+			panic ("Unable to locate in bus utilization queue\n");
+		}
+
+		extract_from_queue (&node->acc.threads_in_link, (char*) bus_utilization);
+
+		free (bus_utilization);
+	}
+
+	thread->accelerator_link = L_NIL;
+
+	if (thread->local_link != L_NIL && thread->partner_link != L_NIL)
+	{
+		if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (
+				": COMMUNIC\tP%02d T%02d (t%02d) Free accelerator "\
+				" writing permissions (OUT)\n",
+				IDENTIFIERS (thread)
+			);
+		}
+
+		LINKS_free_acc_link(thread->local_link, thread);
+
+		if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (
+					": COMMUNIC\tP%02d T%02d (t%02d) Free accelerator " \
+					"writing permissions (IN)\n",
+							IDENTIFIERS (thread) );
+		}
+
+		LINKS_free_acc_link(thread->partner_link, thread);
+	}
+
+	if (node->acc.cur_messages > 0)
+	{
+		node->acc.cur_messages--;
+	}
+
+	recompute_accelerator_bandwidth(thread);
+
+	if ((node->acc.max_messages != 0) && count_queue (&node->acc.wait_for_link) > 0)
+	{
+		wait_thread = (struct t_thread *) head_queue (&node->acc.wait_for_link);
+
+		if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (
+				": COMMUNIC\tP%02d T%02d (t%02d) Obtain Bus\n",
+				IDENTIFIERS (wait_thread)
+			);
+		}
+
+		switch (wait_thread->action->action)
+		{
+		case SEND:
+		case WAIT_FOR_SEND:
+			/* FEC: S'acumula el temps que ha estat esperant busos */
+			ACCUMULATE_BUS_WAIT_TIME (wait_thread);
+
+			extract_from_queue (&node->acc.wait_for_link, (char *) wait_thread);
+	//        printf("\nAGAIN THE REALLY_SEND FOR THE WAIT_THREAD   P%d, T%d t%d\n\n", IDENTIFIERS (wait_thread));
+			really_send (wait_thread);
+			break;
+
+		/*case MPI_OS:
+			/* FEC: S'acumula el temps que ha estat esperant busos */
+			/*COMMUNIC_accumulate_bus_wait_time (wait_thread);
+
+			extract_from_queue (&node->wait_for_acc_link, (char *) wait_thread);
+			really_RMA (wait_thread);
+			break;*/
+		case GLOBAL_OP:
+			/* aux sempre hauria de ser 1 */
+			aux = node->acc.max_messages - node->acc.cur_messages;
+			wait_thread->number_buses += aux;
+			node->acc.cur_messages += aux;
+
+			if (wait_thread->number_buses == node->acc.max_messages)
+			{
+				/* FEC: S'acumula el temps que ha estat esperant busos */
+				ACCUMULATE_BUS_WAIT_TIME (wait_thread);
+
+				extract_from_queue (&node->acc.wait_for_link, (char *) wait_thread);
+				global_op_get_all_buses (wait_thread);
+			}
+			break;
+		}
+	}
+
+	if (debug & D_COMM)
+	{
+		PRINT_TIMER (current_time);
+		printf (
+			": COMMUNIC\tP%02d T%02d (t%02d) Free Accelerator Link\n",
+			IDENTIFIERS (thread)
+		);
+	}
+
+	return;
+}
+
 /******************************************************************************
  * PROCEDURE 'COMMUNIC_resources_COM_TIMER_OUT'                               *
  *****************************************************************************/
 void COMMUNIC_resources_COM_TIMER_OUT (struct t_thread *thread)
 {
+	if ((thread->partner_link == L_NIL) && (thread->local_link == L_NIL) && thread->accelerator_link != L_NIL)
+	{
+		COM_TIMER_OUT_free_accelerator_resources (thread);
+		return;
+	}
 
   if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NIL) )
   {
@@ -3101,14 +3509,6 @@ void COMMUNIC_resources_COM_TIMER_OUT (struct t_thread *thread)
     COMMUNIC_mem_resources_COM_TIMER_OUT (thread);
     return;
   }
-
-  /*
-  if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NUL) )
-  {
-    /* Es una comunicació amb PORTS
-    return;
-  }
-  */
 
   /* Si estem aqui es que es una comunicacio entre nodes o entre maquines */
   /* Per saber el tipus de comunicacio nomes cal que mirem el tipus de
@@ -3130,6 +3530,10 @@ void COMMUNIC_resources_COM_TIMER_OUT (struct t_thread *thread)
   case CONNECTION_LINK:
     COMMUNIC_dedicated_resources_COM_TIMER_OUT (thread);
     break;
+
+  case ACCELERATOR_LINK:
+    	COM_TIMER_OUT_free_accelerator_resources (thread);
+    	break;
 
   default:
     panic ("Unknown link type!\n");
@@ -3158,6 +3562,9 @@ void COMMUNIC_general (int value, struct t_thread *thread)
   case COM_TIMER_OUT_RESOURCES_DED:
     COMMUNIC_dedicated_connection_COM_TIMER_OUT(thread);
     break;
+  case COM_TIMER_OUT_RESOURCES_ACC:
+  	COM_TIMER_OUT_free_accelerator_resources (thread);
+  	break;
 
 /*
   case COM_TIMER_OUT_RESOURCES:
@@ -3713,12 +4120,32 @@ void COMMUNIC_send (struct t_thread *thread)
                                kind,
                                connection);
 
+    /*if (mess->communic_id == 0 && CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event))
+			startup = (dimemas_timer) 0;*
+
+		/*if (mess->communic_id == 0 && OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event))
+			startup = (dimemas_timer) 0;*/
+    if (OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event) &&
+        thread->kernel)
+		{
+			struct t_cpu *cpu = get_cpu_of_thread(thread);
+			PARAVER_Event (cpu->unique_number,
+										 IDENTIFIERS (thread),
+										 current_time,
+										 thread->acc_in_block_event.type,
+										 0);
+		}
+
     if (startup != (t_nano) 0)
     {
       thread->logical_send = current_time;
 
       thread->loose_cpu     = FALSE;
       thread->doing_startup = TRUE;
+
+      if (CUDAEventEncoding_Is_CUDAComm(mess->mess_tag) ||
+					OCLEventEncoding_Is_OCLComm(mess->mess_tag))
+				thread->doing_acc_comm = TRUE;
 
       account = current_account (thread);
       FLOAT_TO_TIMER (startup, tmp_timer);
@@ -3748,7 +4175,7 @@ void COMMUNIC_send (struct t_thread *thread)
   {
     if (thread->copy_done == FALSE)
     {
-      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size);
+      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size, mess->comm_type);
 
       if (copy_latency != (t_nano) 0)
       {
@@ -3969,21 +4396,34 @@ void COMMUNIC_send (struct t_thread *thread)
     }
     else /* hi_ha_irecv || partner != TH_NIL */
     {
-      copy_thread = duplicate_thread (thread);
-      ASS_ALL_TIMER (copy_thread->initial_communication_time, current_time);
-      copy_thread->last_paraver = current_time;
+
+    	if (thread->original_thread &&
+					(CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) ||
+					 OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event)))
+			{
+				thread->acc_sndr_sync = TRUE;
+				copy_thread = thread;
+			}
+			else {
+				copy_thread = duplicate_thread (thread);
+				copy_thread->initial_communication_time = current_time;
+				copy_thread->last_paraver               = current_time;
+			}
 
       /* !!! */
       really_send (copy_thread);
 
-      action = thread->action;
-      thread->action = action->next;
-      READ_free_action(action);
-      if (more_actions (thread) )
-      {
-        thread->loose_cpu = FALSE;
-        SCHEDULER_thread_to_ready (thread);
-      }
+      if (!thread->acc_sndr_sync)
+			{
+				action = thread->action;
+				thread->action = action->next;
+				READ_free_action(action);
+				if (more_actions (thread) )
+				{
+					thread->loose_cpu = FALSE;
+					SCHEDULER_thread_to_ready (thread);
+				}
+			}
     }
     break;
   }
@@ -4098,7 +4538,9 @@ void COMMUNIC_recv (struct t_thread *thread)
                                mess->mess_size,
                                kind,
                                connection);
-
+    /*if (mess->communic_id == 0 &&
+					CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event))
+						startup = (dimemas_timer) 0;*/
 
     if (startup > (t_nano) 0)
     {
@@ -4107,6 +4549,10 @@ void COMMUNIC_recv (struct t_thread *thread)
 
       thread->loose_cpu     = FALSE;
       thread->doing_startup = TRUE;
+
+      if (CUDAEventEncoding_Is_CUDAComm(mess->mess_tag) ||
+					OCLEventEncoding_Is_OCLComm(mess->mess_tag))
+				thread->doing_acc_comm = TRUE;
 
       account = current_account (thread);
       FLOAT_TO_TIMER (startup, tmp_timer);
@@ -4139,7 +4585,7 @@ void COMMUNIC_recv (struct t_thread *thread)
   {
     if (thread->copy_done == FALSE)
     {
-      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size);
+      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size, mess->comm_type);
 
       if (copy_latency != (t_nano) 0)
       {
@@ -4410,7 +4856,7 @@ void COMMUNIC_Irecv (struct t_thread *thread)
     if (thread->copy_done == FALSE)
     {
 
-      dimemas_timer copy_latency = compute_copy_latency (thread, node_s, mess->mess_size);
+      dimemas_timer copy_latency = compute_copy_latency (thread, node_s, mess->mess_size, mess->comm_type);
 
       if (copy_latency != (t_nano) 0)
       {
@@ -4655,7 +5101,7 @@ void COMMUNIC_wait (struct t_thread *thread)
   {
     if (thread->copy_done == FALSE)
     {
-      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size);
+      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size, mess->comm_type);
 
       if (copy_latency != (t_nano) 0)
       {
@@ -5106,6 +5552,31 @@ void transferencia (long long int                  size,
       temps = (bandw * size);
       t_recursos = (bandw * size);
       break;
+
+  case ACCELERATOR_COM_TYPE:  /* Es un missatge local al node entre CPU i GPU */
+		assert(node->accelerator);
+		if (node->acc.bandwidth == (t_bandwidth) 0)
+		{
+			temps   = 0;
+			t_recursos = 0;
+		}
+		else
+		{
+			/* Transmission time with available bandwidth (including bus contention) */
+			bandw = recompute_accelerator_bandwidth(thread);
+			thread->last_comm.bandwidth = bandw;
+			thread->last_comm.bytes     = size;
+			thread->last_comm.ti        = current_time;
+
+			temps = (bandw * size);
+
+			/* Transmission time with full bandwidth (actual resource usage) */
+			/* Selects the appropriate bandwidth	*/
+			bandw = bw_ns_per_byte(node->acc.bandwidth);
+
+			t_recursos = (bandw * size);
+		}
+		break;
   default:
     panic ("Unknown communication type!\n");
     break;
@@ -5199,7 +5670,16 @@ int get_communication_type (struct t_task *task,
   node         = get_node_of_task (task);
   node_partner = get_node_of_task (task_partner);
 
-  if (node == node_partner)
+  if (node == node_partner && (mess_tag == CUDA_TAG || mess_tag == OCL_TAG))
+	{ /* Es un missatge local entre CPU i GPU */
+		if (!node->accelerator || !task->accelerator)
+		{
+			panic("Error in accelerator communication type in a non-accelerator task (check configuration file)");
+		}
+		result_type = ACCELERATOR_COM_TYPE;
+	}
+
+  else if (node == node_partner)
   {
     /* Es un missatge local al node */
     result_type = MEMORY_COMMUNICATION_TYPE;
@@ -5787,6 +6267,124 @@ void really_send_external_model_comm_type (struct t_thread *thread)
   }
 }
 
+void really_send_acc_message (struct t_thread	*thread)
+{
+	struct t_node            *node;
+	struct t_machine         *machine;
+	struct t_task            *task, *task_partner;
+	struct t_action          *action;
+	struct t_account         *account;
+	struct t_send            *mess;
+	struct t_bus_utilization *bus_utilization;
+	struct t_link						 *link;
+
+	dimemas_timer             ti, t_recursos;
+	dimemas_timer             tmp_timer, tmp_timer2;
+
+	node    = get_node_of_thread (thread);
+	assert(node->accelerator);
+
+	machine = node->machine;
+	task    = thread->task;
+	action  = thread->action;
+	mess    = & (action->desc.send);
+
+	task_partner = locate_task (task->Ptask, mess->dest);
+
+	if (LINKS_get_acc_links(thread, task, task_partner) )
+	{
+		if (node->acc.max_messages != 0)
+		{
+			if (machine->communication.policy == COMMUNIC_FIFO)
+			{
+				if (node->acc.cur_messages >= node->acc.max_messages)
+				{
+					if (debug & D_COMM)
+					{
+						PRINT_TIMER (current_time);
+						printf (": COMMUNIC_send\tP%02d T%02d (t%02d) Blocked (Waiting acc node)\n",
+										IDENTIFIERS (thread));
+					}
+					inFIFO_queue (&node->acc.wait_for_link, (char *) thread);
+					/* FEC: Comenc,a el temps que el thread passa esperant un bus */
+					START_BUS_WAIT_TIME (thread);
+					/**************************************************************/
+					return;
+				}
+
+				if (debug & D_COMM)
+				{
+					PRINT_TIMER (current_time);
+					printf (": COMMUNIC_send\tP%02d T%02d (t%02d) Obtains bus\n",
+									IDENTIFIERS (thread) );
+				}
+			}
+			node->acc.cur_messages++;
+			bus_utilization = (struct t_bus_utilization *)
+												malloc (sizeof (struct t_bus_utilization) );
+			bus_utilization->sender       = thread;
+			bus_utilization->initial_time = current_time;
+			inFIFO_queue (&node->acc.threads_in_link, (char*) bus_utilization);
+
+			link = malloc(sizeof(struct t_link));
+			link->info.task = task;
+			link->info.node = node;
+			link->thread		= thread;
+			link->assigned_on = current_time;
+			link->type				= ACCELERATOR_LINK;
+			thread->accelerator_link = link;
+		}
+
+		if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (
+				": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (ACCELERATOR)\n",
+				IDENTIFIERS (thread),
+				mess->dest,
+				mess->mess_tag
+			);
+		}
+
+		account = current_account (thread);
+		SUB_TIMER (current_time, thread->initial_communication_time, tmp_timer);
+		ADD_TIMER (tmp_timer,
+							 account->block_due_resources, account->block_due_resources);
+		thread->physical_send = current_time;
+		thread->last_paraver  = current_time;
+
+		transferencia(mess->mess_size,
+								 ACCELERATOR_COM_TYPE,
+								 thread,
+								 NULL,
+								 &ti,
+								 &t_recursos);
+
+		if (t_recursos > ti)
+		{
+			/* DEBUG */
+			printf ("Accelerator communication. Resources time = %f - Transfer Time = %f\n",
+							t_recursos,
+							ti);
+
+			panic ("resources > transmission time!\n");
+
+		}
+		/* Abans de programar la fi de la comunicacio, es programa la fi de la
+		 * utilització dels recursos reservats. */
+		FLOAT_TO_TIMER (t_recursos, tmp_timer);
+		ADD_TIMER (current_time, tmp_timer, tmp_timer);
+
+		/* tmp_timer has the time for COM_TIMER_OUT_RESOURCES */
+		/* Es programa el final de la comunicació punt a punt. */
+		FLOAT_TO_TIMER (ti, tmp_timer2);
+		ADD_TIMER (current_time, tmp_timer2, tmp_timer2);
+
+		EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_ACC);
+		thread->event = (struct t_event*) EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
+	}
+}
+
 void really_send (struct t_thread *thread)
 {
   struct t_task   *task,
@@ -5844,6 +6442,9 @@ void really_send (struct t_thread *thread)
   case EXTERNAL_MODEL_COM_TYPE:
     really_send_external_model_comm_type(thread);
     break;
+  case ACCELERATOR_COM_TYPE:
+		really_send_acc_message(thread);
+		break;
   default:
     panic ("Incorrect communication type! kind = %d, kind2 %d", kind, kind2);
     break;
@@ -7081,7 +7682,7 @@ static void start_global_op (struct t_thread *thread, int kind)
       IDENTIFIERS (others),
       others->last_paraver,
       current_time,
-      PRV_BLOCKED_ST
+			PRV_BLOCKING_SEND_ST
     );
 
     others->last_paraver = current_time;
@@ -7700,7 +8301,7 @@ void GLOBAL_operation (struct t_thread *thread,
                   IDENTIFIERS (others),
                   others->last_paraver,
                   current_time,
-                  PRV_BLOCKED_ST);
+									PRV_BLOCKING_SEND_ST);
 
     others->last_paraver = current_time;
   }
@@ -7861,4 +8462,283 @@ void GLOBAL_operation (struct t_thread *thread,
 void COMMUNIC_reset_deadlock()
 {
   DEADLOCK_reset();
+}
+
+
+/*
+ * It supposes that any root task will synchronize with threads
+ * of other tasks.
+ */
+void ACCELERATOR_synchronization(struct t_thread* thread, int comm_id)
+{
+  int              task_id, thread_id;
+  struct t_task   *task;
+
+  thread_id = thread->threadid;
+  task      = thread->task;
+  task_id   = task->taskid;
+
+  if (thread->host)
+  { /* It is the host thread */
+    if (task->HostSync != TH_NIL && !thread->blckd_in_global_op)
+    {
+      die("Simultaneous accelerator synchronizations on a single host");
+    }
+    else if (!thread->blckd_in_global_op)
+    {
+			task->HostSync = thread;
+			if (comm_id != -1)
+			{	/* Synchronize with a single stream	*/
+				task->KernelByComm = -1 * (comm_id + 2);
+			}
+			else
+			{	/* In global op no single stream synchronization indicated	*/
+				task->KernelByComm = -1;
+			}
+	  	thread->blckd_in_global_op = TRUE;
+    }
+
+    ACCELERATOR_check_sync_status(thread, TRUE);
+  }
+
+  else if (thread->kernel)
+  { /* It is an accelerator thread */
+  	if (task->KernelSync != TH_NIL && !thread->blckd_in_global_op)
+  	{
+  		die("More than one accelerator thread during synchronization:"\
+  				"P%02d T%02d (t%02d)", IDENTIFIERS(thread));
+  	}
+  	else if (task->HostSync != TH_NIL)
+  	{	/* Host has arrived yet, blocked	*/
+  		if (task->KernelByComm != -1 && task->KernelByComm != thread_id)
+  		{
+  			die("In accelerator synchronization host was waiting another thread:"\
+  			  				"P%02d T%02d (t%02d)", IDENTIFIERS(thread));
+  		}
+  	}
+
+    /* Just in case thread_id is not last thread in task */
+  	task->KernelSync = thread;
+  	thread->blckd_in_global_op = TRUE;
+
+    ACCELERATOR_check_sync_status(thread, FALSE);
+  }
+  else
+  {
+  	die("A non-accelerator thread is doing and accelerator synchronization:"\
+  			"P%02d T%02d (t%02d)", IDENTIFIERS(thread));
+  }
+}
+
+void ACCELERATOR_check_sync_status(struct t_thread* thread,
+                                   t_boolean        host)
+{
+  struct t_thread *host_th = NULL, *kernel_th = NULL;
+  struct t_action *action;
+  struct t_task   *task = thread->task;
+  dimemas_timer tmp_timer, tmp_timer2;
+
+	dimemas_timer startup;
+	struct t_node *node;
+	struct t_dedicated_connection *connection;
+	struct t_account *account;
+	struct t_cpu *cpu;
+
+  if ( task->HostSync == TH_NIL || task->KernelSync == TH_NIL	)
+  {	/*	Or kernel or host has not arrived yet, blocked	*/
+  	if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (": ACCELERATOR_synchronization P%02d T%02d (t%02d) Blocked",
+							IDENTIFIERS (thread));
+
+			if (host)
+			{
+				printf (" (HOST)\n");
+			}
+			else
+			{
+				printf (" (DEVICE)\n");
+			}
+		}
+  }
+  else
+  {	//Both threads ready for sync
+  	if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (": ACCELERATOR_synchronization P%02d T%02d (t%02d) Unlocks\n",
+							IDENTIFIERS (thread));
+		}
+  	if (host)
+		{	/* get Kernel thread blocked */
+			kernel_th = task->KernelSync;
+			host_th = thread;
+		}
+		else
+		{	/* get host thread blocked */
+			host_th = task->HostSync;
+			kernel_th = thread;
+		}
+
+  	node = get_node_of_task (task);
+
+  	if (!node->accelerator || !task->accelerator)
+		{
+			panic("Error in accelerator communication type in a non-accelerator task"\
+					"(check configuration file)");
+		}
+
+  	if (host_th->startup_done == FALSE)
+		{
+			startup = compute_startup (host_th,
+																 host_th->task->taskid,  /* Sender */
+																 kernel_th->task->taskid,  /* Receiver */
+																 node,
+																 node,
+																 0,
+																 0,
+																 ACCELERATOR_COM_TYPE,
+																 NULL);
+
+			if (startup != (dimemas_timer) 0)
+			{
+				host_th->loose_cpu     = FALSE;
+				host_th->doing_startup = TRUE;
+				host_th->doing_acc_comm = TRUE;
+
+				account = current_account (host_th);
+				FLOAT_TO_TIMER (startup, tmp_timer);
+				ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
+				SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
+
+				SCHEDULER_thread_to_ready_return (M_COM, host_th, startup, 0);
+
+				if (debug & D_COMM)
+				{
+					PRINT_TIMER (current_time);
+					printf (": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate startup (%f)\n",
+									IDENTIFIERS (host_th),
+									(double) startup / 1e9);
+				}
+				return;
+			}
+		}
+
+		if (kernel_th->startup_done == FALSE)
+		{
+			if (kernel_th->acc_recv_sync)
+			{
+				cpu = get_cpu_of_thread(kernel_th);
+
+				PARAVER_Not_Created(cpu->unique_number,
+														IDENTIFIERS(kernel_th),
+														kernel_th->acc_in_block_event.paraver_time,
+														current_time);
+				kernel_th->last_paraver = current_time;
+
+				PARAVER_Event (cpu->unique_number,
+											 IDENTIFIERS (kernel_th),
+											 current_time,
+											 kernel_th->acc_in_block_event.type,
+											 kernel_th->acc_in_block_event.value);
+				kernel_th->acc_in_block_event.paraver_time = current_time;
+				kernel_th->acc_recv_sync = FALSE;
+			}
+
+			startup = compute_startup (kernel_th,
+																 kernel_th->task->taskid,  /* Sender */
+																 host_th->task->taskid,  /* Receiver */
+																 node,
+																 node,
+																 0,
+																 0,
+																 ACCELERATOR_COM_TYPE,
+																 NULL);
+
+			if (OCLEventEncoding_Is_OCLSyncBlock(host_th->acc_in_block_event))
+			  		startup = 0;
+
+			if (startup != (dimemas_timer) 0)
+			{
+				kernel_th->loose_cpu     = FALSE;
+				kernel_th->doing_startup = TRUE;
+				kernel_th->doing_acc_comm = TRUE;
+
+				account = current_account (kernel_th);
+				FLOAT_TO_TIMER (startup, tmp_timer);
+				ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
+				SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
+
+				SCHEDULER_thread_to_ready_return (M_COM, kernel_th, startup, 0);
+
+				if (debug & D_COMM)
+				{
+					PRINT_TIMER (current_time);
+					printf (": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate startup (%f)\n",
+									IDENTIFIERS (kernel_th),
+									(double) startup / 1e9);
+				}
+				return;
+			}
+		}
+
+	 	//Startup reset
+		host_th->startup_done = FALSE;
+		kernel_th->startup_done = FALSE;
+
+		action = kernel_th->action;
+		kernel_th->action = action->next;
+		READ_free_action(action);
+
+		if (more_actions (kernel_th) )
+		{
+			kernel_th->loose_cpu = TRUE;
+			SCHEDULER_thread_to_ready (kernel_th);
+			reload_done          = TRUE;
+		}
+
+		//end latency on host
+  	startup = compute_startup (host_th,
+															 host_th->task->taskid,  /* Sender */
+															 kernel_th->task->taskid,  /* Receiver */
+															 node,
+															 node,
+															 0,
+															 0,
+															 ACCELERATOR_COM_TYPE,
+															 NULL);
+
+  	if (OCLEventEncoding_Is_OCLSyncBlock(host_th->acc_in_block_event))
+  		startup = 0;
+
+		host_th->loose_cpu     = FALSE;
+		//host_th->doing_startup = TRUE;
+		host_th->doing_acc_comm = TRUE;
+
+		account = current_account (host_th);
+		FLOAT_TO_TIMER (startup, tmp_timer);
+		ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
+		SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
+
+		FLOAT_TO_TIMER (current_time, tmp_timer2);
+		ADD_TIMER (startup, tmp_timer2, tmp_timer2);
+
+		host_th->event = (struct t_event*) EVENT_timer (tmp_timer2, NOT_DAEMON, M_COM, host_th, COM_TIMER_OUT);
+
+		if (debug & D_COMM)
+		{
+			PRINT_TIMER (current_time);
+			printf (": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate final startup (%f)\n",
+							IDENTIFIERS (host_th),
+							(double) startup / 1e9);
+		}
+
+		task->HostSync 			= TH_NIL;
+		task->KernelSync 		= TH_NIL;
+		task->KernelByComm	= -1;
+		host_th->blckd_in_global_op = FALSE;
+		kernel_th->blckd_in_global_op = FALSE;
+
+  }
 }

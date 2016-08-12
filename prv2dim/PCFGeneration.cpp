@@ -235,7 +235,7 @@ bool PCFGeneration::GenerateDefaultPCF(FILE* OutputPCF)
 
   for (size_t i = 0; i < NUM_MPICALLS; i++)
   {
-     MPIEventEncoding_EnableOperation( (MPIVal) i);
+     MPIEventEncoding_EnableOperation( (MPI_Event_Values) i);
   }
   MPIEventEncoding_WriteEnabledOperations(OutputPCF);
 

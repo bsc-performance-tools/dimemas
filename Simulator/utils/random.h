@@ -44,6 +44,8 @@ struct t_randomness
   struct t_rand_type memory_latency;
   struct t_rand_type external_network_bandwidth;
   struct t_rand_type external_network_latency;
+  struct t_rand_type acc_memory_latency;
+  struct t_rand_type acc_memory_bandwith;
 };
 
 extern struct t_randomness randomness;

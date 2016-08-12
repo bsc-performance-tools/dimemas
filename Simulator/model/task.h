@@ -72,7 +72,8 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
                                    int   map_definition,
                                    int   tasks_per_node);
 
-void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid);
+void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid, t_boolean acc_task);
+
 
 /* Synthetic burst generation functions */
 void SYNT_BURST_add_new_burst_category(int    burst_category_id,
@@ -192,6 +193,8 @@ void add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taski
 void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id);
 
 t_nano PREEMP_overhead(struct t_task* task);
+
+void get_acc_tasks_info(struct t_Ptask *Ptask);
 
 
 #endif

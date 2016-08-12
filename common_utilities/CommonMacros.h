@@ -45,7 +45,7 @@
 #define ASSERT( x ) if (!(x)) ASSERT_ERROR( #x )
 
 /* << ERROR >> */
-#   define ERROR( x ) \
+/*#   define ERROR( x ) \
     {\
       fflush(NULL);\
       fprintf( stderr, "\n");\
@@ -56,10 +56,10 @@
       fflush(NULL);\
       exit( EXIT_FAILURE );\
       abort();\
-    }
+    }*/
 
-#define BZERO( nelem, type, ptr ) \
-   memset ( ptr, '\0', ((size_t)(nelem)) * sizeof(type) )
+/*#define BZERO( nelem, type, ptr ) \
+   memset ( ptr, '\0', ((size_t)(nelem)) * sizeof(type) )*/
       
 /* << ALLOC >> */
 #   define ALLOC( nelem, type, var ) \

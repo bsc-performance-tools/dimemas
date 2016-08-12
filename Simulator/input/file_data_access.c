@@ -106,6 +106,9 @@
 #define RECORD_EVENT     20
 #define EVENT_REGEXP     "%llu:%llu" // event_type:event_value
 
+#define RECORD_GPU_BURST 11
+#define GPU_BURST_REGEXP "%lf"
+
 #define RECVTYPE_RECV  0
 #define RECVTYPE_IRECV 1
 #define RECVTYPE_WAIT  2
@@ -287,6 +290,8 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
 t_boolean DAP_read_event     (const char      *event_str,
                               struct t_action *action);
 
+t_boolean DAP_read_GPU_burst (const char      *cpu_burst_str,
+                              			struct t_action *action);
 /*
  * DEBUG routine
  */
@@ -366,7 +371,7 @@ t_boolean DATA_ACCESS_get_number_of_tasks(char *trace_file_location, int *tasks_
   }
 
   /* Scan the ptask information substring
-   * format: task_num(task_1_thread_num,...,task_n_thread_num),comms_num */
+   * format: task_num(task_1_thread_num,...,task_n_thread_num),comms_num, acc_task_num(acc_task_1,...,acc_task_n) */
   threads_str = malloc(bytes_read+1);
 
   if (sscanf(ptask_info_str,
@@ -580,6 +585,94 @@ int DATA_ACCESS_test_routine (int ptask_id)
     }
   }
   return i;
+}
+
+
+/*	gets the task_id which exectues acc calls, defined in DIMEMAS trace_file header	*/
+t_boolean DATA_ACCES_get_acc_tasks(char *trace_file_location, int *acc_tasks_count, int **acc_tasks)
+{
+	FILE   *trace_file;
+	char   *header        = NULL;
+	size_t  header_length = 0;
+	ssize_t bytes_read;
+
+	char *acc_tasks_str;
+	*acc_tasks_count = 0;
+
+	if (main_struct.init_flag != 1)
+	{
+		if (!DAP_init_data_access_layer())
+		{
+			return FALSE;
+		}
+	}
+
+	if ( (trace_file = IO_fopen(trace_file_location, "r")) == NULL)
+	{
+		DAP_report_error("unable to open trace file '%s' (%s)",
+										 trace_file_location,
+										 IO_get_error());
+		return FALSE;
+	}
+
+	/* Obtain the header line */
+	if ( (bytes_read = getline(&header,
+														 &header_length,
+														 trace_file)) == -1)
+	{
+		DAP_report_error("unable to retrieve header line");
+		return FALSE;
+	}
+
+	acc_tasks_str = malloc(bytes_read+1);
+	/* Header format: #DIMEMAS:trace_name:offsets[,offsets_offset]:ptask_info
+	 * Scan the ptask information substring to get acc info
+	 *  format: task_num(task_1_thread_num,...,task_n_thread_num),comms_num, acc_task_num(task_id)
+	 */
+	if (sscanf(header,
+						 "#DIMEMAS:\"%*[^\"]\":%*[^:]:%*d(%*[^)]),%*d,%d(%[^)])",
+						 acc_tasks_count,
+						 acc_tasks_str) != 2)
+	{
+		if (*acc_tasks_count == 0)
+		{
+			return TRUE;
+		}
+		else
+		{
+			DAP_report_error("wrong header format (accelerator)");
+			return FALSE;
+		}
+	}
+
+	if (acc_tasks_str == NULL || *acc_tasks_count <= 0)
+	{
+		return FALSE;
+	}
+
+	char **tasks_list_array;
+	int    tasks_list_array_length, i;
+	char *translate_ptr;
+
+	tasks_list_array = (char **)str_split(acc_tasks_str, ',', &tasks_list_array_length);
+	if (tasks_list_array_length != *acc_tasks_count)
+	{
+		DAP_report_error("wrong accelerator tasks definition on trace header (accelerator)");
+		return FALSE;
+	}
+
+	*acc_tasks = (int *) malloc(tasks_list_array_length*sizeof(int));
+ 	for (i = 0; i < tasks_list_array_length; i++)
+	{
+		*((*acc_tasks)+i) = (int) strtod(tasks_list_array[i], &translate_ptr);
+
+		if (translate_ptr == tasks_list_array[i])
+		{	/*	no element added 	*/
+			DAP_report_error("wrong accelerator tasks definition on trace header (accelerator)");
+			return FALSE;
+		}
+	}
+	return TRUE;
 }
 
 /******************************************************************************
@@ -1867,48 +1960,53 @@ t_boolean DAP_read_action (app_struct       *app,
 
   empty_line = TRUE;
 
-  struct t_thread * thread = get_thread_by_task_id(task_id);
-
-  /* Si hay operaciones para inyectar, se ha de hacer al inicio de la traza que es
-   * donde potencialmente hemos cortado algo */
-  if (/*with_deadlock_analysis == 2 && */thread->counter_ops_already_injected < count_queue(&thread->ops_to_be_injected))
+  /* If it is not the thread 0 (not MPI), deadlock analysis is left */
+  if (thread_id != 0)
   {
-    struct t_action * actfq = NULL;
-    struct t_action * action_to_inject = NULL;
 
-    actfq = (struct t_action *)query_prio_queue(&thread->ops_to_be_injected, (double)thread->counter_ops_already_injected);
-    action_to_inject = (struct t_action *)malloc(sizeof(struct t_action));
+		struct t_thread * thread = get_thread_by_task_id(task_id);
 
-    if (thread->counter_ops_already_injected == 0)
-    {
-      action_to_inject->action = WORK;
-      action_to_inject->desc.compute.cpu_time = 0;
+		/* Si hay operaciones para inyectar, se ha de hacer al inicio de la traza que es
+		 * donde potencialmente hemos cortado algo */
+		if (/*with_deadlock_analysis == 2 && */thread->counter_ops_already_injected < count_queue(&thread->ops_to_be_injected))
+		{
+			struct t_action * actfq = NULL;
+			struct t_action * action_to_inject = NULL;
 
-      action_to_inject->next = (struct t_action *)malloc(sizeof(struct t_action));
-      memcpy(action_to_inject->next, actfq, sizeof(struct t_action));
-    }
-    else
-    {
-      memcpy(action_to_inject, actfq, sizeof(struct t_action));
-    }
-    *action = action_to_inject;
-    thread->counter_ops_already_injected++;
+			actfq = (struct t_action *)query_prio_queue(&thread->ops_to_be_injected, (double)thread->counter_ops_already_injected);
+			action_to_inject = (struct t_action *)malloc(sizeof(struct t_action));
 
-    return TRUE;
-  }
-  else if (/*with_deadlock_analysis == 1 && */thread->counter_ops_already_ignored < count_queue(&thread->ops_to_be_ignored))
-  {
-    off_t actual_offset = ftell(stream);
-    struct trace_operation * op_to_be_ignored = query_prio_queue(&thread->ops_to_be_ignored, actual_offset);
+			if (thread->counter_ops_already_injected == 0)
+			{
+				action_to_inject->action = WORK;
+				action_to_inject->desc.compute.cpu_time = 0;
 
-    if (op_to_be_ignored != NULL)
-    {
-      bytes_read = getline(&line, &line_length, stream);
-      app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
-      app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
+				action_to_inject->next = (struct t_action *)malloc(sizeof(struct t_action));
+				memcpy(action_to_inject->next, actfq, sizeof(struct t_action));
+			}
+			else
+			{
+				memcpy(action_to_inject, actfq, sizeof(struct t_action));
+			}
+			*action = action_to_inject;
+			thread->counter_ops_already_injected++;
 
-      ++thread->counter_ops_already_ignored;
-    }
+			return TRUE;
+		}
+		else if (/*with_deadlock_analysis == 1 && */thread->counter_ops_already_ignored < count_queue(&thread->ops_to_be_ignored))
+		{
+			off_t actual_offset = ftell(stream);
+			struct trace_operation * op_to_be_ignored = query_prio_queue(&thread->ops_to_be_ignored, actual_offset);
+
+			if (op_to_be_ignored != NULL)
+			{
+				bytes_read = getline(&line, &line_length, stream);
+				app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
+				app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
+
+				++thread->counter_ops_already_ignored;
+			}
+		}
   }
 
   while (empty_line)
@@ -2070,6 +2168,9 @@ t_boolean DAP_read_action (app_struct       *app,
       case RECORD_EVENT:
         result = DAP_read_event(op_fields, *action);
         break;
+      case RECORD_GPU_BURST:
+      	result = DAP_read_GPU_burst(op_fields, *action);
+      	break;
       default:
         DAP_report_error("unknown action (%s)", line);
         result = FALSE;
@@ -2408,3 +2509,23 @@ float DAP_get_progression(int Ptaskid, int taskid, int threadid)
 
 	return progression;
 }
+
+t_boolean DAP_read_GPU_burst (const char      *cpu_burst_str,
+                              struct t_action *action)
+{
+  double duration;
+
+  if (sscanf(cpu_burst_str,
+             GPU_BURST_REGEXP,
+             &duration) != 1)
+  {
+    DAP_report_error("wrong GPU burst duration (%s)", cpu_burst_str);
+    return FALSE;
+  }
+
+  action->action                = GPU_BURST;
+  action->desc.compute.cpu_time = duration;
+
+  return TRUE;
+}
+

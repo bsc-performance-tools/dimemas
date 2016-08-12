@@ -43,6 +43,7 @@ using std::ostream;
 
 #include <stdio.h>
 #include "EventEncoding.h"
+#include "define.h"
 
 #define PARAVER_STATE         1
 #define PARAVER_EVENT         2
@@ -169,6 +170,7 @@ class EventTypeValue
     static INT64 CurrentTraceOrder;
   public:
     EventTypeValue(){};
+
     EventTypeValue(INT32 Type, INT64 Value)
     {
       this->Type       = Type;
@@ -184,8 +186,6 @@ class EventTypeValue
 
     bool IsMPIEvent(void)
     {
-      #define TRUE 1
-      #define FALSE !TRUE
       if (MPIEventEncoding_Is_MPIBlock(this->Type) == TRUE)
         return true;
       else

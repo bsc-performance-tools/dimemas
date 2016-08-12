@@ -33,6 +33,7 @@
 
 #include "EventEncoding.h"
 #include "Dimemas_Generation.h"
+#include "define.h"
 // #include "UIParaverTraceConfig.h"
 
 #include <unistd.h>
@@ -193,7 +194,8 @@ bool ParaverTraceTranslator::EndTranslator(void)
 
   for (unsigned int i = 0; i < TranslationInfo.size(); i++)
   {
-    delete TranslationInfo[i];
+    for (unsigned int j = 0; j < TranslationInfo[i].size(); j++)
+    delete TranslationInfo[i][j];
   }
 
   return true;
@@ -273,11 +275,12 @@ ParaverTraceTranslator::SplitCommunications(void)
 
   i = 0;
 
-  // printf("SPLITTING COMMUNICATIONS\n");
-  /* In order to guarantee the cyclic simulations, when splitting the communications
-   * we also need to process the 'pseudo-physical receive' events */
-
+#ifdef DEBUG
+  printf("SPLITTING COMMUNICATIONS\n");
+#else
   SHOW_PERCENTAGE_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
+#endif
+
   PseudoCommId = 0;
   // CurrentCommunication = Parser->GetNextCommunication();
   CurrentRecord = Parser->GetNextRecord(EVENT_REC | COMM_REC);
@@ -421,7 +424,9 @@ ParaverTraceTranslator::SplitCommunications(void)
     if (PercentageRead > CurrentPercentage)
     {
       CurrentPercentage = PercentageRead;
+#ifndef DEBUG
       SHOW_PERCENTAGE_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
+#endif
     }
   }
 
@@ -459,7 +464,10 @@ ParaverTraceTranslator::SplitCommunications(void)
 }
 
 bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDescription,
-                                                  off_t                    OffsetsOffset)
+																									int 										 acc_tasks_count,
+																									const vector<bool>			*acc_tasks,
+                                                  off_t                    OffsetsOffset
+																									)
 {
 #define OFFSETS_OFFSET_RESERVE 15
 
@@ -477,13 +485,11 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
     if (fseek(DimemasTraceFile, 0, SEEK_SET) != 0)
     {
       SetError(true);
-      SetErrorMessage("error seting position to write definitive header",
+      SetErrorMessage("error setting position to write definitive header",
                       strerror(errno));
       return false;
     }
   }
-
-
 
   if (fprintf (DimemasTraceFile,
                "#DIMEMAS:\"%s\":1,",
@@ -513,8 +519,6 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
     }
   }
 
-
-
   if (fprintf (DimemasTraceFile, ":%d(", AppDescription->GetTaskCount()) < 0)
   {
     SetErrorMessage("error writing header", strerror(errno));
@@ -522,26 +526,76 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
     return false;
   }
 
+  const vector<TaskDescription_t>& TasksInfo = AppDescription->GetTaskInfo();
 
-  for (INT32 i = 0; i < AppDescription->GetTaskCount()-1; i++)
+  for (INT32 i = 0; i < TasksInfo.size(); i++)
   {
-    if (fprintf (DimemasTraceFile, "1,") < 0)
+    if (fprintf (DimemasTraceFile, "%d", TasksInfo[i]->GetThreadCount()) < 0)
     {
       SetErrorMessage("error writing header", strerror(errno));
-
       return false;
+    }
+
+    if (i < TasksInfo.size() - 1)
+    {
+      if (fprintf (DimemasTraceFile, ",") < 0)
+      {
+        SetErrorMessage("error writing header", strerror(errno));
+        return false;
+      }
     }
   }
 
-  if (fprintf(DimemasTraceFile,
-              "1),%d",
-              AppDescription->GetCommunicatorCount()) < 0)
+  if (fprintf(DimemasTraceFile,"),%d", AppDescription->GetCommunicatorCount()) < 0)
   {
     SetErrorMessage("error writing header", strerror(errno));
-
     return false;
   }
 
+  if (fprintf(DimemasTraceFile, ",%d", acc_tasks_count) < 0)
+	{	/*	if no accelerator tasks, just 0 is printed	*/
+		SetErrorMessage("error writing header", strerror(errno));
+		return false;
+	}
+
+  if (acc_tasks_count > 0) {
+
+		for (INT32 i = 0; i < acc_tasks->size() && acc_tasks_count > 0; i++) {
+			if (i == 0) {
+				if (fprintf (DimemasTraceFile, "(") < 0)
+				{
+					SetErrorMessage("error writing header", strerror(errno));
+					return false;
+				}
+			}
+			if (acc_tasks->at(i))
+			{
+				if (fprintf (DimemasTraceFile, "%d", i) < 0)
+				{ //prints task_id
+					SetErrorMessage("error writing header", strerror(errno));
+					return false;
+				}
+				acc_tasks_count--;
+			}
+			if (acc_tasks_count > 0)
+			{ //not last element
+				if (fprintf (DimemasTraceFile, ",") < 0)
+				{
+					SetErrorMessage("error writing header", strerror(errno));
+					return false;
+				}
+			}
+			else
+			{	/*  is last element	*/
+				if (fprintf (DimemasTraceFile, ")") < 0)
+				{
+					SetErrorMessage("error writing header", strerror(errno));
+					return false;
+				}
+				break;
+			}
+		}
+  }
 
   if (!InitialHeader)
   {
@@ -598,7 +652,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
 
   /* For writting new header format with offsets */
   off_t                    OffsetsOffset;
-  vector<off_t>            OutputOffsets;
+  vector<vector<off_t> >   OutputOffsets;
 
   /* For obtaining cluster labels from .pcf
   using namespace libparaver;
@@ -637,16 +691,16 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   else if (AppsDescription.size() == 0)
   {
     cout << " NOK!" << endl;
-
-    LastError = "Trace without applications description";
+    SetErrorMessage("Trace without applications description",
+    								Parser->GetLastError().c_str());
     return false;
   }
   else if (AppsDescription.size() != 1)
   {
     cout << " NOK!" << endl;
-
-    LastError =
-      "This translator is only able to translate Paraver traces with 1 application";
+    SetErrorMessage("This translator is only able to translate"\
+    								" Paraver traces with 1 application",
+										Parser->GetLastError().c_str());
     return false;
   }
 
@@ -668,13 +722,35 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
       break;
     default:
       cout << " NOK!" << endl;
-      LastError = "Error reading trace, time units are unknown";
+      SetErrorMessage("Error reading trace, time units are unknown",
+      								Parser->GetLastError().c_str());
       return false;
       break;
   }
   cout << " OK" << endl;
 
-  // cout << "CREATING CONTROL STRUCTURES..." << flush;
+  cout << "LOOKING FOR ACCELERATOR THREADS... ";
+  if (AcceleratorTasksInfo( (AppsDescription[0])->GetTaskCount() ))
+	{
+  	cout << "FOUND" << endl;
+#ifdef DEBUG
+  	cout << "\tAccelerator tasks: ";
+  	for(INT32 i = 0; i < acc_tasks_count; i++)
+  	{
+  		if (acc_tasks[i])
+  			cout << i+1;
+
+  		if (i+1 < acc_tasks_count)
+  			cout << ", ";
+  	}
+  	cout << endl;
+#endif
+	}
+  else
+	{
+  	cout << "NOT FOUND" << endl;
+	}
+
   if (!InitTranslationStructures(AppsDescription[0],
                                  TimeFactor,
                                  GenerateFirstIdle,
@@ -695,29 +771,20 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     }
   }
 
-
-  /*
-  */
-
   if (MultiThreadTrace)
   {
-    cout << " WARNING! Tasks with multiple threads. Just first thread will be translated" << endl;
+    cout << endl << "WARNING! Tasks with multiple threads. ";
+    cout << "Just first thread will be translated" << endl;
   }
   else
   {
     cout << endl;
   }
-  /*
-  else
-  {
-    cout << " OK" << endl;
-  }
-  */
 
   cout << "WRITING HEADER...";
 
   /* Temporary header! */
-  if(!WriteNewFormatHeader(AppsDescription[0]))
+  if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks))
     return false;
 
   cout << " OK" << endl;
@@ -740,7 +807,9 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
 
   printf("RECORD TRANSLATION\n");
 
+#ifndef DEBUG
   SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
+#endif
 
   Parser->Reload();
 
@@ -749,11 +818,19 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   while (CurrentRecord != NULL)
   {
     Event_t  CurrentEvent;
-    INT32    CurrentTaskId = CurrentRecord->GetTaskId()-1;
+    INT32    CurrentTaskId   = CurrentRecord->GetTaskId()-1;
+    INT32    CurrentThreadId = CurrentRecord->GetThreadId()-1;
 
     if (CurrentTaskId < 0 || CurrentTaskId >= TranslationInfo.size())
     {
       /* Wrong record on the trace! */
+      WrongRecordsFound ++;
+      delete CurrentRecord;
+    }
+    else if (CurrentThreadId < 0 || CurrentThreadId >= TranslationInfo[CurrentTaskId].size())
+    {
+      /* Wrong record on the trace! */
+    	/* If accelerator threads are not translated then WrongRecordsFound > 0 */
       WrongRecordsFound ++;
       delete CurrentRecord;
     }
@@ -797,42 +874,35 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
             // cout << "Pushing SubEvent: " << *SubEvent;
   #endif
 
-            if (!TranslationInfo[CurrentTaskId]->PushRecord(SubEvent))
+            if (!TranslationInfo[CurrentTaskId][CurrentThreadId]->PushRecord(SubEvent))
             {
               SetError(true);
-              this->LastError = TranslationInfo[CurrentTaskId]->GetLastError();
+              this->LastError = TranslationInfo[CurrentTaskId][CurrentThreadId]->GetLastError();
 
               return false;
             }
           }
 
-          /*
-          CurrentGlobalOp = Event2GlobalOp(CurrentEvent);
-          if (CurrentGlobalOp != NULL)
-          {
-            CurrentRecord = static_cast<ParaverRecord_t> (CurrentGlobalOp);
-            continue;
-          }
-          */
-
+          /* Here we can delete the Event record, as we have pushed all the
+           * Type/Values in sub-events */
           delete CurrentRecord;
         }
         else
         {
-          if (!TranslationInfo[CurrentTaskId]->PushRecord(CurrentRecord))
+          if (!TranslationInfo[CurrentTaskId][CurrentThreadId]->PushRecord(CurrentRecord))
           {
             SetError(true);
-            this->LastError = TranslationInfo[CurrentTaskId]->GetLastError();
+            this->LastError = TranslationInfo[CurrentTaskId][CurrentThreadId]->GetLastError();
             return false;
           }
         }
       }
       else
       {
-        if (!TranslationInfo[CurrentTaskId]->PushRecord(CurrentRecord))
+        if (!TranslationInfo[CurrentTaskId][CurrentThreadId]->PushRecord(CurrentRecord))
         {
           SetError(true);
-          this->LastError = TranslationInfo[CurrentTaskId]->GetLastError();
+          this->LastError = TranslationInfo[CurrentTaskId][CurrentThreadId]->GetLastError();
           return false;
         }
       }
@@ -845,7 +915,9 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     if (PercentageRead > CurrentPercentage)
     {
       CurrentPercentage = PercentageRead;
+#ifndef DEBUG
       SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
+#endif
     }
   }
 
@@ -860,23 +932,29 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     unsigned int min_glops = 10000000000;
     for (int i=0; i < TranslationInfo.size(); ++i)
     {
-      if (TranslationInfo[i]->glop_counter < min_glops)
-        min_glops = TranslationInfo[i]->glop_counter;
+			for (int j=0; j < TranslationInfo[i].size(); j++)
+			{
+      	if (TranslationInfo[i][j]->glop_counter < min_glops)
+      	  min_glops = TranslationInfo[i][j]->glop_counter;
+			}
     }
 
     for (int i=0; i < TranslationInfo.size(); ++i)
     {
-      fprintf(extra_statistics_file, "%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
-              TranslationInfo[i]->send_counter,
-              TranslationInfo[i]->isend_counter,
-              TranslationInfo[i]->recv_counter,
-              TranslationInfo[i]->irecv_counter,
-              TranslationInfo[i]->wait_counter,
-              TranslationInfo[i]->glop_counter,
-              TranslationInfo[i]->pendent_i_Send_counter,
-              TranslationInfo[i]->pendent_i_Recv_counter,
-              TranslationInfo[i]->glop_counter - min_glops);
-              //TranslationInfo[i]->pendent_Glop_counter);
+			for (int j=0; j < TranslationInfo[i].size(); j++)
+			{
+		    fprintf(extra_statistics_file, "%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+		            TranslationInfo[i][j]->send_counter,
+		            TranslationInfo[i][j]->isend_counter,
+		            TranslationInfo[i][j]->recv_counter,
+		            TranslationInfo[i][j]->irecv_counter,
+		            TranslationInfo[i][j]->wait_counter,
+		            TranslationInfo[i][j]->glop_counter,
+		            TranslationInfo[i][j]->pendent_i_Send_counter,
+		            TranslationInfo[i][j]->pendent_i_Recv_counter,
+		            TranslationInfo[i][j]->glop_counter - min_glops);
+		            //TranslationInfo[i]->pendent_Glop_counter);
+			}
     }
 
     fclose(extra_statistics_file);
@@ -884,6 +962,8 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
 
   if (Parser->GetError())
   {
+    SetError(true);
+    SetErrorMessage(Parser->GetLastError());
     return false;
   }
 
@@ -902,59 +982,75 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
   int TotalMPIInitBarriersWritten = 0;
   for (UINT32 i = 0; i < TranslationInfo.size(); i++)
   {
-    if (!(TranslationInfo[i]->LastFlush()))
+    for (UINT32 j = 0; j < TranslationInfo[i].size(); j++)
     {
-      char CurrentError[128];
+      /* Generate last records and close temporary files to guarantee the
+       * availability of file descriptors */
+      if (!(TranslationInfo[i][j]->LastFlush()))
+      {
+        char CurrentError[128];
 
-      sprintf(CurrentError,
-              "Error flushing last records from task %02d : ",
-              i+1);
-      SetErrorMessage(CurrentError,
-                      TranslationInfo[i]->GetLastError().c_str());
-      return false;
+        sprintf(CurrentError,
+                "Error flushing last records from task %02d : ",
+                i+1);
+        SetErrorMessage(CurrentError,
+                        TranslationInfo[i][j]->GetLastError().c_str());
+        return false;
+      }
     }
+  }
 
-    OutputOffsets.push_back(ftello(DimemasTraceFile));
+  OutputOffsets.resize(TranslationInfo.size());
 
-    if (!(TranslationInfo[i]->Merge(DimemasTraceFile)))
+  for (UINT32 i = 0; i < TranslationInfo.size(); i++)
+  {
+    OutputOffsets[i].resize(TranslationInfo[i].size());
+
+    for (UINT32 j = 0; j < TranslationInfo[i].size(); j++)
     {
-      char CurrentError[128];
+      OutputOffsets[i][j] = ftello(DimemasTraceFile);
 
-      sprintf(CurrentError,
-              "Error merging file from task %02d : ",
-              i+1);
-      SetErrorMessage(CurrentError,
-                      TranslationInfo[i]->GetLastError().c_str());
-      return false;
-    }
+      if (!(TranslationInfo[i][j]->Merge(DimemasTraceFile)))
+      {
+        char CurrentError[128];
 
-    if (TranslationInfo[i]->GetOutsideComms())
-    {
-      OutsideCommsPresent = true;
-      TasksWithOutsideComms.push_back(TranslationInfo[i]->GetTaskId());
-    }
+        sprintf(CurrentError,
+                "Error merging file from task %02d : ",
+                i+1);
+        SetErrorMessage(CurrentError,
+                        TranslationInfo[i][j]->GetLastError().c_str());
+        return false;
+      }
 
-    if (TranslationInfo[i]->GetWrongComms())
-    {
-      WrongCommsPresent = true;
-      TasksWithWrongComms.push_back(TranslationInfo[i]->GetTaskId());
-    }
+      if (TranslationInfo[i][j]->GetOutsideComms())
+      {
+        OutsideCommsPresent = true;
+        TasksWithOutsideComms.push_back(TranslationInfo[i][j]->GetTaskId());
+      }
 
-    if (TranslationInfo[i]->GetNonDeterministicComms())
-    {
-      NonDeterministicCommsPresent = true;
-      TasksWithNonDeterministicComms.push_back(TranslationInfo[i]->GetTaskId());
-    }
+      if (TranslationInfo[i][j]->GetWrongComms())
+      {
+        WrongCommsPresent = true;
+        TasksWithWrongComms.push_back(TranslationInfo[i][j]->GetTaskId());
+      }
 
-    if (TranslationInfo[i]->GetDisorderedRecords())
-    {
-      DisorderedRecordsPresent = true;
-      TasksWithDisorderedRecords.push_back(TranslationInfo[i]->GetTaskId());
-    }
+      if (TranslationInfo[i][j]->GetNonDeterministicComms())
+      {
+        NonDeterministicCommsPresent = true;
+        TasksWithNonDeterministicComms.push_back(TranslationInfo[i][j]->GetTaskId());
+      }
 
-    if (TranslationInfo[i]->GetMPIInitBarrierWritten())
-    {
-      TotalMPIInitBarriersWritten++;
+      if (TranslationInfo[i][j]->GetDisorderedRecords())
+      {
+        DisorderedRecordsPresent = true;
+        TasksWithDisorderedRecords.push_back(TranslationInfo[i][j]->GetTaskId());
+      }
+
+
+		  if (TranslationInfo[i][j]->GetMPIInitBarrierWritten())
+		  {
+		    TotalMPIInitBarriersWritten++;
+		  }
     }
   }
   printf("   * All task merged!         \r\n");
@@ -1080,21 +1176,28 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     return false;
   }
 
-  /* Write offset line
-   * JGG (12/2011) TEST FOR NEW TRACE
-  if (fprintf(DimemasTraceFile, "s") < 0)
-  {
-    SetErrorMessage("Error printing offsets line",
-                    strerror(errno));
-    return false;
-  }
-  */
-
   for (INT32 Task = 0; Task < (AppsDescription[0])->GetTaskCount(); Task++)
   {
-    // JGG (12/2011): TESTS NEW TRACE
-    // if (fprintf(DimemasTraceFile, ":%d,%lld", Task, OutputOffsets[Task]) < 0, )
-    if (fprintf(DimemasTraceFile, "s:%d:%zu\n", Task, OutputOffsets[Task]) < 0)
+    if (fprintf(DimemasTraceFile, "s:%d", Task) < 0)
+    {
+      SetErrorMessage("Error printing offsets line",
+                      strerror(errno));
+      return false;
+    }
+
+    const vector<TaskDescription_t>& TasksInfo = (AppsDescription[0])->GetTaskInfo();
+
+    for (INT32 Thread = 0; Thread < TasksInfo[Task]->GetThreadCount(); Thread++)
+    {
+      if (fprintf(DimemasTraceFile, ":%zu", OutputOffsets[Task][Thread]) < 0)
+      {
+        SetErrorMessage("Error printing offsets line",
+                        strerror(errno));
+        return false;
+      }
+    }
+
+    if (fprintf(DimemasTraceFile, "\n") < 0)
     {
       SetErrorMessage("Error printing offsets line",
                       strerror(errno));
@@ -1115,7 +1218,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     }
   }
 
-  if(!WriteNewFormatHeader(AppsDescription[0], OffsetsOffset))
+  if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, OffsetsOffset))
   {
     return false;
   }
@@ -1131,19 +1234,16 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
  * Private functions
  ****************************************************************************/
 
-bool
-ParaverTraceTranslator::InitTranslationStructures(
-  ApplicationDescription_t AppDescription,
-  double                   TimeFactor,
-  bool                     GenerateFirstIdle,
-  double                   IprobeMissesThreshold,
-  INT32                    BurstCounterType,
-  double                   BurstCounterFactor,
-  bool                     GenerateMPIInitBarrier)
+bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t AppDescription,
+																											 double                   TimeFactor,
+																											 bool                     GenerateFirstIdle,
+																											 double                   IprobeMissesThreshold,
+																											 INT32                    BurstCounterType,
+																											 double                   BurstCounterFactor,
+																											 bool                     GenerateMPIInitBarrier)
 {
-  vector<TaskDescription_t> TaskInfo;
   vector<Communicator_t>    TraceCommunicators;
-  UINT32                    CurrentCommunicator, CurrentTask;
+  UINT32                    CurrentCommunicator, CurrentTask, CurrentThread;
   TaskTranslationInfo_t     NewTranslationInfo;
   FILE *TemporaryFile;
 
@@ -1179,133 +1279,178 @@ ParaverTraceTranslator::InitTranslationStructures(
     Communicators.push_back(NewTransalationComm);
   }
 
-  TaskInfo = AppDescription->GetTaskInfo();
+  const vector<TaskDescription_t>& TaskInfo = AppDescription->GetTaskInfo();
+
+  TranslationInfo.resize(TaskInfo.size());
 
   for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
   {
-    ParaverRecord_t FirstRecord;
-    bool            EmptyTask       = false;
-    UINT64          FirstRecordTime = 0;
-
-    TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 20);
-
+#ifndef DEBUG
     SHOW_PROGRESS(stdout,
-                  "CREATING TRANSLATION STRUCTURES ",
-                  CurrentTask+1,
-                  (int) TaskInfo.size());
+              "CREATING TRANSLATION STRUCTURES ",
+              CurrentTask+1,
+              TaskInfo.size());
+#endif
 
-    if (TemporaryFileName == NULL)
+    INT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
+
+    bool is_acc_task = false;
+    if (acc_tasks_count == 0)
+    {	/*If any accelerator task, only 1 thread per task will be translated*/
+    	TaskThreadCount = 1;
+    	TaskInfo[CurrentTask]->SetThreadCount(TaskThreadCount);
+    }
+    else if (!acc_tasks.empty() &&	acc_tasks[CurrentTask])
     {
-      SetErrorMessage("unable to allocate memory to temporay filename",
-                    strerror(errno));
-      return false;
+    	is_acc_task = true;
     }
 
-    sprintf(TemporaryFileName,
-            "%s/TmpTask_%04d_%06d",
-            tmp_dir,
-            CurrentTask,
-            rand()%999999);
+    TranslationInfo[CurrentTask].resize(TaskThreadCount);
 
-    if (!DescriptorShared)
+    for (CurrentThread = 0;
+         CurrentThread < TaskThreadCount;
+         CurrentThread++)
     {
-      TemporaryFile = fopen(TemporaryFileName, "a");
-    }
-    else
-    {
-      TemporaryFile = NULL;
-    }
+      ParaverRecord_t FirstRecord;
+      bool            EmptyTask       = false;
+      UINT64          FirstRecordTime = 0;
 
-    if (!Parser->Reload())
-    {
-      SetErrorMessage("Unable to reload Paraver trace",
-                      Parser->GetLastError().c_str());
-      return false;
-    }
+      INT32 AcceleratorThread = ACCELERATOR_NULL;	//not an acc task
+      //always considered as last thread of task
+      if (is_acc_task && CurrentThread != 0)// CurrentThread == TaskThreadCount-1)
+      {	/* Last thread in accelerator task is the kernel thread	*/
+      	AcceleratorThread = ACCELERATOR_KERNEL;
+      }
+      else if (is_acc_task && CurrentThread == 0)
+      {	/* First thread in accelerator task is the host thread	*/
+      	AcceleratorThread = ACCELERATOR_HOST;
+      }
 
-    Parser->Reload();
+      TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 30);
 
-    FirstRecord = Parser->GetNextTaskRecord((INT32)CurrentTask+1);
+      if (TemporaryFileName == NULL)
+      {
+        SetErrorMessage("unable to allocate memory to temporay filename",
+                      strerror(errno));
+        return false;
+      }
 
-    if (FirstRecord == NULL)
-    {
-      EmptyTask = true;
-    }
-    else
-    {
-      FirstRecordTime = FirstRecord->GetTimestamp();
-    }
-
-    if ( DescriptorShared ||
-        (TemporaryFile == NULL && (errno == EMFILE || errno == ENFILE)))
-    { /* No file descriptors available */
-      /*
-      cout << "Task " << TaskInfo[CurrentTask]->GetTaskId();
-      cout << " shares descriptor" << endl; */
+      sprintf(TemporaryFileName,
+              "%s/TmpTask_%04d_%04d_%06d",
+              tmp_dir,
+              CurrentTask,
+              CurrentThread,
+              rand()%999999);
 
       if (!DescriptorShared)
       {
-        if (!ShareDescriptor())
-        {
-          return false;
-        }
+        TemporaryFile = fopen(TemporaryFileName, "a");
+      }
+      else
+      {
+        TemporaryFile = NULL;
       }
 
-      NewTranslationInfo =
-        new TaskTranslationInfo(TaskInfo[CurrentTask]->GetTaskId(),
-                                TimeFactor,
-                                FirstRecordTime,
-                                GenerateFirstIdle,
-                                EmptyTask,
-                                IprobeMissesThreshold,
-                                BurstCounterGeneration,
-                                BurstCounterType,
-                                BurstCounterFactor,
-                                GenerateMPIInitBarrier,
-                                PreviouslySimulatedTrace,
-                                &TranslationInfo,
-                                TemporaryFileName );
+      if (!Parser->Reload())
+      {
+        SetErrorMessage("Unable to reload Paraver trace",
+                        Parser->GetLastError().c_str());
+        return false;
+      }
+
+      Parser->Reload();
+
+      FirstRecord = Parser->GetNextThreadRecord((INT32) CurrentTask+1,
+                                                (INT32) CurrentThread+1);
+
+      if (FirstRecord == NULL)
+      {
+        EmptyTask = true;
+      }
+      else
+      {
+        FirstRecordTime = FirstRecord->GetTimestamp();
+      }
+
+      if ( DescriptorShared ||
+          (TemporaryFile == NULL && (errno == EMFILE || errno == ENFILE)))
+      { /* No file descriptors available */
+        /*
+        cout << "Task " << TaskInfo[CurrentTask]->GetTaskId();
+        cout << " shares descriptor" << endl; */
+
+        if (!DescriptorShared)
+        {
+          if (!ShareDescriptor())
+          {
+            return false;
+          }
+        }
+				NewTranslationInfo =
+					new TaskTranslationInfo(TaskInfo[CurrentTask]->GetTaskId(),
+											CurrentThread+1,
+											TimeFactor,
+											FirstRecordTime,
+											GenerateFirstIdle,
+											EmptyTask,
+											IprobeMissesThreshold,
+											BurstCounterGeneration,
+											BurstCounterType,
+											BurstCounterFactor,
+											GenerateMPIInitBarrier,
+                      PreviouslySimulatedTrace,
+                      &TranslationInfo,
+											AcceleratorThread);
+      }
+      else if (TemporaryFile == NULL)
+      { /* Other error */
+        char CurrentError[128];
+        sprintf(CurrentError,
+                "Error opening temporary file to task %02d",
+                TaskInfo[CurrentTask]->GetTaskId());
+        SetErrorMessage(CurrentError, strerror(errno));
+        return false;
+      }
+      else
+      {
+				NewTranslationInfo =
+					new TaskTranslationInfo(TaskInfo[CurrentTask]->GetTaskId(),
+											CurrentThread+1,
+											TimeFactor,
+											FirstRecordTime,
+											GenerateFirstIdle,
+											EmptyTask,
+											IprobeMissesThreshold,
+											BurstCounterGeneration,
+											BurstCounterType,
+											BurstCounterFactor,
+											GenerateMPIInitBarrier,
+                      PreviouslySimulatedTrace,
+                      &TranslationInfo,
+											AcceleratorThread,
+											TemporaryFileName);
+      }
+
+      TranslationInfo[CurrentTask][CurrentThread] = NewTranslationInfo;
+
+      delete FirstRecord;
     }
-    else if (TemporaryFile == NULL)
-    { /* Other error */
-      char CurrentError[128];
-      sprintf(CurrentError,
-              "Error opening temporary file to task %02d",
-              TaskInfo[CurrentTask]->GetTaskId());
-      SetErrorMessage(CurrentError, strerror(errno));
-      return false;
-    }
-    else
+    if (TaskThreadCount > 1 && !is_acc_task)
+		{ /* if task has an accelerator thread it's not a MultiThreadTrace error */
+			MultiThreadTrace = true;
+		}
+#if DEBUG
+    else if (is_acc_task)
     {
-      NewTranslationInfo =
-        new TaskTranslationInfo(TaskInfo[CurrentTask]->GetTaskId(),
-                                TimeFactor,
-                                FirstRecordTime,
-                                GenerateFirstIdle,
-                                EmptyTask,
-                                IprobeMissesThreshold,
-                                BurstCounterGeneration,
-                                BurstCounterType,
-                                BurstCounterFactor,
-                                GenerateMPIInitBarrier,
-                                PreviouslySimulatedTrace,
-                                &TranslationInfo,
-                                TemporaryFileName,
-                                TemporaryFile );
+    	cout << "ACCELERATOR TASK TRANSLATION IN TASK:" << CurrentTask << endl;
     }
-
-    if (TaskInfo[CurrentTask]->GetThreadCount() > 1)
-    {
-      MultiThreadTrace = true;
-    }
-
-    TranslationInfo.push_back(NewTranslationInfo);
-
-    delete FirstRecord;
+#endif
   }
+#ifndef DEBUG
   SHOW_PROGRESS_END(stdout,
                     "CREATING TRANSLATION STRUCTURES ",
-                    (int) TaskInfo.size());
+                    TaskInfo.size());
+#endif
 
   return true;
 }
@@ -1518,4 +1663,96 @@ ParaverTraceTranslator::ShareDescriptor(void)
 
     return true;
   }
+}
+
+
+/*
+ * Checks in .row file if there are CUDA or OpenCL devices and
+ * gets the mapping info (task and thread)
+ */
+bool ParaverTraceTranslator::AcceleratorTasksInfo(INT32 tasks_count)
+{
+	string RowTraceName;
+	string::size_type SubstrPosition;
+
+	char*   line  = NULL;
+	string	Line;
+	size_t  current_line_length = 0;
+
+	string	pattern_thread_lvl = "LEVEL THREAD SIZE";
+	string	pattern_opencl_tag = "OpenCL";
+	string 	pattern_cuda_tag 	 = "CUDA";
+
+	INT32 	task_id = -1;
+
+	SubstrPosition = ParaverTraceName.rfind(".prv");
+
+	if (SubstrPosition == string::npos)
+	{
+		RowTraceName = ParaverTraceName + ".row";
+	}
+	else
+	{
+		RowTraceName = ParaverTraceName.substr(0, SubstrPosition) + ".row";
+	}
+
+	if ( (RowTraceFile = fopen(RowTraceName.c_str(), "r")) == NULL)
+	{
+		cout << "-> No input trace ROW file found" << endl;
+		RowTraceFile = NULL;
+		return false;
+	}
+
+	if (fseeko(RowTraceFile, (size_t) 0, SEEK_SET) == -1)
+	{
+		SetError(true);
+		SetErrorMessage("Error seeking position in row trace file",
+				strerror(errno));
+		return false;
+	}
+
+	acc_tasks.resize(tasks_count, false);
+	acc_tasks_count	= 0;
+
+	while (getline(&line, &current_line_length, RowTraceFile) !=-1)
+	{
+		Line = (string) line;
+		if ( Line.find(pattern_thread_lvl) != std::string::npos )
+		{	/* Find Level Thread info line	*/
+			while (getline(&line, &current_line_length, RowTraceFile) != -1)
+			{	/* Application, task, thread info line	*/
+				Line = (string) line;
+				if ( Line.find(pattern_opencl_tag) != std::string::npos ||
+						 Line.find(pattern_cuda_tag) != std::string::npos )
+				{
+					if (task_id - 1 < tasks_count)
+					{
+						if (!acc_tasks[task_id - 1])
+						{
+							acc_tasks[task_id - 1] = true;
+							acc_tasks_count++;
+						}
+					}
+					else
+					{
+						SetError(true);
+						SetErrorMessage("Error in reading row line", strerror(errno));
+						return false;
+					}
+				}
+				else
+				{	/*	THREAD app_id.task_id.thread_id line	*/
+					if (atoi(&line[7]) != 1)
+					{	/*	App != 1, not be translated	*/
+						if (acc_tasks_count > 0) return true;
+						return false;
+					}
+					task_id = atoi(&line[9]); //Task_id in 9th position
+				}
+			}
+		}
+	}
+
+	if (acc_tasks_count > 0) return true;
+	return false;
 }

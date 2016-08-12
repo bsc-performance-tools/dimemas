@@ -657,7 +657,7 @@ void link_busy_primer(struct t_thread *thread, struct t_node *node, int in_out)
 
 /*******************************************************************
  **  Aquesta funcio intenta prendre un link de sortida a alguna
- **  comunicació que surti d'aquest node i estigui bloquejada.  Si
+ **  comunicaciï¿½ que surti d'aquest node i estigui bloquejada.  Si
  **  en troba alguna li roba el link i l'assigna al thread donat com
  **  a link d'entrada o de sortida en funcio del parametre. En
  **  funcio de "test_only" es fa el que cal o simplement es retorna
@@ -676,12 +676,12 @@ t_boolean roba_out_link(struct t_thread *thread,
   if (in_out == IN_LINK)
   {
     /* Si es vol robar un link de sortida per aconseguir un link
-       d'entrada al node, el node ha de ser HALF Duplex per força. */
+       d'entrada al node, el node ha de ser HALF Duplex per forï¿½a. */
     if (node->half_duplex_links == FALSE) return (FALSE);
   }
 
 
-  /* El primer que cal és trobar un link que compleixi les
+  /* El primer que cal ï¿½s trobar un link que compleixi les
      condicions necessaries per ser robat. */
 
   /* Es recorren els links de sortida ocupats */
@@ -691,7 +691,7 @@ t_boolean roba_out_link(struct t_thread *thread,
   {
     candidat = link->thread;
 
-    /* Nomes s'agafen els links origen d'una comunicació, que seran
+    /* Nomes s'agafen els links origen d'una comunicaciï¿½, que seran
        els que tinguin un propietari associat (per evitar prendre
        el link de desti en un node half duplex). */
     if (candidat == TH_NIL) continue;
@@ -705,14 +705,14 @@ t_boolean roba_out_link(struct t_thread *thread,
 
     /* El thread candidat ha d'estar encuat esperant link
        d'entrada a algun node. Cal treure'l d'aquesta cua i
-       afegir-lo a l'espera de sortida perquè li pendrem el link*/
+       afegir-lo a l'espera de sortida perquï¿½ li pendrem el link*/
     for (candidat_encuat  = (struct t_thread *)head_queue(&(candidat->partner_node->th_for_in));
          candidat_encuat != (struct t_thread *)0;
          candidat_encuat  = (struct t_thread *)next_queue(&(candidat->partner_node->th_for_in)))
     {
       if (candidat_encuat == candidat) break;
     }
-    /* S'ha d'haver trobat per força */
+    /* S'ha d'haver trobat per forï¿½a */
     ASSERT(candidat_encuat == candidat);
 
     /* Si nomes era un test cal retornar sense tocar res */
@@ -752,7 +752,7 @@ t_boolean roba_out_link(struct t_thread *thread,
               node->nodeid);
     }
 
-    /* Cal trencar el bucle perquè ja s'ha pogut robar un link */
+    /* Cal trencar el bucle perquï¿½ ja s'ha pogut robar un link */
     trobat = TRUE;
     break;
   }
@@ -763,9 +763,9 @@ t_boolean roba_out_link(struct t_thread *thread,
 
 /*******************************************************************
  **  Aquesta funcio intenta obtenir els links entre nodes d'una
- **  mateixa màquina per una comunicació. Ha estat modificada per
+ **  mateixa mï¿½quina per una comunicaciï¿½. Ha estat modificada per
  **  tal que el link de sortida pugui ser robat en cas que s'estigui
- **  esperant link d'entrada. Aquesta funció és la que fa ús del
+ **  esperant link d'entrada. Aquesta funciï¿½ ï¿½s la que fa ï¿½s del
  **  robatori de links en cas que en faltin.
  *******************************************************************/
 t_boolean LINKS_get_network_links(struct t_thread *thread,
@@ -794,7 +794,7 @@ t_boolean LINKS_get_network_links(struct t_thread *thread,
   /* Com que s'utilitza el robatori de links de sortida, sempre s'agafen
     primer els links de sortida encara que un dels nodes sigui half duplex. */
 
-  /* S'obté primer el LINK de SORTIDA */
+  /* S'obtï¿½ primer el LINK de SORTIDA */
   /************************************/
   if (node->infinite_net_links != TRUE)
   {
@@ -857,7 +857,7 @@ t_boolean LINKS_get_network_links(struct t_thread *thread,
     }
   }
 
-  /* Després s'obté el LINK de d'ENTRADA al destí */
+  /* Desprï¿½s s'obtï¿½ el LINK de d'ENTRADA al destï¿½ */
   /************************************************/
   if (node_partner->infinite_net_links != TRUE)
   {
@@ -1509,7 +1509,7 @@ t_boolean LINKS_get_wan_links(struct t_thread  *thread,
 {
    struct t_link  *link;
 
-/* Aixo ara ja no és un error, perquè a les operacions col.lectives que
+/* Aixo ara ja no ï¿½s un error, perquï¿½ a les operacions col.lectives que
    utilitzen la xarxa externa, els threads reserven tots els links de la
    seva mateixa maquina.
    if (s_machine == d_machine) panic("Trying to get links for the same machine!\n");
@@ -2334,5 +2334,382 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
 
     /* Si es vol poder utilitzar PORTS amb connexions dedicades,
        s'hauria de fer aqui */
+  }
+}
+
+
+/*****************************************************************************************************
+******************************************************************************************************
+
+*      ##      #####   #####   ######   #        ######    #####      ##     ######   ######   #####
+*     #  #    #       #        #        #        #         #    #    #  #       #     #    #   #    #
+*    #    #   #       #        ######   #        ######    ######   #    #      #     #    #   ######
+*    ######   #       #        #        #        #         #    #   ######      #     #    #   #    #
+*    #    #   #       #        #        #        #         #    #   #    #      #     #    #   #    #
+*    #    #    #####   #####   ######   ######   ######    #    #   #	   #      #     ######   #    #
+*
+*
+*                    #          #    #    #  #    #   ####
+*                    #          #    ##   #  #   #   #
+*                    #          #    # #  #  ####     ####
+*                    #          #    #  # #  #  #         #
+*                    #          #    #   ##  #   #   #    #
+*                    ######     #    #    #  #    #   ####
+*
+******************************************************************************************************
+******************************************************************************************************/
+void acc_link_busy(struct t_thread *thread,
+                   struct t_task   *task,
+                   int              in_out)
+{
+  struct t_node    *node;
+  struct t_machine *machine;
+
+  node    = get_node_of_thread(thread);
+  machine = node->machine;
+
+  switch (machine->communication.policy)
+  {
+    case COMMUNIC_FIFO:
+    case COMMUNIC_RR:
+    case COMMUNIC_BOOST:
+      if (in_out == OUT_LINK)
+      {
+        inFIFO_queue (&(task->th_for_out), (char *) thread);
+      }
+      else
+      {
+        inFIFO_queue (&(task->th_for_in), (char *) thread);
+      }
+      break;
+    default:
+      panic ("Communication policy not implemented\n");
+   }
+
+  START_LINK_WAIT_TIME(thread);
+}
+
+t_boolean LINKS_get_acc_links(struct t_thread *thread,
+                              struct t_task   *task_snd,
+                              struct t_task   *task_rcv)
+{
+  struct t_link* link;
+
+  if ((task_snd->taskid == task_rcv->taskid))
+  {	// It always returns true, because it's inside and accelerator
+    return TRUE;
+  }
+  return FALSE;
+  /*if ((task_snd->half_duplex_links) || (task_rcv->half_duplex_links))
+  {
+    if (task_snd->taskid > task_rcv->taskid)
+    {
+      goto first_dest;
+    }
+  }
+
+second_src_link:
+
+  link = thread->local_link;
+
+  if (link == L_NIL)
+  {
+    link = (struct t_link *) outFIFO_queue (&(task_snd->free_out_links));
+  }
+
+  if (link == L_NIL)
+  {
+    acc_link_busy (thread, task_snd, OUT_LINK);
+
+    if (debug&D_LINKS)
+    {
+      PRINT_TIMER (current_time);
+      printf (": P%02d T%02d (t%02d) no local (OUT) write permissions to task %d\n",
+              IDENTIFIERS (thread),
+              task_rcv->taskid);
+    }
+    return FALSE;
+  }
+  else
+  {
+    if (thread->local_link == L_NIL)
+    {
+      if (task_snd->half_duplex_links)
+      {
+        /* If the output has been obtained, it MUST be an input free */
+        /*thread->local_hd_link =
+          (struct t_link*) outFIFO_queue(&(task_snd->free_in_links));
+
+        if (thread->local_hd_link==L_NIL)
+        {
+          panic ("P%02d T%02d (t%02d) unable to obtain destination accelerator process\n",
+                 IDENTIFIERS(thread));
+        }
+
+        inFIFO_queue (&(task_snd->busy_in_links), (char*) thread->local_hd_link);
+      }
+      link->assigned_on = current_time;
+
+      inFIFO_queue (&(task_snd->busy_out_links), (char*)link);
+    }
+  }
+
+  thread->local_link = link;
+
+  if ((task_snd->half_duplex_links) || (task_rcv->half_duplex_links))
+  {
+    if (task_snd->taskid > task_rcv->taskid)
+    {
+      goto end_get_links;
+    }
+  }
+
+first_dest:
+
+  link = thread->partner_link;
+  if (link == L_NIL)
+  {
+    link = (struct t_link *) outFIFO_queue (&(task_rcv->free_in_links));
+  }
+
+  if (link == L_NIL)
+  {
+    acc_link_busy (thread, task_rcv, IN_LINK);
+    if (debug&D_LINKS)
+    {
+      PRINT_TIMER (current_time);
+      printf (": P%02d T%02d (t%02d) no local (IN) write permissions to %d\n",
+              IDENTIFIERS (thread),
+              task_rcv->taskid);
+    }
+    return (FALSE);
+  }
+  else
+  {
+    if (thread->partner_link == L_NIL)
+    {
+      if (task_rcv->half_duplex_links)
+      {
+        /* If the input has been obtained, it MUST be an output free */
+        /*thread->partner_hd_link = (struct t_link *) outFIFO_queue (&(task_rcv->free_out_links));
+
+        if (thread->partner_hd_link==L_NIL)
+        {
+          panic ("P%02d T%02d (t%02d) unable to obtain destination  accelerator process\n",
+                 IDENTIFIERS(thread));
+        }
+        inFIFO_queue (&(task_rcv->busy_out_links), (char*)thread->partner_hd_link);
+      }
+
+      link->assigned_on = current_time;
+      inFIFO_queue (&(task_rcv->busy_in_links), (char*)link);
+    }
+  }
+
+  thread->partner_link = link;
+
+  if ((task_snd->half_duplex_links) || (task_rcv->half_duplex_links))
+  {
+    if (task_snd->taskid > task_rcv->taskid)
+    {
+      goto second_src_link;
+    }
+  }
+
+end_get_links:
+
+  if (debug&D_LINKS)
+  {
+    PRINT_TIMER (current_time);
+    printf (": P%02d T%02d (t%02d)  Accelerator process communication available to task %d\n",
+            IDENTIFIERS (thread),
+            task_rcv->taskid);
+  }
+
+   return TRUE;*/
+}
+
+void LINKS_free_acc_link(struct t_link   *link,
+                         struct t_thread *thread)
+{
+  struct t_thread  *first;
+  struct t_task    *task;
+  struct t_node    *node;
+  struct t_cpu     *cpu;
+  struct t_both    *both;
+  struct t_copyseg *copyseg;
+
+  task = link->info.task;
+  cpu  = get_cpu_of_thread(thread);
+	node = link->info.node;
+
+  if (link->type == IN_LINK)
+  {
+    if (debug&D_LINKS)
+    {
+      PRINT_TIMER (current_time);
+      printf (": P%02d T%02d (t%02d) frees writing memory permissions (IN) to task %d\n",
+              IDENTIFIERS (thread),
+              task->taskid);
+    }
+    inFIFO_queue (&(task->free_in_links), (char *) link);
+    extract_from_queue (&(task->busy_in_links), (char *) link);
+
+    if (task->half_duplex_links)
+    {
+      if (debug&D_LINKS)
+      {
+        PRINT_TIMER (current_time);
+        printf (": P%02d T%02d (t%02d) frees memory writing permissions (OUT) to task %d\n",
+                IDENTIFIERS (thread),
+                task->taskid);
+      }
+
+      inFIFO_queue (&(task->free_out_links), (char*) thread->partner_hd_link);
+
+      extract_from_queue(&(task->busy_out_links),
+                        (char*) thread->partner_hd_link);
+
+      first = (struct t_thread *) outFIFO_queue (&(task->th_for_out));
+
+      if (first != TH_NIL)
+      {
+        /* FEC: El primer que faig es acumular el temps que el thread ha
+                  estat bloquejat esperant el link */
+        ACCUMULATE_LINK_WAIT_TIME(first);
+        /***************************************************************/
+
+        if (first->original_thread)
+        {
+          first->last_paraver = current_time;
+        }
+        if (debug&D_LINKS)
+        {
+          PRINT_TIMER (current_time);
+          printf (": free memory writing permissions (OUT) to task %d wakes-up P%02d T%02d (t%02d)\n",
+                  task->taskid,
+                  IDENTIFIERS (first));
+        }
+
+        if (first->action->action  ==  SEND)
+        {
+          really_send (first);
+        }
+        else if (first->action->action == MPI_OS)
+        {
+          really_RMA (first);
+        }
+      }
+    }
+
+    first = (struct t_thread *) outFIFO_queue (&(task->th_for_in));
+
+    if (first != TH_NIL)
+    {
+      /* FEC: El primer que faig es acumular el temps que el thread ha estat
+       * bloquejat esperant el link */
+      ACCUMULATE_LINK_WAIT_TIME(first);
+      /***************************************************************/
+
+      if (first->original_thread)
+      {
+        first->last_paraver = current_time;
+      }
+      if (debug&D_LINKS)
+      {
+        PRINT_TIMER (current_time);
+        printf (": Free memory writing permissions (IN) to task %d wakes-up P%02d T%02d (t%02d)\n",
+                task->taskid,
+                IDENTIFIERS (first));
+      }
+      if (first->action->action == SEND)
+      {
+        really_send (first);
+      }
+      else if (first->action->action==MPI_OS)
+      {
+        really_RMA (first);
+      }
+
+      return;
+    }
+  }
+  else
+  {
+    if (debug&D_LINKS)
+    {
+      PRINT_TIMER (current_time);
+      printf (": P%02d T%02d (t%02d) frees writing memory permissions (OUT) to task %d\n",
+              IDENTIFIERS (thread),
+              task->taskid);
+    }
+    inFIFO_queue (&(task->free_out_links), (char*) link);
+
+    extract_from_queue (&(task->busy_out_links), (char*) link);
+
+    if (task->half_duplex_links)
+    {
+      if (debug&D_LINKS)
+      {
+        PRINT_TIMER (current_time);
+        printf (": P%02d T%02d (t%02d) frees writing memory permissions (IN) to task %d\n",
+                IDENTIFIERS (thread),
+                task->taskid);
+      }
+      inFIFO_queue (&(task->free_in_links), (char *) thread->local_hd_link);
+      extract_from_queue(&(task->busy_in_links), (char*) thread->local_hd_link);
+      first = (struct t_thread *) outFIFO_queue (&(task->th_for_in));
+
+      if (first != TH_NIL)
+      {
+        /* FEC: El primer que faig es acumular el temps que el thread ha estat
+         * bloquejat esperant el link */
+        ACCUMULATE_LINK_WAIT_TIME(first);
+        /***************************************************************/
+
+        if (first->original_thread)
+        {
+          first->last_paraver = current_time;
+        }
+        if (debug&D_LINKS)
+        {
+          PRINT_TIMER (current_time);
+          printf (": free memory writing permissions (IN) to task %d wakes-up P%02d T%02d (t%02d)\n",
+                  task->taskid,
+                  IDENTIFIERS (first));
+        }
+        if (first->action->action==SEND)
+        	really_send (first);
+        else if (first->action->action==MPI_OS)
+          really_RMA (first);
+      }
+    }
+    first = (struct t_thread *) outFIFO_queue (&(task->th_for_out));
+
+    if (first != TH_NIL)
+    {
+      /* FEC: El primer que faig es acumular el temps que el thread ha estat
+       * bloquejat esperant el link */
+      ACCUMULATE_LINK_WAIT_TIME(first);
+      /***************************************************************/
+
+      if (first->original_thread)
+      {
+        first->last_paraver = current_time;
+      }
+      if (debug&D_LINKS)
+      {
+        PRINT_TIMER (current_time);
+        printf (": free memory writing permissions (OUT) to task %d wakes-up P%02d T%02d (t%02d)\n",
+                task->taskid,
+                IDENTIFIERS (first));
+      }
+      if (first->action->action==SEND)
+      	really_send (first);
+      else if (first->action->action==MPI_OS)
+        really_RMA (first);
+
+      return;
+    }
   }
 }

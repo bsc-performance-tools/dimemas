@@ -79,3 +79,8 @@ void DAP_restart_fps(int Ptaskid, int taskid, int threadid);
 
 float DAP_get_progression(int Ptaskid, int taskid, int threadid);
 
+extern t_boolean DATA_ACCES_get_acc_tasks(char *trace_file_location,
+																					int *acc_tasks_count,
+																					int **acc_tasks);
+
+

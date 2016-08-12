@@ -1,4 +1,5 @@
 /* ---------------------------------------------------- Include Files -------*/
+#include <Macros.h>
 #include <CommonMacros.h>
 #include <EventEncoding.h>
 #include <errno.h>
@@ -17,7 +18,7 @@ typedef int Boolean;
 typedef struct
 {
   MPIType    Type;
-  MPIVal     Op;
+  MPI_Event_Values     Op;
   char       *Label;
   DimBlock   Block;
   Boolean    Enabled;
@@ -798,11 +799,11 @@ DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
  **      Description : 
  ******************************************************************************/
 
-void MPIEventEncoding_EnableOperation( MPIVal Op )
+void MPIEventEncoding_EnableOperation( MPI_Event_Values Op )
 {
   ASSERT( Op < NUM_MPICALLS );
   
-  /* Si no es igual, es que en el typedef enum { ... }MPIVal; del fitxer
+  /* Si no es igual, es que en el typedef enum { ... }MPI_Event_Values; del fitxer
      MPI_EventEncoding.h s'han mogut operacions MPI de lloc i per tant,
      cal reordenar la MPI_Table amb els mateixos canvis. */
   ASSERT( MPI_Table[ Op ].Op == Op );
@@ -816,11 +817,11 @@ void MPIEventEncoding_EnableOperation( MPIVal Op )
  **      Description : 
  ******************************************************************************/
 
-DimBlock MPIEventEncoding_DimemasBlockId( MPIVal Op )
+DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op )
 {
   ASSERT( Op < NUM_MPICALLS );
   
-  /* Si no es igual, es que en el typedef enum { ... }MPIVal; del fitxer
+  /* Si no es igual, es que en el typedef enum { ... }MPI_Event_Values; del fitxer
      MPI_EventEncoding.h s'han mogut operacions MPI de lloc i per tant,
      cal reordenar la MPI_Table amb els mateixos canvis. */
   ASSERT( MPI_Table[ Op ].Op == Op );
@@ -933,7 +934,8 @@ long64_t MPIEventEncoding_UserBlockId( long64_t Type, long64_t Value )
   if (Type == (long64_t) USER_BLOCK)    return( Value + BASE_USERBLOCK );
   if (Type == (long64_t) CLUSTER_ID_EV) return ( Value + BASE_CLUSTER_BLOCK );
 
-  ERROR( "MPIEventEncoding_BlockId: Invalid Type" );
+  assert("MPIEventEncoding_BlockId: Invalid Type");
+  //ERROR( "MPIEventEncoding_BlockId: Invalid Type" );
 }
 
 /******************************************************************************
@@ -1070,7 +1072,7 @@ void MPIEventEncoding_WriteEnabledOperations( FILE *fd )
  **      Description : 
  ******************************************************************************/
 
-char* MPIEventEncoding_GetBlockLabel(MPIVal Op)
+char* MPIEventEncoding_GetBlockLabel(MPI_Event_Values Op)
 {
   ASSERT (Op < NUM_MPICALLS);
   
@@ -1109,6 +1111,272 @@ DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value)
 {
   // return( (DimBlock) (value + BASE_USERBLOCK) );
   return ( (DimBlock) (value + BASE_CLUSTER_BLOCK) );
+}
+
+/* ---------------------------------------------------- Data Types ----------*/
+typedef struct
+{
+  int  			Type;
+  char     *Label;
+
+} CUDATypeInfo;
+
+/******************************************************************************
+ **      Function name : CUDAEventEncoding_Is_CUDABlock
+ **
+ **      Description :
+ ******************************************************************************/
+Boolean CUDAEventEncoding_Is_CUDABlock ( long64_t type )
+{
+	return( (type == (long64_t) CUDA_LIB_CALL_EV) ? TRUE: FALSE);
+}
+
+/******************************************************************************
+ **      Function name : CUDAEventEncoding_Is_BlockBegin
+ **
+ **      Description :
+ ******************************************************************************/
+Boolean CUDAEventEncoding_Is_BlockBegin ( long64_t Op )
+{
+  return( (Op == (long64_t) CUDA_END_VAL) ? FALSE : TRUE );
+}
+
+/******************************************************************************
+ **      Function name : CUDAEventEncoding_Is_CUDAComm
+ **
+ **      Description : Returns true if it's a CUDA communication
+ ******************************************************************************/
+
+Boolean CUDAEventEncoding_Is_CUDAComm	 (long64_t tag)
+{
+	if (tag == CUDA_TAG) return TRUE;
+	return FALSE;
+}
+
+/******************************************************************************
+ **      Function name : CUDAEventEconding_Is_CUDAConfigCall
+ **
+ **      Description : Returns true if it's a Cuda_MemCpy event
+ ******************************************************************************/
+Boolean CUDAEventEncoding_Is_CUDATransferBlock (struct t_event_block event)
+{
+	if (event.type == CUDA_LIB_CALL_EV && event.value == CUDA_MEMCPY_VAL)
+		return TRUE;
+	return FALSE;
+}
+
+/******************************************************************************
+ **      Function name : CUDAEventEconding_Is_CUDAConfigCall
+ **
+ **      Description : Returns true if it's a CudaConfigCall event
+ ******************************************************************************/
+Boolean CUDAEventEconding_Is_CUDAConfigCall(struct t_event_block event)
+{
+	if (event.type == CUDA_LIB_CALL_EV && event.value == CUDA_CONFIGURECALL_VAL)
+		return TRUE;
+	return FALSE;
+}
+
+/******************************************************************************
+ **      Function name : CUDAEventEconding_Is_CUDALaunch
+ **
+ **      Description : Returns true if it's a CudaLaunch event
+ ******************************************************************************/
+Boolean CUDAEventEconding_Is_CUDALaunch(struct t_event_block event)
+{
+	if (event.type == CUDA_LIB_CALL_EV && event.value == CUDA_LAUNCH_VAL)
+		return TRUE;
+	return FALSE;
+}
+
+/******************************************************************************
+ **      Function name : CUDAEventEconding_Is_CUDASync
+ **
+ **      Description : Returns true if it's a CudaThreadSync or CudaStreamSync
+ ******************************************************************************/
+Boolean CUDAEventEconding_Is_CUDASync(struct t_event_block event)
+{
+	if (event.type == CUDA_LIB_CALL_EV &&
+			(event.value == CUDA_THREADSYNCHRONIZE_VAL ||
+			 event.value == CUDA_STREAMSYNCHRONIZE_VAL))
+		return TRUE;
+	return FALSE;
+}
+
+/* ---------------------------------------------------- Global Variables ----*/
+#define NUM_OCLTYPES  2
+CUDATypeInfo OCLType_Table[ NUM_OCLTYPES ] = {
+
+  { OCL_HOST_CALL_EV,  				OCL_HOST_CALL_LABEL },
+  { OCL_ACCELERATOR_CALL_EV,	OCL_ACCELERATOR_CALL_LABEL }/*,
+  { OCL_KERNEL_NAME_EV,  			OCL_KERNEL_NAME_LABEL }*/
+	/*{ OCL_SYNCH_STREAM_EV,			OCL_SYNCH_STREAM_LABEL }*/
+};
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_OCLBlock
+ **
+ **      Description : Returns true if is an OCL event
+ ******************************************************************************/
+
+Boolean OCLEventEncoding_Is_OCLBlock ( long64_t type )
+{
+	int i;
+	for (i= 0; i< NUM_OCLTYPES; i++)
+	{
+		if (type == (long64_t) OCLType_Table[ i ].Type)
+			return( TRUE );
+	}
+
+	return( FALSE );
+}
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_BlockBegin
+ **
+ **      Description : Returns true if OCL event is a block begin
+ ******************************************************************************/
+Boolean OCLEventEncoding_Is_BlockBegin ( long64_t Op )
+{
+  return( (Op == (long64_t) OCL_OUTSIDE_VAL) ? FALSE : TRUE );
+}
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_OCLComm
+ **
+ **      Description : Returns true if it's a OCL communication
+ ******************************************************************************/
+Boolean OCLEventEncoding_Is_OCLComm	 (long64_t tag)
+{
+	if (tag == OCL_TAG) return TRUE;
+	return FALSE;
+}
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_OCLSchedBlock
+ **
+ **      Description : Returns true if it's a OCL event that generates
+ **      							 a Sched & Fork/Join CPU state.
+ ******************************************************************************/
+Boolean OCLEventEncoding_Is_OCLSchedBlock (struct t_event_block event)
+{
+	if (event.type == OCL_KERNEL_NAME_EV) return TRUE;
+	if (event.type != OCL_HOST_CALL_EV) return FALSE;
+
+	switch (event.value)
+	{
+		case OCL_CREATE_BUFF_VAL:
+		case OCL_CREATE_COMMAND_QUEUE_VAL:
+		case OCL_CREATE_CONTEXT_VAL:
+		case OCL_CREATE_CONTEXT_FROM_TYPE_VAL:
+		case OCL_CREATE_KERNELS_IN_PROGRAM_VAL:
+		case OCL_CREATE_KERNEL_VAL:
+		case OCL_SET_KERNEL_ARGS_VAL:
+		case OCL_CREATE_PROGRAM_WITH_BINARY_VAL:
+		case OCL_CREATE_PROGRAM_WITH_BUILTIN_KERNELS_VAL:
+		case OCL_CREATE_PROGRAM_WITH_SOURCE_VAL:
+		case OCL_CREATE_SUBBUFFER_VAL:
+		case OCL_BUILD_PROGRAM_VAL:
+		case OCL_RELEASE_COMMAND_QUEUE_VAL:
+		case OCL_RELEASE_CONTEXT_VAL:
+		case OCL_RELEASE_DEVICE_VAL:
+		case OCL_RELEASE_EVENT_VAL:
+		case OCL_RELEASE_KERNEL_VAL:
+		case OCL_RELEASE_MEM_OBJ_VAL:
+		case OCL_RELEASE_PROGRAM_VAL:
+		case OCL_ENQUEUE_NDRANGE_KERNEL_VAL:
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_OCLSchedBlock
+ **
+ **      Description : Returns true if it's a OCL event that generates
+ **      							 a Sched & Fork/Join CPU state.
+ ******************************************************************************/
+Boolean OCLEventEncoding_Is_OCLSchedblock (long64_t type, long64_t value)
+{
+	if (type != OCL_HOST_CALL_EV) return FALSE;
+
+	switch (value)
+	{
+		case OCL_CREATE_BUFF_VAL:
+		case OCL_CREATE_COMMAND_QUEUE_VAL:
+		case OCL_CREATE_CONTEXT_VAL:
+		case OCL_CREATE_CONTEXT_FROM_TYPE_VAL:
+		case OCL_CREATE_KERNELS_IN_PROGRAM_VAL:
+		case OCL_CREATE_KERNEL_VAL:
+		case OCL_SET_KERNEL_ARGS_VAL:
+		case OCL_CREATE_PROGRAM_WITH_BINARY_VAL:
+		case OCL_CREATE_PROGRAM_WITH_BUILTIN_KERNELS_VAL:
+		case OCL_CREATE_PROGRAM_WITH_SOURCE_VAL:
+		case OCL_CREATE_SUBBUFFER_VAL:
+		case OCL_BUILD_PROGRAM_VAL:
+		case OCL_RELEASE_COMMAND_QUEUE_VAL:
+		case OCL_RELEASE_CONTEXT_VAL:
+		case OCL_RELEASE_DEVICE_VAL:
+		case OCL_RELEASE_EVENT_VAL:
+		case OCL_RELEASE_KERNEL_VAL:
+		case OCL_RELEASE_MEM_OBJ_VAL:
+		case OCL_RELEASE_PROGRAM_VAL:
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_OCLTransferBlock
+ **
+ **      Description : Returns true if it's a OCL memory transfer event
+ ******************************************************************************/
+Boolean OCLEventEncoding_Is_OCLTransferBlock (struct t_event_block event)
+{
+	if (event.type != OCL_HOST_CALL_EV && event.type != OCL_ACCELERATOR_CALL_EV)
+		return FALSE;
+
+	switch (event.value)
+	{
+		case OCL_ENQUEUE_WRITE_BUFF_RECT_VAL:
+		case OCL_ENQUEUE_WRITE_BUFF_VAL:
+		case OCL_ENQUEUE_READ_BUFF_RECT_VAL:
+		case OCL_ENQUEUE_READ_BUFF_VAL:
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_OCLFinishBlock
+ **
+ **      Description : Returns true if it's a OCL synchronization event
+ ******************************************************************************/
+Boolean OCLEventEncoding_Is_OCLSyncBlock (struct t_event_block event)
+{
+	if (event.type == OCL_HOST_CALL_EV || event.type == OCL_ACCELERATOR_CALL_EV)
+	{
+		if (event.value == OCL_FINISH_VAL)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/******************************************************************************
+ **      Function name : OCLEventEncoding_Is_OCLKernelRunning
+ **
+ **      Description : Returns true if it's a OCL Kernel burst event
+ ******************************************************************************/
+Boolean OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event)
+{
+	if (event.type  == OCL_ACCELERATOR_CALL_EV &&
+			event.value == OCL_ENQUEUE_NDRANGE_KERNEL_ACC_VAL)
+		return TRUE;
+
+	return FALSE;
 }
 
 

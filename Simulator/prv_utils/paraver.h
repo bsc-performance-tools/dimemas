@@ -61,7 +61,7 @@ extern "C" {
 /* #define PA_STATE_WAIT_LINK  9  */
 /* #define PA_STATE_IO         11 */
 /* #define PA_BUSY_WAIT        12 */
-/* #define PA_GLOBAL_OP_SYNC   13 */ /* NO SE USA EN TODO EL CÓDIGO */
+/* #define PA_GLOBAL_OP_SYNC   13 */ /* NO SE USA EN TO'DO EL CÓDIGO */
 /* #define PA_GLOBAL_OP_PERF   14 */ /* "                         " */
 /* #define PA_STATE_BLOCK_IO   15 */
 /* #define PA_STATE_BLOCK_OS   16 */ /* NO LISTADA EN EL PCF.         *
@@ -225,11 +225,25 @@ extern void PARAVER_Event (int cpu, int ptask, int task, int thread,
                            unsigned long long type,
                            unsigned long long value);
 
-extern void PARAVER_Multievent (int cpu, int ptask, int task, int thread,
-                                dimemas_timer       time,
-                                unsigned int        event_count,
-                                unsigned long long *types,
-                                unsigned long long *values);
+extern void PARAVER_Not_Created (int cpu, int ptask, int task, int thread,
+																 dimemas_timer init_time,
+																 dimemas_timer end_time);
+
+extern void PARAVER_Mem_Transf (int cpu, int ptask, int task, int thread,
+																 dimemas_timer init_time,
+																 dimemas_timer end_time);
+
+extern void PARAVER_Others (int cpu, int ptask, int task, int thread,
+														dimemas_timer init_time,
+														dimemas_timer end_time);
+
+extern void PARAVER_Thread_Sched (int cpu, int ptask, int task, int thread,
+																  dimemas_timer init_time,
+																  dimemas_timer end_time);
+
+extern void PARAVER_Thread_Sync (int cpu, int ptask, int task, int thread,
+																 dimemas_timer init_time,
+																 dimemas_timer end_time);
 
 #ifdef __cplusplus
 }

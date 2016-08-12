@@ -524,6 +524,7 @@ void calculate_execution_end_time()
   struct t_thread  *thread;
   struct t_account *account;
   size_t            i;
+  size_t			j;
 
   for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
        Ptask != P_NIL;
@@ -541,13 +542,12 @@ void calculate_execution_end_time()
       task = &(Ptask->tasks[i]);
       // thread = (struct t_thread *) head_queue (&(task->threads));
 
-
       // Thread 0 always exists */
-      thread = task->threads[0];
-      // thread = (struct t_thread *) head_queue (&(task->threads));
-
-      account = current_account (thread);
-      MAX_TIMER (account->final_time, execution_end_time, execution_end_time);
+      for (j = 0; j < task->threads_count; j++) {
+				thread = task->threads[j];
+				account = current_account (thread);
+				MAX_TIMER (account->final_time, execution_end_time, execution_end_time);
+      }
     }
   }
 
@@ -1084,6 +1084,44 @@ void READ_get_next_action(struct t_thread *thread)
     // inLIFO_queue (&(thread->modules), (char *)mod);
     */
   }
+
+  if (new_action->action == GPU_BURST)
+	{
+		//Vladimir added to multiply with the relative cpu speed
+		struct t_node *node;
+
+		// JGG: NOW, time is ALWAYS in NANOSECONDS!!
+		new_action->desc.compute.cpu_time *= 1e9;
+
+		/*
+		 * JGG (2014/03/10): First apply the module transformations
+		 * (balancing/factor), and then the node factor
+		 */
+
+		//recompute_work_upon_modules(thread, new_action);
+
+		node = get_node_of_thread(thread);
+
+		if (node->acc_relative == 0)
+		{
+			new_action->desc.compute.cpu_time = 0;
+		}
+		else if (node->acc_relative < 0)
+		{
+			double burst = node->acc_relative;
+			burst *= -1;
+			new_action->desc.compute.cpu_time = burst;
+		}
+		else
+		{
+			new_action->desc.compute.cpu_time /= node->relative;
+		}
+
+		if (PREEMP_enabled)
+		{
+			new_action->desc.compute.cpu_time += PREEMP_overhead(thread->task);
+		}
+	}
 
   assert(thread->action == NULL);
   thread->action = new_action;

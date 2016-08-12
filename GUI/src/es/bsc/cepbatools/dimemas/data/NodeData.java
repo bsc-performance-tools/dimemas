@@ -179,6 +179,8 @@ public class NodeData
       node[nodeId].setIntraNodeBuses(Tools.blanks(nodeFields[3])); // Same intra-node buses as processors
       node[nodeId].setIntraNodeInLinks("1");
       node[nodeId].setIntraNodeOutLinks("0");
+      
+      node[nodeId].setAcc(false);
     }
     
     lastNodeIdAssigned++;
@@ -318,6 +320,8 @@ public class NodeData
         node[lastNodeIdAssigned].setInterNodeOutLinks(Tools.blanks(nodeFields[12]));
         node[lastNodeIdAssigned].setWANStartup(Tools.blanks(nodeFields[13]));
         
+        node[lastNodeIdAssigned].setAcc(false);
+        
         lastNodeIdAssigned++;
       }
     }
@@ -327,6 +331,53 @@ public class NodeData
       return false;
     }
     
+    return true;
+  }
+  
+  public boolean loadAccNodeData(String line, boolean oldFile, int lineCount) throws Exception
+  {
+    int nodeId;
+    
+    Pattern pattern = Pattern.compile("\"accelerator node information\" \\{(.*)\\};;$");
+    Matcher matcher = pattern.matcher(line);
+
+    if (!matcher.matches())
+    {
+      Tools.showErrorDialog("Wrong accelerator node information record");
+      return false;
+    }
+
+    String   fields = matcher.group(1);
+    String[] accNodeFields = fields.split(",");
+    
+    if (accNodeFields.length != Node.ACC_NODE_RECORD_FIELD_COUNT)
+    {
+      Tools.showErrorDialog("Wrong number of fields of accelerator node information record (line "+lineCount+").\nTry to update the CFG file");
+      return false;
+    }
+
+    try
+	{
+	  nodeId = Integer.parseInt(Tools.blanks(accNodeFields[0]));
+	  if (nodeId >= node.length)
+	  {
+	    Tools.showErrorDialog("The accelerator node does not exist");
+	    return false;
+	  }
+    
+      node[nodeId].setAcc(true);
+      node[nodeId].setAccStartup(Tools.blanks(accNodeFields[1]));
+      node[nodeId].setAccMemStartup(Tools.blanks(accNodeFields[2]));
+      node[nodeId].setAccBandwidth(Tools.blanks(accNodeFields[3]));
+      node[nodeId].setAccBuses(Tools.blanks(accNodeFields[4]));
+      node[nodeId].setAccRatio(Tools.blanks(accNodeFields[5]));
+      
+    } catch(NumberFormatException e)
+    {
+    	Tools.showErrorDialog("Wrong accelerator node information record (line "+lineCount+")");
+    	return false;
+    }
+
     return true;
   }
 
@@ -403,6 +454,21 @@ public class NodeData
       target.writeBytes(node[previousNode].getInterNodeOutLinks() + ", ");
       target.writeBytes(node[previousNode].getWANStartup() + "};;\n");
     }
+    
+    /* The accelerator node information (if defined) is printed
+     * after node information, for each node
+     */
+    currentNode  = 0;
+    target.writeBytes("\n");
+    while (currentNode < node.length)
+    {
+    	if (node[currentNode].getAcc())
+    	{
+    		node[currentNode].saveAccData(target);
+    	}
+    	currentNode++;
+    }
+    
   }
   
   // Método que permite acceder al número de nodos fuera de la clase.
@@ -613,7 +679,14 @@ public class NodeData
           aux[i].setInterNodeInLinks(node[l].getInterNodeInLinks());
           aux[i].setInterNodeOutLinks(node[l].getInterNodeOutLinks());
           aux[i].setWANStartup(node[l].getWANStartup());
-
+          
+          aux[i].setAcc(node[l].getAcc());
+          aux[i].setAccStartup(node[l].getAccStartup());
+          aux[i].setAccMemStartup(node[l].getAccMemStartup());
+          aux[i].setAccBandwidth(node[l].getAccBandwidth());
+          aux[i].setAccBuses(node[l].getAccBuses());
+          aux[i].setAccRatio(node[l].getAccRatio());
+          
           l++;
         }
         else // Nodo de máquina nuevo.
@@ -655,6 +728,14 @@ public class NodeData
           aux[l].setInterNodeInLinks(node[i].getInterNodeInLinks());
           aux[l].setInterNodeOutLinks(node[i].getInterNodeOutLinks());
           aux[l].setWANStartup(node[i].getWANStartup());
+          
+          aux[l].setAcc(node[i].getAcc());
+          aux[l].setAccStartup(node[i].getAccStartup());
+          aux[l].setAccMemStartup(node[i].getAccMemStartup());
+          aux[l].setAccBandwidth(node[i].getAccBandwidth());
+          aux[l].setAccBuses(node[i].getAccBuses());
+          aux[l].setAccRatio(node[i].getAccRatio());
+          
           l++;
         }
       }

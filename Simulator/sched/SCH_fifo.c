@@ -73,7 +73,7 @@ t_nano FIFO_get_execution_time (struct t_thread *thread)
   t_nano           ex_time;
 
   action = thread->action;
-  if (action->action != WORK)
+  if (action->action != WORK && action->action != GPU_BURST)
   {
     printf ("Must be work for P%02d T%02d t%02d but it was %d\n",
             IDENTIFIERS (thread),

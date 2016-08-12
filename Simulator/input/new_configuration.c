@@ -82,6 +82,7 @@ t_boolean parse_conf_files      (char* current_record);
 t_boolean parse_mod_info        (char* current_record);
 t_boolean parse_fs_params       (char* current_record);
 t_boolean parse_d_conn          (char* current_record);
+t_boolean parse_acc_nodes				(char *record_fields);
 
 t_boolean NEW_CONFIGURATION_load_mapping(char* tracefile,
                                          int*  tasks_mapping,
@@ -223,6 +224,7 @@ static const char CONF_FILES_TEXT[] = "\"configuration files\" {%[^}]};;\n";
 static const char MOD_INFO_TEXT[]   = "\"modules information\" {%[^}]};;\n";
 static const char FS_PARAMS_TEXT[]  = "\"file system parameters\" {%[^}]};;\n";
 static const char D_CONN_TEXT[]     = "\"dedicated connection information\" {%[^}]};;\n";
+static const char ACC_NODES_TEXT[]  = "\"accelerator node information\" {%[^}]};;\n";
 
 t_boolean parse_record(char* current_record)
 {
@@ -267,6 +269,10 @@ t_boolean parse_record(char* current_record)
   else if (sscanf(current_record, D_CONN_TEXT, record_fields) == 1)
   {
     return parse_d_conn(record_fields);
+  }
+  else if (sscanf(current_record, ACC_NODES_TEXT, record_fields) == 1)
+  {
+  	return parse_acc_nodes(record_fields);
   }
 
   generate_error(&error_message,
@@ -1295,6 +1301,44 @@ t_boolean parse_d_conn (char* record_fields)
     return FALSE;
   }
 
+  return TRUE;
+}
+
+
+/*
+"accelerator node information" {
+  int  		"node ID"
+  double  "latency time (s) of intra-node communications model"
+  double  "memory_latency time (s) of intra-node communication model"
+  double  "bandwidth (MBps) of intra-node communications model"
+      		"0 means instantaneous communication"
+  int			"num of accelerator buses"
+  "if no accelerator nodes info and CUDA/OpenCL records -> error"
+  double  "accelerator speed ratio wrt. original execution (divisive factor)"
+          "0 means instantaneous | negative value means fixed duration in s."
+};;
+*/
+t_boolean parse_acc_nodes(char *record_fields)
+{
+	int 		matches, node_id, i, num_acc_buses;
+	double	bandwith, latency, memory_latency, relative;
+
+  if (sscanf(record_fields, "%d, %lf, %lf, %lf, %d, %lf",
+  		&node_id, &latency, &memory_latency, &bandwith, &num_acc_buses, &relative) == 6)
+  {
+  	latency = latency *1e9;
+  	memory_latency = memory_latency * 1e9;
+  	SIMULATOR_set_acc_nodes(node_id, latency, memory_latency, bandwith, num_acc_buses, relative);
+  	//printf("%lf, %lf, %lf, %d", latency, memory_latency, bandwith, num_acc_buses);
+  }
+  else
+	{
+		generate_error(&error_message,
+									 "Wrong accelerator nodes information record field count at line %d",
+									 current_line);
+
+		return FALSE;
+	}
   return TRUE;
 }
 

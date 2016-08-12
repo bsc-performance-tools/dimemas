@@ -544,7 +544,7 @@ struct t_thread * get_thread_by_task_id(int taskid)
     for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
       struct t_task * task = &(Ptask->tasks[tasks_it]);
-      assert(task->threads_count == 1);
+      //assert(task->threads_count == 1);
 
       if (task->taskid == taskid)
         return task->threads[0];

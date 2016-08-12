@@ -51,6 +51,7 @@ class TaskTranslationInfo: public Error
 {
   private:
     INT32                   TaskId;
+    INT32                   ThreadId;
     double                  TimeFactor;  /* To adjust CPU Burst values */
     vector<ParaverRecord_t> RecordStack;
     vector<Block_t>         MPIBlockIdStack;
@@ -58,7 +59,18 @@ class TaskTranslationInfo: public Error
     vector<Block_t>         ClusterBlockIdStack;
     UINT64                  LastBlockEnd;
 
-    /* MPIVal type is defined in 'EventEncoding.h', on common-files */
+    /* For CUDA / OpenCL version */
+    UINT64									LastGPUBurstBlock;
+    bool                    FirstCUDARead;
+    bool										FirstOCLRead;
+    bool                    OngoingDeviceSync;
+    INT32                   StreamIdToSync;
+    INT32										AcceleratorThread;
+    vector<Block_t>         CUDABlockIdStack;
+    vector<Block_t>					OCLBlockIdStack;
+    bool										OCLFinishComm;
+
+    /* MPI_Event_Values type is defined in 'EventEncoding.h', on common-files */
     GlobalOp_t              PartialGlobalOp;
     INT32                   GlobalOpFields;
     bool                    PendingGlobalOp;
@@ -93,11 +105,12 @@ class TaskTranslationInfo: public Error
     bool  FirstPrint;
 
     /* Needed to access counters from others TaskTranslators */
-    vector<TaskTranslationInfo*> * AllTranslationInfo;
+    vector<vector<TaskTranslationInfo*> > * AllTranslationInfo;
 
 
   public:
     TaskTranslationInfo(INT32   TaskId,
+                        INT32   ThreadId,
                         double  TimeFactor,
                         UINT64  InitialTime,
                         bool    GenerateFirstIdle,
@@ -108,7 +121,8 @@ class TaskTranslationInfo: public Error
                         double  BurstCounterFactor,
                         bool    GenerateMPIInitBarrier,
                         bool    PreviouslySimulatedTrace,
-                        vector<TaskTranslationInfo*> * AllTranslationInfo,
+                        vector<vector<TaskTranslationInfo*> > * AllTranslationInfo,
+												INT32		AcceleratorThread,
                         char*   TemporaryFileName = NULL,
                         FILE*   TemporaryFile = NULL);
 
@@ -161,7 +175,7 @@ class TaskTranslationInfo: public Error
     bool CheckIprobeCounters(Event_t CurrentEvent);
     bool GenerateBurst(INT32 TaskId, INT32 ThreadId, UINT64 Timestamp);
 
-    bool PrintPseudoCommunicationEndpoint(INT32 CommType,
+		bool PrintPseudoCommunicationEndpoint(INT32 CommType,
                                           INT32 TaskId,
                                           INT32 ThreadId,
                                           INT32 PartnerTaskId,
@@ -169,6 +183,11 @@ class TaskTranslationInfo: public Error
                                           INT32 Size,
                                           INT32 Tag,
                                           INT32 CommId);
+
+    bool GenerateGPUBurst(INT32 TaskId,
+    											INT32 ThreadId,
+													UINT64 Timestamp,
+													UINT64 LastBlock);
 
     void PrintStack(void);
 };

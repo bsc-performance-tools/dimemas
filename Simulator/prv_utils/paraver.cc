@@ -490,7 +490,7 @@ void PARAVER_Startup (int cpu, int ptask, int task, int thread,
   NewState(cpu, ptask, task, thread,
            init_time,
            end_time,
-           PRV_STARTUP_ST);
+           PRV_STARTUP_LAT_ST);
 }
 
 void PARAVER_Wait (int cpu, int ptask, int task, int thread,
@@ -537,7 +537,7 @@ void PARAVER_Busy_Wait (int cpu, int ptask, int task, int thread,
   NewState(cpu, ptask, task, thread,
            init_time,
            end_time,
-           PRV_BLOCKED_ST);
+           PRV_BLOCKING_SEND_ST);
 }
 
 void PARAVER_Waiting_Links (int cpu, int ptask, int task, int thread,
@@ -559,7 +559,7 @@ void PARAVER_Waiting_Links (int cpu, int ptask, int task, int thread,
   NewState(cpu, ptask, task, thread,
            init_time,
            end_time,
-           PRV_WAIT_LINKS_ST);
+           PRV_WAITING_LNKS_ST);
 }
 
 /* TODO: This operation prints TEST/PROBE state... */
@@ -695,7 +695,7 @@ void PARAVER_OS_Blocked (int cpu, int ptask, int task, int thread,
   NewState(cpu, ptask, task, thread,
            init_time,
            end_time,
-           PRV_BLOCKED_ST);
+					 PRV_BLOCKING_SEND_ST);
 }
 
 void PARAVER_Dead (int cpu, int ptask, int task, int thread,
@@ -887,63 +887,119 @@ void PARAVER_Event (int cpu, int ptask, int task, int thread,
            value);
 }
 
-void PARAVER_Multievent (int cpu, int ptask, int task, int thread,
-                         dimemas_timer       time,
-                         unsigned int        event_count,
-                         unsigned long long *types,
-                         unsigned long long *values)
+void PARAVER_Not_Created (int cpu, int ptask, int task, int thread,
+													dimemas_timer init_time,
+													dimemas_timer end_time)
 {
-  prv_time_t time_prv;
-  int i;
-
   VERIFICA_GENERACIO_PARAVER;
 
-  if (paraver_final_timer)
-  {
-    if (GT_TIMER (time, stop_paraver))
-    {
-      return;
-    }
-  }
-
-  if (paraver_initial_timer)
-  {
-    if (GT_TIMER (start_paraver, time))
-    {
-      return;
-    }
-
-    SUB_TIMER (time, start_paraver, time);
-  }
-
-  TIMER_TO_PRV_TIME_T (time, time_prv);
-
-  /* fprintf (paraver, PA_EVENT_STRING, cpu, ptask, task, thread,
-           temps_final, tipus_final, valor_final); */
+  if EQ_TIMER (init_time, end_time)
+    return;
 
   if (debug&D_PRV)
   {
     PRINT_TIMER (current_time);
-    printf (": Paraver Multievent Printed\n\tOBJECT   CPU %d P%02d T%02d (t%02d)\n",
-           cpu, ptask, task, thread);
-
+    printf (": Paraver Not Created Printed\n\tOBJECT   "\
+    				"CPU %d P%02d T%02d (t%02d)\n",
+            cpu, ptask, task, thread);
   }
 
-  for (i = 0; i < event_count; i++)
-  {
-    NewEvent(cpu, ptask, task, thread,
-             time_prv,
-             types[i],
-             values[i]);
+  NewState(cpu, ptask, task, thread,
+           init_time,
+           end_time,
+           PRV_NOT_CREATED_ST);
+}
 
-    if (debug&D_PRV)
-    {
-      printf("\tTime: %llu Final Type: %llu Final Value: %llu\n",
-             time_prv,
-             types[i],
-             values[i]);
-    }
-  }
+void PARAVER_Mem_Transf (int cpu, int ptask, int task, int thread,
+																 dimemas_timer init_time,
+																 dimemas_timer end_time)
+{
+	 VERIFICA_GENERACIO_PARAVER;
+
+	if EQ_TIMER (init_time, end_time)
+		return;
+
+	if (debug&D_PRV)
+	{
+		PRINT_TIMER (current_time);
+		printf (": Paraver Memory Transfer Printed\n\tOBJECT   "\
+						"CPU %d P%02d T%02d (t%02d)\n",
+						cpu, ptask, task, thread);
+	}
+
+	NewState(cpu, ptask, task, thread,
+					 init_time,
+					 end_time,
+					 PRV_MEMORY_TRNSF_ST);
+}
+
+void PARAVER_Others (int cpu, int ptask, int task, int thread,
+														dimemas_timer init_time,
+														dimemas_timer end_time)
+{
+	VERIFICA_GENERACIO_PARAVER;
+
+	if EQ_TIMER (init_time, end_time)
+		return;
+
+	if (debug&D_PRV)
+	{
+		PRINT_TIMER (current_time);
+		printf (": Paraver Others Printed\n\tOBJECT   "\
+						"CPU %d P%02d T%02d (t%02d)\n",
+						cpu, ptask, task, thread);
+	}
+
+	NewState(cpu, ptask, task, thread,
+					 init_time,
+					 end_time,
+					 PRV_OTHERS_ST);
+}
+
+void PARAVER_Thread_Sched (int cpu, int ptask, int task, int thread,
+									 	dimemas_timer init_time,
+									  dimemas_timer end_time)
+{
+	VERIFICA_GENERACIO_PARAVER;
+
+	if EQ_TIMER (init_time, end_time)
+		return;
+
+	if (debug&D_PRV)
+	{
+		PRINT_TIMER (current_time);
+		printf (": Paraver Thread Scheduling and Fork Join Printed\n\tOBJECT   "\
+						"CPU %d P%02d T%02d (t%02d)\n",
+						cpu, ptask, task, thread);
+	}
+
+	NewState(cpu, ptask, task, thread,
+					 init_time,
+					 end_time,
+					 PRV_THREAD_SCHED_ST);
+}
+
+void PARAVER_Thread_Sync (int cpu, int ptask, int task, int thread,
+									 				dimemas_timer init_time,
+													dimemas_timer end_time)
+{
+	VERIFICA_GENERACIO_PARAVER;
+
+	if EQ_TIMER (init_time, end_time)
+		return;
+
+	if (debug&D_PRV)
+	{
+		PRINT_TIMER (current_time);
+		printf (": Paraver Thread Synchronization Printed\n\tOBJECT   "\
+						"CPU %d P%02d T%02d (t%02d)\n",
+						cpu, ptask, task, thread);
+	}
+
+	NewState(cpu, ptask, task, thread,
+					 init_time,
+					 end_time,
+					 PRV_SYNC_ST);
 }
 
 /*****************************************************************************

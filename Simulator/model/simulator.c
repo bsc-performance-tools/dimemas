@@ -210,7 +210,7 @@ void SIMULATOR_Init(char  *simulator_configuration_filename,
       break;
 
     default:
-      die("Unknown configuration file tpye %s\n", simulator_configuration_filename);
+      die("Unknown configuration file type %s\n", simulator_configuration_filename);
       break;
   }
 
@@ -983,6 +983,44 @@ void SIMULATOR_check_correct_definitions(void)
   // return TRUE;
 }
 
+void SIMULATOR_set_acc_nodes(int node_id,
+														 double latency,
+														 double memory_latency,
+														 double bandwith,
+														 int num_acc_buses,
+														 double relative) {
+	if (!SIMULATOR_node_exists(node_id))
+	{
+		die("Wrong accelerator node id %d, does no exist. Check your configuration file\n", node_id);
+	}
+	if (latency < 0.0)
+	{
+		die("invalid latency value (%lf) in accelerator node (%d)", latency, node_id);
+	}
+	if (memory_latency < 0.0)
+	{
+		die("invalid memory latency value (%lf) in accelerator node (%d)", latency, node_id);
+	}
+	if (bandwith < 0.0)
+	{
+		die("invalid bandiwth (%lf) in accelerator node (%d)", bandwith, node_id);
+	}
+
+	if (num_acc_buses < 0)
+	{
+		die("invalid number of accelerator buses (%d) in accelerator node (%d)",
+				num_acc_buses, node_id);
+	}
+
+	if (relative < 0)
+	{
+		die("invalid speed ratio value (%lf) in accelerator node (%d)",
+				relative, num_acc_buses);
+	}
+
+	NODE_set_acc(node_id, latency, memory_latency, bandwith, num_acc_buses, relative);
+}
+
 char* SIMULATOR_get_last_error(void)
 {
   return SIMULATOR_error_message;
@@ -1195,7 +1233,7 @@ void SIMULATOR_reset_state()
       struct t_task * task = &(Ptask->tasks[tasks_it]);
 
       move_queue_elements(&task->busy_in_links, &task->free_in_links);
-      move_queue_elements(&task->busy_out_links, &task->free_out_links);
+      move_queue_elements(&task->busy_out_links, &task->busy_out_links);
 
       remove_queue_elements(&task->th_for_in);
       remove_queue_elements(&task->th_for_out);
@@ -1208,7 +1246,7 @@ void SIMULATOR_reset_state()
       remove_queue_elements(&task->irecvs_executed);
       remove_queue_elements(&task->semaphores); // ??
 
-      task->current_wait = T_NIL;
+      task->current_wait = TH_NIL;
 
       int th_id;
       for (th_id = 0; th_id < task->threads_count; ++th_id)
@@ -1243,7 +1281,7 @@ void SIMULATOR_reset_state()
         if (thread->original_thread && thread->twin_thread != TH_NIL)
         {
           free(thread->twin_thread);
-          thread->twin_thread = T_NIL;
+          thread->twin_thread = TH_NIL;
         }
 
         thread->last_paraver = 0;

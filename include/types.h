@@ -69,6 +69,7 @@ typedef int     t_boolean;
 typedef double  t_priority; /* priority for queue elements */
 typedef int     t_count;    /* number of elements in queue */
 
+typedef double  t_bandwidth;
 typedef double  t_nano;
 
 typedef int modules_map;    /* see 'modules_map.h' */
@@ -659,6 +660,12 @@ struct t_fh_commid
   int counter;
 };
 
+struct t_event_block
+{
+  unsigned long int	 type;
+  unsigned long int	 value;
+  dimemas_timer			 paraver_time;
+};
 
 struct t_Ptask
 {
@@ -694,6 +701,8 @@ struct t_Ptask
   struct t_queue      Filesd;
   struct t_queue      UserEventsInfo; /* Cua amb les informacions dels possibles
                                        * events d'usuari */
+  int									*acc_tasks;			/* Extra info for accelerator mapping */
+  int									 acc_tasks_count;
 };
 
 struct t_task
@@ -751,7 +760,6 @@ struct t_task
   t_boolean         infinite_links;       /* TRUE if there are infinite links */
   t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
 
-
   struct t_queue    free_in_links;        /* Free input links */
   struct t_queue    free_out_links;       /* Free output link */
   struct t_queue    busy_in_links;        /* Busy input links */
@@ -759,7 +767,12 @@ struct t_task
   struct t_queue    th_for_in;            /* Awaiting for input link */
   struct t_queue    th_for_out;           /* Awaiting for output link */
 
-  t_boolean       io_thread;
+  t_boolean       	io_thread;
+
+  t_boolean					accelerator;
+  struct t_thread  *KernelSync;	/*	Kernel thread of sync	*/
+  struct t_thread	 *HostSync;		/*	Host thread of sync	*/
+  int							  KernelByComm;/* Kernel_id indicated in comm_id for global_op */
 };
 
 struct t_event
@@ -950,6 +963,21 @@ struct t_thread
   // Or also the some operations can be injected.
   struct t_queue ops_to_be_injected;
   int counter_ops_already_injected;
+
+	/* Accelerator variables */
+  t_boolean			 host;		/* Indicates if it's an accelerator host thread	*/
+  t_boolean			 kernel;	/* Indicates if it's an accelerator kernel thread	*/
+  struct t_link	*accelerator_link;	/* Accelerator link for communications	*/
+  t_boolean			 first_acc_event_read;		/*	Throws a NOT_CREATED_ST before */
+  																				/*	start if it's a kernel thread	*/
+  t_boolean			 acc_recv_sync;	/* Indicates if receiver has to wait to comm
+  																to start block (Syncs in kernel)	*/
+  t_boolean			 acc_sndr_sync;	/* Indicates if sender has to wait to
+  																receiver receives	*/
+  t_boolean			 doing_acc_comm; /* Do not print startup latencies	*/
+  t_boolean			 blckd_in_global_op; /* To control threads inside acc sync */
+  struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
+  /* Accelerator variables */
 };
 
 struct t_semaphore
@@ -1028,6 +1056,14 @@ struct t_account
   double          n_group_operations;
   dimemas_timer   block_due_group_operations;
   dimemas_timer   group_operations_time;
+
+  /* Accelerator communication time accounting */
+  //dimemas_timer   acc_latency_time;           /* Accelerator startup latency */
+	//dimemas_timer   acc_block_due_resources;    /* Accelerator general resource blocking */
+	//dimemas_timer   acc_initial_wait_link_time; /* Accelerator initial's wait time */
+	//dimemas_timer   acc_block_due_link;         /* Accelerator links' wait time */
+	//dimemas_timer   acc_initial_wait_bus_time;  /* Accelerator bus initial's wait time */
+	//dimemas_timer   acc_block_due_buses;        /* Accelerator bus blocking's wait time */
 };
 
 struct t_cpu
@@ -1106,6 +1142,7 @@ struct t_copyseg
 #define CO_NIL   (struct t_copyseg *)0
 #define PO_NIL   (struct t_port *)0
 #define S_NIL    (struct t_semaphore *)0
+#define EB_NIL   (struct t_event_block *)0
 
 struct t_scheduler_actions
 {

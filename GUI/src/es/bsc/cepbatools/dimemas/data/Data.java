@@ -105,6 +105,7 @@ public class Data implements Version
   static public final String CONFIG      = "\"configuration files\" {";
   static public final String MODULE      = "\"modules information\" {";
   static public final String FILE_SYS    = "\"file system parameters\" {";
+  static public final String ACC_NODE	 = "\"accelerator node information\" {";
 
   // public MachineDataBase machineDB         = new MachineDataBase();
   // public NetworkDataBase netDB             = new NetworkDataBase();
@@ -647,6 +648,13 @@ public class Data implements Version
         else if(line.startsWith(FILE_SYS))    // Datos de FILE SYSTEM INFO.
         {
           if (!fileSys.loadData(splitLine(line,source), lineCount))
+          {
+            malformedFile = true;
+          }
+        }
+        else if (line.startsWith(ACC_NODE))
+        {
+          if (!nodes_information.loadAccNodeData(splitLine(line,source), oldFile, lineCount))
           {
             malformedFile = true;
           }

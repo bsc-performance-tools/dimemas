@@ -856,3 +856,27 @@ int Dimemas_NOOP ( FILE *fd, int task, int thread )
 #endif
 }
 
+/******************************************************************************
+ **      Function name : Dimemas_GPU_Burst
+ **
+ **      Description :
+ ******************************************************************************/
+
+int Dimemas_GPU_Burst( FILE *fd,
+                       int task, int thread,
+                       double burst_time )
+{
+
+#ifdef NEW_DIMEMAS_TRACE
+
+  #ifdef NANOSECOND_TRACE
+    #define GPU_BURST_STRING "11:%d:%d:%.9f\n"
+  #else
+    #define GPU_BURST_STRING "11:%d:%d:%.6f\n"
+  #endif
+	return fprintf(fd, GPU_BURST_STRING, task, thread, burst_time);
+#else
+	return 0;
+#endif
+}
+

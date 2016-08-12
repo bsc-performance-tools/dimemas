@@ -7,6 +7,7 @@ extern "C"
 #endif
 
 #include <stdio.h>
+#include "../include/types.h"
 
 #if !defined( LONG64_T )
 typedef long long long64_t;
@@ -102,6 +103,216 @@ typedef int MPIType;
 
 #define CLUSTER_GROUP_EV       90000002
 #define CLUSTER_GROUP_LABEL    "Cluster Group"
+
+/* ==========================================================================
+   ==== CUDA Event Types
+   ========================================================================== */
+
+#define CUDA_LIB_CALL_EV        63000001
+#define CUDA_LIB_CALL_LABEL     "CUDA library call"
+#define CUDA_MEMCPY_SIZE_EV     63000002
+#define CUDA_MEMCPY_SIZE_LABEL  "cudaMemcpy size"
+#define CUDA_KERNEL_EV					63000019
+#define CUDA_KERNEL_LABEL				"CUDA Kernel"
+#define CUDA_KERNEL_SOURCE_EV		63000119
+#define CUDA_KERNEL_SOURCE_LABEL "CUDA Kernel Source Code"
+#define CUDA_SYNCH_STREAM_EV    63300000
+#define CUDA_SYNCH_STREAM_LABEL "Synchronized stream (on thread)"
+#define CUDA_TAG								49370
+
+typedef enum
+{
+  CUDA_END_VAL        = 0,
+  CUDA_LAUNCH_VAL,
+  CUDA_CONFIGURECALL_VAL,
+  CUDA_MEMCPY_VAL,
+  CUDA_THREADSYNCHRONIZE_VAL,
+  CUDA_STREAMSYNCHRONIZE_VAL,
+  CUDA_MEMCPY_ASYNC_VAL,
+  CUDA_DEVICE_RESET_VAL,
+  CUDA_THREADEXIT_VAL
+} CUDA_Event_Values;
+
+/* ==========================================================================
+   ==== OpenCL Event Types
+   ========================================================================== */
+
+#define OCL_HOST_CALL_EV        64000000
+#define OCL_HOST_CALL_LABEL     "OpenCL host call"
+
+typedef enum
+{
+/* 0 */		OCL_OUTSIDE_VAL	= 0,
+/* 1 */		OCL_CREATE_BUFF_VAL,
+/* 2 */		OCL_CREATE_COMMAND_QUEUE_VAL,
+/* 3 */		OCL_CREATE_CONTEXT_VAL,
+/* 4 */		OCL_CREATE_CONTEXT_FROM_TYPE_VAL,
+/* 5 */		OCL_CREATE_SUBBUFFER_VAL,
+/* 6 */		OCL_CREATE_KERNEL_VAL,
+/* 7 */		OCL_CREATE_KERNELS_IN_PROGRAM_VAL,
+/* 8 */		OCL_SET_KERNEL_ARGS_VAL,
+/* 9 */		OCL_CREATE_PROGRAM_WITH_SOURCE_VAL,
+/* 10 */	OCL_CREATE_PROGRAM_WITH_BINARY_VAL,
+/* 11 */	OCL_CREATE_PROGRAM_WITH_BUILTIN_KERNELS_VAL,
+/* 12 */	OCL_ENQUEUE_FILL_BUFFER_VAL,
+/* 13 */	OCL_ENQUEUE_COPY_BUFFER_VAL,
+/* 14 */	OCL_ENQUEUE_COPY_BUFFER_RECT_VAL,
+/* 15 */	OCL_ENQUEUE_NDRANGE_KERNEL_VAL,
+/* 16 */	OCL_ENQUEUE_TASK_VAL,
+/* 17 */	OCL_ENQUEUE_NATIVE_KERNEL_VAL,
+/* 18 */	OCL_ENQUEUE_READ_BUFF_VAL,
+/* 19 */	OCL_ENQUEUE_READ_BUFF_RECT_VAL,
+/* 20 */	OCL_ENQUEUE_WRITE_BUFF_VAL,
+/* 21 */	OCL_ENQUEUE_WRITE_BUFF_RECT_VAL,
+/* 22 */	OCL_BUILD_PROGRAM_VAL,
+/* 23 */	OCL_COMPILE_PROGRAM_VAL,
+/* 24 */	OCL_LINK_PROGRAM_VAL,
+/* 25 */	OCL_FINISH_VAL,
+/* 26 */	OCL_FLUSH_VAL,
+/* 27 */	OCL_WAIT_FOR_EVENTS_VAL,
+/* 28 */	OCL_ENQUEUE_MARKER_WITH_WAIT_LIST_VAL,
+/* 29 */	OCL_ENQUEUE_BARRIER_WITH_WAIT_LIST_VAL,
+/* 30 */	OCL_ENQUEUE_MAP_BUFFER_VAL,
+/* 31 */	OCL_ENQUEUE_UNMAP_MEM_OBJ_VAL,
+/* 32 */	OCL_ENQUEUE_MIGRATE_MEM_OBJ_VAL,
+/* 33 */	OCL_ENQUEUE_MARKER_VAL,
+/* 34 */	OCL_ENQUEUE_BARRIER_VAL,
+/* 35 */	OCL_RETAIN_COMMAND_QUEUE_VAL,
+/* 36 */	OCL_RELEASE_COMMAND_QUEUE_VAL,
+/* 37 */	OCL_RETAIN_CONTEXT_VAL,
+/* 38 */	OCL_RELEASE_CONTEXT_VAL,
+/* 39 */	OCL_RETAIN_DEVICE_VAL,
+/* 40 */	OCL_RELEASE_DEVICE_VAL,
+/* 41 */	OCL_RETAIN_EVENT_VAL,
+/* 42 */	OCL_RELEASE_EVENT_VAL,
+/* 43 */	OCL_RETAIN_KERNEL_VAL,
+/* 44 */	OCL_RELEASE_KERNEL_VAL,
+/* 45 */	OCL_RETAIN_MEM_OBJ_VAL,
+/* 46 */	OCL_RELEASE_MEM_OBJ_VAL,
+/* 47 */	OCL_RETAIN_PROGRAM_VAL,
+/* 48 */	OCL_RELEASE_PROGRAM_VAL
+} OCL_Host_Event_Values;
+
+#define OCL_TRANSF_SIZE_EV     			64099999
+#define OCL_TRANSF_SIZE_LABEL   		"OpenCL transfer size"
+
+#define OCL_ACCELERATOR_CALL_EV			64100000
+#define OCL_ACCELERATOR_CALL_LABEL	"OpenCL Accelerator call"
+
+typedef enum
+{
+/* 0 */		OCL_OUTSIDE_ACC_VAL = 0,
+/* 12 */	OCL_ENQUEUE_FILL_BUFFER_ACC_VAL = 12,
+/* 13 */	OCL_ENQUEUE_COPY_BUFFER_ACC_VAL,
+/* 14 */	OCL_ENQUEUE_COPY_BUFFER_RECT_ACC_VAL,
+/* 15 */	OCL_ENQUEUE_NDRANGE_KERNEL_ACC_VAL,
+/* 16 */	OCL_ENQUEUE_TASK_ACC_VAL,
+/* 17 */	OCL_ENQUEUE_NATIVE_KERNEL_ACC_VAL,
+/* 18 */	OCL_ENQUEUE_READ_BUFF_ACC_VAL,
+/* 19 */	OCL_ENQUEUE_READ_BUFF_RECT_ACC_VAL,
+/* 20 */	OCL_ENQUEUE_WRITE_BUFF_ACC_VAL,
+/* 21 */	OCL_ENQUEUE_WRITE_BUFF_RECT_ACC_VAL,
+/* 25 */	OCL_FINISH_ACC_VAL = 25,
+/* 28 */	OCL_ENQUEUE_MARKER_WITH_WAIT_LIST_ACC_VAL = 28,
+/* 29 */	OCL_ENQUEUE_BARRIER_WITH_WAIT_LIST_ACC_VAL,
+/* 30 */	OCL_ENQUEUE_MAP_BUFFER_ACC_VAL,
+/* 31 */	OCL_ENQUEUE_UNMAP_MEM_OBJ_ACC_VAL,
+/* 32 */	OCL_ENQUEUE_MIGRATE_MEM_OBJ_ACC_VAL,
+/* 33 */	OCL_ENQUEUE_MARKER_ACC_VAL,
+/* 34 */	OCL_ENQUEUE_BARRIER_ACC_VAL
+} OCL_Accelerator_Event_Values;
+
+#define OCL_KERNEL_NAME_EV					64200000
+#define OCL_KERNEL_NAME_LABEL				"OpenCL kernel name"
+#define OCL_SYNCH_STREAM_EV    			64300000
+#define OCL_SYNCH_STREAM_LABEL 			"OpenCL Synchronized stream (on thread)"
+#define OCL_TAG											3121
+
+/*
+EVENT_TYPE
+0		64000000    OpenCL host call
+VALUES
+0 Outside OpenCL
+1 clCreateBuffer
+2 clCreateCommandQueue
+3 clCreateContext
+4 clCreateContextFromType
+5 clCreateSubBuffer
+6 clCreateKernel
+7 clCreateKernelsInProgram
+8 clSetKernelArg
+9 clCreateProgramWithSource
+10 clCreateProgramWithBinary
+11 clCreateProgramWithBuiltInKernels
+12 clEnqueueFillBuffer
+13 clEnqueueCopyBuffer
+14 clEnqueueCopyBufferRect
+15 clEnqueueNDRangeKernel
+16 clEnqueueTask
+17 clEnqueueNativeKernel
+18 clEnqueueReadBuffer
+19 clEnqueueReadBufferRect
+20 clEnqueueWriteBuffer
+21 clEnqueueWriteBufferRect
+22 clBuildProgram
+23 clCompileProgram
+24 clLinkProgram
+25 clFinish
+26 clFlush
+27 clWaitForEvents
+28 clEnqueueMarkerWithWaitList
+29 clEnqueueBarrierWithWaitList
+30 clEnqueueMapBuffer
+31 clEnqueueUnmapMemObject
+32 clEnqueueMigrateMemObjects
+33 clEnqueueMarker
+34 clEnqueueBarrier
+35 clRetainCommandQueue
+36 clReleaseCommandQueue
+37 clRetainContext
+38 clReleaseContext
+39 clRetainDevice
+40 clReleaseDevice
+41 clRetainEvent
+42 clReleaseEvent
+43 clRetainKernel
+44 clReleaseKernel
+45 clRetainMemObject
+46 clReleaseMemObject
+47 clRetainProgram
+48 clReleaseProgram
+
+EVENT_TYPE
+0   64099999    OpenCL transfer size
+
+EVENT_TYPE
+0		64100000		Accelerator OpenCL call
+VALUES
+0 Outside OpenCL
+12 clEnqueueFillBuffer
+13 clEnqueueCopyBuffer
+14 clEnqueueCopyBufferRect
+15 clEnqueueNDRangeKernel
+16 clEnqueueTask
+17 clEnqueueNativeKernel
+18 clEnqueueReadBuffer
+19 clEnqueueReadBufferRect
+20 clEnqueueWriteBuffer
+21 clEnqueueWriteBufferRect
+25 clFinish
+28 clEnqueueMarkerWithWaitList
+29 clEnqueueBarrierWithWaitList
+30 clEnqueueMapBuffer
+31 clEnqueueUnmapMemObject
+32 clEnqueueMigrateMemObjects
+33 clEnqueueMarker
+34 clEnqueueBarrier
+
+EVENT_TYPE
+0    64200000    OpenCL kernel name
+VALUES
+1      kernel_name
+*/
 
 /* ==========================================================================
    ==== MPI Event Values
@@ -264,7 +475,8 @@ typedef enum
   MPI_INIT_THREAD_VAL,                    /* 140 */
 
   MPI_TYPE_VECTOR_VAL                     /* 141 */
-} MPIVal;
+
+} MPI_Event_Values;
 
 #define NUM_MPICALLS  (MPI_TYPE_VECTOR_VAL+1)
 
@@ -657,11 +869,11 @@ typedef enum
 #define LAPI_WAITCNTR_LABEL                "LAPI_Waitcntr"
 
 /* ---------------------------------------------------- Function Prototypes -*/
-void MPIEventEncoding_EnableOperation( MPIVal Op );
+void MPIEventEncoding_EnableOperation( MPI_Event_Values Op );
 
 void MPIEventEncoding_WriteEnabledOperations( FILE *fd );
 
-DimBlock MPIEventEncoding_DimemasBlockId( MPIVal Op );
+DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op );
 
 DimCollectiveOp MPIEventEncoding_GlobalOpId (DimBlock BlockId);
 
@@ -677,13 +889,35 @@ long64_t EventEncoding_DimemasIO_Block( long64_t Type );
 
 int EventEncoding_Is_Flushing( long64_t Type );
 
-char* MPIEventEncoding_GetBlockLabel(MPIVal Op);
+char* MPIEventEncoding_GetBlockLabel(MPI_Event_Values Op);
 
 int ClusterEventEncoding_Is_ClusterBlock(long64_t type);
 int ClusterEventEncoding_Is_BlockBegin  (long64_t Op);
 
 
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value);
+
+/* CUDA EventEncoding calls	*/
+int      CUDAEventEncoding_Is_CUDABlock  				(long64_t type);
+int      CUDAEventEncoding_Is_BlockBegin 				(long64_t Op);
+int			 CUDAEventEncoding_Is_CUDAComm	 				(long64_t tag);
+int			 CUDAEventEncoding_Is_CUDATransferBlock (struct t_event_block event);
+int			 CUDAEventEconding_Is_CUDAConfigCall		(struct t_event_block event);
+int			 CUDAEventEconding_Is_CUDALaunch				(struct t_event_block event);
+int			 CUDAEventEconding_Is_CUDASync					(struct t_event_block event);
+/* CUDA EventEncoding calls	*/
+
+/* OpenCL EventEncoding calls	*/
+int			 OCLEventEncoding_Is_OCLBlock		 			(long64_t type);
+int			 OCLEventEncoding_Is_BlockBegin	 			(long64_t Op);
+int			 OCLEventEncoding_Is_OCLComm	 	 			(long64_t tag);
+int			 OCLEventEncoding_Is_OCLSyncBlock 		(struct t_event_block event);
+int			 OCLEventEncoding_Is_OCLTransferBlock (struct t_event_block event);
+int			 OCLEventEncoding_Is_OCLSchedBlock 		(struct t_event_block event);
+int			 OCLEventEncoding_Is_OCLSchedblock 		(long64_t type, long64_t value);
+int			 OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event);
+/* OpenCL EventEncoding calls	*/
+
 #ifdef __cplusplus
 }
 #endif

@@ -64,9 +64,10 @@ class TaskDescription
     
     void Write ( ostream & os ) const;
     
-    INT32 GetTaskId(void)      { return TaskId; };
-    INT32 GetThreadCount(void) { return ThreadCount; };
-    INT32 GetNode(void)        { return Node; };
+    INT32 GetTaskId(void)      							{ return TaskId; };
+    INT32 GetThreadCount(void) 							{ return ThreadCount; };
+    INT32 GetNode(void)        							{ return Node; };
+    void	SetThreadCount(INT32 ThreadCount) { this->ThreadCount =ThreadCount; };
     
 };
 typedef TaskDescription* TaskDescription_t;

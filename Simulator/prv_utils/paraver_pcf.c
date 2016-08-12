@@ -79,13 +79,11 @@ static t_boolean PCF_write_header_and_states(FILE* output_pcf);
 t_boolean MakeParaverPCFandROW(const char *output_trace_name,
                                const char *pcf_insert_name)
 {
-  struct t_Ptask* ptask;
-
-  FILE *input_pcf_file, *output_pcf_file, *pcf_insert_file;
+	struct t_Ptask *ptask;
+  FILE *input_pcf_file, *output_pcf_file, *pcf_insert_file = NULL;
   char *extension, *input_pcf_name, *output_pcf_name;
   FILE *input_row_file, *output_row_file;
   char *input_row_name, *output_row_name;
-
   t_boolean PCF_generation_output;
 
   /* Generate the output PCF name */
@@ -100,8 +98,8 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
     strcat(output_pcf_name, ".pcf");
 
     output_row_name = (char*) malloc( (strlen(output_trace_name)+5)*sizeof(char) );
-    strcpy(output_row_name, output_trace_name);
-    strcat(output_row_name, ".row");
+    strcpy(output_pcf_name, output_trace_name);
+    strcat(output_pcf_name, ".row");
   }
   else
   {
@@ -113,8 +111,8 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
       strcat(output_pcf_name, ".pcf");
 
       output_row_name = (char*) malloc( (strlen(output_trace_name)+5)*sizeof(char) );
-      strcpy(output_row_name, output_trace_name);
-      strcat(output_row_name, ".row");
+      strcpy(output_pcf_name, output_trace_name);
+      strcat(output_pcf_name, ".row");
     }
     else
     {
@@ -126,6 +124,18 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
     }
   }
 
+  /* The PCF would be a copy of the first trace PCF, if exists! */
+  ptask  = (struct t_Ptask *) head_queue(&Ptask_queue);
+
+  input_pcf_name = strdup(ptask->tracefile);
+  input_row_name = strdup(ptask->tracefile);
+  strncpy(&input_pcf_name[strlen(input_pcf_name)-3],"pcf", 3);
+
+  if (strcmp(input_pcf_name, output_pcf_name) == 0)
+	{ /* avoid having a writer and reader in a file at same time	*/
+		return PCF_generation_output = TRUE;
+	}
+
   if ( (output_pcf_file = IO_fopen(output_pcf_name, "w")) == NULL)
   {
     warning ("Unable to open output PCF file (%s): %s\n",
@@ -134,6 +144,15 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
 
     return FALSE;
   }
+
+  if ( (output_row_file = IO_fopen(output_row_name, "w")) == NULL)
+	{
+		warning ("Unable to open output ROW file (%s): %s\n",
+						 output_row_name,
+						 IO_get_error());
+
+		return FALSE;
+	}
 
   /* Open the possible PCF insert */
   if (pcf_insert_name != NULL)
@@ -147,16 +166,6 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
       pcf_insert_file = NULL;
     }
   }
-  else
-  {
-    pcf_insert_file = NULL;
-  }
-
-  /* The PCF would be a copy of the first trace PCF, if exists! */
-  ptask  = (struct t_Ptask *) head_queue(&Ptask_queue);
-
-  input_pcf_name = strdup(ptask->tracefile);
-  input_row_name = strdup(ptask->tracefile);
 
   if (input_pcf_name == NULL)
   {
@@ -165,53 +174,33 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
   }
   else
   {
-    strncpy(&input_pcf_name[strlen(input_pcf_name)-3],"pcf", 3);
-
-    /*
-    printf("PCF to be copied = %s\n",
-           input_pcf_name);
-    */
-
     if ( ( input_pcf_file = IO_fopen(input_pcf_name, "r")) == NULL)
     {
       warning ("Unable to open input PCF. A default would be generated\n");
       input_pcf_file = NULL;
     }
-
-    strncpy(&input_row_name[strlen(input_row_name)-3],"row", 3);
-
-    input_row_file = IO_fopen(input_row_name, "r");
-  }
-
-  if (input_pcf_file != NULL)
-  {
-        PCF_generation_output = PCF_copy_existing(input_pcf_file, output_pcf_file, pcf_insert_file);
-  }
-  else
-  {
-    PCF_generation_output = PCF_generate_default(output_pcf_file, pcf_insert_file);
-  }
-
-  if (input_row_file != NULL)
-  {
-    if ( (output_row_file = IO_fopen(output_row_name, "w")) == NULL)
-    {
-      warning ("Unable to open output ROW file, none generated!\n");
-      IO_fclose(output_row_file);
-    }
     else
     {
-      if (!ROW_copy_existing(input_row_file, output_row_file))
-      {
-        warning ("No ROW file will be generated\n");
-        unlink(output_row_name);
-      }
+    	PCF_generation_output = PCF_copy_existing(input_pcf_file, output_pcf_file, pcf_insert_file);
+    }
+
+    strncpy(&input_row_name[strlen(input_row_name)-3],"row", 3);
+    if ( ( input_row_file = IO_fopen(input_row_name, "r")) == NULL)
+		{
+			warning ("Unable to open input ROW. A default would be generated\n");
+			input_row_file = NULL;
+		}
+    else
+    {
+    	if (!ROW_copy_existing(input_row_file, output_row_file))
+			{
+				warning ("No ROW file will be generated\n");
+				unlink(output_row_name);
+			}
     }
   }
-  else
-  {
-    return PCF_generation_output;
-  }
+
+  return PCF_generation_output;
 }
 
 static t_boolean PCF_copy_existing(FILE* input_pcf,
@@ -456,7 +445,7 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
 //#ifdef PUT_ALL_VALUES
   /* JGG: That should be changed at certain point... */
   for (i = 0; i < NUM_MPICALLS; i++) {
-     MPIEventEncoding_EnableOperation( (MPIVal) i);
+     MPIEventEncoding_EnableOperation( (MPI_Event_Values) i);
   }
   MPIEventEncoding_WriteEnabledOperations(output_pcf);
 // #endif

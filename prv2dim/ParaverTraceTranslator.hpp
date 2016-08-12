@@ -56,12 +56,14 @@ class ParaverTraceTranslator: public Error
 
     string ParaverTraceName;
     string DimemasTraceName;
-    string ExtraStatsName;
+		string ExtraStatsName;
+
+    FILE* RowTraceFile;
 
     FILE* ParaverTraceFile;
     FILE* DimemasTraceFile;
 
-    bool withExtraStats;
+    bool  withExtraStats;
     bool  DescriptorShared;
 
     char* CommunicationsFileName;
@@ -69,7 +71,7 @@ class ParaverTraceTranslator: public Error
 
     vector<PartialCommunication_t>    Communications;
     vector<TranslationCommunicator_t> Communicators;
-    vector<TaskTranslationInfo_t>     TranslationInfo;
+    vector<vector<TaskTranslationInfo_t> > TranslationInfo;
 
     ParaverTraceParser_t Parser;
 
@@ -78,6 +80,11 @@ class ParaverTraceTranslator: public Error
     bool PreviouslySimulatedTrace;
 
     INT32 WrongRecordsFound;
+
+    INT32					AcceleratorType;	/* Indicates if CUDA or OpenCL
+    																	  will be translated */
+    vector<bool>	acc_tasks;
+    INT32					acc_tasks_count;
 
   public:
 
@@ -124,7 +131,11 @@ class ParaverTraceTranslator: public Error
     bool ShareDescriptor(void);
 
     bool WriteNewFormatHeader(ApplicationDescription_t AppDescription,
+    													int											 acc_tasks_count,
+    													const vector<bool>			*acc_tasks,
                               off_t                    OffsetsOffset = 0);
+
+    bool AcceleratorTasksInfo(INT32 tasks_count);
 };
 
 #endif /* _PARAVERTRACETRANSLATOR_H */

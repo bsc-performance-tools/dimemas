@@ -56,19 +56,19 @@ using std::vector;
 class ParaverTraceParser: public Error
 {
   private:
-  
+
     string ParaverTraceName;
     FILE*  ParaverTraceFile;
     off_t  TraceSize;
     off_t  FirstCommunicatorOffset; /* Offset of first communicator */
     off_t  FirstRecordOffset;       /* Offset of first record (without header
                                      * and communicators) */
-    
+
     bool   ParsingInitialized;
-  
+
     UINT32 CurrentLine;
     UINT32 FirstRecordLine;
-  
+
     ParaverHeader_t Header;
 
   public:
@@ -76,14 +76,14 @@ class ParaverTraceParser: public Error
 
     ParaverTraceParser(string ParaverTraceName,
                        FILE*  ParaverTraceFile = NULL);
-    
+
     UINT32 GetCurrentLine(void) { return CurrentLine; };
-    
+
     bool InitTraceParsing(void);
-    
+
     vector<ApplicationDescription_t> GetApplicationsDescription(void);
     INT32 GetTimeUnits(void);
-      
+
     ParaverRecord_t GetNextRecord(void);
     ParaverRecord_t GetNextRecord(UINT32 RecordTypeMask);
     ParaverRecord_t GetNextTaskRecord(INT32 TaskId);
@@ -93,25 +93,26 @@ class ParaverTraceParser: public Error
     Event_t         GetNextEvent(void);
     Communication_t GetNextCommunication(void);
     GlobalOp_t      GetNextGlobalOp(void);
-    
+
     INT32           GetFilePercentage(void);
-      
+
     bool Reload(void);
 
   private:
-    
+
     ParaverRecord_t NextTraceRecord(UINT32 RecordType);
-  
+
     bool   GetAppCommunicators(ApplicationDescription_t AppDescription);
-  
+
     INT32  GetLongLine(char** Line);
   
     bool   GetTraceLine(char* Line, int LineSize);
-  
+
     State_t         ParseState(char* ASCIIState);
     Event_t         ParseEvent(char* ASCIIEvent);
     Communication_t ParseCommunication(char* ASCIICommunication);
     GlobalOp_t      ParseGlobalOp(char* ASCIIGlobalOp);
+
 };
 typedef ParaverTraceParser* ParaverTraceParser_t;
 

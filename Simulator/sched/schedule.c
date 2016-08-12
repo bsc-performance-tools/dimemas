@@ -116,7 +116,7 @@ void SCHEDULER_Init()
                   IDENTIFIERS (thread));
         }
 
-        if (action->action != WORK)
+        if (action->action != WORK && action->action != GPU_BURST)
         {
           panic ("P%02d T%02d (t%02d) must begin execution with work\n",
                  IDENTIFIERS (thread));
@@ -288,11 +288,15 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
 
   machine = node->machine;
 
-  PARAVER_Wait ( 0,
-                 IDENTIFIERS (thread),
-                 thread->last_paraver, current_time,
-                 PRV_THREAD_SYNC_ST);
-  thread->last_paraver = current_time;
+  if (!thread->kernel && !thread->host)
+  {	/* If is a wait in accelerator event block, no wait thrown to fill original trace */
+		PARAVER_Wait (0,
+									IDENTIFIERS (thread),
+									thread->last_paraver,
+									current_time,
+									PRV_SYNC_ST);
+		thread->last_paraver = current_time;
+  }
 
   account = current_account (thread);
   SUB_TIMER (current_time, thread->put_into_ready, tmp_timer);
@@ -375,7 +379,7 @@ SCHEDULER_thread_to_ready (struct t_thread *thread)
 
   /* FEC: Faig aixo per no haver de posar necessariament un CPU_BURST a zero
    * entre cada accio de la trac,a. */
-  if (thread->action->action != WORK)
+  if (thread->action->action != WORK && thread->action->action != GPU_BURST)
   {
     /* Estic suposant que en aquest cas es prove d'un lloc on s'ha cridat a
      * SCHEDULER_thread_to_ready just despres d'acabar una altra accio sense
@@ -426,8 +430,10 @@ SCHEDULER_thread_to_ready (struct t_thread *thread)
     {
       printf ("\t\t  (O) P%02d T%02d (t%02d)\n", IDENTIFIERS (thread_current));
     }
-    printf ("\t\t  (N) P%02d T%02d (t%02d)\n", IDENTIFIERS (thread));
   }
+
+  if(debug&D_SCH)
+  	printf ("\t\t  (N) P%02d T%02d (t%02d)\n", IDENTIFIERS (thread));
 
   if (thread->action->action==FS)
   {
@@ -455,7 +461,7 @@ t_nano SCHEDULER_get_execution_time (struct t_thread *thread)
 
   action = thread->action;
 
-  if (action->action != WORK)
+  if (action->action != WORK && action->action != GPU_BURST)
   {
     panic ("Trying to work when innaproppiate P%02d T%02d (t%02d)\n",
            IDENTIFIERS (thread));
@@ -649,7 +655,14 @@ void SCHEDULER_general (int value, struct t_thread *thread)
   {
     case SCH_TIMER_OUT:
     {
-      if (thread->doing_startup)
+    	if (thread->doing_acc_comm)
+    	{
+    		thread->doing_acc_comm = FALSE;
+    		thread->startup_done  = TRUE;
+    		thread->doing_startup = FALSE;
+    		new_cp_node (thread, CP_OVERHEAD);
+    	}
+    	else if (thread->doing_startup)
       {
         PARAVER_Startup (cpu->unique_number,
                          IDENTIFIERS (thread),
@@ -700,19 +713,60 @@ void SCHEDULER_general (int value, struct t_thread *thread)
           {
             action = thread->action;
 
-            if (thread->idle_block == TRUE)
+            if (thread->idle_block && !thread->kernel)
             {
-              PARAVER_Idle ( cpu->unique_number,
-                                    IDENTIFIERS (thread),
-                                    thread->last_paraver,
-                                    current_time);
+              PARAVER_Idle (cpu->unique_number,
+														IDENTIFIERS (thread),
+														thread->last_paraver,
+														current_time);
+            }
+            else if (thread->idle_block == TRUE)
+            {
+            	PARAVER_Not_Created(cpu->unique_number,
+																	IDENTIFIERS (thread),
+																	thread->acc_in_block_event.paraver_time,
+																	current_time);
             }
             else
             {
-              PARAVER_Running (cpu->unique_number,
-                                      IDENTIFIERS (thread),
-                                      thread->last_paraver,
-                                      current_time);
+							if (thread->kernel && (!thread->first_acc_event_read ||
+									thread->acc_in_block_event.value == 0))
+							{	/* Previous at accelerator events in kernel thread must be
+									 NOT_CREATED state in CPU	*/
+								/* Not created states between blocks in kernel thread	*/
+								PARAVER_Not_Created(cpu->unique_number,
+																		IDENTIFIERS (thread),
+																		thread->last_paraver,
+																		current_time);
+							}
+
+							else if (thread->kernel &&
+									(CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event) ||
+									 OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)))
+							{	/*	It's a GPU burst	*/
+								PARAVER_Running(cpu->unique_number,
+																IDENTIFIERS (thread),
+																thread->last_paraver,
+																current_time);
+							}
+
+							else if ((thread->host || thread->kernel) &&
+								(CUDAEventEncoding_Is_CUDABlock(thread->acc_in_block_event.type) ||
+								 OCLEventEncoding_Is_OCLBlock(thread->acc_in_block_event.type))
+								&& CUDAEventEncoding_Is_BlockBegin(thread->acc_in_block_event.value))
+
+							{
+								/* Do not throw anything if host or kernel is inside
+								 * a CUDA or OpenCL event block	*/
+							}
+
+							else
+							{	/*	It's a CPU burst	*/
+								PARAVER_Running (cpu->unique_number,
+																IDENTIFIERS (thread),
+																thread->last_paraver,
+																current_time);
+							}
             }
 
             new_cp_node (thread, CP_WORK);
@@ -787,7 +841,7 @@ next_op:
             if (more_actions (thread))
             {
               action = thread->action;
-              if (action->action != WORK)
+              if (action->action != WORK && action->action != GPU_BURST)
                 goto next_op;
 
               thread->loose_cpu = FALSE;
@@ -851,6 +905,16 @@ next_op:
             SCHEDULER_thread_to_ready (thread);
             break;
           }
+          case GPU_BURST:
+          {
+          	PARAVER_Start_Op (cpu->unique_number,
+															IDENTIFIERS (thread),
+															current_time);
+
+						thread->loose_cpu = TRUE;
+						SCHEDULER_thread_to_ready (thread);
+          	break;
+          }
           case EVENT:
           {
             if (debug&D_SCH)
@@ -879,13 +943,15 @@ next_op:
             /* JGG (2012/01/10): New module management */
             if (action->desc.even.value != (unsigned long int) 0)
             {
-              /* DEBUG
-              PRINT_TIMER(current_time);
-              printf(": Checking 'module_entrance [%lld:%lld] for P%02d T%02d (t%02d)\n",
-                    action->desc.even.type,
-                    action->desc.even.value,
-                    IDENTIFIERS(thread));
-              */
+              if (debug&D_SCH)
+              {
+              	PRINT_TIMER(current_time);
+								printf(": Checking 'module_entrance [%lld:%lld] for P%02d T%02d (t%02d)\n",
+											action->desc.even.type,
+											action->desc.even.value,
+											IDENTIFIERS(thread));
+              }
+
               module_entrance(thread,
                               (unsigned long int) action->desc.even.type,
                               (unsigned long int) action->desc.even.value);
@@ -916,7 +982,6 @@ next_op:
             if (action->desc.even.type == PREEMPTION_SET_EVENT)
             {
                printf("warning - this was BEFORE used as an user event for PREEMPTION_SET_EVENT - BUT NOT ANY MORE???\n");
-//               (*SCH[machine->scheduler.policy].modify_preemption) (thread, (t_priority) action->desc.even.value);
             }
 
             /* remember the sstaskid of this thread */
@@ -933,13 +998,26 @@ next_op:
                   thread->sstask_type = action->desc.even.value;
             }
 
-            cpu = get_cpu_of_thread(thread);
+            /* treat acc events */
+            treat_acc_event(thread, action);
 
-            PARAVER_Event (cpu->unique_number,
-                           IDENTIFIERS (thread),
-                           current_time,
-                           action->desc.even.type,
-                           action->desc.even.value);
+            /* Not printing block end if it is a clEnqueueNDRangeKernel because
+             * it has been printed yet in COMMUNIC_SEND
+             * Not printing event if kernel needs a previous sync (in barrier)
+             */
+            int printing_event = !thread->acc_recv_sync &&
+            	!(OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)
+								&& thread->kernel && action->desc.even.value == 0);
+
+            if (printing_event)
+            {	/* If it is not an accelerator event that has to wait to be written */
+							cpu = get_cpu_of_thread(thread);
+							PARAVER_Event (cpu->unique_number,
+														 IDENTIFIERS (thread),
+														 current_time,
+														 action->desc.even.type,
+														 action->desc.even.value);
+            }
 
             thread->action = action->next;
             READ_free_action(action);
@@ -947,16 +1025,12 @@ next_op:
             if (more_actions (thread))
             {
               action = thread->action;
-              if (action->action != WORK)
+              if (action->action != WORK && action->action != GPU_BURST)
                 goto next_op;
 
               thread->loose_cpu = FALSE;
               SCHEDULER_thread_to_ready (thread);
             }
-
-            // goto next_op;
-
-
             break;
           }
           case FS:
@@ -1053,17 +1127,26 @@ next_op:
           }
           case GLOBAL_OP:
           {
-            PARAVER_Start_Op (cpu->unique_number,
-                                     IDENTIFIERS (thread),
-                                     current_time);
+            if (action->desc.global_op.comm_id >= 0)
+            { /* Regular execution of a global operation */
+              PARAVER_Start_Op (cpu->unique_number,
+                                IDENTIFIERS (thread),
+                                current_time);
 
-            GLOBAL_operation (thread,
-                              action->desc.global_op.glop_id,
-                              action->desc.global_op.comm_id,
-                              action->desc.global_op.root_rank,
-                              action->desc.global_op.root_thid,
-                              action->desc.global_op.bytes_send,
-                              action->desc.global_op.bytes_recvd);
+              GLOBAL_operation (thread,
+                                    action->desc.global_op.glop_id,
+                                    action->desc.global_op.comm_id,
+                                    action->desc.global_op.root_rank,
+                                    action->desc.global_op.root_thid,
+                                    action->desc.global_op.bytes_send,
+                                    action->desc.global_op.bytes_recvd);
+            }
+            else
+            { /* Pseudo global operation to implement accelerator
+               * synchronizations */
+              ACCELERATOR_synchronization(thread,
+                                          action->desc.global_op.comm_id);
+            }
             break;
           }
           case  MPI_IO:
@@ -1463,7 +1546,7 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
     thread_current->last_paraver = current_time;
   }
 
-  if (thread->action->action != WORK)
+  if (thread->action->action != WORK && thread->action->action != GPU_BURST)
     panic ("Next action for P%02d T%02d (t%02d) must be work\n",
            IDENTIFIERS (thread));
 
@@ -1495,12 +1578,7 @@ t_boolean more_actions (struct t_thread *thread)
   struct t_action *action;
   struct t_account *account;
   struct t_Ptask *Ptask;
-
-  //if ((load_interactive) && (thread->action == AC_NIL))
-  //{
-    /* Using the wrapper ti mask whether we read old or new trace format */
-
-  //}
+  struct t_task  *task;
 
   if (thread->action == NULL)
   {
@@ -1510,6 +1588,7 @@ t_boolean more_actions (struct t_thread *thread)
   action  = thread->action;
   account = current_account (thread);
   Ptask   = thread->task->Ptask;
+  task    = thread->task;
 
   if (action == NULL)
   {
@@ -1533,12 +1612,33 @@ t_boolean more_actions (struct t_thread *thread)
     }
     else
     {
-      PARAVER_Dead (0, IDENTIFIERS (thread), current_time);
+    	struct t_cpu *cpu;
+    	if (!thread->kernel)
+    	{ /* In kernel thread last cpu state is Not_Created thrown by host (above) */
+				cpu = get_cpu_of_thread(thread);
+				PARAVER_Dead (cpu->unique_number, IDENTIFIERS (thread), current_time);
+    	}
+
+      /* Not_created state in kernel from last paraver event to end of trace */
+      if (thread->host)
+      {
+      	int threads_it;
+      	struct t_thread *tmp_thread;
+      	for (threads_it = 0; threads_it < task->threads_count; threads_it++)
+				{
+      		tmp_thread = task->threads[threads_it];
+					if (tmp_thread->kernel)
+					{
+						PARAVER_Not_Created(cpu->unique_number,
+																IDENTIFIERS (tmp_thread),
+																tmp_thread->last_paraver,
+																current_time);
+					}
+				}
+      }
+      thread->last_paraver = current_time;
     }
 
-//     PRINT_TIMER (current_time);
-//     printf (": finished thread P%02d T%02d (t%02d)\n",
-//               IDENTIFIERS (thread));
     Simulator.finished_threads_count++;
 
     if (((Simulator.finished_threads_count * 100) / Simulator.threads_count) == (unsigned) progress + 10)
@@ -1578,4 +1678,113 @@ t_boolean more_actions (struct t_thread *thread)
     return (FALSE);
   }
   return (TRUE);
+}
+
+/***************************************************************
+ ** treat_acc_event
+ ************************
+ ** if action->desc.even is an accelerator event (CUDA or OpenCL), affects
+ ** to cpu (or gpu) states, communications.
+ ** Updates acc_in_block_event
+
+ ***************************************************************/
+void treat_acc_event (struct t_thread *thread, struct t_action *action)
+{
+	struct t_cpu *cpu;
+
+	if (!CUDAEventEncoding_Is_CUDABlock(action->desc.even.type) &&
+			!OCLEventEncoding_Is_OCLBlock(action->desc.even.type))
+		return;
+
+	int block_begin = CUDAEventEncoding_Is_BlockBegin(action->desc.even.value);
+
+	if (!thread->first_acc_event_read)
+	{	/*	when in kernel thread first CUDA/OpenCL event  occurred,
+				indicated to stop generating NOT_CREATED states in CPU	*/
+		thread->first_acc_event_read = TRUE;
+	}
+
+	cpu = get_cpu_of_thread(thread);
+
+	/* CUDA cpu states */
+	if (!block_begin && CUDAEventEconding_Is_CUDAConfigCall(thread->acc_in_block_event))
+	{	/* If ending a Config Call event, cpu state is Others	*/
+		PARAVER_Others(cpu->unique_number,
+									 IDENTIFIERS(thread),
+									 thread->acc_in_block_event.paraver_time,
+									 current_time);
+	}
+
+	else if (!block_begin && !thread->kernel &&
+					 CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event))
+	{	/* If ending a Launch event, cpu state is Thread Scheduling	*/
+		PARAVER_Thread_Sched(cpu->unique_number,
+												 IDENTIFIERS(thread),
+												 thread->acc_in_block_event.paraver_time,
+												 current_time);
+	}
+
+	else if (!block_begin &&
+					 CUDAEventEconding_Is_CUDASync(thread->acc_in_block_event))
+	{
+		PARAVER_Thread_Sync(cpu->unique_number,
+												IDENTIFIERS(thread),
+												thread->acc_in_block_event.paraver_time,
+												current_time);
+	}
+
+	else if (!block_begin &&
+					 CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event))
+	{
+		PARAVER_Mem_Transf(cpu->unique_number,
+												IDENTIFIERS(thread),
+												thread->acc_in_block_event.paraver_time,
+												current_time);
+	}
+	/* CUDA cpu states */
+
+
+	/* OpenCL cpu states */
+	else if (!block_begin &&
+					 OCLEventEncoding_Is_OCLSchedBlock(thread->acc_in_block_event) &&
+					 thread->host)
+	{
+		PARAVER_Thread_Sched(cpu->unique_number,
+												 IDENTIFIERS(thread),
+												 thread->acc_in_block_event.paraver_time,
+												 current_time);
+	}
+
+	else if (!block_begin &&
+					 OCLEventEncoding_Is_OCLSyncBlock(thread->acc_in_block_event))
+	{
+		PARAVER_Thread_Sync(cpu->unique_number,
+												IDENTIFIERS(thread),
+												thread->acc_in_block_event.paraver_time,
+												current_time);
+	}
+
+	else if (!block_begin &&
+					 OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event))
+	{
+		PARAVER_Mem_Transf(cpu->unique_number,
+											 IDENTIFIERS(thread),
+											 thread->acc_in_block_event.paraver_time,
+											 current_time);
+	}
+	/* OpenCL cpu states */
+
+	/* Update the current accelerator block	*/
+	thread->acc_in_block_event.type 	= action->desc.even.type;
+	thread->acc_in_block_event.value	= action->desc.even.value;
+
+	if (CUDAEventEconding_Is_CUDASync(thread->acc_in_block_event)
+			&& thread->kernel)
+	{	/* Event waits when receive comm to be written	*/
+		thread->acc_recv_sync = TRUE;
+	}
+	else
+	{	/* Do not get current_time if block is going to start later */
+		thread->acc_in_block_event.paraver_time = current_time;
+	}
 }
