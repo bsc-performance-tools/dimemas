@@ -38,7 +38,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <float.h>
-
 #include <list.h>
 #include <generate_error.h>
 
@@ -62,8 +61,6 @@ static double  NEW_CONFIGURATION_parameter_bw             = DBL_MIN;
 static double  NEW_CONFIGURATION_parameter_lat            = DBL_MIN;
 static int     NEW_CONFIGURATION_parameter_predefined_map = MAP_NO_PREDEFINED;
 static int     NEW_CONFIGURATION_parameter_tasks_per_node;
-
-
 static int     NEW_CONFIGURATION_mappings_read   = 0;
 t_boolean      NEW_CONFIGURATION_old_nodes_defined = FALSE;
 
@@ -950,26 +947,25 @@ t_boolean parse_conf_files (char* record_fields)
   char scheduler[strlen(record_fields)];
   char file_system[strlen(record_fields)];
   char communication[strlen(record_fields)];
-  char sensitivity[strlen(record_fields)];
+  char random[strlen(record_fields)];
 
   matches = sscanf(record_fields,
                    "%[^,],%[^,],%[^,],%s",
                    scheduler,
                    file_system,
                    communication,
-                   sensitivity);
+                   random);
 
   if (matches == 4)
   {
-
     if (!is_empty(trim_string(scheduler)))
     {
-      CONFIGURATION_Set_Scheduling_Configuration_File(erase_quotations(trim_string(scheduler)));
+      CONFIGURATION_Set_Scheduling_Configuration_File(trim_string(scheduler));
     }
 
     if (!is_empty(trim_string(file_system)))
     {
-      CONFIGURATION_Set_FileSystem_Configuration_File(erase_quotations(trim_string(file_system)));
+    	CONFIGURATION_Set_FileSystem_Configuration_File(trim_string(file_system));
     }
 
     if (!is_empty(trim_string(communication)))
@@ -977,17 +973,13 @@ t_boolean parse_conf_files (char* record_fields)
       CONFIGURATION_Set_Communications_Configuration_File(erase_quotations(trim_string(communication)));
     }
 
-    // I don't know why the record field is named 'sensitivity' but internally
-    // it is used as a Random numbers definitions
-    if (!is_empty(trim_string(sensitivity)))
+    if (!is_empty(trim_string(random)))
     {
-      CONFIGURATION_Set_RandomValues_Configuration_File(erase_quotations(trim_string(sensitivity)));
+      CONFIGURATION_Set_RandomValues_Configuration_File(erase_quotations(trim_string(random)));
     }
   }
   else
   {
-
-
     generate_error(&error_message,
                    "wrong configuration files record field count at line %d",
                    current_line);

@@ -37,7 +37,6 @@
 #include <errno.h>
 #include <math.h>
 #include <float.h>
-
 #include <list.h>
 
 #include "sddf_records.h"
@@ -164,13 +163,13 @@ t_boolean CONFIGURATION_parse(FILE  *configuration_file,
 
 void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename)
 {
-  if (sch_filename != NULL)
+  if (sch_conf_filename != NULL)
   {
     warning("Using the '-s' scheduling parametrization (%s) instead of the indicated in the configuration file\n",
               sch_conf_filename);
   }
-
-  sch_conf_filename = strdup(sch_filename);
+  else
+  	sch_conf_filename = strdup(sch_filename);
 
   if ( (sch_conf_file = IO_fopen(sch_conf_filename, "r")) == NULL)
   {
@@ -183,7 +182,13 @@ void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename)
 
 void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_filename)
 {
-  fs_conf_filename = strdup(fs_filename);
+	if (fs_conf_filename != NULL)
+	{
+		warning("Using the '-f' file system parametrization (%s) instead of the indicated in the configuration file\n",
+				fs_conf_filename);
+	}
+	else
+		fs_conf_filename = strdup(fs_filename);
 
   if ( (fs_conf_file = IO_fopen(fs_conf_filename, "r")) == NULL)
   {
@@ -196,7 +201,13 @@ void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_filename)
 
 void CONFIGURATION_Set_Communications_Configuration_File(char *comm_filename)
 {
-  comm_conf_filename = strdup(comm_filename);
+	if (comm_conf_filename != NULL)
+	{
+		warning("Using the '-c' communication parametrization (%s) instead of the indicated in the configuration file\n",
+				comm_conf_filename);
+	}
+	else
+		comm_conf_filename = strdup(comm_filename);
 
   if ( (comm_conf_file = IO_fopen(comm_conf_filename, "r")) == NULL)
   {
@@ -210,7 +221,13 @@ void CONFIGURATION_Set_Communications_Configuration_File(char *comm_filename)
 
 void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_filename)
 {
-  random_conf_filename = strdup(rand_filename);
+	if (random_conf_filename != NULL)
+	{
+		warning("Using the '-r' random parametrization (%s) instead of the indicated in the configuration file\n",
+				random_conf_filename);
+	}
+	else
+		random_conf_filename = strdup(rand_filename);
 
   if ( (random_conf_file = IO_fopen(random_conf_filename, "r")) == NULL)
   {

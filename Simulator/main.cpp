@@ -39,7 +39,6 @@
 #include <cfloat>
 
 #include <ezOptionParser.hpp>
-
 #include <assert.h>
 
 extern "C"
@@ -159,12 +158,9 @@ t_boolean reload_Ptasks = FALSE;
 t_boolean reload_done   = FALSE;
 int       reload_limit  = 10;
 t_boolean reload_while_longest_running = FALSE;
-
 t_boolean full_out_info  = FALSE;
 t_boolean short_out_info = FALSE; /* Only simulation time */
-
 t_boolean Critical_Path_Analysis=FALSE;
-
 t_boolean wait_logical_recv = FALSE;
 
 FILE     *salida_datos;
@@ -186,11 +182,8 @@ t_boolean      new_trace_format = FALSE;  /* New dimemas trace format
 */
 
 static t_boolean HOT_cache = FALSE;
-
 char            message_buffer[1024];
-
 dimemas_timer   time_limit;
-
 int             sintetic_io_applications = 0;
 
 struct t_queue CP_NODES;
@@ -203,34 +196,39 @@ long long int  RD_SYNC_message_size;   /* Minimum message size to use Rendez-vou
 int  RD_SYNC_use_trace_sync; /* Use the synchronous field of the sends
                               * in the trace? */
 
+int with_deadlock_analysis = 0;
+int reboots_counter = 0;
+float danalysis_deactivation_percent = 1;
+t_boolean simulation_rebooted = FALSE;
+
 #ifdef VENUS_ENABLED
 #define USAGE \
 "Usage: %s [-h] [-v] [-d] [-x[s|e|p]] [-o[l] output-file] [-T time] [-l] [-C]\n"\
 "\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
 "\t[-e event_type] [-g event_output_info] [-a input-trace]\n" \
-"\t[-F] [-S sync_size] [-venus] [-venusconn host:port]\n"\
+"\t[-F] [-S sync_size] [-s file] [-f file] [-c file]\n" \
+"\t[-r file] [-venus] [-venusconn host:port]\n"\
 "\t[-w] [-ES] [-Eo eee_network_definition] [-Ef eee_frame_size]\n"\
 "\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
 "\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
 "\t[--clean-deadlocks <until-trace-progression> ]\n"\
+"\t[--sched scheduler_config] [--fs file_sys_config]\n"\
+"\t[--comms comms_config] [--sens sensitivity_config]\n"\
 "\tconfig-file\n"
 #else
 #define USAGE \
 "Usage: %s [-h] [-v] [-d] [-x[s|e|p]] [-o[l] output-file] [-T time] [-l] [-C]\n"\
 "\t[-p[a|b] paraver-file [-y time] -z time]] [-x[s|e]]\n" \
 "\t[-e event_type] [-g event_output_info] [-F] [-S sync_size]\n" \
+"\t[-F] [-S sync_size] [-s file] [-f file] [-c file] [-r file]\n" \
 "\t[-w] [-ES] [-Eo eee_network_definition] [-Ef eee_frame_size]\n"\
 "\t[--dim input-trace] [--bw bandwidth] [--lat latency]\n"\
 "\t[--ppn processors_per_node] [--fill] [--interlvd]\n"\
 "\t[--clean-deadlocks <until-trace-progression> ]\n"\
+"\t[--sched scheduler_config] [--fs file_sys_config]\n"\
+"\t[--comms comms_config] [--sens sensitivity_config]\n"\
 "\t config-file\n"
-
 #endif
-
-int with_deadlock_analysis = 0;
-int reboots_counter = 0;
-float danalysis_deactivation_percent = 1;
-t_boolean simulation_rebooted = FALSE;
 
 static bool ParseArguments(const int argc, const char* argv)
 {
@@ -293,24 +291,25 @@ help_message(char *tname)
   printf ("\t-g event_output\tFile for output information on events occurrence\n");
   printf ("\t-F\t\tIgnore synchronism send trace field\n");
   printf ("\t-S sync_size\tMinimum message size to use Rendez vous\n");
+  printf ("\t-s file\t\tScheduler definition filename (overrides the config_files record)\n");
+  printf ("\t-f file\t\tFile system definition filename (overrides the config_files record)\n");
+  printf ("\t-c file\t\tCommunication fine tuning configuration filename (overrides the config_files record)\n");
+  printf ("\t-r file\t\tRandom configuration filename (overrides the config_files record)\n");
 #ifdef VENUS_ENABLED
   printf ("\t-venus\tConnect to a Venus server at localhost:'default venus port'\n");
   printf ("\t-venusconn host:port\tConnect to a Venus server at host:port\n");
 #endif
-  printf ("\t-w\tWhen generating Paraver trace, output the LOGICAL_RECV times when Wait primitives take place (Default: at IRecv execution time)\n");
-  printf ("\t-ES\tEnables the EEE network model (you must use '-Eo' and '-Ef'\n");
-  printf ("\t-Eo eee_network_definition\tSet the filename where the EEE network is defined\n");
+  printf ("\t-w\t\tWhen generating Paraver trace, output the LOGICAL_RECV times when Wait primitives take place (Default: at IRecv execution time)\n");
+  printf ("\t-ES\t\tEnables the EEE network model (you must use '-Eo' and '-Ef'\n");
+  printf ("\t-Eo file\tSet the filename where the EEE network is defined\n");
   printf ("\t-Ef frame_size\tSets the EEE network frame size (in bytes)\n");
-  printf ("\t--dim input-trace\tSet input trace (overrides the configuration file)\n");
+  printf ("\t--dim input-trace Set input trace (overrides the configuration file)\n");
   printf ("\t--bw  bandwidth\tSet inter-node bandwidth (MBps, overrides the configuration file)\n");
   printf ("\t--lat latency\tSet inter-node latency for all nodes (seconds, overrides the configuration file)\n");
-  printf ("\t--fill\tSet node filling task mapping (overrides the configuration file)\n");
-  printf ("\t--ppn tasks_per_node\tSet 'n' tasks per node mapping (overrides the configuration file)\n");
+  printf ("\t--fill\t\tSet node filling task mapping (overrides the configuration file)\n");
+  printf ("\t--ppn tasks_per_node Set 'n' tasks per node mapping (overrides the configuration file)\n");
   printf ("\t--interlvd\tSet interleaved node tasks mapping (overrides the configuration file)\n");
-  printf ("\t--clean-deadlocks <until-trace-progression> \tA deadlock analysis is performed and if detects, tries to solve it.\n");
-
-
-
+  printf ("\t--clean-deadlocks <until-trace-progression> A deadlock analysis is performed and if detects, tries to solve it.\n");
 }
 
 static dimemas_timer read_timer(char *c);
@@ -460,6 +459,14 @@ void parse_arguments(int argc, char *argv[])
           j++;
           CONFIGURATION_Set_Scheduling_Configuration_File(argv[j]);
           break;
+        case 'c':
+        	j++;
+        	CONFIGURATION_Set_Communications_Configuration_File(argv[j]);
+        	break;
+        case 'r':
+        	j++;
+        	CONFIGURATION_Set_RandomValues_Configuration_File(argv[j]);
+        	break;
         case 'I':
           j++;
           sintetic_io_applications = atoi (argv[j]);
@@ -474,7 +481,7 @@ void parse_arguments(int argc, char *argv[])
         case 'W':
           HOT_cache = TRUE;
           break;
-        case 'r':
+        case 'R':
           j++;
           reload_Ptasks = TRUE;
           reload_limit = atoi (argv[j]);
@@ -484,7 +491,7 @@ void parse_arguments(int argc, char *argv[])
             reload_while_longest_running = TRUE;
           }
           if (reload_limit < 0) {
-              fprintf (stderr, "# reloads must be >= 0, given: -r %d\n", reload_limit);
+              fprintf (stderr, "# reloads must be >= 0, given: -R %d\n", reload_limit);
               fprintf (stderr, USAGE, argv[0]);
               exit (EXIT_FAILURE);
           }
@@ -519,7 +526,7 @@ void parse_arguments(int argc, char *argv[])
           wait_logical_recv = TRUE;
           break;
         case '-':
-          if (strncmp(argv[j], "--clean-deadlocks", 11) == 0)
+          if (strncmp(argv[j], "--clean-deadlocks", 17) == 0)
           {
             with_deadlock_analysis = 1;
             j++;
@@ -575,7 +582,7 @@ void parse_arguments(int argc, char *argv[])
             }
             parameter_predefined_map = MAP_FILL_NODES;
           }
-          else if (strncmp(argv[j], "--interlvd", 8) == 0)
+          else if (strncmp(argv[j], "--interlvd", 10) == 0)
           {
             if (parameter_predefined_map != MAP_NO_PREDEFINED)
             {
