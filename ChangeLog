@@ -10,6 +10,17 @@ Date - user - Tool (Simulator | GUI | prv2dim | trf2dim | Other)
 
 	CHANGES:  	explanation of codification changes
 
+2016/07/01 - jmartine - GUI
+	CHANGES:	Now, the DIMEMAS_HOME path is set automatically.
+
+2016/06/10 - jmartine - Simulator
+	FEATURES:	New feature that deal with the deadlocks that can be 
+				generated because a bad cut of a trace. The
+				deadlocks can be detected and deleted by mean of an
+				exaustive analysis of the communications. This
+				feature can be activated with the new flag
+				--clean-deadlocks <until-trace-progression>.
+
 2015/03/03 - jgonzale - All - 5.2.12
 	CHANGES:	5.2.12 Release!!
 
