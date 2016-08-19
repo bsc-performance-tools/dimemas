@@ -47,7 +47,8 @@ import es.bsc.cepbatools.dimemas.tools.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 /*
 * Esta clase crea la ventana de configuración de los nodos.
 */

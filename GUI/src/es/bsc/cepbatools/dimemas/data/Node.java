@@ -571,7 +571,7 @@ public class Node
 	  try 
 	  {
 		acc = value;
-	  } catch(ValueException e)
+	  } catch(NumberFormatException e)
 	  {
 		Tools.showErrorMessage("WRONG ACCELERATOR NODE");
 	    throw e;
