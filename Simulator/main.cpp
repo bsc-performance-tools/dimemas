@@ -974,9 +974,9 @@ REBOOT:
                  paraver_start,
                  paraver_end,
                  paraver_priorities);
-#if DEBUG
-      printf("\n-> " ANSI_COLOR_RED "RESTARTING SIMULATION(%d) " ANSI_COLOR_RESET "\n\n", reboots_counter);
-#endif
+//#if DEBUG
+      printf("\n-> " ANSI_COLOR_RED "Restarting sim. because deadlock has been detected (%d) \r" ANSI_COLOR_RESET "\n", reboots_counter);
+//#endif
 
       // This call load the events that threads have in actions
       // for this reason, before this we have to read the new actions

@@ -1961,7 +1961,7 @@ t_boolean DAP_read_action (app_struct       *app,
   empty_line = TRUE;
 
   /* If it is not the thread 0 (not MPI), deadlock analysis is left */
-  if (thread_id != 0)
+  if (thread_id == 0)
   {
 
 		struct t_thread * thread = get_thread_by_task_id(task_id);

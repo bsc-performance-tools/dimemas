@@ -468,7 +468,7 @@ t_boolean _is_deadlocked(int from)
     if (query_prio_queue(&thread_to_mod->ops_to_be_ignored, prio) != A_NIL)
     {
       printf("ERROR: Has been an incoherence between Dimemas"
-             " models and deadlock analyzer. Try to simulate without --danalyzer flag.\n\n");
+             " models and deadlock analyzer. Try to simulate without --clean-deadlocks flag.\n\n");
       assert(FALSE);
     }
 #if DEBUG
