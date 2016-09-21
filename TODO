@@ -1,3 +1,9 @@
+20160920 - Dimemas GPU extension: actually a kernel thread runs in a CPU unit as every thread. Only GPU params are
+	   used to simulate the comms between a host thread an a kernel thread. When a node has mapped
+	   more threads than CPUs, an accelerator thread probably will wait too much for a CPU when in a real
+	   case there will be no waiting because the GPU will only run few threads. The solution is to mark a CPU unit
+	   somehow to assign exclusively kernel threads there and not every type of thread.
+
 20130130 - Dimemas/Venus interaction reported
 
 20121211 - Show a warning / Generate fake COMM_WORLD communicator when no communicators are defined on the trace
