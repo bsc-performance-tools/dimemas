@@ -21,7 +21,7 @@
 #define TAG_ALL -1
 #define COMMUNIC_ID_ALL -1
 
-#define DEBUG 0
+#define DEBUG 1
 
 FILE *log;
 int file_index;

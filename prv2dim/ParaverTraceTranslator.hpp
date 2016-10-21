@@ -104,6 +104,7 @@ class ParaverTraceTranslator: public Error
 
     bool Translate(bool   GenerateFirstIdle,
                    double IprobeMissesThreshold,
+		   double TestMissesThreshold,
                    INT32  BurstCounterType,
                    double BurstCounterFactor,
                    bool   GenerateMPIInitBarrier);
@@ -114,6 +115,7 @@ class ParaverTraceTranslator: public Error
                                    double TimeFactor,
                                    bool   GenerateFirstIdle,
                                    double IprobeMissesThreshold,
+		   		   double TestMissesThreshold,
                                    INT32  BurstCounterType,
                                    double BurstCounterFactor,
                                    bool   GenerateMPIInitBarrier);

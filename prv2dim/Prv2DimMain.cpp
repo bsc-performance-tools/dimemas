@@ -58,6 +58,7 @@ bool  GenerateFirstIdle;
 bool  GenerateMPIInitBarrier;
 
 double IprobeMissesThreshold; /* Maximun iprobe misses to discard iprobe burst */
+double TestMissesThreshold;
 
 INT32  BurstCounterType;
 double BurstCounterFactor;
@@ -117,8 +118,17 @@ bool ReadArgsNew(const int argc, const char *argv[])
       "--extra-statistics",
       "-e"
       );
-
   ez::ezOptionValidator* vD = new ez::ezOptionValidator("d");
+  opt.add(
+      "",
+      false,
+      1,
+      0,
+      "MPI_Test miss rate (per milisecond) to discard Test area CPU burst\n",
+      "-t",
+      "--test-miss-rate",
+      vD);
+
   opt.add(
       "",
       false,
@@ -201,6 +211,23 @@ bool ReadArgsNew(const int argc, const char *argv[])
   else
   {
     GenerateMPIInitBarrier = true;
+  }
+
+  // Added by fran
+  if (opt.isSet("-t"))
+  {
+    std::string TestMissesThresholdStr;
+    opt.get("-t")->getString(TestMissesThresholdStr);
+
+    if (bsc_tools::isDouble(TestMissesThresholdStr))
+    {
+      opt.get("-t")->getDouble(TestMissesThreshold);
+    }
+    else
+    {
+      std::cerr << "ERROR: Got invalid argument \"" << TestMissesThresholdStr << "\" for option \"-t\".\n\n";
+      return false;
+    }
   }
 
   if (opt.isSet("-i"))
@@ -464,6 +491,7 @@ int main(const int argc, const char *argv[])
   std::string CounterFactorStr;
 
   IprobeMissesThreshold = 0.0;
+  TestMissesThreshold = 0.0;
   BurstCounterType      = -1;
   BurstCounterFactor    = 0.0;
 
@@ -506,6 +534,7 @@ int main(const int argc, const char *argv[])
 
   if (!Translator->Translate(GenerateFirstIdle,
                              IprobeMissesThreshold,
+			     TestMissesThreshold,
                              BurstCounterType,
                              BurstCounterFactor,
                              GenerateMPIInitBarrier))

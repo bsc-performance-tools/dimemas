@@ -625,6 +625,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 bool
 ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
                                   double IprobeMissesThreshold,
+				  double TestMissesThreshold,
                                   INT32  BurstCounterType,
                                   double BurstCounterFactor,
                                   bool   GenerateMPIInitBarrier)
@@ -755,6 +756,7 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
                                  TimeFactor,
                                  GenerateFirstIdle,
                                  IprobeMissesThreshold,
+				 TestMissesThreshold,
                                  BurstCounterType,
                                  BurstCounterFactor,
                                  GenerateMPIInitBarrier))
@@ -1238,6 +1240,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 																											 double                   TimeFactor,
 																											 bool                     GenerateFirstIdle,
 																											 double                   IprobeMissesThreshold,
+																											 double                   TestMissesThreshold,
 																											 INT32                    BurstCounterType,
 																											 double                   BurstCounterFactor,
 																											 bool                     GenerateMPIInitBarrier)
@@ -1335,12 +1338,17 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
         return false;
       }
 
+      // Added PID of the prv2dim process in order to allow multiple
+      // instances working together
       sprintf(TemporaryFileName,
-              "%s/TmpTask_%04d_%04d_%06d",
+              "%s/P%d_TmpTask_%04d_%04d_%06d",
               tmp_dir,
+	      getpid(),
               CurrentTask,
               CurrentThread,
               rand()%999999);
+
+      printf("\n-> TMPFILE:%s\n", TemporaryFileName);
 
       if (!DescriptorShared)
       {
@@ -1394,6 +1402,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 											GenerateFirstIdle,
 											EmptyTask,
 											IprobeMissesThreshold,
+											TestMissesThreshold,
 											BurstCounterGeneration,
 											BurstCounterType,
 											BurstCounterFactor,
@@ -1421,6 +1430,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 											GenerateFirstIdle,
 											EmptyTask,
 											IprobeMissesThreshold,
+											TestMissesThreshold,
 											BurstCounterGeneration,
 											BurstCounterType,
 											BurstCounterFactor,

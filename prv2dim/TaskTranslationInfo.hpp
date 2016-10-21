@@ -89,6 +89,7 @@ class TaskTranslationInfo: public Error
     char* TemporaryFileName;
 
     double IprobeMissesThreshold;
+    double TestMissesThreshold;
 
     bool   GenerateMPIInitBarrier;
     bool   MPIInitBarrierWritten;
@@ -100,7 +101,9 @@ class TaskTranslationInfo: public Error
     double BurstCounterFactor;
 
     bool  OngoingIprobe;
+    bool  OngoingTest;
     bool  IprobeBurstFlushed;
+    bool  TestBurstFlushed;
     bool  FilePointerAvailable;
     bool  FirstPrint;
 
@@ -116,6 +119,7 @@ class TaskTranslationInfo: public Error
                         bool    GenerateFirstIdle,
                         bool    EmptyTask,
                         double  IprobeMissesThreshold,
+			double  TestMissesThreshold,
                         bool    BurstCounterGeneration,
                         INT32   BurstCounterType,
                         double  BurstCounterFactor,
@@ -173,6 +177,7 @@ class TaskTranslationInfo: public Error
     void Event2GlobalOp(Event_t CurrentEvent);
     void FinalizeGlobalOp(void);
     bool CheckIprobeCounters(Event_t CurrentEvent);
+    bool CheckTestCounters(Event_t CurrentEvent);
     bool GenerateBurst(INT32 TaskId, INT32 ThreadId, UINT64 Timestamp);
 
 		bool PrintPseudoCommunicationEndpoint(INT32 CommType,
