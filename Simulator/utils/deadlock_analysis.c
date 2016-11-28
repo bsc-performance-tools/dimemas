@@ -370,7 +370,8 @@ void DEADLOCK_thread_finalized(struct t_thread * thread)
     for (j=0; j < dep_set_size; ++j)
     {
         struct t_thread * thread_to_reverse = get_thread_by_task_id(i);
-        struct trace_operation * op_to_be_ignored = (struct trace_operation *)malloc(sizeof(struct trace_operation));
+        struct trace_operation * op_to_be_ignored = 
+            (struct trace_operation *)malloc(sizeof(struct trace_operation));
 
         op_to_be_ignored->Ptask_id = thread_to_reverse->task->Ptask->Ptaskid;
         op_to_be_ignored->task_id = thread_to_reverse->task->taskid;

@@ -148,8 +148,19 @@
 #define IRECV           14  /* Immediate recieve (without blocking) */
 #define WAIT            15  /* Block until wait */
 #define WAIT_FOR_SEND   16  /* Added by Vladimir */
-#define ACC_SYNC				17
-#define GPU_BURST			  18
+#define ACC_SYNC        17
+#define GPU_BURST       18
+
+/*
+ * FRAN
+ * Types of global ops. With the introduction of the non-blocking global ops
+ * we need a way to determine if the glop is blocking or not. The last filed
+ * of the record is saying it to us
+ */
+
+#define GLOBAL_OP_ASYN  0
+#define GLOBAL_OP_SYNC  1
+#define GLOBAL_OP_WAIT  2
 
 
 /*#define FS               32
@@ -257,12 +268,13 @@
 #define ACCELERATOR_LINK 	5
 
 /* Six communication types */
-#define MEMORY_COMMUNICATION_TYPE      0
-#define INTERNAL_NETWORK_COM_TYPE      1
-#define EXTERNAL_NETWORK_COM_TYPE      2
-#define DEDICATED_CONNECTION_COM_TYPE  3
-#define EXTERNAL_MODEL_COM_TYPE        4 // Used by the external communications model
-#define	ACCELERATOR_COM_TYPE	 				 5
+#define MEMORY_COMMUNICATION_TYPE       0
+#define INTERNAL_NETWORK_COM_TYPE       1
+#define EXTERNAL_NETWORK_COM_TYPE       2
+#define DEDICATED_CONNECTION_COM_TYPE   3
+#define EXTERNAL_MODEL_COM_TYPE         4 // Used by the external communications model
+#define	ACCELERATOR_COM_TYPE            5
+#define NON_BLOCKING_GLOBAL_OP_COM_TYPE 6
 
 /* Type of global Ops used by the external communications models */
 #define DIMEMAS_GLOBAL_OP_MODEL  0

@@ -758,18 +758,159 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
   BLOCK_ID_MPI_Type_ub,
   FALSE },
 /* 140 */
-{ MPITYPE_OTHER,
+/*{ MPITYPE_OTHER,
   MPI_INIT_THREAD_VAL, MPI_INIT_THREAD_LABEL,
   BLOCK_ID_MPI_Init_thread,
-  FALSE },
+  FALSE },*/
 /* 141 */
 { MPITYPE_TYPE,
   MPI_TYPE_VECTOR_VAL, MPI_TYPE_VECTOR_LABEL,
   BLOCK_ID_MPI_Type_vector,
+  FALSE },
+/* 142 */
+{ MPITYPE_IO,
+  MPI_FILE_OPEN_VAL, MPI_FILE_OPEN_LABEL,
+  BLOCK_ID_MPI_File_open,
+  FALSE },
+/* 143 */
+{ MPITYPE_IO,
+  MPI_FILE_CLOSE_VAL, MPI_FILE_CLOSE_LABEL,
+  BLOCK_ID_MPI_File_close,
+  FALSE },
+/* 144 */
+{ MPITYPE_IO,
+  MPI_FILE_READ_VAL, MPI_FILE_READ_LABEL,
+  BLOCK_ID_MPI_File_read,
+  FALSE },
+/* 145 */
+{ MPITYPE_IO,
+  MPI_FILE_READ_ALL_VAL, MPI_FILE_READ_ALL_LABEL,
+  BLOCK_ID_MPI_File_read_all,
+  FALSE },
+/* 146 */
+{ MPITYPE_IO,
+  MPI_FILE_WRITE_VAL, MPI_FILE_WRITE_LABEL,
+  BLOCK_ID_MPI_File_write,
+  FALSE },
+/* 147 */
+{ MPITYPE_IO,
+  MPI_FILE_WRITE_ALL_VAL, MPI_FILE_WRITE_ALL_LABEL,
+  BLOCK_ID_MPI_File_write_all,
+  FALSE },
+/* 148 */
+{ MPITYPE_IO,
+  MPI_FILE_READ_AT_VAL, MPI_FILE_READ_AT_LABEL,
+  BLOCK_ID_MPI_File_read_at,
+  FALSE },
+/* 149 */
+{ MPITYPE_IO,
+  MPI_FILE_READ_AT_ALL_VAL, MPI_FILE_READ_AT_ALL_LABEL,
+  BLOCK_ID_MPI_File_read_at_all,
+  FALSE },
+/* 150 */
+{ MPITYPE_IO,
+  MPI_FILE_WRITE_AT_VAL, MPI_FILE_WRITE_AT_LABEL,
+  BLOCK_ID_MPI_File_write_at,
+  FALSE },
+/* 151 */
+{ MPITYPE_IO,
+  MPI_FILE_WRITE_AT_ALL_VAL, MPI_FILE_WRITE_AT_ALL_LABEL,
+  BLOCK_ID_MPI_File_write_at_all,
+  FALSE },
+/* 152 */
+{ MPITYPE_COMM,
+  MPI_COMM_SPAWN_VAL, MPI_COMM_SPAWN_LABEL,
+  BLOCK_ID_MPI_Comm_spawn,
+  FALSE },
+/* 153 */
+{ MPITYPE_COMM,
+  MPI_COMM_SPAWN_MULTIPLE_VAL, MPI_COMM_SPAWN_MULTIPLE_LABEL,
+  BLOCK_ID_MPI_Comm_spawn_multiple,
+  FALSE },
+/* 154 */
+{ MPITYPE_OTHER,
+  MPI_REQUEST_GET_STATUS_VAL, MPI_REQUEST_GET_STATUS_LABEL,
+  BLOCK_ID_MPI_Request_get_status,
+  FALSE },
+/* 155 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IREDUCE_VAL, MPI_IREDUCE_LABEL,
+  BLOCK_ID_MPI_Ireduce,
+  FALSE },
+/* 156 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IALLREDUCE_VAL, MPI_IALLREDUCE_LABEL,
+  BLOCK_ID_MPI_Iallreduce,
+  FALSE },
+/* 157 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IBARRIER_VAL, MPI_IBARRIER_LABEL,
+  BLOCK_ID_MPI_Ibarrier,
+  FALSE },
+/* 158 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IBCAST_VAL, MPI_IBCAST_LABEL,
+  BLOCK_ID_MPI_Ibcast,
+  FALSE },
+/* 159 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IALLTOALL_VAL, MPI_IALLTOALL_LABEL,
+  BLOCK_ID_MPI_Ialltoall,
+  FALSE },
+/* 160 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IALLTOALLV_VAL, MPI_IALLTOALLV_LABEL,
+  BLOCK_ID_MPI_Ialltoallv,
+  FALSE },
+/* 161 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IALLGATHER_VAL, MPI_IALLGATHER_LABEL,
+  BLOCK_ID_MPI_Iallgather,
+  FALSE },
+/* 162 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IALLGATHERV_VAL, MPI_IALLGATHERV_LABEL,
+  BLOCK_ID_MPI_Iallgatherv,
+  FALSE },
+/* 163 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IGATHER_VAL, MPI_IGATHER_LABEL,
+  BLOCK_ID_MPI_Igather,
+  FALSE },
+/* 164 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IGATHERV_VAL, MPI_IGATHERV_LABEL,
+  BLOCK_ID_MPI_Igatherv,
+  FALSE },
+/* 165 */
+{ MPITYPE_COLLECTIVE,
+  MPI_ISCATTER_VAL, MPI_ISCATTER_LABEL,
+  BLOCK_ID_MPI_Iscatter,
+  FALSE },
+/* 166 */
+{ MPITYPE_COLLECTIVE,
+  MPI_ISCATTERV_VAL, MPI_ISCATTERV_LABEL,
+  BLOCK_ID_MPI_Iscatterv,
+  FALSE },
+/* 167 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IREDUCESCAT_VAL, MPI_IREDUCESCAT_LABEL,
+  BLOCK_ID_MPI_Ireducescat,
+  FALSE },
+/* 168 */
+{ MPITYPE_COLLECTIVE,
+  MPI_ISCAN_VAL, MPI_ISCAN_LABEL,
+  BLOCK_ID_MPI_Iscan,
+  FALSE },
+// In order to have the same Ids than extrae I've moved this
+// MPI from 141 to here.
+{ MPITYPE_OTHER,
+  MPI_INIT_THREAD_VAL, MPI_INIT_THREAD_LABEL,
+  BLOCK_ID_MPI_Init_thread,
   FALSE }
 };
 
-#define BLOCKID_TOGLOBALOPID_VALUES 17
+#define BLOCKID_TOGLOBALOPID_VALUES 28
 DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 {
 /* 000 */  GLOP_ID_NULL,
@@ -782,13 +923,26 @@ DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 /* 007 */  GLOP_ID_MPI_Bcast,
 /* 008 */  GLOP_ID_MPI_Gather,
 /* 009 */  GLOP_ID_MPI_Gatherv,
-/* 010 */  GLOP_ID_NULL,
-/* 011 */  GLOP_ID_NULL,
-/* 012 */  GLOP_ID_MPI_Reduce_scatter,
-/* 013 */  GLOP_ID_MPI_Reduce,
-/* 014 */  GLOP_ID_MPI_Scan,
-/* 015 */  GLOP_ID_MPI_Scatter,
-/* 016 */  GLOP_ID_MPI_Scatterv
+/* 010 */  GLOP_ID_MPI_Reduce_scatter,
+/* 011 */  GLOP_ID_MPI_Reduce,
+/* 012 */  GLOP_ID_MPI_Scan,
+/* 013 */  GLOP_ID_MPI_Scatter,
+/* 014 */  GLOP_ID_MPI_Scatterv,
+/* 015 */  GLOP_ID_MPI_Iallgather,
+/* 016 */  GLOP_ID_MPI_Iallgatherv,
+/* 017 */  GLOP_ID_MPI_Iallreduce,
+/* 018 */  GLOP_ID_MPI_Ialltoall,
+/* 019 */  GLOP_ID_MPI_Ialltoallv,
+/* 020 */  GLOP_ID_MPI_Ibarrier,
+/* 021 */  GLOP_ID_MPI_Ibcast,
+/* 022 */  GLOP_ID_MPI_Igather,
+/* 023 */  GLOP_ID_MPI_Igatherv,
+/* 024 */  GLOP_ID_MPI_Ireduce_scatter,
+/* 025 */  GLOP_ID_MPI_Ireduce,
+/* 026 */  GLOP_ID_MPI_Iscan,
+/* 027 */  GLOP_ID_MPI_Iscatter,
+/* 028 */  GLOP_ID_MPI_Iscatterv
+
 };
 
 
@@ -837,9 +991,10 @@ DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op )
 
 DimCollectiveOp MPIEventEncoding_GlobalOpId (DimBlock BlockId)
 {
-  ASSERT (BlockId < NUM_MPICALLS);
-  
-  return( BlockId2GlobalOpId[BlockId] );
+    ASSERT (BlockId < NUM_MPICALLS);
+    int GlobalOpId=BlockId2GlobalOpId[BlockId]; 
+    
+    return GlobalOpId;
 }
 
 /******************************************************************************

@@ -306,6 +306,8 @@ class GlobalOp: public virtual ParaverRecord
     INT32 SendSize, RecvSize;
     INT32 GlobalOpId;
     INT32 RootTaskId;
+		
+		INT32	Synchronize;
     bool  Root;
   public:
     GlobalOp(UINT64 Timestamp,
@@ -330,40 +332,32 @@ class GlobalOp: public virtual ParaverRecord
     };
     INT32 GetCommunicatorId(void) { return CommunicatorId; };
 
-    void SetSendSize(INT32 SendSize)
-    {
-      this->SendSize = SendSize;
-    };
-    INT32 GetSendSize(void)       { return SendSize; };
+    void SetSendSize(INT32 SendSize) { this->SendSize = SendSize; };
 
-    void SetRecvSize(INT32 RecvSize)
-    {
-      this->RecvSize = RecvSize;
-    };
-    INT32 GetRecvSize(void)       { return RecvSize; };
+    INT32 GetSendSize(void) { return SendSize; };
 
-    void SetGlobaOpId(INT32 GlobaOpId)
-    {
-      this->GlobalOpId = GlobalOpId;
-    }
-    INT32 GetGlobalOpId(void)     { return GlobalOpId; };
+    void SetRecvSize(INT32 RecvSize) { this->RecvSize = RecvSize; };
 
-    void SetRootTaskId(INT32 RootTaskId)
-    {
-      this->RootTaskId = RootTaskId;
-    };
-    INT32 GetRootTaksId(void)     { return RootTaskId; };
+		INT32 GetRecvSize(void) { return RecvSize; };
 
-    void  SetIsRoot(bool Root)
-    {
-      this->Root = Root;
-    };
-    bool  GetIsRoot(void)         { return Root; };
+    void SetGlobaOpId(INT32 GlobaOpId) { this->GlobalOpId = GlobalOpId; }
 
+		INT32 GetGlobalOpId(void) { if (GlobalOpId >= 14) return GlobalOpId-14; 
+			                          else return GlobalOpId; };
 
+    void SetRootTaskId(INT32 RootTaskId) { this->RootTaskId = RootTaskId; };
+
+		INT32 GetRootTaksId(void) { return RootTaskId; };
+
+    void  SetIsRoot(bool Root) { this->Root = Root; };
+
+		bool  GetIsRoot(void) { return Root; };
+
+		INT32 GetSynch(void)	{ return Synchronize; };
 
     void Write(ostream& os) const;
 };
+
 typedef GlobalOp* GlobalOp_t;
 
 ostream& operator<< (ostream& os, const GlobalOp& Comm);

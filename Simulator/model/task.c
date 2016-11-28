@@ -685,10 +685,16 @@ void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
   comm->communicator_id = communicator_id;
   comm->size            = 0;
   comm->global_ranks    = NULL;
-  // create_queue (&comm->global_ranks);
+
   create_queue (&comm->threads);
   create_queue (&comm->machines_threads);
   create_queue (&comm->m_threads_with_links);
+
+  create_queue (&comm->nonblock_global_op_threads);
+  create_queue (&comm->nonblock_global_op_machine_threads);
+  create_queue (&comm->nonblock_m_threads_with_links);
+  create_queue (&comm->nonblock_current_root);
+
   comm->current_root = TH_NIL;
   comm->in_flight_op = FALSE;
 
@@ -1215,6 +1221,16 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
 	thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
 	thread->blckd_in_global_op = FALSE;
 	/* Accelerator variables */
+
+    /* NON-Block global operations variables */
+    thread->n_nonblock_glob_in_flight = 0;
+    thread->n_nonblock_glob_waiting = 0;
+    thread->n_nonblock_glob_done = 0;
+    thread->nb_glob_index = 0;
+    thread->nb_glob_index_master = 0;
+
+    create_queue(&thread->nonblock_glop_done_threads);
+
 }
 
 struct t_thread *locate_thread_of_task (struct t_task *task, int thid)
@@ -1422,14 +1438,10 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
   copy_thread->task                     = thread->task;
   copy_thread->put_into_ready           = thread->put_into_ready;
   copy_thread->last_action              = AC_NIL;
-  /* copy_thread->account               = thread->account;*/
   copy_thread->local_link               = thread->local_link;
   copy_thread->partner_link             = thread->partner_link;
   copy_thread->local_hd_link            = thread->local_hd_link;
   copy_thread->partner_hd_link          = thread->partner_hd_link;
-
-  // copy_thread->in_mem_link              = thread->in_mem_link;
-  // copy_thread->out_mem_link             = thread->out_mem_link;
 
   copy_thread->last_paraver             = thread->last_paraver;
   copy_thread->base_priority            = thread->base_priority;
@@ -1447,31 +1459,27 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
   (*SCH[machine->scheduler.policy].init_scheduler_parameters) (copy_thread);
   SCHEDULER_copy_parameters (thread, copy_thread);
 
-  // ac = thread->action;
-  //action = (struct t_action *) malloc (sizeof (struct t_action));
-
   READ_create_action(&copy_thread->action);
   READ_copy_action(thread->action, copy_thread->action);
 
-  // memcpy (copy_thread->action, ac, sizeof(struct t_action));
   copy_thread->action->next = AC_NIL;
-  // copy_thread->action = action;
 
-  /* Intent de crear un nou accounting pel thread nou, que al destruir-se
-  * s'afegira al thread original. */
+  // Intent de crear un nou accounting pel thread nou, que al destruir-se s'afegira al thread original.
   create_queue (&(copy_thread->account));
   new_account (&(copy_thread->account), node->nodeid);
 
-  copy_thread->host											= thread->host;
-  copy_thread->kernel										= thread->kernel;
-  copy_thread->accelerator_link					= thread->accelerator_link;
-  copy_thread->first_acc_event_read			= thread->first_acc_event_read;
-  copy_thread->acc_in_block_event				= thread->acc_in_block_event;
-  copy_thread->acc_recv_sync						= thread->acc_recv_sync;
-  copy_thread->acc_sndr_sync						= thread->acc_sndr_sync;
-  copy_thread->doing_acc_comm						= thread->doing_acc_comm;
-  copy_thread->blckd_in_global_op				= thread->blckd_in_global_op;
-  return (copy_thread);
+  copy_thread->host                     = thread->host;
+  copy_thread->kernel                   = thread->kernel;
+  copy_thread->accelerator_link         = thread->accelerator_link;
+  copy_thread->first_acc_event_read     = thread->first_acc_event_read;
+  copy_thread->acc_in_block_event       = thread->acc_in_block_event;
+  copy_thread->acc_recv_sync            = thread->acc_recv_sync;
+  copy_thread->acc_sndr_sync            = thread->acc_sndr_sync;
+  copy_thread->doing_acc_comm           = thread->doing_acc_comm;
+  copy_thread->blckd_in_global_op       = thread->blckd_in_global_op;
+  copy_thread->n_nonblock_glob_in_flight= thread->n_nonblock_glob_in_flight;
+
+  return copy_thread;
 }
 
 // this is used for making MPI_Isend

@@ -72,7 +72,9 @@ Communicator::Communicator(char* ASCIICommunicator)
            &AppId,
            &CommId,
            &TaskCount) == 3)
-  { /* Special case for void communicators */
+  { 
+    // Special case for void communicators
+    //
     CommunicatorId = CommId;
     ApplicationId  = AppId;
     if (TaskCount != 0)

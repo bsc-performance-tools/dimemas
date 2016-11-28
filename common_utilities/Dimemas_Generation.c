@@ -835,10 +835,33 @@ int Dimemas_Global_OP( FILE *fd,
                        int task, int thread,
                        int opid, int commid,
                        int root_rank, int root_thd,
+                       long64_t sendsize, long64_t recvsize, 
+											 int synchronize )
+{
+
+
+#ifdef NEW_DIMEMAS_TRACE
+  #define GLOBAL_OP_STRING "10:%d:%d:%d:%d:%d:%d:%lld:%lld:%d\n"
+#else
+  #define GLOBAL_OP_STRING "\"global OP\" { %d, %d, %d, %d, %d, %d, %lld, %lld, %d };;\n"
+#endif
+
+  return fprintf(fd, GLOBAL_OP_STRING,
+                 task, thread, opid, commid,
+                 root_rank, root_thd,
+                 sendsize, recvsize, synchronize);
+}
+
+int Dimemas_Global_OP_Wait( FILE *fd,
+                       int task, int thread,
+                       int opid, int commid,
+                       int root_rank, int root_thd,
                        long64_t sendsize, long64_t recvsize )
 {
+
+
 #ifdef NEW_DIMEMAS_TRACE
-  #define GLOBAL_OP_STRING "10:%d:%d:%d:%d:%d:%d:%lld:%lld\n"
+  #define GLOBAL_OP_STRING "10:%d:%d:%d:%d:%d:%d:%lld:%lld:2\n"
 #else
   #define GLOBAL_OP_STRING "\"global OP\" { %d, %d, %d, %d, %d, %d, %lld, %lld };;\n"
 #endif
@@ -846,8 +869,9 @@ int Dimemas_Global_OP( FILE *fd,
   return fprintf(fd, GLOBAL_OP_STRING,
                  task, thread, opid, commid,
                  root_rank, root_thd,
-                 sendsize, recvsize );
+                 sendsize, recvsize);
 }
+
 
 /******************************************************************************
  **      Function name : Dimemas_NX_One_Sided

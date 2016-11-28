@@ -90,13 +90,15 @@ void new_global_op (int identificator, const char *name);
 
 int get_global_op_id_by_name (char *name);
 
+void GLOBAL_wait_operation(struct t_thread *thread);
 void GLOBAL_operation (struct t_thread *thread,
                        int glop_id,
                        int comm_id,
                        int root_rank,
                        int root_thid,
                        int bytes_send,
-                       int bytes_recv);
+                       int bytes_recv,
+                       int synch_type);
 
 extern struct t_communicator*
 locate_communicator(struct t_queue *communicator_queue, int commid);

@@ -230,6 +230,8 @@ t_boolean simulation_rebooted = FALSE;
 "\t config-file\n"
 #endif
 
+void print_events_queue();
+
 static bool ParseArguments(const int argc, const char* argv)
 {
   return true;
@@ -936,6 +938,7 @@ REBOOT:
     }
     */
 
+    //print_events_queue();
     event_manager(current_event);
   }
 
@@ -1084,4 +1087,25 @@ REBOOT:
   }
 
   exit(EXIT_SUCCESS);
+}
+
+void print_events_queue()
+{
+    struct t_item *ev_it = Event_queue.first;
+    
+    while (ev_it != NULL)
+    {
+        struct t_event *content = (struct t_event*)ev_it->content;
+        struct t_thread *th = content->thread;
+
+        if (th == NULL) break;
+
+        int action_id = 0;
+        if (th->action != NULL)
+            action_id = th->action->action;
+
+        printf("TASK ID: %d OPERATION: %d\n", 
+                th->task->taskid, action_id);
+        ev_it = ev_it->next;
+    }
 }

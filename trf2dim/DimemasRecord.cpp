@@ -294,7 +294,7 @@ GlobalOp::ToDimemas(FILE* OutputTraceFile)
   if (Dimemas_Global_OP(OutputTraceFile, TaskId, ThreadId,
                         GlobalOpId, CommunicatorId,
                         RootTaskId, RootThreadId,
-                        SendSize, RecvSize) < 0)
+                        SendSize, RecvSize, 1) < 0)
     return false;
   
   return true;

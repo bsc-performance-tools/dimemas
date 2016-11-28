@@ -205,6 +205,7 @@ static void start_global_op (struct t_thread *thread, int kind);
 static void free_global_communication_resources (struct t_thread *thread);
 
 static void close_global_communication (struct t_thread *thread);
+static void close_global_nonblock_communication(struct t_thread *thread);
 
 static int get_communication_type (struct t_task  *task,
                                    struct t_task  *task_partner,
@@ -264,6 +265,18 @@ int                     ACCELERATOR_SYNC_required_threads_count;
 
 static void ACCELERATOR_check_sync_status(struct t_thread* thread,
                                           t_boolean        host);
+
+static void calcula_temps_maxim_intra_nodes (struct t_machine      *machine,
+                                             struct t_communicator *communicator,
+                                             struct t_global_op_information *glop_info,
+                                             int bytes_send,   /* Number of bytes send */
+                                             int bytes_recvd,  /* Number of bytes received */
+                                             t_nano *max_tnode_in,
+                                             t_nano *max_lnode_in,
+                                             t_nano *max_tnode_out,
+                                             t_nano *max_lnode_out);
+
+int cmpfunc(const void *a, const void *b);
 
 /*****************************************************************************
  * Initialization/Finalization of the communications module
@@ -710,12 +723,17 @@ t_nano compute_startup (struct t_thread                 *thread,
     break;
 
   case ACCELERATOR_COM_TYPE:
-	/*	Es un missatge local al node, però entre CPU i GPU	*/
+	    /*	Es un missatge local al node, però entre CPU i GPU	*/
 		if (!send_node->accelerator)
 		{
-			panic("Error computing accelerator comm startup through a non-accelerator node\n");
+			panic("Error computing accelerator comm startup \
+                    through a non-accelerator node\n");
 		}
-		/* Differenciated memory transfers latency and configuration/launch/sync latency */
+		/* 
+         * Differenciated memory transfers latency and configuration/launch/sync 
+         * latency 
+         */
+
 		if (CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) &&
 						mess_size == 0)
 					startup = send_node->acc.startup;
@@ -729,7 +747,155 @@ t_nano compute_startup (struct t_thread                 *thread,
 		startup += (dimemas_timer) RANDOM_GenerateRandom(&randomness.acc_memory_latency);
 
 		break;
+  
+  case NON_BLOCKING_GLOBAL_OP_COM_TYPE:
+        {
+        struct t_action* action = thread->action;
+        struct t_Ptask* Ptask = thread->task->Ptask;
+        int comm_id = action->desc.global_op.comm_id;
+        struct t_communicator* comm = locate_communicator (&Ptask->Communicator, comm_id);
 
+        // Let's see which tasks are involved in this communicator in order to get the
+        // correct startup time. If only intra-node threads are involved, then just get
+        // the intra-node latency. If intra-node and inter-node threads are involved, then
+        // get the maximum one. Equal with inter-machine communications.
+        //
+        
+        int i;
+        int machines_id[comm->size];
+        int nodes_id[comm->size];
+        
+        // Get all threads involved in the communicator
+        for (i=0; i<comm->size; ++i)
+        {
+            struct t_thread* current_th = get_thread_by_task_id(comm->global_ranks[i]);
+            struct t_node* current_node = get_node_of_thread (current_th);
+            struct t_machine* current_machine = current_node->machine;
+
+            nodes_id[i] = current_node->nodeid;
+            machines_id[i] = current_machine->id;
+        }
+
+        qsort(nodes_id, comm->size, sizeof(int), cmpfunc);
+        qsort(machines_id, comm->size, sizeof(int), cmpfunc);
+
+        int last_machine_id=machines_id[0];
+        int last_node_id=nodes_id[0];
+
+        int n_machines=1;
+        int n_nodes=1;
+        int n_tasks = comm->size;
+
+        for (i=1; i < comm->size; ++i)
+        {
+            if (machines_id[i] != last_machine_id)
+                n_machines++;
+            if (nodes_id[i] != last_node_id)
+                n_nodes++;
+            last_machine_id=machines_id[i];
+            last_node_id=nodes_id[i];
+        }
+
+        t_boolean same_machine = TRUE;
+        t_boolean same_node = TRUE;
+        t_boolean sharing_node = TRUE;
+
+        same_machine=(n_machines==1);
+        same_node=(n_nodes==1);
+        sharing_node=(n_nodes<n_tasks);
+
+        t_nano inter_machine_lat = 0;
+        t_nano inter_node_lat = 0;
+        t_nano intra_node_lat = 0;
+        t_nano dummy; // For transmission time
+
+        int glop_id = thread->action->desc.global_op.glop_id;
+
+
+        struct t_node* node=get_node_of_thread (thread);
+        struct t_machine* machine=node->machine;
+
+        // Get the information about the global operation
+        struct t_global_op_information* glop_info;
+        glop_info = (struct t_global_op_information *)
+                query_prio_queue (&machine->communication.global_ops_info,
+                                  (t_priority) glop_id);
+        
+        // If not all of them are in the same machine, calculate the latency for
+        // the inter-machine communications.
+        //       
+        if (same_machine == FALSE)
+        {
+            /*calcula_fan ( 0, // We do not want to calculate bandwith
+                  n_machines,
+                  0, // Infinits busos
+                  FAN_IN,
+                  glop_info->FIN_model, 
+                  glop_info->FIN_size,
+                  action->desc.global_op.bytes_send,
+                  action->desc.global_op.bytes_recvd,
+                  node->external_net_startup,
+                  &dummy,
+                  &inter_machine_lat);
+            */
+            inter_machine_lat = node->external_net_startup;
+        }
+
+        // If not all of them are in the same node, calculate the latency for 
+        // inter-node communications.
+        //
+        if (same_node == FALSE)
+        {
+            /*calcula_fan (machine->communication.remote_bandwidth,
+                     n_nodes,
+                     machine->communication.num_messages_on_network,
+                     FAN_IN,
+                     glop_info->FIN_model,
+                     glop_info->FIN_size,
+                     action->desc.global_op.bytes_send,
+                     action->desc.global_op.bytes_recvd,
+                     node->remote_startup,
+                     &dummy,
+                     &inter_node_lat);
+            */
+            inter_node_lat = node->remote_startup;
+        }
+
+        // If some tasks are sharing nodes, calculate the latency for
+        // intra-node communications.
+        //
+        if (sharing_node == TRUE)
+        {
+                /*calcula_temps_maxim_intra_nodes (machine,
+                        comm,
+                        glop_info,
+                        action->desc.global_op.bytes_send,
+                        action->desc.global_op.bytes_recvd,
+                        &dummy,
+                        &intra_node_lat,
+                        &dummy,
+                        &dummy);
+                */ 
+                intra_node_lat = node->local_startup;
+
+        }
+
+        // Now, get the maximum latency time and return it!
+        //
+        t_nano max = 0;
+        if (inter_machine_lat > max) max = inter_machine_lat;
+        if (inter_node_lat > max) max = inter_node_lat;
+        if (intra_node_lat > max) max = intra_node_lat;
+
+        /*printf("%d  :  max([%d]%f, [%d]%f, [%d]%f)=%f\n", thread->task->taskid,
+                same_machine, inter_machine_lat, 
+                same_node, inter_node_lat, 
+                sharing_node, intra_node_lat, max);*/
+
+        startup = max;
+        //startup = 1000;
+        break;
+        }
   default:
     panic ("Error computing startup (P%02 T%02d t%02d): unknown comm type %d\n",
            IDENTIFIERS (thread),
@@ -3581,7 +3747,14 @@ void COMMUNIC_general (int value, struct t_thread *thread)
 
   case COM_TIMER_GROUP:
     /* The global operation is completed, restart blocked threads */
-    close_global_communication (thread);
+    if (thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYN)
+    {
+        close_global_nonblock_communication(thread);
+    }
+    else
+    {
+        close_global_communication (thread);
+    }
     break;
 
   case COM_EXT_NET_TRAFFIC_TIMER:
@@ -3816,12 +3989,13 @@ int COMMUNIC_send_reached_real_MPI_transfer (struct t_thread *thread, struct t_s
 
     assert (partner_recv->task->taskid == mess->dest);
     assert (mess->dest_thread == -1);
-    if ( ( (partner_recv->threadid     == mess->dest_thread)    || (mess->dest_thread == -1) ) &&
-         /*   ((partner_recv->task->taskid == mess->dest)           || (mess->dest == -1))        &&   */
-         (mess->mess_tag             == mess_recv->mess_tag)                                &&
-         (mess->communic_id          == mess_recv->communic_id)                             &&
-         ( (mess_recv->ori           == thread->task->taskid) || (mess_recv->ori == -1) )    &&
-         ( (mess_recv->ori_thread    == thread->threadid)     || (mess_recv->ori_thread == -1) ) )
+    if ( 
+            ((partner_recv->threadid == mess->dest_thread) || (mess->dest_thread == -1))
+            && (mess->mess_tag == mess_recv->mess_tag) 
+            && (mess->communic_id == mess_recv->communic_id) 
+            && ((mess_recv->ori == thread->task->taskid) || (mess_recv->ori == -1))
+            && ((mess_recv->ori_thread == thread->threadid) || (mess_recv->ori_thread == -1)) 
+        )
     {
       /* Ja s'havia arribat al recv corresponent */
       break;
@@ -3881,12 +4055,13 @@ int COMMUNIC_send_reached_dependency_synchronization (struct t_thread *thread, s
     mess_recv = & (action->desc.recv);
     assert (partner_recv->task->taskid == mess->dest);
     assert (mess->dest_thread != -1);
-    if ( ( (partner_recv->threadid     == mess->dest_thread)    || (mess->dest_thread == -1) ) &&
-         /*   ((partner_recv->task->taskid == mess->dest)           || (mess->dest == -1))        &&   */
-         (mess->mess_tag             == mess_recv->mess_tag)                                &&
-         (mess->communic_id          == mess_recv->communic_id)                             &&
-         ( (mess_recv->ori             == thread->task->taskid) || (mess_recv->ori == -1) )    &&
-         ( (mess_recv->ori_thread      == thread->threadid)     || (mess_recv->ori_thread == -1) ) )
+    if  ( 
+            ((partner_recv->threadid == mess->dest_thread) || (mess->dest_thread == -1) ) 
+            && (mess->mess_tag == mess_recv->mess_tag) 
+            && (mess->communic_id == mess_recv->communic_id) 
+            && ((mess_recv->ori == thread->task->taskid) || (mess_recv->ori == -1) )
+            && ((mess_recv->ori_thread == thread->threadid) || (mess_recv->ori_thread == -1))
+        )
     {
       /* Ja s'havia arribat al recv corresponent */
       break;
@@ -3968,7 +4143,8 @@ void COMMUNIC_send (struct t_thread *thread)
    if (debug&D_COMM)
    {
     PRINT_TIMER (current_time);
-    printf (":----calling COMMUNIC_send   P%02d T%02d (t%02d) -> T%02d Tag(%d) Size: %lld  Comm.Id: %d \n",
+    printf (":----calling COMMUNIC_send \
+            P%02d T%02d (t%02d) -> T%02d Tag(%d) Size: %lld  Comm.Id: %d \n",
             IDENTIFIERS (thread),
             mess->dest,
             mess->mess_tag,
@@ -4008,8 +4184,8 @@ void COMMUNIC_send (struct t_thread *thread)
                                  mess->mess_size,
                                  &connection);
 
-  if ( kind == INTERNAL_NETWORK_COM_TYPE &&
-      external_comm_library_loaded == TRUE)
+  if ( kind == INTERNAL_NETWORK_COM_TYPE 
+          && external_comm_library_loaded == TRUE)
   {
     /* JGG (28/10/2004): if the communication occurs between nodes and
     the external library is loaded, we check which model is going to be
@@ -4120,21 +4296,16 @@ void COMMUNIC_send (struct t_thread *thread)
                                kind,
                                connection);
 
-    /*if (mess->communic_id == 0 && CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event))
-			startup = (dimemas_timer) 0;*
-
-		/*if (mess->communic_id == 0 && OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event))
-			startup = (dimemas_timer) 0;*/
-    if (OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event) &&
-        thread->kernel)
-		{
-			struct t_cpu *cpu = get_cpu_of_thread(thread);
-			PARAVER_Event (cpu->unique_number,
-										 IDENTIFIERS (thread),
-										 current_time,
-										 thread->acc_in_block_event.type,
-										 0);
-		}
+    if (OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event) 
+            && thread->kernel)
+	{
+		struct t_cpu *cpu = get_cpu_of_thread(thread);
+		PARAVER_Event (cpu->unique_number,
+								 IDENTIFIERS (thread),
+								 current_time,
+								 thread->acc_in_block_event.type,
+								 0);
+	}
 
     if (startup != (t_nano) 0)
     {
@@ -4175,7 +4346,10 @@ void COMMUNIC_send (struct t_thread *thread)
   {
     if (thread->copy_done == FALSE)
     {
-      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size, mess->comm_type);
+      copy_latency = compute_copy_latency (thread, 
+              node_s, 
+              mess->mess_size, 
+              mess->comm_type);
 
       if (copy_latency != (t_nano) 0)
       {
@@ -4396,7 +4570,6 @@ void COMMUNIC_send (struct t_thread *thread)
     }
     else /* hi_ha_irecv || partner != TH_NIL */
     {
-
     	if (thread->original_thread &&
 					(CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) ||
 					 OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event)))
@@ -6554,13 +6727,14 @@ void global_op_get_all_buses (struct t_thread *thread)
   int                            i, comm_id, glop_id;
   struct t_node                 *node;
   struct t_machine              *machine;
+  int                           nb_glob_index;
 
+  nb_glob_index = thread->nb_glob_index;
   node    = get_node_of_thread (thread);
   machine = node->machine;
 
-  if ( (machine->communication.num_messages_on_network) &&
-       (thread->number_buses == 0)
-     )
+  if ( (machine->communication.num_messages_on_network) 
+          && (thread->number_buses == 0))
   {
     if (machine->network.curr_on_network != 0)
     {
@@ -6581,15 +6755,16 @@ void global_op_get_all_buses (struct t_thread *thread)
     }
   }
 
-  Ptask        = thread->task->Ptask;
-  action       = thread->action;
-  comm_id      = action->desc.global_op.comm_id;
+  Ptask = thread->task->Ptask;
+  action = thread->action;
+  comm_id = action->desc.global_op.comm_id;
   communicator = locate_communicator (&Ptask->Communicator, comm_id);
 
   if (communicator == COM_NIL )
   {
     panic (
-      "Communication get_buses trough an invalid communicator %d to P%02d T%02d (t%02d)\n",
+      "Communication get_buses trough an invalid \
+      communicator %d to P%02d T%02d (t%02d)\n",
       comm_id,
       IDENTIFIERS (thread)
     );
@@ -6631,9 +6806,20 @@ void global_op_get_all_buses (struct t_thread *thread)
       glop->name
     );
   }
+  struct t_queue* comm_machine_threads;
+  if (thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYN)
+  {
+
+      comm_machine_threads = (struct t_queue *) query_prio_queue(&communicator->nonblock_global_op_machine_threads, nb_glob_index);
+      //comm_machine_threads=&communicator->nonblock_global_op_machine_threads[nb_glob_index];
+  }
+  else
+  {
+      comm_machine_threads=&communicator->machines_threads;
+  }
 
   /* Si cal obtenir links de la xarxa externa, cal fer-ho aqui */
-  if (count_queue (&communicator->machines_threads) > 1)
+  if (count_queue (comm_machine_threads) > 1)
   {
     /* Com que hi ha mes d'una maquina cal obtenir els links cap a la
      * xarxa externa (tant el d'entrada com el de sortida). */
@@ -6677,9 +6863,11 @@ void global_op_reserva_links (struct t_thread *thread)
   struct t_communicator *communicator;
   struct t_action *action;
   int comm_id;
+  int nb_glob_index;
 
   node = get_node_of_thread (thread);
   machine = node->machine;
+  nb_glob_index = thread->nb_glob_index;
 
   Ptask        = thread->task->Ptask;
   action       = thread->action;
@@ -6692,8 +6880,20 @@ void global_op_reserva_links (struct t_thread *thread)
            comm_id, IDENTIFIERS (thread) );
   }
 
+  struct t_queue* comm_machine_threads;
+  if (thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYN)
+  {
+      comm_machine_threads = (struct t_queue *) query_prio_queue(&communicator->nonblock_global_op_machine_threads, 
+              nb_glob_index);
+      //comm_machine_threads=&communicator->nonblock_global_op_machine_threads[thread->n_nonblock_glob_in_flight];
+  }
+  else
+  {
+      comm_machine_threads=&communicator->machines_threads;
+  }
+
   /* Cal saber si s'estan reservant els links d'entrada o de sortida */
-  if (count_queue (&communicator->machines_threads) !=
+  if (count_queue (comm_machine_threads) !=
       count_queue (&communicator->m_threads_with_links) )
   {
     /* Encara falten algunes maquines per tenir tots els out_links */
@@ -6733,12 +6933,31 @@ static void global_op_get_all_out_links (struct t_thread *thread)
   struct t_node                 *node;
   struct t_machine              *machine;
   int                            comm_id, glop_id;
-
+  int                            synch_type;
+  int                            nb_glob_index;
 
   Ptask        = thread->task->Ptask;
   action       = thread->action;
   comm_id      = action->desc.global_op.comm_id;
+  synch_type   = action->desc.global_op.synch_type;
   communicator = locate_communicator (&Ptask->Communicator, comm_id);
+  nb_glob_index= thread->nb_glob_index; 
+
+  struct t_queue* comm_machine_threads;
+  struct t_queue* m_threads_with_links;
+  if (synch_type == GLOBAL_OP_ASYN)
+  {
+
+      m_threads_with_links = (struct t_queue *) query_prio_queue(&communicator->nonblock_m_threads_with_links, nb_glob_index);
+      comm_machine_threads = (struct t_queue *) query_prio_queue(&communicator->nonblock_global_op_machine_threads, nb_glob_index);
+      //m_threads_with_links=&communicator->nonblock_m_threads_with_links[nb_glob_index];   
+      //comm_machine_threads=&communicator->nonblock_global_op_machine_threads[nb_glob_index];
+  }
+  else
+  {
+        m_threads_with_links=&communicator->m_threads_with_links;
+        comm_machine_threads=&communicator->machines_threads;
+  }
 
   if (communicator == COM_NIL)
   {
@@ -6748,7 +6967,7 @@ static void global_op_get_all_out_links (struct t_thread *thread)
   }
 
   glop_id = action->desc.global_op.glop_id;
-  glop    = (struct t_global_op_definition *)
+  glop = (struct t_global_op_definition *)
             query_prio_queue (&Global_op, (t_priority) glop_id);
 
   if (glop == GOPD_NIL)
@@ -6759,7 +6978,7 @@ static void global_op_get_all_out_links (struct t_thread *thread)
   }
 
   /* Si cal obtenir mes links de la xarxa externa, cal fer-ho aqui */
-  if (count_queue (&communicator->machines_threads) > 1)
+  if (count_queue (comm_machine_threads) > 1)
   {
     /* D'aquesta maquina ja es disposa del link de sortida i dels busos,
        per tant, s'ha d'indicar aixo i, si era l'ultima, ja es pot
@@ -6768,11 +6987,11 @@ static void global_op_get_all_out_links (struct t_thread *thread)
 
     /* S'afegeix el thread a la cua d'aquest communicador de threads que ja
        tenen el link de sortida reservat. */
-    inFIFO_queue (&communicator->m_threads_with_links, (char *) thread);
+    inFIFO_queue (m_threads_with_links, (char *) thread);
 
     /* Es mira si ja es tenen tots */
-    if (count_queue (&communicator->m_threads_with_links) !=
-        count_queue (&communicator->machines_threads) )
+    if (count_queue (m_threads_with_links) !=
+        count_queue (comm_machine_threads))
     {
       /* Encara falten alguns threads per acabar d'obtenir tots els
          links de sortida. */
@@ -6780,9 +6999,9 @@ static void global_op_get_all_out_links (struct t_thread *thread)
     }
 
     /* Ja es pot comenc,ar a la fase de reserva de links d'entrada */
-    for (others  = (struct t_thread *) head_queue (&communicator->machines_threads);
+    for (others  = (struct t_thread *) head_queue (comm_machine_threads);
          others != TH_NIL;
-         others  = (struct t_thread *) next_queue (&communicator->machines_threads) )
+         others  = (struct t_thread *) next_queue (comm_machine_threads) )
     {
       /* Aquest thread reserva els recursos necessaris que falten de la
          seva maquina */
@@ -6821,12 +7040,15 @@ static void global_op_get_all_in_links (struct t_thread *thread)
   struct t_global_op_definition *glop;
   struct t_thread               *others;
   struct t_action               *action;
-  int comm_id, glop_id, root_task;
+  int                            comm_id, glop_id, root_task;
+  int                            synch_type = thread->action->desc.global_op.synch_type;
+  int                            nb_glob_index;
 
   Ptask        = thread->task->Ptask;
   action       = thread->action;
   comm_id      = action->desc.global_op.comm_id;
   communicator = locate_communicator (&Ptask->Communicator, comm_id);
+  nb_glob_index= thread->nb_glob_index;
 
   if (communicator == COM_NIL)
   {
@@ -6852,12 +7074,26 @@ static void global_op_get_all_in_links (struct t_thread *thread)
      si era l'ultima, ja es pot comenc,ar la col.lectiva. En cas contrari,
      s'ha d'encuar aquest thread i seguir esperant. */
 
-  /* S'afegeix el thread a la cua de threads del communicador */
-  inFIFO_queue (&communicator->threads, (char *) thread);
+  // Deciding which queue we have to take
+  struct t_queue *threads_queue;
+  struct t_queue *m_threads_with_links;
+  if (synch_type == GLOBAL_OP_ASYN)
+  { 
+      m_threads_with_links = (struct t_queue *) query_prio_queue(&communicator->nonblock_m_threads_with_links, nb_glob_index);
+      threads_queue = (struct t_queue*) query_prio_queue(&communicator->nonblock_global_op_threads, nb_glob_index);
+      //m_threads_with_links = &communicator->nonblock_m_threads_with_links[nb_glob_index];
+      //threads_queue = &communicator->nonblock_global_op_threads[nb_glob_index];
+  }
+  else
+  {
+      m_threads_with_links = &communicator->m_threads_with_links;
+      threads_queue = &communicator->threads;
+  }
 
-  // if (count_queue (&communicator->threads) !=
-  //    count_queue (&communicator->global_ranks) )
-  if (count_queue(&communicator->threads) != communicator->size)
+  /* S'afegeix el thread a la cua de threads del communicador */
+  inFIFO_queue (threads_queue, (char *) thread);
+
+  if (count_queue(threads_queue) != communicator->size)
   {
     /* Encara falten alguns threads per acabar d'obtenir tot el que
        es necessita. */
@@ -6867,33 +7103,22 @@ static void global_op_get_all_in_links (struct t_thread *thread)
   /* Ja es pot comenc,ar a realitzar l'operacio col.lectiva */
 
   /* Es buida la cua m_threads_with_links perque ja no es necessita */
-  for (others  = (struct t_thread *) outFIFO_queue (&communicator->m_threads_with_links);
+  for (others  = (struct t_thread *) outFIFO_queue (m_threads_with_links);
        others != TH_NIL;
-       others  = (struct t_thread *) outFIFO_queue (&communicator->m_threads_with_links) );
-  // {}
-
-  /* Search the root task
-  root_task = from_rank_to_taskid (communicator, action->desc.global_op.root_rank);
-
-  for (others  = (struct t_thread*) head_queue(&communicator->threads);
-       others != TH_NIL;
-       others  = (struct t_thread*) next_queue(&communicator->threads))
-  {
-    if (others->task->taskid == root_task)
-    {
-      break;
-    }
-  }
-
-  if (others == TH_NIL)
-  {
-    panic("Unable to locate root T%02d for global operation\n", root_task);
-    exit(EXIT_FAILURE);
-  }
-  */
+       others  = (struct t_thread *) outFIFO_queue (m_threads_with_links) );
 
   /* JGG (07/07/2010): New way to manage root thread */
-  others = communicator->current_root;
+  if (synch_type == GLOBAL_OP_ASYN )
+  {
+    others = (struct t_thread *) query_prio_queue(&communicator->nonblock_current_root, nb_glob_index);
+    //others = communicator->nonblock_current_root[nb_glob_index];
+  }
+  else
+  {
+    others = communicator->current_root;
+  }
+
+  //others = communicator->current_root;
 
   /* NO ES TREU el thread de root de la cua. Els tracto tots igual! */
 
@@ -7071,21 +7296,6 @@ static void calcula_temps_maxim_intra_nodes (struct t_machine      *machine,
     int *tasks_per_node = (int*) query_prio_queue(&communicator->tasks_per_node,
                                                   (t_priority) *nodeid);
 
-    /*
-    if (debug & D_COMM)
-    {
-      PRINT_TIMER (current_time);
-      printf (
-        ": Machine %d Node: %d: Tasks involved = %d\n",
-        machine->id,
-        (*nodeid),
-        (*tasks_per_node)
-      );
-    }
-    */
-
-    // num_cpus = count_queue (& (node->Cpus) );
-
     /* Cal calcular els temps dins d'aquest node */
     calcula_fan (node->bandwidth,
                  // num_tasks,
@@ -7161,6 +7371,8 @@ static void calcula_maxim_flight_times (struct t_thread *thread,
   int index_origen;
   struct t_thread *others;
   double flight_time_in, flight_time_out;
+ 
+  int nb_glob_index= thread->nb_glob_index;
 
   node         = get_node_of_thread (thread);
   machine      = node->machine;
@@ -7169,10 +7381,21 @@ static void calcula_maxim_flight_times (struct t_thread *thread,
   max_flight_in  = 0;
   max_flight_out = 0;
 
+  struct t_queue* comm_machine_threads;
+  if (thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYN)
+  {
+      comm_machine_threads = (struct t_queue *) query_prio_queue(&communicator->nonblock_global_op_machine_threads, nb_glob_index);
+      //comm_machine_threads=&communicator->nonblock_global_op_machine_threads[nb_glob_index];
+  }
+  else
+  {
+      comm_machine_threads=&communicator->machines_threads;
+  }
+
   /* Es calcula el temps de cada maquina */
-  for (others = (struct t_thread *) head_queue (&communicator->machines_threads);
+  for (others = (struct t_thread *) head_queue (comm_machine_threads);
        others != (struct t_thread *) 0;
-       others = (struct t_thread *) next_queue (&communicator->machines_threads) )
+       others = (struct t_thread *) next_queue (comm_machine_threads) )
   {
     /* No te sentit calcular el flight time a si mateixa */
     if (others == thread) continue;
@@ -7223,6 +7446,7 @@ void calcula_temps_operacio_global (struct t_thread *thread,
   int                             comm_id, glop_id, num_maquines, num_tasks;
   int                             nodes_involved;
 
+  int nb_glob_index= thread->nb_glob_index;
   t_nano tfin_node, lfin_node, tfout_node, lfout_node;
   t_nano tfin_int,  lfin_int,  tfout_int,  lfout_int;
   t_nano tfin_ext,  lfin_ext,  tfout_ext,  lfout_ext;
@@ -7272,11 +7496,22 @@ void calcula_temps_operacio_global (struct t_thread *thread,
   flightin_ext = flightout_ext = 0;
   suma_maxim   = 0;
 
+  struct t_queue* comm_machine_threads;
+  if (thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYN)
+  {
+      comm_machine_threads = (struct t_queue *) query_prio_queue(&communicator->nonblock_global_op_machine_threads, nb_glob_index);
+      //comm_machine_threads=&communicator->nonblock_global_op_machine_threads[nb_glob_index];
+  }
+  else
+  {
+      comm_machine_threads=&communicator->machines_threads;
+  }
+
   /* For each machine used we compute the inter-node communication time and
     the intra-node communication time */
-  for (others  = (struct t_thread*) head_queue (&communicator->machines_threads);
+  for (others  = (struct t_thread*) head_queue (comm_machine_threads);
        others != TH_NIL;
-       others  = (struct t_thread*) next_queue (&communicator->machines_threads) )
+       others  = (struct t_thread*) next_queue (comm_machine_threads) )
   {
     /* S'obte el node i la maquina corresponent al thread */
     node    = get_node_of_thread (others);
@@ -7296,22 +7531,6 @@ void calcula_temps_operacio_global (struct t_thread *thread,
         IDENTIFIERS (others)
       );
     }
-
-    /*
-    if (debug & D_COMM)
-    {
-      PRINT_TIMER (current_time);
-      printf (
-        ": Machine %d: GlobalOp = %d FIN_model = %d FIN_size = %d FOUT_model = %d FOUT_size = %d\n",
-        machine->id,
-        glop_info->identificator,
-        glop_info->FIN_model,
-        glop_info->FIN_size,
-        glop_info->FOUT_model,
-        glop_info->FOUT_size
-      );
-    }
-    */
 
     /* Inter-node communication times */
     if (machine->number_of_nodes > 1)
@@ -7356,14 +7575,7 @@ void calcula_temps_operacio_global (struct t_thread *thread,
             laux_out/1e9
           );
 
-          /*
-          PRINT_TIMER (current_time);
-          printf (": Send_Size = %d, Recv_Size = %d, Nodes involved = %d\n",
-                  action->desc.global_op.bytes_send,
-                  action->desc.global_op.bytes_recvd,
-                  count_queue(&communicator->nodes_per_machine[machine->id]));
-          */
-        }
+         }
       }
     }
 
@@ -7434,8 +7646,9 @@ void calcula_temps_operacio_global (struct t_thread *thread,
     */
   }
 
+  
   /* Cal contar el temps a la xarxa externa */
-  num_maquines = count_queue (& (communicator->machines_threads) );
+  num_maquines = count_queue (comm_machine_threads);
   if (num_maquines > 1)
   {
 
@@ -7608,7 +7821,6 @@ static void start_global_op (struct t_thread *thread, int kind)
   switch (kind)
   {
     case DIMEMAS_GLOBAL_OP_MODEL:
-
       calcula_temps_operacio_global (thread,
                                      &temps_latencia,
                                      &temps_recursos,
@@ -7669,6 +7881,11 @@ static void start_global_op (struct t_thread *thread, int kind)
     COM_TIMER_GROUP
   );
 
+  // In this case we do not want to generate any state in the trace
+  //
+  if (thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYN)
+      return;
+
   /* Per cada thread del comunicador, es guarden les estadistiques i es
    * genera el que cal a la trac,a */
   for (others  = (struct t_thread *) head_queue (&communicator->threads);
@@ -7682,7 +7899,8 @@ static void start_global_op (struct t_thread *thread, int kind)
       IDENTIFIERS (others),
       others->last_paraver,
       current_time,
-			PRV_BLOCKING_SEND_ST
+      PRV_BLOCKED_ST
+      //PRV_BLOCKING_SEND_ST
     );
 
     others->last_paraver = current_time;
@@ -7718,6 +7936,7 @@ static void free_global_communication_resources (struct t_thread *thread)
   struct t_machine              *machine;
   int comm_id, glop_id, i, aux, num_elements, num_maquines;
 
+  int nb_glob_index= thread->nb_glob_index;
 
   Ptask        = thread->task->Ptask;
   action       = thread->action;
@@ -7755,10 +7974,20 @@ static void free_global_communication_resources (struct t_thread *thread)
       glop->name
     );
   }
+  struct t_queue* comm_machine_threads;
+  if (thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYN)
+  {
+      comm_machine_threads = (struct t_queue *) query_prio_queue(&communicator->nonblock_global_op_machine_threads, nb_glob_index);
+      //comm_machine_threads=&communicator->nonblock_global_op_machine_threads[nb_glob_index];
+  }
+  else
+  {
+      comm_machine_threads=&communicator->machines_threads;
+  }
 
   /* Mirem el numero de maquines implicades abans de comenc,ar a
      desencuar threads. */
-  num_maquines = count_queue (&communicator->machines_threads);
+  num_maquines = count_queue (comm_machine_threads);
 
   /* Per cada maquina utilitzada s'alliberen tots els recursos reservats i
    * es treu el thread de la cua de maquines utilitzades per tal que la
@@ -7768,9 +7997,9 @@ static void free_global_communication_resources (struct t_thread *thread)
          others = (struct t_thread *)next_queue(&communicator->machines_threads))
   */
   for (
-    others  = (struct t_thread *) outFIFO_queue (&communicator->machines_threads);
+    others  = (struct t_thread *) outFIFO_queue (comm_machine_threads);
     others != TH_NIL;
-    others  = (struct t_thread *) outFIFO_queue (&communicator->machines_threads)
+    others  = (struct t_thread *) outFIFO_queue (comm_machine_threads)
   )
   {
     /* S'obte la maquina corresponent al thread */
@@ -7873,6 +8102,168 @@ static void free_global_communication_resources (struct t_thread *thread)
      l'operació encara no ha acabat. */
 }
 
+
+static void close_global_nonblock_communication(struct t_thread *thread)
+{
+  struct t_action               *action;
+  struct t_thread               *others;
+  struct t_communicator         *communicator;
+  struct t_Ptask                *Ptask;
+  struct t_global_op_definition *glop;
+  struct t_node                 *node;
+  struct t_account              *account;
+  struct t_cpu                  *cpu;
+  dimemas_timer                  tmp_timer;
+  int comm_id, glop_id;
+  int  machines;
+  int *tasks_per_node;
+  int nb_glob_index;
+
+  Ptask        = thread->task->Ptask;
+  action       = thread->action;
+  comm_id      = action->desc.global_op.comm_id;
+  communicator = locate_communicator (&Ptask->Communicator, comm_id);
+
+  if (communicator == COM_NIL)
+  {
+    panic ("Communication close trough an invalid communicator %d to P%02d T%02d (t%02d)\n",
+           comm_id,
+           IDENTIFIERS (thread) );
+  }
+
+  nb_glob_index = thread->nb_glob_index;
+
+  struct t_thread* current_root = query_prio_queue(&communicator->nonblock_current_root, nb_glob_index);
+  extract_from_queue(&communicator->nonblock_current_root, (void *) current_root);
+  //communicator->nonblock_current_root[nb_glob_index] = TH_NIL;
+  //communicator->in_flight_op = FALSE; // TODO: It is set ??
+
+  /* Clean communicator queues */
+  for (machines = 0; machines < Simulator.number_machines; machines++)
+  {
+    int *nodeid;
+
+    for (nodeid  = (int*) outFIFO_queue (&communicator->nodes_per_machine[machines]);
+         nodeid != NULL;
+         nodeid  = (int*) outFIFO_queue (&communicator->nodes_per_machine[machines]))
+    {
+      free(nodeid);
+    }
+  }
+
+  for (tasks_per_node  = (int*) outFIFO_queue(&communicator->tasks_per_node);
+       tasks_per_node != NULL;
+       tasks_per_node  =(int*) outFIFO_queue(&communicator->tasks_per_node))
+  {
+    free(tasks_per_node);
+  }
+
+  glop_id = action->desc.global_op.glop_id;
+  glop    = (struct t_global_op_definition *)
+            query_prio_queue (&Global_op, (t_priority) glop_id);
+
+  if (glop == GOPD_NIL)
+  {
+    panic ("Global operation %d undefined to P%02d T%02d (t%02d)\n",
+           glop_id,
+           IDENTIFIERS (thread) );
+  }
+
+  if (debug & D_COMM)
+  {
+    PRINT_TIMER (current_time);
+    printf (": non-block GLOBAL_operation P%02d T%02d (t%02d) ends '%s'\n",
+            IDENTIFIERS (thread),
+            glop->name);
+  }
+
+  // For sure, all ranks involved in the global operation must be arrive.
+  struct t_queue* nb_glob_threads = (struct t_queue*) query_prio_queue(&communicator->nonblock_global_op_threads, nb_glob_index);
+  assert (nb_glob_threads->count == communicator->size);
+
+  /* Unblock all threads involved in communication */
+  for (others  = (struct t_thread *) outFIFO_queue (nb_glob_threads);
+       others != TH_NIL;
+       others  = (struct t_thread *) outFIFO_queue (nb_glob_threads) )
+  {
+
+    assert (others->original_thread == FALSE);
+    struct t_thread* parent_thread = others->twin_thread;
+
+    if (debug & D_COMM)
+    {
+      PRINT_TIMER (current_time);
+      printf (": non-block GLOBAL_operation P%02d T%02d (t%02d) ends '%s'\n",
+              IDENTIFIERS (others),
+              glop->name);
+    }
+
+    node = get_node_of_thread (others);
+    new_cp_node (others, CP_BLOCK);
+    new_cp_relation (others, thread);
+    action = others->action;
+    account = current_account (others);
+
+    ASS_ALL_TIMER (others->collective_timers.conclude_communication,current_time);
+    
+    SUB_TIMER (others->collective_timers.with_resources,
+               others->collective_timers.arrive_to_collective,
+               tmp_timer);
+
+    ADD_TIMER (account->block_due_group_operations,
+               tmp_timer,
+               account->block_due_group_operations);
+
+    SUB_TIMER (others->collective_timers.conclude_communication,
+               others->collective_timers.with_resources,
+               tmp_timer);
+
+    ADD_TIMER (account->group_operations_time,
+               tmp_timer,
+               account->group_operations_time);
+
+    // If the MPI_Wait for the non-block GLOP has already arrived then the
+    // action is done. If not, set the flag for the future
+    //
+    int nb_index = others->nb_glob_index;
+    if (parent_thread->n_nonblock_glob_waiting > 0)
+    {
+        delete_duplicate_thread(others);
+        parent_thread->n_nonblock_glob_waiting -= 1;
+
+        action = parent_thread->action;
+        parent_thread->action = action->next;
+        READ_free_action(action);
+
+        if (more_actions (parent_thread) )
+        {
+            parent_thread->loose_cpu = TRUE;
+            SCHEDULER_thread_to_ready (parent_thread);
+            reload_done = TRUE;
+        }
+    }
+    else
+    {
+        parent_thread->n_nonblock_glob_done += 1;
+        inFIFO_queue(&parent_thread->nonblock_glop_done_threads, others);
+    }
+
+    parent_thread->n_nonblock_glob_in_flight -= 1;
+
+    //printf("%f ENDING (%d:%d) : done=%d waiting=%d flight=%d\n", 
+    //              current_time,
+    //              parent_thread->task->taskid,
+    //              nb_index,
+    //              parent_thread->n_nonblock_glob_done,
+    //              parent_thread->n_nonblock_glob_waiting,
+    //              parent_thread->n_nonblock_glob_in_flight);
+
+  }
+  extract_from_queue(&communicator->nonblock_global_op_threads, nb_glob_threads);
+
+}
+
+
 /**************************************************************************
  ** Desbloqueja tot els threads de l'operació col.lectiva. No allibera
  ** els recursos utilitzats, perquè ja s'ha d'haver fet a la rutina
@@ -7948,6 +8339,25 @@ static void close_global_communication (struct t_thread *thread)
             glop->name);
   }
 
+  /*
+   * TODO: Borrar
+   */
+  /*
+  printf("######### %d ##########\n", count_queue(&communicator->threads));
+  
+  struct t_item *ev_it = communicator->threads.first;
+    
+    while (ev_it != NULL)
+    {
+        struct t_thread *th = (struct t_thread*)ev_it->content;
+
+        if (th == NULL) break;
+
+        printf("TASK ID: %d\n", th->task->taskid);
+        ev_it = ev_it->next;
+    }
+  */
+
   /* Unblock all threads involved in communication */
   for (others  = (struct t_thread *) outFIFO_queue (&communicator->threads);
        others != TH_NIL;
@@ -8004,6 +8414,7 @@ static void close_global_communication (struct t_thread *thread)
                    PARAVER_GROUP_FREE,
                    glop_id);
     */
+
 
     action         = others->action;
     others->action = action->next;
@@ -8068,13 +8479,165 @@ int from_rank_to_taskid (struct t_communicator *comm, int root_rank)
   return root_rank;
 }
 
+void GLOBAL_wait_operation(struct t_thread *thread)
+{
+  struct t_action               *action;
+  struct t_recv                 *mess;
+  struct t_task                 *task, *task_source;
+  struct t_account              *account;
+  dimemas_timer                  tmp_timer;
+  struct t_node                 *node_r, *node_s;
+  t_nano                        startup, copy_latency;
+  int                            kind;
+  struct t_dedicated_connection *connection;
+
+  action = thread->action;
+  /*if (action->action != WAIT)
+  {
+    panic ("Calling COMMUNIC_wait and action is not Wait (%d)\n",
+           action->action);
+    }*/
+  
+  task   = thread->task;
+
+  if (thread->startup_done == FALSE)
+  {
+      startup = compute_startup (
+            thread,
+            thread->task->taskid,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NON_BLOCKING_GLOBAL_OP_COM_TYPE,
+            NULL);
+
+    if (startup != (t_nano) 0)
+    {
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER (current_time);
+        printf (": GLOBAL_wait \tP%02d T%02d (t%02d) Initiate startup (%f)\n",
+                IDENTIFIERS (thread),
+                (double) startup / 1e9);
+      }
+      thread->loose_cpu     = FALSE;
+      thread->doing_startup = TRUE;
+
+      account = current_account (thread);
+      FLOAT_TO_TIMER (startup, tmp_timer);
+      ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
+      SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
+
+      SCHEDULER_thread_to_ready_return (M_COM, thread, startup, 0);
+      return;
+    }
+    else
+    {
+      thread->startup_done = TRUE;
+    }
+  }
+  
+  /* Copy latency operations */
+  /*if (DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size)
+  {
+    if (thread->copy_done == FALSE)
+    {
+      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size, mess->comm_type);
+
+      if (copy_latency != (t_nano) 0)
+      {
+        thread->loose_cpu     = FALSE;
+        thread->doing_copy    = TRUE;
+
+        account = current_account (thread);
+        FLOAT_TO_TIMER (copy_latency, tmp_timer);
+        ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
+        SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
+
+        SCHEDULER_thread_to_ready_return (M_COM, thread, copy_latency, 0);
+
+        if (debug & D_COMM)
+        {
+          PRINT_TIMER (current_time);
+          printf (": COMMUNIC_wait\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n",
+                  IDENTIFIERS (thread),
+                  (double) copy_latency / 1e9);
+        }
+        return;
+      }
+    }
+  }*/
+
+  /* Startup and Copy checks reset */
+  thread->startup_done = FALSE;
+  thread->copy_done    = FALSE;
+
+ 
+  account = current_account (thread);
+  account = current_account (thread);
+
+  // There is some non-block glop still executing
+  if (thread->n_nonblock_glob_done == 0)
+  {
+      thread->n_nonblock_glob_waiting += 1;
+      //thread->n_nonblock_glob_in_flight -= 1;
+
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER (current_time);
+        printf (": non-block GLOBAL_wait waiting \tP%02d T%02d (t%02d)\n",
+          IDENTIFIERS (thread));
+      }
+  }
+  else
+  {
+      // Some non-block glop is done
+
+      thread->n_nonblock_glob_done -= 1;
+    
+      struct t_thread * copy_thread = outFIFO_queue(
+              &thread->nonblock_glop_done_threads);
+      delete_duplicate_thread(copy_thread);
+      
+      if (debug & D_COMM)
+      {
+        PRINT_TIMER (current_time);
+        printf (
+          ": non-block GLOBAL_wait done \tP%02d T%02d (t%02d)\n",
+          IDENTIFIERS (thread));
+      }
+
+      // Then we must continue with this rank execution
+      //
+      thread->action = action->next;
+      READ_free_action(action);
+      if (more_actions (thread) )
+      {
+        thread->loose_cpu = FALSE;
+        SCHEDULER_thread_to_ready (thread);
+      }
+   }
+
+   //printf("%f WAIT (%d:%d) : done=%d waiting=%d flight=%d\n", 
+   //               current_time, 
+   //               thread->task->taskid,
+   //               thread->nb_glob_index,
+   //               thread->n_nonblock_glob_done,
+   //               thread->n_nonblock_glob_waiting,
+   //               thread->n_nonblock_glob_in_flight);
+
+}
+
 void GLOBAL_operation (struct t_thread *thread,
-                       int glop_id,
-                       int comm_id,
-                       int root_rank,
-                       int root_thid,
-                       int bytes_send,
-                       int bytes_recv)
+   int glop_id,
+   int comm_id,
+   int root_rank,
+   int root_thid,
+   int bytes_send,
+   int bytes_recv,
+   int synch_type)
 {
   struct t_Ptask                *Ptask;
   struct t_communicator         *communicator;
@@ -8085,11 +8648,14 @@ void GLOBAL_operation (struct t_thread *thread,
   struct t_node                 *node_usat;
   struct t_machine              *maquina_usada;
 
+  dimemas_timer                  tmp_timer;
   struct t_queue                *nodes_per_machine;
   int                           *tasks_per_node;
 
   int root_task;
   int i, kind;
+
+  int nb_glob_index;
 
   if (with_deadlock_analysis)
   {
@@ -8109,7 +8675,8 @@ void GLOBAL_operation (struct t_thread *thread,
   communicator = locate_communicator (&Ptask->Communicator, comm_id);
   if (communicator == COM_NIL)
   {
-    panic ("Communication start trough an invalid communicator %d to P%02d T%02d (t%02d)\n",
+    panic ("Communication start trough an invalid \
+            communicator %d to P%02d T%02d (t%02d)\n",
            comm_id,
            IDENTIFIERS (thread) );
   }
@@ -8131,7 +8698,7 @@ void GLOBAL_operation (struct t_thread *thread,
            IDENTIFIERS (thread) );
   }
 
-  if (debug & D_COMM)
+  if (debug & D_COMM & synch_type != GLOBAL_OP_ASYN)
   {
     PRINT_TIMER (current_time);
     printf (
@@ -8142,24 +8709,143 @@ void GLOBAL_operation (struct t_thread *thread,
     );
   }
 
-  if (communicator->in_flight_op != TRUE)
+  // Pay the startup
+  //
+  if (synch_type == GLOBAL_OP_ASYN)
   {
-    communicator->in_flight_op = TRUE;
+      if (thread->startup_done == FALSE)
+      {
+        int startup = compute_startup (
+                thread,
+                thread->task->taskid,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NON_BLOCKING_GLOBAL_OP_COM_TYPE,
+                NULL);
+
+        if (startup != (t_nano) 0)
+        {
+          thread->loose_cpu     = FALSE;
+          thread->doing_startup = TRUE;
+
+          account = current_account (thread);
+          FLOAT_TO_TIMER (startup, tmp_timer);
+          ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
+          SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
+
+          SCHEDULER_thread_to_ready_return (M_COM, thread, tmp_timer, 0);
+
+          if (debug & D_COMM)
+          {
+            PRINT_TIMER (current_time);
+            printf (": non-block GLOBAL_operation \tP%02d T%02d (t%02d) Initiate startup (%f)\n",
+                    IDENTIFIERS (thread),
+                    (double) startup / 1e9);
+          }
+          return;
+        }
+        else /* (startup == (t_nano) 0) */
+        {
+          thread->startup_done = TRUE;
+        }
+      }
+      
+      // Like this because if latency is 0 we want to perform this piece 
+      // of code anyway
+      if (thread->startup_done == TRUE)
+      {
+
+          thread->startup_done=FALSE;
+          // If startup done, then create a copy of thread for the non-blocking
+          // collective, and schedule the original for continuing with the
+          // simulation
+          //
+          struct t_thread *copy_thread;
+          copy_thread = duplicate_thread(thread);
+
+          // Reschedule the original thread
+          struct t_action * action;
+          thread->last_paraver = current_time;
+          action = thread->action;
+          thread->action = action->next;
+          READ_free_action(action);
+
+          if (more_actions (thread) )
+          {
+            thread->loose_cpu = FALSE;
+            //SCHEDULER_thread_to_ready (thread);
+            SCHEDULER_general (SCH_TIMER_OUT, thread);
+          }
+    
+          // One more non-block glop in flight
+          thread->n_nonblock_glob_in_flight += 1;
+          copy_thread->nb_glob_index = thread->nb_glob_index_master;
+          thread->nb_glob_index_master++;
+
+          // It will be the index for the nonblock-glop structures
+          nb_glob_index = copy_thread->nb_glob_index;
+
+          // Create the structures for the new non-block global operation
+          struct t_queue* new_global_op_threads = malloc(sizeof(struct t_queue));
+          struct t_queue* new_global_op_machine_threads = malloc(sizeof(struct t_queue));
+          struct t_queue* new_nonblock_m_threads_with_links = malloc(sizeof(struct t_queue));
+
+          create_queue(new_global_op_threads);
+          create_queue(new_global_op_machine_threads);
+          create_queue(new_nonblock_m_threads_with_links);
+
+          insert_queue(&communicator->nonblock_global_op_threads, 
+                  new_global_op_threads, nb_glob_index);
+          insert_queue(&communicator->nonblock_global_op_machine_threads, 
+                  new_global_op_machine_threads, nb_glob_index);
+          insert_queue(&communicator->nonblock_m_threads_with_links, 
+                  new_nonblock_m_threads_with_links, nb_glob_index);
+
+          //communicator->nonblock_current_root;
+
+          // Manage the glop with the copy_thread
+          thread=copy_thread;
+        
+          //printf("%f START (%d:%d) : done=%d waiting=%d flight=%d\n", 
+          //        current_time,
+          //        thread->task->taskid,
+          //        thread->nb_glob_index,
+          //        thread->n_nonblock_glob_done,
+          //        thread->n_nonblock_glob_waiting,
+          //        thread->n_nonblock_glob_in_flight);
+   
+          if (debug & D_COMM)
+          {
+            PRINT_TIMER (current_time);
+            printf (": non-block GLOBAL_operation \tP%02d T%02d (t%02d) startup done.\n",
+                    IDENTIFIERS (thread));
+          }
+      }
   }
 
-  /* Update the number of used nodes per machine and tasks per node */
-  node_usat     = get_node_of_thread (thread);
-  maquina_usada = node_usat->machine;
-  // communicator->nodes_per_machine[maquina_usada->id]++;
+  if (synch_type != GLOBAL_OP_ASYN)
+  {
+      if (communicator->in_flight_op != TRUE)
+      {
+        communicator->in_flight_op = TRUE;
+      }
+  }
 
-  nodes_per_machine  = (struct t_queue*)
-          query_prio_queue(&communicator->nodes_per_machine[maquina_usada->id],
-                           (t_priority) node_usat->nodeid);
+  // Update the number of used nodes per machine and tasks per node
+  //
+  node_usat = get_node_of_thread (thread);
+  maquina_usada = node_usat->machine;
+
+  nodes_per_machine = (struct t_queue*)query_prio_queue(
+          &communicator->nodes_per_machine[maquina_usada->id],
+          (t_priority) node_usat->nodeid);
 
   if (nodes_per_machine == QU_NIL)
   {
-    int* new_node     = (int*)            malloc(sizeof(int));
-
+    int* new_node = (int*) malloc(sizeof(int));
     (*new_node) = node_usat->nodeid;
 
     insert_queue(&communicator->nodes_per_machine[maquina_usada->id],
@@ -8184,26 +8870,18 @@ void GLOBAL_operation (struct t_thread *thread,
   }
 
 
-  /*
-  node_tasks = (int*) query_prio_queue (&communicator->node_tasks,
-                                        (t_priority) node_usat->nodeid);
-
-  if (node_tasks == NULL)
-  {
-    node_tasks  = malloc(sizeof(int));
-    *node_tasks = 1;
-    insert_queue(&communicator->node_tasks, node_tasks, node_usat->nodeid);
-  }
-  else
-  {
-    (*node_tasks) += 1;
-  }
-  */
-
   /* JGG (07/07/2010): New way to choose the root */
   if (root_rank == 1)
   {
-    communicator->current_root = thread;
+    if (synch_type == GLOBAL_OP_ASYN )
+    {
+      insert_queue(&communicator->nonblock_current_root, thread, nb_glob_index);
+      //communicator->nonblock_current_root[nb_glob_index] = thread;
+    }
+    else
+    {
+      communicator->current_root = thread;
+    }
 
     if (debug & D_COMM)
     {
@@ -8213,148 +8891,169 @@ void GLOBAL_operation (struct t_thread *thread,
     }
   }
 
-  // Total_threads_involved = count_queue (&communicator->global_ranks);
-
-  /* FEC: Debugant!
-
-  printf(
-    "El comid de l'operacio global es %d, te %d threads i %d estan bloquejats\n",
-    comm_id,
-    Total_threads_involved,
-    count_queue(&communicator->threads)
-  );
-  */
-
   ASS_ALL_TIMER (thread->collective_timers.arrive_to_collective, current_time);
 
-  // if (Total_threads_involved != count_queue (&communicator->threads) + 1)
-  if ( communicator->size != count_queue (&communicator->threads) + 1)
+  ////////////////////////////////////////////////
+  ////////////////// SYNCH PART //////////////////
+  ////////////////////////////////////////////////
+  
+  // Deciding which queue we have to take
+  //
+  struct t_queue *threads_queue;
+  if (synch_type == GLOBAL_OP_ASYN)
   {
-    /* This is not the last thread arriving to the communication point,
-     * simply block */
+      threads_queue = (struct t_queue*) query_prio_queue(&communicator->nonblock_global_op_threads, nb_glob_index);
+      //threads_queue = &communicator->nonblock_global_op_threads[nb_glob_index];
+  }
+  else
+  {
+      threads_queue = &communicator->threads;
+  }
 
+  // This is not the last thread arriving to the communication point,
+  // simply block
+  //
+  if ( communicator->size != count_queue (threads_queue) + 1)
+  {
     cpu = get_cpu_of_thread (thread);
+    if (synch_type != GLOBAL_OP_ASYN)
+        thread->last_paraver = current_time; // TODO: Check if okay when non-block
 
-    /* JGG (2014/12/18): What is this event????
-    PARAVER_Event (cpu->unique_number,
-                   IDENTIFIERS (thread),
-                   current_time,
-                   PARAVER_GROUP_BLOCK,
-                   glop_id );
-    */
-    thread->last_paraver = current_time;
-
-    inFIFO_queue (&communicator->threads, (char *) thread);
+    inFIFO_queue (threads_queue, (char *) thread);
 
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
-      printf (
-        ": GLOBAL_operation P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
-        IDENTIFIERS (thread),
-        glop->name,
-        comm_id,
-        count_queue (&communicator->threads),
-        communicator->size
-      );
+      if (synch_type == GLOBAL_OP_ASYN)
+        printf (
+          ": non-block GLOBAL_operation (%d)  P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
+          synch_type,
+          IDENTIFIERS (thread),
+          glop->name,
+          comm_id,
+          count_queue (threads_queue),
+          communicator->size
+        );
+      else
+        printf (
+          ": GLOBAL_operation (%d)  P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
+          synch_type,
+          IDENTIFIERS (thread),
+          glop->name,
+          comm_id,
+          count_queue (threads_queue),
+          communicator->size
+        );
     }
-
-    /* Add the current thread node */
 
     return;
   }
 
-  /* All partners arrived. Start the contention stage */
+   
   if (debug & D_COMM)
   {
     PRINT_TIMER (current_time);
-    printf (
-      ": GLOBAL_operation P%02d T%02d (t%02d) Initiate '%s' (Comm.%d: %dT)\n",
-      IDENTIFIERS (thread),
-      glop->name,
-      comm_id,
-      communicator->size
-    );
+    if (synch_type == GLOBAL_OP_ASYN)
+      printf (
+        ": non-block GLOBAL_operation  P%02d T%02d (t%02d) Initiate '%s' (Comm.%d: %dT)\n",
+        IDENTIFIERS (thread),
+        glop->name,
+        comm_id,
+        communicator->size
+      );
+
+    else
+      printf (
+        ": GLOBAL_operation  P%02d T%02d (t%02d) Initiate '%s' (Comm.%d: %dT)\n",
+        IDENTIFIERS (thread),
+        glop->name,
+        comm_id,
+        communicator->size
+      );
   }
 
   cpu = get_cpu_of_thread (thread);
-
-    /* JGG (2014/12/18): What is this event????
-  PARAVER_Event (cpu->unique_number,
-                 IDENTIFIERS (thread),
-                 current_time,
-                 PARAVER_GROUP_LAST,
-                 glop_id);
-  */
 
   thread->number_buses = 0;
   thread->last_paraver = current_time;
 
   ASS_ALL_TIMER (thread->collective_timers.sync_time, current_time);
 
-  for (others  = (struct t_thread*) head_queue (&communicator->threads);
+  for (others  = (struct t_thread*) head_queue (threads_queue);
        others != TH_NIL;
-       others  = (struct t_thread*) next_queue (&communicator->threads) )
+       others  = (struct t_thread*) next_queue (threads_queue) )
   {
     ASS_ALL_TIMER (others->collective_timers.sync_time, current_time);
-    PARAVER_Wait (0,
+    if (synch_type == GLOBAL_OP_SYNC )
+    {
+        PARAVER_Wait (0,
                   IDENTIFIERS (others),
                   others->last_paraver,
                   current_time,
-									PRV_BLOCKING_SEND_ST);
+                  PRV_BLOCKED_ST
+                  //PRV_BLOCKING_SEND_ST
+                  );
 
-    others->last_paraver = current_time;
-  }
-
-  /*
-  inFIFO_queue (&communicator->threads, (char*)thread);
-  root_task = from_rank_to_taskid (communicator, root_rank);
-
-  /* Es busca el thread de la root task
-  for (
-    others  = (struct t_thread *)head_queue(&communicator->threads);
-    others != TH_NIL;
-    others  = (struct t_thread *)next_queue(&communicator->threads)
-  )
-  {
-    if (others->task->taskid == root_task)
-    {
-      break;
+        others->last_paraver = current_time;
     }
   }
 
-  if (others == TH_NIL)
+  /////////////////////////////////////
+  ////////// CONTENTION PART //////////
+  /////////////////////////////////////
+
+
+  // Insert current thread to the communicator list
+  //
+  inFIFO_queue (threads_queue, (char*) thread);
+
+  // Search the root task
+  //
+
+  // Decide which current root we take
+  struct t_thread* current_root;
+
+  if (synch_type == GLOBAL_OP_ASYN )
   {
-    panic("Unable to locate root %d for global operation\n", root_task);
-    exit(EXIT_FAILURE);
+      current_root = (struct t_thread *) query_prio_queue(&communicator->nonblock_current_root, nb_glob_index);
   }
-  /* El thread 'others' pertany a la 'root_task'
-  root_th = others;
-   */
-
-  /* Insert current thread to the communicator list */
-  inFIFO_queue (&communicator->threads, (char*) thread);
-
-  /* Search the root task */
-  if (communicator->current_root == TH_NIL)
+  else
   {
-    /* Ja jan arribat tots els threads a aquest punt */
+      current_root = communicator->current_root;
+  }
+
+  if (current_root == TH_NIL)
+  {
     if (debug & D_COMM)
     {
       PRINT_TIMER (current_time);
-      printf (": GLOBAL_operation P%02d T%02d (t%02d) Root-less operation. Current thread will be the root\n",
+      if (synch_type == GLOBAL_OP_ASYN)
+          printf (": non-block GLOBAL_operation (%d)  P%02d T%02d (t%02d) Root-less operation. \
+              Current thread will be the root\n",
               IDENTIFIERS (thread));
+      else
+          printf (": GLOBAL_operation (%d)  P%02d T%02d (t%02d) Root-less operation. \
+              Current thread will be the root\n",
+              IDENTIFIERS (thread));   
     }
 
-    communicator->current_root = thread;
+    if (synch_type == GLOBAL_OP_ASYN)
+    {
+        insert_queue(&communicator->nonblock_current_root, (void *) thread, nb_glob_index);
+    }
+    else
+    {
+        communicator->current_root = thread;
+    }
 
+    current_root = thread;
     root_th = thread;
     others  = thread;
   }
   else
   {
-    root_th = communicator->current_root;
-    others  = communicator->current_root;
+    root_th = current_root;
+    others  = current_root;
   }
 
   if (external_comm_library_loaded == TRUE)
@@ -8377,74 +9076,80 @@ void GLOBAL_operation (struct t_thread *thread,
     }
   }
 
-  /* JGG (08/11/2004): Comportamiento de una operación global según el
-   * modelo Dimemas */
 
+  /*
+   * extract_from_queue (&communicator->threads, (char*)others);
+   * global_op_get_all_buses (others);
+   *
+   * En lloc de fer aixo (que root reservi tots el busos), a partir d'ara
+   * s'agafara un thread de cada maquina implicada per tal que agafi els
+   * busos de la seva maquina. De totes maneres, root sera l'encarregat
+   * d'agafar els de la seva maquina (tot i que no crec que calgui).
+   */
 
-  /*****************************************************************************
-    extract_from_queue (&communicator->threads, (char*)others);
-    global_op_get_all_buses (others);
-
-    En lloc de fer aixo (que root reservi tots el busos), a partir d'ara
-    s'agafara un thread de cada maquina implicada per tal que agafi els
-    busos de la seva maquina. De totes maneres, root sera l'encarregat
-    d'agafar els de la seva maquina (tot i que no crec que calgui).
-  *****************************************************************************/
-
-  /* S'obte la maquina corresponent al thread de root */
+  // S'obte la maquina corresponent al thread de root
+  //
   node_usat     = get_node_of_thread (others);
   maquina_usada = node_usat->machine;
 
-  /* S'afegeix root a la llista de maquines utilitzades */
-  insert_queue (&communicator->machines_threads,
-                (char*) others,
-                (t_priority) maquina_usada->id);
+  // S'afegeix root a la llista de maquines utilitzades
+  //
+  struct t_queue* comm_machine_threads;
+  if (synch_type == GLOBAL_OP_ASYN)
+  {
 
-  /* Es treu de la llista de threads per poder detectar quan esta tot reservat*/
-  extract_from_queue (&communicator->threads, (char *) others);
+      comm_machine_threads = (struct t_queue *) query_prio_queue(&communicator->nonblock_global_op_machine_threads, nb_glob_index);
+      //comm_machine_threads=&communicator->nonblock_global_op_machine_threads[nb_glob_index];
+  }
+  else
+  {
+      comm_machine_threads=&communicator->machines_threads;
+  }
+    
+  insert_queue (comm_machine_threads,(char*) others,
+          (t_priority) maquina_usada->id);
+  
+  // Es treu de la llista de threads per poder detectar quan esta tot reservat
+  //
+  extract_from_queue (threads_queue, (char *) others);
 
-  /* Es fa el mateix amb el primer thread trobat de cada nova maquina */
-  /* Aquest altre tipus de bucle no funcionava perque hi ha problemes si es
-   * treu de la llista el primer element. En aquest cas el next retornava
-   * NULL abans d'hora.
-    for (others=(struct t_thread *)head_queue(&communicator->threads);
-         others!=(struct t_thread *)0;
-         others=(struct t_thread *)next_queue(&communicator->threads))
-   */
-  others = (struct t_thread*) head_queue (&communicator->threads);
+  // Es fa el mateix amb el primer thread trobat de cada nova maquina
+  //
+  others = (struct t_thread*) head_queue (threads_queue);
 
   for (i = 0; i < (communicator->size - 1); i++)
   {
-    /* S'obte la maquina corresponent a aquest thread */
-    node_usat     = get_node_of_thread (others);
+    node_usat = get_node_of_thread (others);
     maquina_usada = node_usat->machine;
-    /* Es mira si ja hem trobat un thread d'aquesta maquina */
-    if( query_prio_queue (&communicator->machines_threads,
+
+    if( query_prio_queue (comm_machine_threads,
                           (t_priority) maquina_usada->id) == A_NIL)
     {
-      /* Es una maquina nova */
-      /* S'afegeix el thread a la llista de maquines utilitzades */
-      insert_queue (&communicator->machines_threads,
-                    (char *) others,
+      // Es una maquina nova, s'afegeix el thread a la llista de 
+      // maquines utilitzades
+      insert_queue (comm_machine_threads, (char *) others,
                     maquina_usada->id);
-      /* Es treu de la llista de threads per poder detectar quan esta tot reservat */
-      extract_from_queue (&communicator->threads, (char *) others);
+
+      // Es treu de la llista de threads per poder detectar quan esta 
+      // tot reservat
+      extract_from_queue (threads_queue, (char *) others);
     }
-    others = (struct t_thread*) next_queue (&communicator->threads);
+    others = (struct t_thread*) next_queue (threads_queue);
 
     if ( (others == NULL) && (i < (communicator->size - 2) ) )
     {
       /* En aquest cas es deu haver extret el primer element de la llista,
        * pero encara hauria de quedar algun thread. Per tant, agafo el
        * primer que queda. */
-      others = (struct t_thread*) head_queue (&communicator->threads);
+      others = (struct t_thread*) head_queue (threads_queue);
     }
   }
 
-  /* Un thread de cada maquina reserva els recursos */
-  for (others  = (struct t_thread*) head_queue (&communicator->machines_threads);
+  // Un thread de cada maquina reserva els recursos
+  //
+  for (others  = (struct t_thread*) head_queue (comm_machine_threads);
        others != TH_NIL;
-       others  = (struct t_thread*) next_queue (&communicator->machines_threads) )
+       others  = (struct t_thread*) next_queue (comm_machine_threads))
   {
     /* Aquest thread reserva els recursos necessaris de la seva maquina */
     /* Aixo no es podia anar fent directament al bucle anterior perque
@@ -8453,10 +9158,11 @@ void GLOBAL_operation (struct t_thread *thread,
      * correctament quan s'han reservat els recursos de totes les
      * maquines. */
     global_op_get_all_buses (others);
-  }
+  }   
 
   /* Aqui se suposa que ja haura intentat reservar tot el que cal i si
    * ho ha pogut fer, ja haura comenc,at la col.lectiva.  */
+
 
 }
 
@@ -8592,15 +9298,16 @@ void ACCELERATOR_check_sync_status(struct t_thread* thread,
 
   	if (host_th->startup_done == FALSE)
 		{
-			startup = compute_startup (host_th,
-																 host_th->task->taskid,  /* Sender */
-																 kernel_th->task->taskid,  /* Receiver */
-																 node,
-																 node,
-																 0,
-																 0,
-																 ACCELERATOR_COM_TYPE,
-																 NULL);
+			startup = compute_startup (
+                    host_th,
+                    host_th->task->taskid,  /* Sender */
+                    kernel_th->task->taskid,  /* Receiver */
+                    node,
+                    node,
+                    0,
+                    0,
+                    ACCELERATOR_COM_TYPE,
+                    NULL);
 
 			if (startup != (dimemas_timer) 0)
 			{
@@ -8700,15 +9407,16 @@ void ACCELERATOR_check_sync_status(struct t_thread* thread,
 		}
 
 		//end latency on host
-  	startup = compute_startup (host_th,
-															 host_th->task->taskid,  /* Sender */
-															 kernel_th->task->taskid,  /* Receiver */
-															 node,
-															 node,
-															 0,
-															 0,
-															 ACCELERATOR_COM_TYPE,
-															 NULL);
+  	startup = compute_startup (
+            host_th,
+            host_th->task->taskid,  /* Sender */
+            kernel_th->task->taskid,  /* Receiver */
+            node,
+            node,
+            0,
+            0,
+            ACCELERATOR_COM_TYPE,
+            NULL);
 
   	if (OCLEventEncoding_Is_OCLSyncBlock(host_th->acc_in_block_event))
   		startup = 0;
@@ -8742,4 +9450,12 @@ void ACCELERATOR_check_sync_status(struct t_thread* thread,
 		kernel_th->blckd_in_global_op = FALSE;
 
   }
+}
+
+/*
+ * Auxiliar function for qsort
+ */
+int cmpfunc(const void *a, const void *b)
+{
+    return ( *(int*)a - *(int*)b );
 }

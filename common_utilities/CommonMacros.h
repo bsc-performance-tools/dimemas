@@ -10,6 +10,7 @@
 #define BEGINFN( x )
 #define ENDFN( x )
 
+#define DEBUG 1
 
 #   define SWAP( a, b, tmp ) { (tmp)= (a); (a) = (b); (b) = (tmp); }
 

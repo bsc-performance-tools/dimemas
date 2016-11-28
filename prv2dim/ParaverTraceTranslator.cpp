@@ -223,7 +223,7 @@ ParaverTraceTranslator::SplitCommunications(void)
   const char* tmp_dir_default = "/tmp";
   char* tmp_dir;
 
-  if ( (tmp_dir = getenv("TMPDIR")) == NULL)
+  if ( (tmp_dir = getenv("TMPDIR")) == NULL )
   {
     tmp_dir = strdup(tmp_dir_default);
   }
@@ -275,11 +275,7 @@ ParaverTraceTranslator::SplitCommunications(void)
 
   i = 0;
 
-#ifdef DEBUG
-  printf("SPLITTING COMMUNICATIONS\n");
-#else
   SHOW_PERCENTAGE_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
-#endif
 
   PseudoCommId = 0;
   // CurrentCommunication = Parser->GetNextCommunication();
@@ -289,19 +285,18 @@ ParaverTraceTranslator::SplitCommunications(void)
   {
     PseudoCommId++;
 
+    //Current Record is an event. We split it, if needed
+    //
     if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
-    { /* Current Record is an event. We split it, if needed */
-
+    { 
       INT32  Type;
       UINT64 Timestamp;
-
       INT32 PartnerTaskId, PartnerThreadId;
       INT32  Size, Tag, CommId;
 
-      // SrcCPU = SrcAppId = SrcTaskId = SrcThreadId = -1;
-      Type          = -1;
+      Type = -1;
       PartnerTaskId = PartnerThreadId = -1;
-      Size          = Tag             = CommId = -1;
+      Size = Tag = CommId = -1;
 
       if (CurrentEvent->GetTypeValueCount() > 1)
       {
@@ -312,22 +307,22 @@ ParaverTraceTranslator::SplitCommunications(void)
           switch (CurrentEvent->GetType(i))
           {
             case 9:
-              Type            = CurrentEvent->GetValue(i);
+              Type = CurrentEvent->GetValue(i);
               break;
             case 10:
-              PartnerTaskId   = CurrentEvent->GetValue(i);
+              PartnerTaskId = CurrentEvent->GetValue(i);
               break;
             case 11:
               PartnerThreadId = CurrentEvent->GetValue(i);
               break;
             case 12:
-              Size            = CurrentEvent->GetValue(i);
+              Size = CurrentEvent->GetValue(i);
               break;
             case 13:
-              Tag             = CurrentEvent->GetValue(i);
+              Tag = CurrentEvent->GetValue(i);
               break;
             case 14:
-              CommId          = CurrentEvent->GetValue(i);
+              CommId = CurrentEvent->GetValue(i);
               break;
           }
         }
@@ -365,11 +360,12 @@ ParaverTraceTranslator::SplitCommunications(void)
           }
 
           PreviouslySimulatedTrace = true;
-          SplittedCommunication    = new PartialCommunication(Type,
-                                                              CurrentEvent->GetTimestamp(),
-                                                              SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
-                                                              DstCPU, DstAppId, DstTaskId, DstThreadId,
-                                                              Size, Tag, CommId, CurrentEvent->GetRecordCount());
+          SplittedCommunication    = new PartialCommunication(
+                  Type,
+                  CurrentEvent->GetTimestamp(),
+                  SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
+                  DstCPU, DstAppId, DstTaskId, DstThreadId,
+                  Size, Tag, CommId, CurrentEvent->GetRecordCount());
           Communications.push_back(SplittedCommunication);
         }
       }
@@ -623,12 +619,13 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 
 
 bool
-ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
-                                  double IprobeMissesThreshold,
-				  double TestMissesThreshold,
-                                  INT32  BurstCounterType,
-                                  double BurstCounterFactor,
-                                  bool   GenerateMPIInitBarrier)
+ParaverTraceTranslator::Translate(
+        bool   GenerateFirstIdle,
+        double IprobeMissesThreshold,
+        double TestMissesThreshold,
+        INT32  BurstCounterType,
+        double BurstCounterFactor,
+        bool   GenerateMPIInitBarrier )
 {
   /* unsigned int CurrentCommunication; */
   vector<ApplicationDescription_t> AppsDescription;
@@ -838,88 +835,81 @@ ParaverTraceTranslator::Translate(bool   GenerateFirstIdle,
     }
     else
     {
-
 #ifdef DEBUG
-      cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
+        cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
 #endif
+        
+        // Current Record is an event. We split it, if needed
+        //
+        if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
+        {             
+            if (CurrentEvent->GetTypeValueCount() > 1)
+            {
+          
+                for (unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++)
+                {
+                    Event_t SubEvent;
 
-      /* GlobalOp_t CurrentGlobalOp; */
-      /* Record translation */
-
-      /* DEBUG
-      cout << *CurrentRecord;
-      */
-
-      if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
-      { /* Current Record is an event. We split it, if needed */
-        if (CurrentEvent->GetTypeValueCount() > 1)
-        {
-          /* DEBUG
-          fprintf(stdout, "Adding an Event with %d type/values\n",
-                  CurrentEvent->GetTypeValueCount());
-          */
-
-          for (unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++)
-          {
-            Event_t SubEvent;
-
-            SubEvent = new Event( CurrentEvent->GetTimestamp(),
+                    SubEvent = new Event( CurrentEvent->GetTimestamp(),
                                   CurrentEvent->GetCPU(),
                                   CurrentEvent->GetAppId(),
                                   CurrentEvent->GetTaskId(),
                                   CurrentEvent->GetThreadId());
 
-            SubEvent->AddTypeValue(CurrentEvent->GetType(i),
+                    SubEvent->AddTypeValue(CurrentEvent->GetType(i),
                                    CurrentEvent->GetValue(i));
 
-  #ifdef DEBUG
-            // cout << "Pushing SubEvent: " << *SubEvent;
-  #endif
+                    bool success = 
+                        TranslationInfo[CurrentTaskId][CurrentThreadId]
+                            ->PushRecord(SubEvent);
 
-            if (!TranslationInfo[CurrentTaskId][CurrentThreadId]->PushRecord(SubEvent))
-            {
-              SetError(true);
-              this->LastError = TranslationInfo[CurrentTaskId][CurrentThreadId]->GetLastError();
+                    if (!success)
+                    {
+                        SetError(true);
+                        this->LastError = 
+                            TranslationInfo[CurrentTaskId][CurrentThreadId]
+                                ->GetLastError();
+                        return false;
+                    }
+                }
 
-              return false;
+                // Here we can delete the Event record, as we have pushed all the
+                // Type/Values in sub-events
+                delete CurrentRecord;
             }
-          }
-
-          /* Here we can delete the Event record, as we have pushed all the
-           * Type/Values in sub-events */
-          delete CurrentRecord;
+            else
+            {
+                if (!TranslationInfo[CurrentTaskId][CurrentThreadId]
+                        ->PushRecord(CurrentRecord))
+                {
+                    SetError(true);
+                    this->LastError = 
+                        TranslationInfo[CurrentTaskId][CurrentThreadId]
+                            ->GetLastError();
+                    return false;
+                }
+            }
         }
         else
         {
-          if (!TranslationInfo[CurrentTaskId][CurrentThreadId]->PushRecord(CurrentRecord))
-          {
-            SetError(true);
-            this->LastError = TranslationInfo[CurrentTaskId][CurrentThreadId]->GetLastError();
-            return false;
-          }
+            if (!TranslationInfo[CurrentTaskId][CurrentThreadId]
+                    ->PushRecord(CurrentRecord))
+            {
+                SetError(true);
+                this->LastError = 
+                    TranslationInfo[CurrentTaskId][CurrentThreadId]->GetLastError();
+                return false;
+            }
         }
-      }
-      else
-      {
-        if (!TranslationInfo[CurrentTaskId][CurrentThreadId]->PushRecord(CurrentRecord))
-        {
-          SetError(true);
-          this->LastError = TranslationInfo[CurrentTaskId][CurrentThreadId]->GetLastError();
-          return false;
-        }
-      }
     }
 
     CurrentRecord = SelectNextRecord();
-
     PercentageRead = Parser->GetFilePercentage();
 
     if (PercentageRead > CurrentPercentage)
     {
-      CurrentPercentage = PercentageRead;
-#ifndef DEBUG
-      SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
-#endif
+        CurrentPercentage = PercentageRead;
+        SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
     }
   }
 
@@ -1347,8 +1337,6 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
               CurrentTask,
               CurrentThread,
               rand()%999999);
-
-      printf("\n-> TMPFILE:%s\n", TemporaryFileName);
 
       if (!DescriptorShared)
       {

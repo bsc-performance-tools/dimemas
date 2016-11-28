@@ -101,7 +101,7 @@
 #define MSG_RECV_REGEXP_SS  "%d:%d:%lld:%d:%d:%d"  // ssrc_task_id:src_thread_id:msg_size:tag:comm_id:recv_type
 
 #define RECORD_GLOBAL_OP 10
-#define GLOBAL_OP_REGEXP    "%d:%d:%d:%d:%ld:%ld" // global_op_id:comm_id:root_task:root_th:bytes_send:bytes_recv
+#define GLOBAL_OP_REGEXP    "%d:%d:%d:%d:%ld:%ld:%d" // global_op_id:comm_id:root_task:root_th:bytes_send:bytes_recv
 
 #define RECORD_EVENT     20
 #define EVENT_REGEXP     "%llu:%llu" // event_type:event_value
@@ -1229,7 +1229,9 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
   new_communicator->global_ranks = malloc(comm_tasks_count*sizeof(int));
 
   create_queue (&new_communicator->threads);
+  create_queue (&new_communicator->nonblock_global_op_threads);
   create_queue (&new_communicator->machines_threads);
+  create_queue (&new_communicator->nonblock_global_op_machine_threads);
   create_queue (&new_communicator->m_threads_with_links);
 
   // new_communicator->nodes_per_machine = malloc(Simulator.number_machines);
@@ -2045,7 +2047,7 @@ t_boolean DAP_read_action (app_struct       *app,
   printf(": App %d read: %s", app->ptask_id, line);
   fflush(stdout);
   */
-
+  
   if ( (op_fields = malloc(bytes_read+1)) == NULL)
   {
     DAP_report_error("unable to allocate memory to parse an action record");
@@ -2079,8 +2081,10 @@ t_boolean DAP_read_action (app_struct       *app,
       else
       {
         (*action) = (struct t_action*) malloc(sizeof(struct t_action));
+        (*action)->trace_line = (char *) malloc(bytes_read);
+        memcpy((*action)->trace_line, line, bytes_read);
 
-        if ( (*action) == NULL)
+       if ( (*action) == NULL)
         {
           DAP_report_error("unable to allocate space for new action");
 
@@ -2100,7 +2104,6 @@ t_boolean DAP_read_action (app_struct       *app,
         free(line);
 
         return TRUE;
-
       }
     }
 
@@ -2141,7 +2144,9 @@ t_boolean DAP_read_action (app_struct       *app,
   {
     /* Allocate memory for new action */
     (*action) = (struct t_action*) malloc(sizeof(struct t_action));
-
+    (*action)->trace_line = (char *) malloc(bytes_read);
+    memcpy((*action)->trace_line, line, bytes_read);
+    
     if ( (*action) == NULL)
     {
       DAP_report_error("unable to allocate space for new action");
@@ -2391,6 +2396,7 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
   int      root_thread_id;
   long int bytes_sent;
   long int bytes_recv;
+  int      synch_type;
 
   if (sscanf(global_op_str,
              GLOBAL_OP_REGEXP,
@@ -2399,12 +2405,12 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
              &root_task_id,
              &root_thread_id,
              &bytes_sent,
-             &bytes_recv) != 6)
+             &bytes_recv,
+             &synch_type) != 7)
   {
     DAP_report_error("wrong global operation (%)", global_op_str);
     return FALSE;
   }
-
 
   action->action                     = GLOBAL_OP;
   action->desc.global_op.glop_id     = global_op_id;
@@ -2413,6 +2419,7 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
   action->desc.global_op.root_thid   = root_thread_id;
   action->desc.global_op.bytes_send  = bytes_sent;
   action->desc.global_op.bytes_recvd = bytes_recv;
+  action->desc.global_op.synch_type  = synch_type;
 
   return TRUE;
 }

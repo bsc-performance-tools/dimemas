@@ -347,7 +347,8 @@ void FS_general (int value, struct t_thread *thread)
                         action->desc.global_op.root_rank,
                         action->desc.global_op.root_thid,
                         action->desc.global_op.bytes_send,
-                        action->desc.global_op.bytes_recvd);
+                        action->desc.global_op.bytes_recvd,
+                        action->desc.global_op.synch_type);
 
       break;
     case MPI_IO_Block_NonCollective:
@@ -454,7 +455,8 @@ A:
                         action->desc.global_op.root_rank,
                         action->desc.global_op.root_thid,
                         action->desc.global_op.bytes_send,
-                        action->desc.global_op.bytes_recvd);
+                        action->desc.global_op.bytes_recvd,
+                        action->desc.global_op.synch_type);
 
       break;
     case MPI_IO_NonBlock_NonCollective_Begin:
@@ -628,7 +630,8 @@ B:
                         action->desc.global_op.root_rank,
                         action->desc.global_op.root_thid,
                         action->desc.global_op.bytes_send,
-                        action->desc.global_op.bytes_recvd);
+                        action->desc.global_op.bytes_recvd,
+                        action->desc.global_op.synch_type);
 
       thread->last_paraver = current_time;
       Next_Action_to_thread (thread);
@@ -727,7 +730,8 @@ B:
                         action->desc.global_op.root_rank,
                         action->desc.global_op.root_thid,
                         action->desc.global_op.bytes_send,
-                        action->desc.global_op.bytes_recvd);
+                        action->desc.global_op.bytes_recvd,
+                        action->desc.global_op.synch_type);
       fh_commid->counter--;
       if (fh_commid->counter == 0)
         fh_commid->stage = IN_SCATTER;
@@ -913,7 +917,8 @@ B:
                         action->desc.global_op.root_rank,
                         action->desc.global_op.root_thid,
                         action->desc.global_op.bytes_send,
-                        action->desc.global_op.bytes_recvd);
+                        action->desc.global_op.bytes_recvd,
+                        action->desc.global_op.synch_type);
 
       fh_commid->counter--;
       if (fh_commid->counter == 0)

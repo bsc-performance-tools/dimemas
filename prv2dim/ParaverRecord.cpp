@@ -439,6 +439,11 @@ GlobalOp::GlobalOp(UINT64 Timestamp,
   this->GlobalOpId     = GlobalOpId;
   this->Root           = Root;
 
+	if (this->GlobalOpId < 14)
+		this->Synchronize = 1;
+	else
+		this->Synchronize = 0;
+
   if (this->Root)
     this->RootTaskId = 1;
   else
@@ -459,8 +464,8 @@ GlobalOp::Write( ostream& os) const
   os << ThreadId << "] ";
 
   os << "T: " << Timestamp << " CommId " << CommunicatorId;
-
-  os << " GlobOpId: " << GlobalOpId << " RootTask: " << RootTaskId << endl;
+  os << " GlobOpId: " << GlobalOpId << " RootTask: " << RootTaskId;
+	os << " Synchronize: " <<  Synchronize << endl;
 }
 
 ostream& operator<< (ostream& os, const GlobalOp& GlobOp)

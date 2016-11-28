@@ -53,6 +53,7 @@ typedef int MPIType;
 #define MPITYPE_GROUP                 MPITYPE_OTHER
 #define MPITYPE_TOPOLOGIES            MPITYPE_OTHER
 #define MPITYPE_TYPE                  MPITYPE_OTHER
+#define MPITYPE_IO										50000005
 
 #define MPITYPE_PROBE_SOFTCOUNTER     50000300
 #define MPITYPE_PROBE_TIMECOUNTER     50000301
@@ -472,13 +473,47 @@ typedef enum
   MPI_TYPE_SIZE_VAL,                      /* 137 */
   MPI_TYPE_STRUCT_VAL,                    /* 138 */
   MPI_TYPE_UB_VAL,                        /* 139 */
-  MPI_INIT_THREAD_VAL,                    /* 140 */
+  //MPI_INIT_THREAD_VAL,                    /* 140 */
 
-  MPI_TYPE_VECTOR_VAL                     /* 141 */
+  MPI_TYPE_VECTOR_VAL,                     /* 141 */
 
+	MPI_FILE_OPEN_VAL,					
+  MPI_FILE_CLOSE_VAL,
+  MPI_FILE_READ_VAL,
+  MPI_FILE_READ_ALL_VAL,
+  MPI_FILE_WRITE_VAL,
+  MPI_FILE_WRITE_ALL_VAL,
+  MPI_FILE_READ_AT_VAL,
+  MPI_FILE_READ_AT_ALL_VAL,
+  MPI_FILE_WRITE_AT_VAL,									/* 150 */
+
+  MPI_FILE_WRITE_AT_ALL_VAL,							
+  MPI_COMM_SPAWN_VAL,
+  MPI_COMM_SPAWN_MULTIPLE_VAL,
+  MPI_REQUEST_GET_STATUS_VAL,
+
+  MPI_IREDUCE_VAL,												/* 155 */
+  MPI_IALLREDUCE_VAL,											
+  MPI_IBARRIER_VAL,
+  MPI_IBCAST_VAL,
+  MPI_IALLTOALL_VAL,
+  MPI_IALLTOALLV_VAL,											/* 160 */
+  MPI_IALLGATHER_VAL,									
+  MPI_IALLGATHERV_VAL,
+  MPI_IGATHER_VAL,
+  MPI_IGATHERV_VAL,
+  MPI_ISCATTER_VAL,												/* 165 */
+  MPI_ISCATTERV_VAL,
+  MPI_IREDUCESCAT_VAL,
+  MPI_ISCAN_VAL,													/* 168 */
+
+	// In order to have the same Ids than extrae I've moved this MPI
+	// from 141 to here
+  MPI_INIT_THREAD_VAL                    /* 140 */
 } MPI_Event_Values;
 
-#define NUM_MPICALLS  (MPI_TYPE_VECTOR_VAL+1)
+//#define NUM_MPICALLS  (MPI_TYPE_VECTOR_VAL+1)
+#define NUM_MPICALLS (MPI_INIT_THREAD_VAL+1)
 
 #define BLOCK_END_VAL MPIEND_VAL          /* BLOCK_END_VAL == MPIEND_VAL */
 
@@ -503,167 +538,198 @@ typedef enum
 
 typedef enum
 {
-/* 000 */   BLOCK_ID_NULL,
-/* 001 */   BLOCK_ID_MPI_Allgather,
-/* 002 */   BLOCK_ID_MPI_Allgatherv,
-/* 003 */   BLOCK_ID_MPI_Allreduce,
-/* 004 */   BLOCK_ID_MPI_Alltoall,
-/* 005 */   BLOCK_ID_MPI_Alltoallv,
-/* 006 */   BLOCK_ID_MPI_Barrier,
-/* 007 */   BLOCK_ID_MPI_Bcast,
-/* 008 */   BLOCK_ID_MPI_Gather,
-/* 009 */   BLOCK_ID_MPI_Gatherv,
-/* 010 */   BLOCK_ID_MPI_Op_create,
-/* 011 */   BLOCK_ID_MPI_Op_free,
-/* 012 */   BLOCK_ID_MPI_Reduce_scatter,
-/* 013 */   BLOCK_ID_MPI_Reduce,
-/* 014 */   BLOCK_ID_MPI_Scan,
-/* 015 */   BLOCK_ID_MPI_Scatter,
-/* 016 */   BLOCK_ID_MPI_Scatterv,
-/* 017 */   BLOCK_ID_MPI_Attr_delete,
-/* 018 */   BLOCK_ID_MPI_Attr_get,
-/* 019 */   BLOCK_ID_MPI_Attr_put,
+	BLOCK_ID_NULL,									/* 000 */
+	BLOCK_ID_MPI_Allgather,					   
+	BLOCK_ID_MPI_Allgatherv,
+	BLOCK_ID_MPI_Allreduce,
+	BLOCK_ID_MPI_Alltoall,
+	BLOCK_ID_MPI_Alltoallv,
+	BLOCK_ID_MPI_Barrier,
+	BLOCK_ID_MPI_Bcast,
+	BLOCK_ID_MPI_Gather,
+	BLOCK_ID_MPI_Gatherv,
+	BLOCK_ID_MPI_Reduce_scatter,		/* 010 */
+  BLOCK_ID_MPI_Reduce,
+  BLOCK_ID_MPI_Scan,
+  BLOCK_ID_MPI_Scatter,
+  BLOCK_ID_MPI_Scatterv,
+  
+	BLOCK_ID_MPI_Iallgather,
+  BLOCK_ID_MPI_Iallgatherv,
+  BLOCK_ID_MPI_Iallreduce,
+	BLOCK_ID_MPI_Ialltoall,
+  BLOCK_ID_MPI_Ialltoallv,
+  BLOCK_ID_MPI_Ibarrier,					/* 020 */
+  BLOCK_ID_MPI_Ibcast,
+  BLOCK_ID_MPI_Igather,
+  BLOCK_ID_MPI_Igatherv,
+	BLOCK_ID_MPI_Ireducescat,
+  BLOCK_ID_MPI_Ireduce,
+  BLOCK_ID_MPI_Iscan,						
+  BLOCK_ID_MPI_Iscatter,
+  BLOCK_ID_MPI_Iscatterv,
 
-/* 020 */   BLOCK_ID_MPI_Comm_create,
-/* 021 */   BLOCK_ID_MPI_Comm_dup,
-/* 022 */   BLOCK_ID_MPI_Comm_free,
-/* 023 */   BLOCK_ID_MPI_Comm_group,
-/* 024 */   BLOCK_ID_MPI_Comm_rank,
-/* 025 */   BLOCK_ID_MPI_Comm_remote_group,
-/* 026 */   BLOCK_ID_MPI_Comm_remote_size,
-/* 027 */   BLOCK_ID_MPI_Comm_size,
-/* 028 */   BLOCK_ID_MPI_Comm_split,
-/* 029 */   BLOCK_ID_MPI_Comm_test_inter,
-/* 030 */   BLOCK_ID_MPI_Comm_compare,
-/* 031 */   BLOCK_ID_MPI_Group_difference,
-/* 032 */   BLOCK_ID_MPI_Group_excl,
-/* 033 */   BLOCK_ID_MPI_Group_free,
-/* 034 */   BLOCK_ID_MPI_Group_incl,
-/* 035 */   BLOCK_ID_MPI_Group_intersection,
-/* 036 */   BLOCK_ID_MPI_Group_rank,
-/* 037 */   BLOCK_ID_MPI_Group_range_excl,
-/* 038 */   BLOCK_ID_MPI_Group_range_incl,
-/* 039 */   BLOCK_ID_MPI_Group_size,
-/* 040 */   BLOCK_ID_MPI_Group_translate_ranks,
-/* 041 */   BLOCK_ID_MPI_Group_union,
-/* 042 */   BLOCK_ID_MPI_Group_compare,
-/* 043 */   BLOCK_ID_MPI_Intercomm_create,
-/* 044 */   BLOCK_ID_MPI_Intercomm_merge,
-/* 045 */   BLOCK_ID_MPI_Keyval_free,
-/* 046 */   BLOCK_ID_MPI_Keyval_create,
-/* 047 */   BLOCK_ID_MPI_Abort,
-/* 048 */   BLOCK_ID_MPI_Error_class,
-/* 049 */   BLOCK_ID_MPI_Errhandler_create,
-/* 050 */   BLOCK_ID_MPI_Errhandler_free,
-/* 051 */   BLOCK_ID_MPI_Errhandler_get,
-/* 052 */   BLOCK_ID_MPI_Error_string,
-/* 053 */   BLOCK_ID_MPI_Errhandler_set,
-/* 054 */   BLOCK_ID_MPI_Finalize,
-/* 055 */   BLOCK_ID_MPI_Get_processor_name,
-/* 056 */   BLOCK_ID_MPI_Init,
-/* 057 */   BLOCK_ID_MPI_Initialized,
-/* 058 */   BLOCK_ID_MPI_Wtick,
-/* 059 */   BLOCK_ID_MPI_Wtime,
-/* 060 */   BLOCK_ID_MPI_Address,
-/* 061 */   BLOCK_ID_MPI_Bsend,
-/* 062 */   BLOCK_ID_MPI_Bsend_init,
-/* 063 */   BLOCK_ID_MPI_Buffer_attach,
-/* 064 */   BLOCK_ID_MPI_Buffer_detach,
-/* 065 */   BLOCK_ID_MPI_Cancel,
-/* 066 */   BLOCK_ID_MPI_Request_free,
-/* 067 */   BLOCK_ID_MPI_Recv_init,
-/* 068 */   BLOCK_ID_MPI_Send_init,
-/* 069 */   BLOCK_ID_MPI_Get_count,
-/* 070 */   BLOCK_ID_MPI_Get_elements,
-/* 071 */   BLOCK_ID_MPI_Ibsend,
-/* 072 */   BLOCK_ID_MPI_Iprobe,
-/* 073 */   BLOCK_ID_MPI_Irecv,
-/* 074 */   BLOCK_ID_MPI_Irsend,
-/* 075 */   BLOCK_ID_MPI_Isend,
-/* 076 */   BLOCK_ID_MPI_Issend,
-/* 077 */   BLOCK_ID_MPI_Pack,
-/* 078 */   BLOCK_ID_MPI_Pack_size,
-/* 079 */   BLOCK_ID_MPI_Probe,
-/* 080 */   BLOCK_ID_MPI_Recv,
-/* 081 */   BLOCK_ID_MPI_Rsend,
-/* 082 */   BLOCK_ID_MPI_Rsend_init,
-/* 083 */   BLOCK_ID_MPI_Send,
-/* 084 */   BLOCK_ID_MPI_Sendrecv,
-/* 085 */   BLOCK_ID_MPI_Sendrecv_replace,
-/* 086 */   BLOCK_ID_MPI_Ssend,
-/* 087 */   BLOCK_ID_MPI_Ssend_init,
-/* 088 */   BLOCK_ID_MPI_Start,
-/* 089 */   BLOCK_ID_MPI_Startall,
-/* 090 */   BLOCK_ID_MPI_Test,
-/* 091 */   BLOCK_ID_MPI_Testall,
-/* 092 */   BLOCK_ID_MPI_Testany,
-/* 093 */   BLOCK_ID_MPI_Test_cancelled,
-/* 094 */   BLOCK_ID_MPI_Test_some,
-/* 095 */   BLOCK_ID_MPI_Type_commit,
-/* 096 */   BLOCK_ID_MPI_Type_contiguous,
-/* 097 */   BLOCK_ID_MPI_Type_extent,
-/* 098 */   BLOCK_ID_MPI_Type_free,
-/* 099 */   BLOCK_ID_MPI_Type_hindexed,
-/* 100 */   BLOCK_ID_MPI_Type_hvector,
-/* 101 */   BLOCK_ID_MPI_Type_indexed,
-/* 102 */   BLOCK_ID_MPI_Type_lb,
-/* 103 */   BLOCK_ID_MPI_Type_size,
-/* 104 */   BLOCK_ID_MPI_Type_struct,
-/* 105 */   BLOCK_ID_MPI_Type_ub,
-/* 106 */   BLOCK_ID_MPI_Type_vector,
-/* 107 */   BLOCK_ID_MPI_Unpack,
-/* 108 */   BLOCK_ID_MPI_Wait,
-/* 109 */   BLOCK_ID_MPI_Waitall,
-/* 110 */   BLOCK_ID_MPI_Waitany,
-/* 111 */   BLOCK_ID_MPI_Waitsome,
-/* 112 */   BLOCK_ID_MPI_Cart_coords,
-/* 113 */   BLOCK_ID_MPI_Cart_create,
-/* 114 */   BLOCK_ID_MPI_Cart_get,
-/* 115 */   BLOCK_ID_MPI_Cart_map,
-/* 116 */   BLOCK_ID_MPI_Cart_rank,
-/* 117 */   BLOCK_ID_MPI_Cart_shift,
-/* 118 */   BLOCK_ID_MPI_Cart_sub,
-/* 119 */   BLOCK_ID_MPI_Cartdim_get,
-/* 120 */   BLOCK_ID_MPI_Dims_create,
-/* 121 */   BLOCK_ID_MPI_Graph_get,
-/* 122 */   BLOCK_ID_MPI_Graph_map,
-/* 123 */   BLOCK_ID_MPI_Graph_create,
-/* 124 */   BLOCK_ID_MPI_Graph_neighbors,
-/* 125 */   BLOCK_ID_MPI_Graphdims_get,
-/* 126 */   BLOCK_ID_MPI_Graph_neighbors_count,
-/* 127 */   BLOCK_ID_MPI_Topo_test,
+	BLOCK_ID_MPI_Op_create,					
+  BLOCK_ID_MPI_Op_free,						/* 030 */
 
-/* 128 */   BLOCK_ID_TRACE_ON,
-/* 129 */   BLOCK_ID_IO_Read,
-/* 130 */   BLOCK_ID_IO_Write,
-/* 131 */   BLOCK_ID_IO,
+  BLOCK_ID_MPI_Attr_delete,
+  BLOCK_ID_MPI_Attr_get,
+  BLOCK_ID_MPI_Attr_put,
 
-/* 132 */   BLOCK_ID_MPI_Win_create,
-/* 133 */   BLOCK_ID_MPI_Win_free,
-/* 134 */   BLOCK_ID_MPI_Put,
-/* 135 */   BLOCK_ID_MPI_Get,
-/* 136 */   BLOCK_ID_MPI_Accumulate,
-/* 137 */   BLOCK_ID_MPI_Win_fence,
-/* 138 */   BLOCK_ID_MPI_Win_complete,
-/* 139 */   BLOCK_ID_MPI_Win_start,
-/* 140 */   BLOCK_ID_MPI_Win_post,
-/* 141 */   BLOCK_ID_MPI_Win_wait,
-/* 142 */   BLOCK_ID_MPI_Win_test,
-/* 143 */   BLOCK_ID_MPI_Win_lock,
-/* 144 */   BLOCK_ID_MPI_Win_unlock,
+  BLOCK_ID_MPI_Comm_create,
+  BLOCK_ID_MPI_Comm_dup,
+  BLOCK_ID_MPI_Comm_free,
+  BLOCK_ID_MPI_Comm_group,
+  BLOCK_ID_MPI_Comm_rank,
+  BLOCK_ID_MPI_Comm_remote_group,
+  BLOCK_ID_MPI_Comm_remote_size,	 /* 040 */
+  BLOCK_ID_MPI_Comm_size,
+  BLOCK_ID_MPI_Comm_split,
+  BLOCK_ID_MPI_Comm_test_inter,
+  BLOCK_ID_MPI_Comm_compare,
+  BLOCK_ID_MPI_Group_difference,
+  BLOCK_ID_MPI_Group_excl,
+  BLOCK_ID_MPI_Group_free,
+  BLOCK_ID_MPI_Group_incl,
+  BLOCK_ID_MPI_Group_intersection,
+  BLOCK_ID_MPI_Group_rank,				/* 050 */
+  BLOCK_ID_MPI_Group_range_excl,
+  BLOCK_ID_MPI_Group_range_incl,
+  BLOCK_ID_MPI_Group_size,
+  BLOCK_ID_MPI_Group_translate_ranks,
+  BLOCK_ID_MPI_Group_union,
+  BLOCK_ID_MPI_Group_compare,
+  BLOCK_ID_MPI_Intercomm_create,
+  BLOCK_ID_MPI_Intercomm_merge,
+  BLOCK_ID_MPI_Keyval_free,
+  BLOCK_ID_MPI_Keyval_create,			/* 060 */
+  BLOCK_ID_MPI_Abort,
+  BLOCK_ID_MPI_Error_class,
+  BLOCK_ID_MPI_Errhandler_create,
+  BLOCK_ID_MPI_Errhandler_free,
+  BLOCK_ID_MPI_Errhandler_get,
+  BLOCK_ID_MPI_Error_string,
+  BLOCK_ID_MPI_Errhandler_set,
+  BLOCK_ID_MPI_Finalize,
+  BLOCK_ID_MPI_Get_processor_name,
+  BLOCK_ID_MPI_Init,							/* 070 */
+  BLOCK_ID_MPI_Initialized,
+  BLOCK_ID_MPI_Wtick,
+  BLOCK_ID_MPI_Wtime,
+  BLOCK_ID_MPI_Address,
+  BLOCK_ID_MPI_Bsend,
+  BLOCK_ID_MPI_Bsend_init,
+  BLOCK_ID_MPI_Buffer_attach,
+  BLOCK_ID_MPI_Buffer_detach,
+  BLOCK_ID_MPI_Cancel,
+  BLOCK_ID_MPI_Request_free,			/* 080 */
+  BLOCK_ID_MPI_Recv_init,
+  BLOCK_ID_MPI_Send_init,
+  BLOCK_ID_MPI_Get_count,
+  BLOCK_ID_MPI_Get_elements,
+  BLOCK_ID_MPI_Ibsend,
+  BLOCK_ID_MPI_Iprobe,
+  BLOCK_ID_MPI_Irecv,
+  BLOCK_ID_MPI_Irsend,
+  BLOCK_ID_MPI_Isend,
+  BLOCK_ID_MPI_Issend,						/* 090 */
+  BLOCK_ID_MPI_Pack,
+  BLOCK_ID_MPI_Pack_size,
+  BLOCK_ID_MPI_Probe,
+  BLOCK_ID_MPI_Recv,
+  BLOCK_ID_MPI_Rsend,
+  BLOCK_ID_MPI_Rsend_init,
+  BLOCK_ID_MPI_Send,
+  BLOCK_ID_MPI_Sendrecv,
+  BLOCK_ID_MPI_Sendrecv_replace,
+  BLOCK_ID_MPI_Ssend,							/* 100 */
+  BLOCK_ID_MPI_Ssend_init,
+  BLOCK_ID_MPI_Start,
+  BLOCK_ID_MPI_Startall,
+  BLOCK_ID_MPI_Test,
+  BLOCK_ID_MPI_Testall,
+  BLOCK_ID_MPI_Testany,
+  BLOCK_ID_MPI_Test_cancelled,
+  BLOCK_ID_MPI_Test_some,
+  BLOCK_ID_MPI_Type_commit,
+  BLOCK_ID_MPI_Type_contiguous,		/* 110 */
+  BLOCK_ID_MPI_Type_extent,
+  BLOCK_ID_MPI_Type_free,
+  BLOCK_ID_MPI_Type_hindexed,
+  BLOCK_ID_MPI_Type_hvector,
+  BLOCK_ID_MPI_Type_indexed,
+  BLOCK_ID_MPI_Type_lb,
+  BLOCK_ID_MPI_Type_size,
+  BLOCK_ID_MPI_Type_struct,
+  BLOCK_ID_MPI_Type_ub,
+  BLOCK_ID_MPI_Type_vector,				/* 120 */
+  BLOCK_ID_MPI_Unpack,
+  BLOCK_ID_MPI_Wait,
+  BLOCK_ID_MPI_Waitall,
+  BLOCK_ID_MPI_Waitany,
+  BLOCK_ID_MPI_Waitsome,
+  BLOCK_ID_MPI_Cart_coords,
+  BLOCK_ID_MPI_Cart_create,
+  BLOCK_ID_MPI_Cart_get,
+  BLOCK_ID_MPI_Cart_map,
+  BLOCK_ID_MPI_Cart_rank,					/* 130 */
+  BLOCK_ID_MPI_Cart_shift,
+  BLOCK_ID_MPI_Cart_sub,
+  BLOCK_ID_MPI_Cartdim_get,
+  BLOCK_ID_MPI_Dims_create,
+  BLOCK_ID_MPI_Graph_get,
+  BLOCK_ID_MPI_Graph_map,
+  BLOCK_ID_MPI_Graph_create,
+  BLOCK_ID_MPI_Graph_neighbors,
+  BLOCK_ID_MPI_Graphdims_get,
+  BLOCK_ID_MPI_Graph_neighbors_count,	/* 140 */
+  BLOCK_ID_MPI_Topo_test,
 
-/* 145 */   BLOCK_ID_MPI_Init_thread,
+  BLOCK_ID_TRACE_ON,
+  BLOCK_ID_IO_Read,
+  BLOCK_ID_IO_Write,
+  BLOCK_ID_IO,
 
-/* 146 */   BLOCK_ID_LAPI_Init,
-/* 147 */   BLOCK_ID_LAPI_Term,
-/* 148 */   BLOCK_ID_LAPI_Put,
-/* 149 */   BLOCK_ID_LAPI_Get,
-/* 150 */   BLOCK_ID_LAPI_Fence,
-/* 151 */   BLOCK_ID_LAPI_Gfence,
-/* 152 */   BLOCK_ID_LAPI_Address_init,
-/* 153 */   BLOCK_ID_LAPI_Amsend,
-/* 154 */   BLOCK_ID_LAPI_Rmw,
-/* 155 */   BLOCK_ID_LAPI_Waitcntr
+  BLOCK_ID_MPI_Win_create,
+  BLOCK_ID_MPI_Win_free,
+  BLOCK_ID_MPI_Put,
+  BLOCK_ID_MPI_Get,
+  BLOCK_ID_MPI_Accumulate,					/* 150 */
+  BLOCK_ID_MPI_Win_fence,
+  BLOCK_ID_MPI_Win_complete,
+  BLOCK_ID_MPI_Win_start,
+  BLOCK_ID_MPI_Win_post,
+  BLOCK_ID_MPI_Win_wait,
+  BLOCK_ID_MPI_Win_test,
+  BLOCK_ID_MPI_Win_lock,
+  BLOCK_ID_MPI_Win_unlock,
+
+  BLOCK_ID_MPI_Init_thread,
+
+  BLOCK_ID_LAPI_Init,								/* 160 */
+  BLOCK_ID_LAPI_Term,
+  BLOCK_ID_LAPI_Put,
+  BLOCK_ID_LAPI_Get,
+  BLOCK_ID_LAPI_Fence,
+  BLOCK_ID_LAPI_Gfence,
+  BLOCK_ID_LAPI_Address_init,
+  BLOCK_ID_LAPI_Amsend,
+  BLOCK_ID_LAPI_Rmw,
+  BLOCK_ID_LAPI_Waitcntr,
+
+  BLOCK_ID_MPI_File_open,						/* 170 */
+  BLOCK_ID_MPI_File_close,
+  BLOCK_ID_MPI_File_read,
+  BLOCK_ID_MPI_File_read_all,
+  BLOCK_ID_MPI_File_write,
+  BLOCK_ID_MPI_File_write_all,
+  BLOCK_ID_MPI_File_read_at,
+  BLOCK_ID_MPI_File_read_at_all,
+  BLOCK_ID_MPI_File_write_at,
+  BLOCK_ID_MPI_File_write_at_all,
+  BLOCK_ID_MPI_Comm_spawn,					/* 180 */
+  BLOCK_ID_MPI_Comm_spawn_multiple,
+  BLOCK_ID_MPI_Request_get_status,	/* 182 */
 
 }DimBlock;
 
@@ -687,7 +753,23 @@ typedef enum
   GLOP_ID_MPI_Reduce         = 10,
   GLOP_ID_MPI_Allreduce      = 11,
   GLOP_ID_MPI_Reduce_scatter = 12,
-  GLOP_ID_MPI_Scan           = 13
+  GLOP_ID_MPI_Scan           = 13,
+
+  GLOP_ID_MPI_Ibarrier       = 14,
+  GLOP_ID_MPI_Ibcast         = 15,
+	GLOP_ID_MPI_Igather        = 16,
+  GLOP_ID_MPI_Igatherv       = 17,
+	GLOP_ID_MPI_Iscatter       = 18,
+  GLOP_ID_MPI_Iscatterv      = 19,
+  GLOP_ID_MPI_Iallgather     = 20,
+  GLOP_ID_MPI_Iallgatherv    = 21, 
+  GLOP_ID_MPI_Ialltoall      = 22,
+  GLOP_ID_MPI_Ialltoallv     = 23,
+  GLOP_ID_MPI_Ireduce        = 24,
+  GLOP_ID_MPI_Iallreduce     = 25,
+  GLOP_ID_MPI_Ireduce_scatter= 26,
+  GLOP_ID_MPI_Iscan          = 27
+  
 
 }DimCollectiveOp;
 
@@ -716,8 +798,22 @@ typedef enum
 #define  MPI_SCATTERV_LABEL                "MPI_Scatterv"
 #define  MPI_ALLGATHER_LABEL               "MPI_Allgather"
 #define  MPI_ALLGATHERV_LABEL              "MPI_Allgatherv"
-
 #define  MPI_SCAN_LABEL                    "MPI_Scan"
+
+#define  MPI_IREDUCE_LABEL                 "MPI_Ireduce"                  
+#define  MPI_IALLREDUCE_LABEL              "MPI_Iallreduce"                     
+#define  MPI_IBARRIER_LABEL                "MPI_Ibarrier"                       
+#define  MPI_IBCAST_LABEL                  "MPI_Ibcast"                         
+#define  MPI_IALLTOALL_LABEL               "MPI_Ialltoall"                      
+#define  MPI_IALLTOALLV_LABEL              "MPI_Ialltoallv"                     
+#define  MPI_IALLGATHER_LABEL              "MPI_Iallgather"                     
+#define  MPI_IALLGATHERV_LABEL             "MPI_Iallgatherv"                    
+#define  MPI_IGATHER_LABEL                 "MPI_Igather"                        
+#define  MPI_IGATHERV_LABEL                "MPI_Igatherv"                       
+#define  MPI_ISCATTER_LABEL                "MPI_Iscatter"                       
+#define  MPI_ISCATTERV_LABEL               "MPI_Iscatterv"                      
+#define  MPI_IREDUCESCAT_LABEL             "MPI_Ireduce_scatter"                
+#define  MPI_ISCAN_LABEL                   "MPI_Iscan" 
 
 #define  MPI_INIT_LABEL                    "MPI_Init"
 #define  MPI_FINALIZE_LABEL                "MPI_Finalize"
@@ -782,6 +878,8 @@ typedef enum
 #define  MPI_COMM_CREATE_LABEL             "MPI_Comm_create"
 #define  MPI_COMM_DUP_LABEL                "MPI_Comm_dup"
 #define  MPI_COMM_SPLIT_LABEL              "MPI_Comm_split"
+#define  MPI_COMM_SPAWN_LABEL              "MPI_Comm_spawn"                 
+#define  MPI_COMM_SPAWN_MULTIPLE_LABEL     "MPI_Comm_spawn_multiple"
 #define  MPI_COMM_GROUP_LABEL              "MPI_Comm_group"
 #define  MPI_COMM_FREE_LABEL               "MPI_Comm_free"
 #define  MPI_COMM_REMOTE_GROUP_LABEL       "MPI_Comm_remote_group"
@@ -847,6 +945,18 @@ typedef enum
 #define  MPI_TYPE_STRUCT_LABEL             "MPI_Type_struct"
 #define  MPI_TYPE_UB_LABEL                 "MPI_Type_ub"
 #define  MPI_TYPE_VECTOR_LABEL             "MPI_Type_vector"
+
+#define  MPI_FILE_OPEN_LABEL               "MPI_File_open"
+#define  MPI_FILE_CLOSE_LABEL              "MPI_File_close"                     
+#define  MPI_FILE_READ_LABEL               "MPI_File_read"                      
+#define  MPI_FILE_READ_ALL_LABEL           "MPI_File_read_all"                  
+#define  MPI_FILE_WRITE_LABEL              "MPI_File_write"                     
+#define  MPI_FILE_WRITE_ALL_LABEL          "MPI_File_write_all"                 
+#define  MPI_FILE_READ_AT_LABEL            "MPI_File_read_at"                   
+#define  MPI_FILE_READ_AT_ALL_LABEL        "MPI_File_read_at_all"               
+#define  MPI_FILE_WRITE_AT_LABEL           "MPI_File_write_at"                  
+#define  MPI_FILE_WRITE_AT_ALL_LABEL       "MPI_File_write_at_all"              
+#define  MPI_REQUEST_GET_STATUS_LABEL      "MPI_Request_get_status"
 
 /*
  * MPI 2

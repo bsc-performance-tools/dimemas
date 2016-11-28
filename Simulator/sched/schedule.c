@@ -441,6 +441,7 @@ SCHEDULER_thread_to_ready (struct t_thread *thread)
   }
   else
   {
+    
     thread->put_into_ready = current_time;
     (*SCH[machine->scheduler.policy].thread_to_ready) (thread);
   }
@@ -463,24 +464,17 @@ t_nano SCHEDULER_get_execution_time (struct t_thread *thread)
 
   if (action->action != WORK && action->action != GPU_BURST)
   {
-    panic ("Trying to work when innaproppiate P%02d T%02d (t%02d)\n",
-           IDENTIFIERS (thread));
+    panic ("Trying to work when innaproppiate P%02d T%02d (t%02d) (%d)\n",
+           IDENTIFIERS (thread), thread->original_thread);
   }
 
-  ti = (*SCH[machine->scheduler.policy].get_execution_time) (thread);
+    ti = (*SCH[machine->scheduler.policy].get_execution_time) (thread);
 
-// #ifndef IDLE_ACCOUNTING
-  /* In idle blocks, time isn't added to account */
-  //if (thread->idle_block == FALSE)
-  //{
-//#endif
     account = current_account (thread);
     FLOAT_TO_TIMER (ti, tmp_timer);
     ADD_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
-//#ifndef IDLE_ACCOUNTING
-//  }
-//#endif
-  return (ti);
+  
+    return (ti);
 }
 
 void
@@ -655,126 +649,119 @@ void SCHEDULER_general (int value, struct t_thread *thread)
   {
     case SCH_TIMER_OUT:
     {
-    	if (thread->doing_acc_comm)
-    	{
-    		thread->doing_acc_comm = FALSE;
-    		thread->startup_done  = TRUE;
-    		thread->doing_startup = FALSE;
-    		new_cp_node (thread, CP_OVERHEAD);
-    	}
-    	else if (thread->doing_startup)
-      {
-        PARAVER_Startup (cpu->unique_number,
-                         IDENTIFIERS (thread),
-                         thread->last_paraver,
-                         current_time);
-        new_cp_node (thread, CP_OVERHEAD);
-        thread->startup_done  = TRUE;
-        thread->doing_startup = FALSE;
-      }
-      else if (thread->doing_copy)
-      { /* At this point thread has done its data copy to internal library */
-        PARAVER_Data_Copy(cpu->unique_number,
-                                IDENTIFIERS (thread),
-                                thread->last_paraver,
-                                current_time);
-        new_cp_node(thread, CP_OVERHEAD);
-        thread->copy_done  = TRUE;
-        thread->doing_copy = FALSE;
-      }
-      else if (thread->doing_roundtrip)
-      { /* At this point thread has done send round trip */
-        PARAVER_RTT(cpu->unique_number,
-                                  IDENTIFIERS (thread),
-                                  thread->last_paraver,
-                                  current_time);
-        new_cp_node(thread, CP_OVERHEAD);
-        thread->roundtrip_done  = TRUE;
-        thread->doing_roundtrip = FALSE;
-      }
-      else
-      {
-        if (thread->doing_context_switch)
+        if (thread->doing_acc_comm)
         {
-          PARAVER_Ctx_Switch (cpu->unique_number,
-                              IDENTIFIERS (thread),
-                              thread->last_paraver,
-                              current_time);
+            thread->doing_acc_comm = FALSE;
+            thread->startup_done  = TRUE;
+            thread->doing_startup = FALSE;
+            new_cp_node (thread, CP_OVERHEAD);
+        }
+        else if (thread->doing_startup)
+        {
+            PARAVER_Startup (cpu->unique_number,
+                    IDENTIFIERS (thread),
+                    thread->last_paraver,
+                    current_time);
+            new_cp_node (thread, CP_OVERHEAD);
+            thread->startup_done  = TRUE;
+            thread->doing_startup = FALSE;
+        }
+        else if (thread->doing_copy)
+        { /* At this point thread has done its data copy to internal library */
+            PARAVER_Data_Copy(cpu->unique_number,
+                    IDENTIFIERS (thread),
+                    thread->last_paraver,
+                    current_time);
+            new_cp_node(thread, CP_OVERHEAD);
+            thread->copy_done  = TRUE;
+            thread->doing_copy = FALSE;
+        }
+        else if (thread->doing_roundtrip)
+        { /* At this point thread has done send round trip */
+            PARAVER_RTT(cpu->unique_number,
+                    IDENTIFIERS (thread),
+                    thread->last_paraver,
+                    current_time);
+            new_cp_node(thread, CP_OVERHEAD);
+            thread->roundtrip_done  = TRUE;
+            thread->doing_roundtrip = FALSE;
         }
         else
         {
-          if (thread->doing_busy_wait)
-          {
-            PARAVER_Busy_Wait (cpu->unique_number,
-                                 IDENTIFIERS (thread),
-                                 thread->last_paraver, current_time);
-          }
-          else
-          {
-            action = thread->action;
-
-            if (thread->idle_block && !thread->kernel)
+            if (thread->doing_context_switch)
             {
-              PARAVER_Idle (cpu->unique_number,
-														IDENTIFIERS (thread),
-														thread->last_paraver,
-														current_time);
-            }
-            else if (thread->idle_block == TRUE)
-            {
-            	PARAVER_Not_Created(cpu->unique_number,
-																	IDENTIFIERS (thread),
-																	thread->acc_in_block_event.paraver_time,
-																	current_time);
+                PARAVER_Ctx_Switch (cpu->unique_number,
+                        IDENTIFIERS (thread),
+                        thread->last_paraver,
+                        current_time);
             }
             else
             {
-							if (thread->kernel && (!thread->first_acc_event_read ||
-									thread->acc_in_block_event.value == 0))
-							{	/* Previous at accelerator events in kernel thread must be
-									 NOT_CREATED state in CPU	*/
-								/* Not created states between blocks in kernel thread	*/
-								PARAVER_Not_Created(cpu->unique_number,
-																		IDENTIFIERS (thread),
-																		thread->last_paraver,
-																		current_time);
-							}
+                if (thread->doing_busy_wait)
+                {
+                    PARAVER_Busy_Wait (cpu->unique_number,
+                                 IDENTIFIERS (thread),
+                                 thread->last_paraver, current_time);
+                }
+                else
+                {
+                    action = thread->action;
 
-							else if (thread->kernel &&
-									(CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event) ||
-									 OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)))
-							{	/*	It's a GPU burst	*/
-								PARAVER_Running(cpu->unique_number,
-																IDENTIFIERS (thread),
-																thread->last_paraver,
-																current_time);
-							}
-
-							else if ((thread->host || thread->kernel) &&
-								(CUDAEventEncoding_Is_CUDABlock(thread->acc_in_block_event.type) ||
-								 OCLEventEncoding_Is_OCLBlock(thread->acc_in_block_event.type))
+                    if (thread->idle_block && !thread->kernel)
+                    {
+                        PARAVER_Idle (cpu->unique_number,
+                                IDENTIFIERS (thread),
+                                thread->last_paraver,
+                                current_time);
+                    }
+                    else if (thread->idle_block == TRUE)
+                    {
+                        PARAVER_Not_Created(cpu->unique_number,
+                                IDENTIFIERS (thread),
+                                thread->acc_in_block_event.paraver_time,
+                                current_time);
+                    }
+                    else
+                    {
+                        if (thread->kernel && (!thread->first_acc_event_read 
+                                    || thread->acc_in_block_event.value == 0))
+                        {	/* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
+                            /* Not created states between blocks in kernel thread	*/
+                            PARAVER_Not_Created(cpu->unique_number,
+                                    IDENTIFIERS (thread),
+                                    thread->last_paraver,
+                                    current_time);
+                        }
+                        else if (thread->kernel 
+                                && (CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event) 
+                                    || OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)))
+                        {	/*	It's a GPU burst	*/
+                            PARAVER_Running(cpu->unique_number,
+                                    IDENTIFIERS (thread),
+                                    thread->last_paraver,
+                                    current_time);
+                        }
+                        else if ((thread->host || thread->kernel) 
+                                && (CUDAEventEncoding_Is_CUDABlock(thread->acc_in_block_event.type) 
+                                    || OCLEventEncoding_Is_OCLBlock(thread->acc_in_block_event.type))
 								&& CUDAEventEncoding_Is_BlockBegin(thread->acc_in_block_event.value))
-
-							{
-								/* Do not throw anything if host or kernel is inside
-								 * a CUDA or OpenCL event block	*/
-							}
-
-							else
-							{	/*	It's a CPU burst	*/
-								PARAVER_Running (cpu->unique_number,
-																IDENTIFIERS (thread),
-																thread->last_paraver,
-																current_time);
-							}
+                        {
+                            /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
+						}
+						else
+                        {	/*	It's a CPU burst	*/
+                            PARAVER_Running (cpu->unique_number,
+                                    IDENTIFIERS (thread),
+                                    thread->last_paraver,
+                                    current_time);
+                        }
+                    }
+                    new_cp_node (thread, CP_WORK);
+                }
             }
-
-            new_cp_node (thread, CP_WORK);
-          }
         }
-      }
-      thread->last_paraver = current_time;
-      cpu->current_thread  = TH_NIL;
+        thread->last_paraver = current_time;
+        cpu->current_thread  = TH_NIL;
 
       if (thread->doing_context_switch)
       {
@@ -1129,17 +1116,32 @@ next_op:
           {
             if (action->desc.global_op.comm_id >= 0)
             { /* Regular execution of a global operation */
-              PARAVER_Start_Op (cpu->unique_number,
+
+
+                if (action->desc.global_op.synch_type != GLOBAL_OP_WAIT)
+                {
+                    PARAVER_Start_Op (cpu->unique_number,
                                 IDENTIFIERS (thread),
                                 current_time);
 
-              GLOBAL_operation (thread,
-                                    action->desc.global_op.glop_id,
-                                    action->desc.global_op.comm_id,
-                                    action->desc.global_op.root_rank,
-                                    action->desc.global_op.root_thid,
-                                    action->desc.global_op.bytes_send,
-                                    action->desc.global_op.bytes_recvd);
+                    GLOBAL_operation (thread,
+                        action->desc.global_op.glop_id,
+                        action->desc.global_op.comm_id,
+                        action->desc.global_op.root_rank,
+                        action->desc.global_op.root_thid,
+                        action->desc.global_op.bytes_send,
+                        action->desc.global_op.bytes_recvd,
+                        action->desc.global_op.synch_type);
+                }
+                else if (action->desc.global_op.synch_type == GLOBAL_OP_WAIT)
+                {
+                    GLOBAL_wait_operation(thread);
+                    // Ignore
+                    /*
+                    READ_action_free(action);
+                    goto next_op;
+                    */
+                }
             }
             else
             { /* Pseudo global operation to implement accelerator

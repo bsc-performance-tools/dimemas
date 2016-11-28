@@ -59,16 +59,20 @@ class TaskTranslationInfo: public Error
     vector<Block_t>         ClusterBlockIdStack;
     UINT64                  LastBlockEnd;
 
+    // For matching non-block collectives with its MPI_Wait
+    vector<GlobalOp_t>      NonBlockingGlopsInFlight;
+    bool                    MPIWaitWithCommunication;
+
     /* For CUDA / OpenCL version */
-    UINT64									LastGPUBurstBlock;
+    UINT64					LastGPUBurstBlock;
     bool                    FirstCUDARead;
-    bool										FirstOCLRead;
+    bool                    FirstOCLRead;
     bool                    OngoingDeviceSync;
     INT32                   StreamIdToSync;
-    INT32										AcceleratorThread;
+    INT32                   AcceleratorThread;
     vector<Block_t>         CUDABlockIdStack;
-    vector<Block_t>					OCLBlockIdStack;
-    bool										OCLFinishComm;
+    vector<Block_t>         OCLBlockIdStack;
+    bool                    OCLFinishComm;
 
     /* MPI_Event_Values type is defined in 'EventEncoding.h', on common-files */
     GlobalOp_t              PartialGlobalOp;

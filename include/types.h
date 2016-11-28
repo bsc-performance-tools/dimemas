@@ -465,6 +465,7 @@ struct t_global_op
   int           root_thid;   /* Identificator of thread root task */
   long long int bytes_send;  /* Number of bytes send */
   long long int bytes_recvd; /* Number of bytes received */
+  int           synch_type;  /* 0: Asynch glop, 1: Synch glop, 2: Wait glop */
 };
 
 struct t_mpi_io
@@ -494,6 +495,7 @@ struct t_action
   struct t_action *next;   /* Next action for thread */
   int              action; /* DEAD/WORK/SEND/RECV/IRECV/WAIT/
                               PRIO/FS/SEM/GLOBAL_OP/MPI_IO/MPI_OS*/
+  char * trace_line;
   union
   {
     struct t_compute   compute;
@@ -592,22 +594,36 @@ struct t_communicator
   int            communicator_id;
   int            size;
   int*           global_ranks;
-  // struct t_queue global_ranks;         /* Queue of integers, rank of tasks */
 
   struct t_queue threads;              /* Threads block until syncronization */
   struct t_queue machines_threads;     /* One thread from each machine used */
   struct t_queue m_threads_with_links; /* Els anteriors que ja tenen links
                                         * reservats */
 
-  // struct t_queue machines_nodes;
   struct t_queue* nodes_per_machine;    /* Nodes involved on each machine */
   struct t_queue  tasks_per_node;
-  // struct t_queue nodes_used;           /* List of nodes used */
-  // struct t_queue tasks_per_node;       /* Number of tasks on each node */
-
+  
   struct t_thread* current_root;       /* Root thread of the 'in-flight'
                                           operation */
   t_boolean in_flight_op;              /* True when simulating an operation */
+
+  // Queue that keeps all threads (copy) that arrives to the non-block
+  // global operation. We need this new queue because the threads queue could be
+  // used by a blocking global op at same time.
+
+  /*
+  struct t_queue nonblock_global_op_threads[1000];
+  struct t_queue nonblock_global_op_machine_threads[1000];
+  struct t_thread* nonblock_current_root[1000];
+  struct t_queue nonblock_m_threads_with_links[1000];
+  */
+
+  struct t_queue nonblock_global_op_threads;
+  struct t_queue nonblock_global_op_machine_threads;
+  struct t_queue nonblock_current_root;
+  struct t_queue nonblock_m_threads_with_links;
+
+
 };
 
 
@@ -964,20 +980,34 @@ struct t_thread
   struct t_queue ops_to_be_injected;
   int counter_ops_already_injected;
 
-	/* Accelerator variables */
-  t_boolean			 host;		/* Indicates if it's an accelerator host thread	*/
-  t_boolean			 kernel;	/* Indicates if it's an accelerator kernel thread	*/
-  struct t_link	*accelerator_link;	/* Accelerator link for communications	*/
-  t_boolean			 first_acc_event_read;		/*	Throws a NOT_CREATED_ST before */
-  																				/*	start if it's a kernel thread	*/
-  t_boolean			 acc_recv_sync;	/* Indicates if receiver has to wait to comm
-  																to start block (Syncs in kernel)	*/
-  t_boolean			 acc_sndr_sync;	/* Indicates if sender has to wait to
-  																receiver receives	*/
+  // Accelerator variables
+  t_boolean			 host; /* Indicates if it's an accelerator host thread	*/
+  t_boolean			 kernel; /* Indicates if it's an accelerator kernel thread	*/
+  struct t_link	*accelerator_link; /* Accelerator link for communications	*/
+  t_boolean			 first_acc_event_read; /* Throws a NOT_CREATED_ST before */
+                                           /* start if it's a kernel thread	*/
+  t_boolean			 acc_recv_sync;	/* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
+  t_boolean			 acc_sndr_sync;	/* Indicates if sender has to wait to receiver receives	*/
   t_boolean			 doing_acc_comm; /* Do not print startup latencies	*/
   t_boolean			 blckd_in_global_op; /* To control threads inside acc sync */
   struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
-  /* Accelerator variables */
+
+  // Non-blocking GLOP variables
+  // in_flight: Indicates how many non-block glops are already executing.
+  // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.
+  // waiting: Indicates how many waits are waiting for an in flight non-global op. (max 1)
+  //
+  int nb_glob_index; 
+  int nb_glob_index_master;
+  int n_nonblock_glob_in_flight;
+  int n_nonblock_glob_waiting;
+  int n_nonblock_glob_done;
+
+  struct t_queue nonblock_glop_done_threads;
+
+  //t_boolean nonblock_glop_waiting;
+  //t_boolean nonblock_glop_done;
+  //struct t_thread* nonblock_glop_thread;
 };
 
 struct t_semaphore

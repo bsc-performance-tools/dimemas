@@ -114,6 +114,13 @@ int Dimemas_Global_OP( FILE *fd,
                        int task, int thread,
                        int opid, int commid,
                        int root_rank, int root_thd,
+                       long64_t sendsize, long64_t recvsize, 
+											 int synchronize );
+
+int Dimemas_Global_OP_Wait( FILE *fd,
+                       int task, int thread,
+                       int opid, int commid,
+                       int root_rank, int root_thd,
                        long64_t sendsize, long64_t recvsize );
 
 int Dimemas_User_EventType_Definition( FILE *fd,
