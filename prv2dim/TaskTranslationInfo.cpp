@@ -1454,6 +1454,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 		case BLOCK_ID_MPI_Bsend:
 		case BLOCK_ID_MPI_Isend:
 		case BLOCK_ID_MPI_Issend:
+        case BLOCK_ID_MPI_Irsend:
 			/* DEBUG
 			   fprintf(stdout, "MPI_ISEND\n");
 			 */
@@ -1469,15 +1470,31 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 					return false;
 				}
 
-				if (Dimemas_NX_ImmediateSend(TemporaryFile, TaskId, ThreadId, PartnerTaskId, -1,	/* That should be corrected eventually */
-							     CommId, Size,
-							     (INT64) Tag) < 0) {
-					SetError(true);
-					SetErrorMessage
-					    ("error writing output trace",
-					     strerror(errno));
-					return false;
-				}
+					
+                if (CurrentBlockValue == BLOCK_ID_MPI_Irsend)
+                {
+                    if (Dimemas_NX_ImmediateReadySend(TemporaryFile,
+                          TaskId, ThreadId,
+                          PartnerTaskId, -1, /* That should be corrected eventually */
+                          CommId, Size, (INT64) Tag) < 0)
+                    {
+                        SetError(true);
+                         SetErrorMessage("error writing output trace", strerror(errno));
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (Dimemas_NX_ImmediateSend(TemporaryFile,
+                        TaskId, ThreadId,
+                        PartnerTaskId, -1, /* That should be corrected eventually */
+                        CommId, Size, (INT64) Tag) < 0)
+                    {
+                        SetError(true);
+                        SetErrorMessage("error writing output trace", strerror(errno));
+                        return false;
+                    }
+                }
 				this->isend_counter++;
 
 				if ((*AllTranslationInfo)[PartnerTaskId]

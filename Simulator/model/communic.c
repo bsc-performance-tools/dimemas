@@ -8440,6 +8440,7 @@ void GLOBAL_operation (struct t_thread *thread,
       others = (struct t_thread*) head_queue (&communicator->threads);
     }
   }
+
   /* Un thread de cada maquina reserva els recursos */
   for (others  = (struct t_thread*) head_queue (&communicator->machines_threads);
        others != TH_NIL;

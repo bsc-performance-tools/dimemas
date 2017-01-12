@@ -41,6 +41,11 @@ int Dimemas_NX_ImmediateSend( FILE *fd,
                      int commid,
                      int size, long64_t tag );
 
+int Dimemas_NX_ImmediateReadySend( FILE *fd,
+                                  int task,   int thread,
+                                  int task_r, int thread_r, /* receiver */
+                                  int commid,
+                                  int size, long64_t tag );
 
 int Dimemas_NX_BlockingSend( FILE *fd,
                              int task,   int thread,

@@ -496,6 +496,28 @@ int Dimemas_NX_ImmediateSend( FILE *fd,
   return fprintf(fd, NX_ISEND_STRING, task, thread, task_r, thread_r, size, tag, commid);
 }
 
+/******************************************************************************
+ **      Function name : Dimemas_NX_ImmediateReady_Send
+ **
+ **      Description :
+ ******************************************************************************/
+
+int Dimemas_NX_ImmediateReadySend( FILE *fd,
+                                   int task,   int thread,
+                                   int task_r, int thread_r, /* receiver */
+                                   int commid,
+                                   int size, long64_t tag )
+{
+  /* synchronism: immediate + rendezvous = 3 */
+
+#ifdef NEW_DIMEMAS_TRACE
+  #define NX_ISEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:3\n"
+#else
+  #define NX_ISEND_STRING "\"NX send\" { %d, %d, %d, %d, %lld, %d, 3 };;\n"
+#endif
+
+  return fprintf(fd, NX_ISEND_STRING, task, thread, task_r, thread_r, size, tag, commid);
+}
 
 
 /******************************************************************************
@@ -879,4 +901,3 @@ int Dimemas_GPU_Burst( FILE *fd,
 	return 0;
 #endif
 }
-
