@@ -2,9 +2,9 @@
 
 # Update the version numbers manually
 
-MAJOR=5
-MINOR=2
-REV=13
+MAJOR=6
+MINOR=0
+REV=0
 
 # 'svnversion' no longer needed. Always use the manual version
 #sh -c "svnversion -n . | cut -d: -f2 | cut -dS -f1 | tr -d '\n'" > ./SVN_VERSION
