@@ -257,6 +257,7 @@ void reload_events()
        node  = (struct t_node *) next_queue (&Node_queue))
 #endif
   {
+
     while ( (count_queue (& (node->ready) ) != 0) && (num_free_cpu (node) > 0) )
     {
       SCHEDULER_next_thread_to_run (node);
@@ -308,7 +309,7 @@ void event_manager (struct t_event *event)
     are_only_daemons--;
   }
 
-//   printf("to check which type of event it is\n");
+  //   printf("to check which type of event it is\n");
   switch (event->module)
   {
   case M_SCH:

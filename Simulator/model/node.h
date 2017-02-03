@@ -100,9 +100,10 @@ struct t_node
   int messages_in_flight;
 
   //accelerator
-  int										accelerator;
+  t_boolean accelerator;
   struct t_accelerator 	acc;
-  double								acc_relative;
+  double acc_relative;
+  t_boolean has_accelerated_task;
 };
 
 void NODE_Init_Empty_Node(struct t_machine* machine,

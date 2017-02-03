@@ -440,14 +440,14 @@ void ExternalSort::Merge(string InFileName1,
   // Open each file
   if ( (InFile1 = IO_fopen(InFileName1.c_str(), "r")) == NULL)
   {
-    die("Unable to open temporal input file (%s) during Paraver external sort: %s\n",
+    die("Unable to open temporal input file in InFileName1 (%s) during Paraver external sort: %s\n",
         InFileName1.c_str(),
         IO_get_error());
   }
 
   if ( (InFile2 = IO_fopen(InFileName2.c_str(), "r")) == NULL)
   {
-    die("Unable to open temporal input file (%s) during Paraver external sort: %s\n",
+    die("Unable to open temporal input file InFileName2 (%s) during Paraver external sort: %s\n",
         InFileName1.c_str(),
         IO_get_error());
   }
@@ -481,7 +481,7 @@ void ExternalSort::Merge(string InFileName1,
   // Open each file
   if ( (InFile1 = IO_fopen(InFileName1.c_str(), "r")) == NULL)
   {
-    die("Unable to open temporal input file (%s) during Paraver external sort: %s\n",
+    die("Unable to open temporal input file InFileName3 (%s) during Paraver external sort: %s\n",
         InFileName1.c_str(),
         IO_get_error());
   }

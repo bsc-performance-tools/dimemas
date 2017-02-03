@@ -224,29 +224,30 @@ char* SIMULATOR_Get_Configuration_FileName(void)
 
 int  SIMULATOR_get_number_of_nodes(void)
 {
-#ifndef USE_EQUEUE
-  return (int) count_queue(&Node_queue);
-#else
-  return (int) count_Equeue(&Node_queue);
-#endif
+  #ifndef USE_EQUEUE
+    return (int) count_queue(&Node_queue);
+  #else
+    return (int) count_Equeue(&Node_queue);
+  #endif
 }
 
 int *SIMULATOR_get_cpus_per_node(void)
 {
   struct t_node  *node;
+  struct t_cpu   *cpu;
   int             current_node = 0;
   int            *result = malloc(SIMULATOR_get_number_of_nodes()*sizeof(int));
 
   for (current_node = 0; current_node < SIMULATOR_get_number_of_nodes(); current_node++)
   {
-#ifndef USE_EQUEUE
-    if ( (node = (struct t_node*) query_prio_queue(&Node_queue, (t_priority) current_node )) == NULL)
-#else
-    if ( (node = (struct t_node*) query_prio_Equeue(&Node_queue, (t_priority) current_node)) == NULL)
-#endif
+    #ifndef USE_EQUEUE
+      if ( (node = (struct t_node*) query_prio_queue(&Node_queue, (t_priority) current_node )) == NULL)
+    #else
+      if ( (node = (struct t_node*) query_prio_Equeue(&Node_queue, (t_priority) current_node)) == NULL)
+    #endif
     {
-      generate_error(&SIMULATOR_error_message, "invalid node id (%d)", current_node);
-      return NULL;
+        generate_error(&SIMULATOR_error_message, "invalid node id (%d)", current_node);
+        return NULL;
     }
 
     result[current_node] = (int) count_queue (&(node->Cpus));
@@ -291,10 +292,6 @@ void SIMULATOR_set_number_of_machines(int number_of_machines)
   SIMULATOR_nodes_loaded = (int*) malloc(number_of_machines*sizeof(int));
   bzero(SIMULATOR_nodes_loaded, number_of_machines*sizeof(int));
 
-  /* Set flight times to 0
-  bzero(Simulator.wan.flight_times,
-        number_of_machines*number_of_machines*sizeof(double));
-  */
 }
 
 void SIMULATOR_set_wan_name(char* wan_name)
@@ -1044,7 +1041,6 @@ void Initialize_Empty_Machines(void)
     MACHINE_Init_Empty_Machine(&Machines[i], i);
   }
 }
-
 /*
  * That shouldn't be here. A new file to manage dedicated connections should
  * be included
@@ -1204,7 +1200,9 @@ void SIMULATOR_reset_state()
     remove_queue_elements(&node->ready);
 
     struct t_cpu * cpu;
-    for (cpu = (struct t_cpu *)head_queue(&node->Cpus); cpu != C_NIL; cpu = (struct t_cpu *)next_queue(&node->Cpus))
+    for (cpu = (struct t_cpu *)head_queue(&node->Cpus); 
+        cpu != C_NIL; 
+        cpu = (struct t_cpu *)next_queue(&node->Cpus))
     {
       cpu->current_thread = TH_NIL;
     }

@@ -4122,7 +4122,7 @@ void COMMUNIC_send (struct t_thread *thread)
   struct t_account *account;
   t_nano           startup, copy_latency, roundtriptime;
   dimemas_timer     tmp_timer;
-  struct t_node    *node_s,       /* Sender node */
+  struct t_node    *node_s,      /* Sender node */
       *node_r;       /* Receiver node */
   int               hi_ha_irecv;  /* Indica si s'ha arribat a un Irecv que
                                    * permet continuar el send encara que sigui
@@ -8693,7 +8693,7 @@ void GLOBAL_operation (struct t_thread *thread,
 
   if (glop == GOPD_NIL)
   {
-    panic ("Global operation %d undefined to P%02d T%02d (t%02d)\n",
+    panic ("Global operation faild on line 8696 communic %d undefined to P%02d T%02d (t%02d)\n",
            glop_id,
            IDENTIFIERS (thread) );
   }
@@ -9045,7 +9045,6 @@ void GLOBAL_operation (struct t_thread *thread,
     {
         communicator->current_root = thread;
     }
-
     current_root = thread;
     root_th = thread;
     others  = thread;
@@ -9075,8 +9074,6 @@ void GLOBAL_operation (struct t_thread *thread,
       return;
     }
   }
-
-
   /*
    * extract_from_queue (&communicator->threads, (char*)others);
    * global_op_get_all_buses (others);
@@ -9162,8 +9159,6 @@ void GLOBAL_operation (struct t_thread *thread,
 
   /* Aqui se suposa que ja haura intentat reservar tot el que cal i si
    * ho ha pogut fer, ja haura comenc,at la col.lectiva.  */
-
-
 }
 
 void COMMUNIC_reset_deadlock()

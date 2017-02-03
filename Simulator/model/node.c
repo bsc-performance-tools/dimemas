@@ -121,9 +121,11 @@ void NODE_Fill_Node_Fields(struct t_node *node,
     cpu->current_thread_context = TH_NIL;
     cpu->current_load           = (double) 0;
     cpu->io                     = QU_NIL;
+    cpu->is_gpu                 = FALSE;
     insert_queue (&(node->Cpus), (char *) cpu, (t_priority) (j + 1));
   }
 
+  
   if (no_input == 0 && no_output == 0)
   {
     node->infinite_net_links = TRUE;
@@ -216,10 +218,12 @@ void NODE_set_acc(int node_id,
 									double relative)
 {
 	struct t_node *node = get_node_by_id(node_id);
-	if (node == N_NIL) {
+	if (node == N_NIL) 
+  {
 		panic("Wrong accelerator node id %d, does no exist. Check your configuration file\n", node_id);
 	}
-
+/*if user select the heterogenous accelerator it will create
+  //a node with GPU *c */
 	node->accelerator				= TRUE;
 	node->acc.bandwidth			= (t_bandwidth) 	bandwith;
 	node->acc.startup 			= (dimemas_timer) latency;
@@ -229,6 +233,18 @@ void NODE_set_acc(int node_id,
 
 	create_queue(&(node->acc.threads_in_link));
 	create_queue(&(node->acc.wait_for_link));
+
+  /* Adding GPU to heterogeneous node */
+  int gpu_id = count_queue(&node->Cpus) +1;
+
+  struct t_cpu *cpu = (struct t_cpu *) malloc (sizeof (struct t_cpu));
+  cpu->cpuid                  = gpu_id;
+  cpu->current_thread         = TH_NIL;
+  cpu->current_thread_context = TH_NIL;
+  cpu->current_load           = (double) 0;
+  cpu->io                     = QU_NIL;
+  cpu->is_gpu                 = TRUE;
+  insert_queue (&(node->Cpus), (char *) cpu, (t_priority) gpu_id);
 }
 
 t_boolean NODE_get_acc(struct t_node *node)

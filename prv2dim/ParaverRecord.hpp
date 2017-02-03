@@ -74,7 +74,7 @@ class ParaverRecord
 
     virtual ~ParaverRecord(void){};
 
-    virtual bool operator<  (const ParaverRecord& T1)
+    virtual bool operator < (const ParaverRecord& T1)
     {
       return this->Timestamp < T1.Timestamp;
       /*if (this->Timestamp < T1.Timestamp)
@@ -84,7 +84,7 @@ class ParaverRecord
       */
     };
 
-    virtual bool operator>  (const ParaverRecord& T1)
+    virtual bool operator > (const ParaverRecord& T1)
     {
       return this->Timestamp > T1.Timestamp;
       /*
@@ -95,7 +95,7 @@ class ParaverRecord
       */
     };
 
-    virtual bool operator== (const ParaverRecord& T1)
+    virtual bool operator == (const ParaverRecord& T1)
     {
       return this->Timestamp == T1.Timestamp;
       /*
@@ -117,13 +117,16 @@ class ParaverRecord
 
     virtual void Write(ostream& os) const {};
 };
+
 typedef ParaverRecord* ParaverRecord_t;
 
 ostream& operator<< (ostream& os, const ParaverRecord& Comm);
 
-class ParaverRecordCompare {
+class ParaverRecordCompare 
+{
   public:
-    bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) {
+    bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) 
+    {
       return R1->GetTimestamp() < R2->GetTimestamp();
     }
 };
@@ -241,7 +244,7 @@ class Event: public virtual ParaverRecord
 };
 typedef Event* Event_t;
 
-ostream& operator<< (ostream& os, const Event& Comm);
+ostream& operator << (ostream& os, const Event& Comm);
 
 /*****************************************************************************
  * class Communication

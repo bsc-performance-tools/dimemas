@@ -73,6 +73,8 @@ extern struct t_queue Registers_queue; // Defined in 'check.c'
 
 extern char *types[];
 
+
+
 /*
  * Global variables
  */
@@ -392,7 +394,6 @@ void CONFIGURATION_Load_Scheduler_Configuration(void)
   else
   {
     info ("-> Loading default scheduler configuration\n");
-
   }
 
   /* Load the scheduler for each machine */

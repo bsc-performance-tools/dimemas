@@ -136,6 +136,7 @@ FILE *IO_fopen(const char *path, const char *mode)
 
   if (IO_OpenedFileDescriptors == IO_MaximumFileDescriptors)
   {
+    printf(" here a return null report \n");
     IO_report_error("no file pointers available, please check OS limits (total: %zu)",
                     IO_MaximumFileDescriptors);
     result = NULL;

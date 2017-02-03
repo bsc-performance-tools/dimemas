@@ -256,8 +256,7 @@ public class Node
     target.writeBytes(getInterNodeInLinks() + ", ");
     target.writeBytes(getInterNodeOutLinks() + ", ");
     target.writeBytes(getWANStartup() + "};;\n");
-  }
-  
+  }  
   
   /*
    * Prints accelerator information for this node.

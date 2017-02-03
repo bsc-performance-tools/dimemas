@@ -732,7 +732,7 @@ ParaverTraceTranslator::Translate(
 	{
   	cout << "FOUND" << endl;
 #ifdef DEBUG
-  	cout << "\tAccelerator tasks: ";
+  	cout << "\t Accelerator tasks: ";
   	for(INT32 i = 0; i < acc_tasks_count; i++)
   	{
   		if (acc_tasks[i])

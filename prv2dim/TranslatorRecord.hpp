@@ -106,12 +106,13 @@ class OutBlockComparison
 {
 
   public:
-    bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) {
-
+    bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) 
+    {
       Event_t                EventR1, EventR2;
       PartialCommunication_t CommR1, CommR2;
       GlobalOp_t             GlobalOpR1, GlobalOpR2;
 
+      //printf("%d : %d \n", EventR1, EventR2 );
       if (R1->GetTimestamp() != R2->GetTimestamp())
         return R1->GetTimestamp() < R2->GetTimestamp();
 
@@ -213,7 +214,7 @@ class OutBlockComparison
         CommR2 = dynamic_cast<PartialCommunication_t>(R2);
         
         if (CommR1->GetType() == LOGICAL_RECV)
-          //return true;
+
           return false;
 
         if (CommR1->GetType() == LOGICAL_SEND &&
@@ -278,14 +279,13 @@ class InBlockComparison
 {
 
   public:
-    bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) {
-
+    bool operator()(ParaverRecord_t R1, ParaverRecord_t R2) 
+    {
       Event_t                EventR1, EventR2;
       PartialCommunication_t CommR1, CommR2;
       GlobalOp_t             GlobalOpR1, GlobalOpR2;
 
-
-      if (R1->GetTimestamp() != R2->GetTimestamp())
+      if (R1->GetTimestamp() != R2->GetTimestamp())        
         return R1->GetTimestamp() < R2->GetTimestamp();
 
       /* Records at the same time */

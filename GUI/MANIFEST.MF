@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Main-Class: es.bsc.cepbatools.dimemas.gui.Main
+Class-path: commons-io-2.4.jar

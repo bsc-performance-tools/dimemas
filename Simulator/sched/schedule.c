@@ -59,6 +59,8 @@
 #include "machine.h"
 #include "node.h"
 
+#include <assert.h>
+
 static int progress          = 0;
 static int last_node_id_used = 0;
 static int SCH_prio          = 0;
@@ -66,9 +68,12 @@ static int SCH_prio          = 0;
 t_boolean monitorize_event    = FALSE;
 int       event_to_monitorize = 0;
 
+//void SCHEDULER_thread_to_gpu(struct t_node *node, struct t_thread *kernel_thread);
+
 void SCHEDULER_Init()
 {
   struct t_node    *node;
+  struct t_cpu     *cpu;
   struct t_Ptask   *Ptask;
   struct t_task    *task;
   struct t_thread  *thread;
@@ -87,58 +92,64 @@ void SCHEDULER_Init()
        Ptask != P_NIL;
        Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
-    /* JGG (2012/01/17): new way to navigate through tasks
-    for (task  = (struct t_task *) head_queue (&(Ptask->tasks));
-         task != T_NIL;
-         task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-    */
     for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
-      task = &(Ptask->tasks[tasks_it]);
-
+      task = &(Ptask->tasks[tasks_it]);        
       node    = get_node_of_task (task);
       machine = node->machine;
 
-      /* JGG (2012/01/17): new way to navigate through threads
-      for (thread  = (struct t_thread *) head_queue (&(task->threads));
-           thread != TH_NIL;
-           thread  = (struct t_thread *) next_queue (&(task->threads)))
-      */
       for (threads_it = 0; threads_it < task->threads_count; threads_it++)
       {
         thread = task->threads[threads_it];
 
         action = thread->action;
-
         if (action == AC_NIL)
         {
             panic("P%02d T%02d (t%02d) initialized without actions\n",
                   IDENTIFIERS (thread));
         }
 
-        if (action->action != WORK && action->action != GPU_BURST)
+        if(action->action != WORK && action->action != GPU_BURST)
         {
           panic ("P%02d T%02d (t%02d) must begin execution with work\n",
                  IDENTIFIERS (thread));
         }
-
-        thread->loose_cpu = TRUE;
-        (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
-        SCHEDULER_thread_to_ready (thread);
+        /*Chetan*/
+        if(thread->kernel)
+        {
+          printf("kernel_thread [%d:%d] (%d) assigned to GPU at node %d\n", 
+            thread->task->taskid,
+            thread->threadid,
+            thread->kernel,
+            node->nodeid);
+          thread->loose_cpu = FALSE;
+          (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
+          SCHEDULER_thread_to_ready (thread);
+        }        
+        if(!thread->kernel)
+        {
+          printf("\n host_thread [%d:%d] (%d) assigned to CPU at node %d\n", 
+            thread->task->taskid,
+            thread->threadid,
+            thread->kernel,
+            node->nodeid);
+          thread->loose_cpu = TRUE ;
+          (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
+          SCHEDULER_thread_to_ready (thread);
+        }
       }
     }
   }
-
   /* Prepare the the first Scheduler Events */
-#ifdef USE_EQUEUE
+  #ifdef USE_EQUEUE
   for (node  = (struct t_node *) head_Equeue (&Node_queue);
        node != N_NIL;
        node  = (struct t_node *) next_Equeue (&Node_queue))
-#else
+  #else
   for (node  = (struct t_node *) head_queue (&Node_queue);
        node != N_NIL;
        node  = (struct t_node *) next_queue (&Node_queue))
-#endif
+  #endif
   {
     j = MIN (count_queue (&(node->ready)), count_queue (&(node->Cpus)));
     if (j > 0)
@@ -162,15 +173,15 @@ void SCHEDULER_End()
     printf (": SCHEDULER end routine called\n");
   }
 
-#ifdef USE_EQUEUE
+  #ifdef USE_EQUEUE
   for (node  = (struct t_node *) head_Equeue (&Node_queue);
        node != N_NIL;
        node  = (struct t_node *) next_Equeue (&Node_queue))
-#else
+  #else
   for (node  = (struct t_node *) head_queue (&Node_queue);
        node != N_NIL;
        node  = (struct t_node *) next_queue (&Node_queue))
-#endif
+  #endif
   {
     if (count_queue (&(node->ready)) != 0)
     {
@@ -208,14 +219,10 @@ void SCHEDULER_reload(struct t_Ptask *Ptask)
   struct t_thread *thread;
   struct t_node    *node;
   struct t_machine *machine;
+  struct t_cpu     *cpu;
 
   size_t tasks_it, threads_it;
 
-  /* JGG (2012/01/17): new way to navigate through tasks
-  for (task  = (struct t_task *) head_queue (&(Ptask->tasks));
-       task != T_NIL;
-       task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-  */
   for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
   {
     task = &(Ptask->tasks[tasks_it]);
@@ -230,12 +237,6 @@ void SCHEDULER_reload(struct t_Ptask *Ptask)
       machine = node->machine;
     }
 
-
-    /* JGG (2012/01/17): new way to navigate through threads
-    for (thread  = (struct t_thread *) head_queue (&(task->threads));
-         thread != TH_NIL;
-         thread  = (struct t_thread *) next_queue (&(task->threads)))
-    */
     for (threads_it = 0; threads_it < task->threads_count; threads_it++)
     {
       thread = task->threads[threads_it];
@@ -245,10 +246,19 @@ void SCHEDULER_reload(struct t_Ptask *Ptask)
         panic ("P%02d T%02d (t%02d) without initial actions\n",
                IDENTIFIERS (thread));
       }
-
-      thread->loose_cpu = TRUE;
-      SCHEDULER_thread_to_ready (thread);
-      (*SCH[machine->scheduler.policy].clear_parameters) (thread);
+      //cpu with is_gpu==TRUE cannot loose thread which are kernel thread.
+      if(!thread->kernel)
+      {
+        thread->loose_cpu = TRUE;
+        SCHEDULER_thread_to_ready (thread);
+        (*SCH[machine->scheduler.policy].clear_parameters) (thread);
+      }
+      else
+      {
+        thread->loose_cpu = FALSE;
+        SCHEDULER_thread_to_ready(thread); //no need to reload kernel thread in GPU
+        (*SCH[machine->scheduler.policy].clear_parameters) (thread);     
+      }
     }
   }
 }
@@ -257,24 +267,25 @@ struct t_cpu* select_free_cpu(struct t_node *node, struct t_thread *thread)
 {
   struct t_cpu   *cpu;
 
-  /* Select a free processor with cache affinity */
-  for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
-       cpu != C_NIL;
-       cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
-  {
-    if ((cpu->current_thread == TH_NIL) &&
-        (cpu->current_thread_context == thread))
-      return (cpu);
-  }
-
-  /* Select a free processor */
-  for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
-       cpu != C_NIL;
-       cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
-  {
-    if (cpu->current_thread == TH_NIL)
-      return (cpu);
-  }
+    /* Select a free processor with cache affinity */
+    for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
+         cpu != C_NIL;
+         cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
+    {
+      if ((cpu->current_thread == TH_NIL) &&
+          (cpu->current_thread_context == thread) && 
+          (cpu->is_gpu == FALSE)) //need to add is_gpu==FALSE
+        return (cpu);
+    }
+    /* Select a free processor */
+    for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
+         cpu != C_NIL;
+         cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
+    {
+      if ((cpu->current_thread == TH_NIL) && //|| ((cpu->current_thread!=thread->kernel) &&
+        (cpu->is_gpu == FALSE))
+        return (cpu);
+    }
   return (C_NIL);
 }
 
@@ -297,50 +308,100 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
 									PRV_SYNC_ST);
 		thread->last_paraver = current_time;
   }
-
   account = current_account (thread);
   SUB_TIMER (current_time, thread->put_into_ready, tmp_timer);
   ADD_TIMER (tmp_timer,
              account->time_ready_without_cpu,
              account->time_ready_without_cpu);
-
-  cpu = select_free_cpu (node, thread);
-  if (cpu == C_NIL)
-    panic ("Can't get free processor on node %d\n", node->nodeid);
-
-  cpu->current_thread = thread;
-  thread->cpu = cpu;
-
-  if (cpu->current_thread_context != thread)
-  {
-     /* Context switch */
-    account->n_th_in_run++;
-    cpu->current_thread_context = thread;
-    if (machine->scheduler.context_switch != (t_nano) NO_CONTEXT_SWITCH)
+  /*Chetan*/
+  if(thread->task->accelerator && thread->kernel == TRUE)
+  {    
+      // 0. Ensure that this is an heterogeneous node
+    assert (node->accelerator == TRUE);
+    assert (thread->kernel == TRUE);
+      // 1. Look for CPU with is_gpu = 1  
+    for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
+        cpu !=C_NIL;
+        cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
     {
-      thread->doing_context_switch = TRUE;
-      thread->to_be_preempted = FALSE;
-      FLOAT_TO_TIMER (machine->scheduler.context_switch, tmp_timer);
-      ADD_TIMER (current_time,
-                 machine->scheduler.minimum_quantum,
-                 thread->min_time_to_be_preempted);
-      ADD_TIMER (tmp_timer,
-                 thread->min_time_to_be_preempted,
-                 thread->min_time_to_be_preempted);
-      ADD_TIMER (current_time, tmp_timer, new_time);
-
-      if (debug&D_SCH)
+      //check either the cpu has thread or not.
+      if (cpu->is_gpu == TRUE && cpu->current_thread == TH_NIL) 
       {
-        PRINT_TIMER (current_time);
-        printf (
-          ": Thread context swicth P%02d T%02d (t%02d) for %.0f on CPU %d node %d\n",
-          IDENTIFIERS (thread),
-          machine->scheduler.context_switch, cpu->cpuid,
-          node->nodeid);
+        // 2.Assigning thread to this GPU                       
+        cpu->current_thread = thread;
+        thread->cpu = cpu;
+        //context switch
+        if(cpu->current_thread_context!=thread)
+        {
+          account->n_th_in_run++;
+          cpu->current_thread_context = thread;
+        }
       }
-      thread->event = EVENT_timer (new_time, NOT_DAEMON, M_SCH, thread, 0);
-      return;
     }
+  }
+  if(!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE))
+  //else  
+  //if(!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE)
+  {
+    /*account = current_account (thread);
+    SUB_TIMER (current_time, thread->put_into_ready, tmp_timer);
+    ADD_TIMER (tmp_timer,
+               account->time_ready_without_cpu,
+               account->time_ready_without_cpu);             
+    */
+    assert (!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE ));
+    cpu = select_free_cpu (node, thread);
+
+    assert(cpu->is_gpu == FALSE);
+
+    if(cpu == C_NIL)
+    {
+      panic ("Can't get free processor on node %d\n", node->nodeid);
+    }
+    cpu->current_thread = thread;
+    thread->cpu = cpu; 
+  
+   if (cpu->current_thread_context!= thread)
+    {
+      printf("==> THREAD %d(%d) [kernel=%d] to CPU %d [GPU=%d] at NODE %d [Het=%d | P.U.=%d] ASSIGNEMENT\n", 
+          /*print which thread is assigned to which cpu and to which node*/
+          thread->task->taskid, 
+          thread->threadid,
+          thread->kernel,
+          cpu->cpuid,
+          cpu->is_gpu,
+          node->nodeid,
+          node->accelerator,
+          count_queue(&node->Cpus));
+       /* Context switch */
+      account->n_th_in_run++;
+      cpu->current_thread_context = thread;
+    }
+  }
+  if (machine->scheduler.context_switch != (t_nano) NO_CONTEXT_SWITCH)
+  {
+    thread->doing_context_switch = TRUE;
+    thread->to_be_preempted = FALSE;
+    FLOAT_TO_TIMER (machine->scheduler.context_switch, tmp_timer);
+    ADD_TIMER (current_time,
+               machine->scheduler.minimum_quantum,
+               thread->min_time_to_be_preempted);
+    ADD_TIMER (tmp_timer,
+               thread->min_time_to_be_preempted,
+               thread->min_time_to_be_preempted);
+    ADD_TIMER (current_time, tmp_timer, new_time);
+
+    if (debug&D_SCH)
+    {
+      PRINT_TIMER (current_time);
+      printf (
+        ": Thread context swicth P%02d T%02d (t%02d) for %.0f on CPU %d node %d\n",
+        IDENTIFIERS (thread),
+        machine->scheduler.context_switch, cpu->cpuid,
+        node->nodeid);
+    }
+    thread->event = EVENT_timer (new_time, NOT_DAEMON, M_SCH, thread, 0);
+    return;
   }
   ADD_TIMER (current_time,
              machine->scheduler.minimum_quantum,
@@ -362,15 +423,14 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
   thread->event = EVENT_timer (new_time, NOT_DAEMON, M_SCH, thread, 0);
 }
 
-void
-SCHEDULER_thread_to_ready (struct t_thread *thread)
+void SCHEDULER_thread_to_ready (struct t_thread *thread)
 {
   struct t_node    *node;
   struct t_cpu     *cpu;
   struct t_thread  *thread_current;
   struct t_machine *machine;
 
-  node = get_node_of_thread (thread);
+  node = get_node_of_thread(thread);
   machine = node->machine;
 
   if (!more_actions (thread))
@@ -393,11 +453,9 @@ SCHEDULER_thread_to_ready (struct t_thread *thread)
       printf (": Thread P%02d T%02d (t%02d) to ready and action isn't WORK! Rescheduling...\n",
               IDENTIFIERS (thread));
     }
-
     SCHEDULER_thread_to_ready_return(M_SCH, thread, (t_nano) 0, 0);
     return;
   }
-
   if (debug&D_SCH)
   {
     PRINT_TIMER (current_time);
@@ -406,7 +464,7 @@ SCHEDULER_thread_to_ready (struct t_thread *thread)
          cpu != C_NIL;
          cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
     {
-      if (cpu->current_thread != TH_NIL)
+      if (cpu->current_thread != TH_NIL)// && cpu->is_gpu==FALSE)
       {
         thread_current = cpu->current_thread;
         if (thread_current->doing_busy_wait)
@@ -477,8 +535,7 @@ t_nano SCHEDULER_get_execution_time (struct t_thread *thread)
     return (ti);
 }
 
-void
-SCHEDULER_next_thread_to_run (struct t_node *node)
+void SCHEDULER_next_thread_to_run (struct t_node *node)
 {
   struct t_thread *thread;
   struct t_cpu   *cpu;
@@ -496,14 +553,12 @@ SCHEDULER_next_thread_to_run (struct t_node *node)
       cpu = (struct t_cpu *) next_queue (&(node->Cpus))
     )
     {
-      if (cpu->current_thread != TH_NIL)
+      if (cpu->current_thread != TH_NIL)// && cpu->is_gpu==FALSE)
       {
         thread = cpu->current_thread;
-        printf (
-          "\t\t   Running P%02d T%02d (t%02d) node %d cpu %d\n",
+        printf ("\t\t   Running P%02d T%02d (t%02d) node %d cpu %d\n",
           IDENTIFIERS (thread),
-          node->nodeid, cpu->cpuid
-        );
+          node->nodeid, cpu->cpuid);
       }
     }
     for (thread = (struct t_thread *) head_queue (&(node->ready));
@@ -1273,7 +1328,7 @@ SCHEDULER_info (int              value,
 }
 
 void
-SCHEDULER_thread_to_ready_return(int              module,
+ SCHEDULER_thread_to_ready_return(int              module,
                                  struct t_thread *thread,
                                  t_nano           ti,
                                  int              id)
@@ -1319,8 +1374,9 @@ SCHEDULER_thread_to_ready_return(int              module,
 }
 
 struct t_thread *
-SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
-{
+SCHEDULER_preemption (struct t_thread *thread, struct t_cpu *cpu)
+{ 
+
   struct t_node    *node;
   struct t_thread  *thread_current;
   struct t_account *account_current, *account;
@@ -1381,49 +1437,13 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
         }
         else
         {
-          // action = (struct t_action *) malloc (sizeof (struct t_action));
           READ_create_action(&action);
-
           action->next = thread_current->action;
           action->action = WORK;
           action->desc.compute.cpu_time = ti;
           thread_current->action = action;
         }
-
         printf("I DONT EXPECT IT TO COME HERE - VLADIMIR\n");
-// Vladimir: this is a fix for Superscalar for generation of paraver files
-// when the thread is preempted - LOOK THE NORMAL CASE
-//         if (thread_current->sstask_id > 0) {
-//         /* add user events to mark that this task is finished (PREEMPTED) - TASK_ID*/
-//           PARAVER_Event(cpu->unique_number,
-//                               IDENTIFIERS (thread_current),
-//                               current_time,
-//                               USER_EVENT_TYPE_TASKID_START_TASK, 0);
-//         /* and that it will start again when it gets cpu (PREEMPTED) - TASK_ID*/
-//           action = (struct t_action *) malloc (sizeof (struct t_action));
-//           action->next = thread_current->action;
-//           action->action = EVEN;
-//           action->desc.even.type  = USER_EVENT_TYPE_TASKID_START_TASK;
-//           action->desc.even.value = thread_current->sstask_id;
-//           thread_current->action  = action;
-//         }
-//
-//         if (thread_current->sstask_type > 0) {
-//         /* add user events to mark that this task is finished (PREEMPTED) - TASK_TYPE*/
-//           printf("marking preemptiong of P%d T%d t%d  in tasktype %lu\n", IDENTIFIERS(thread_current), thread_current->sstask_type);
-//           PARAVER_Event(cpu->unique_number,
-//                               IDENTIFIERS (thread_current),
-//                               current_time,
-//                               USER_EVENT_TYPE_TASKTYPE_START_TASK, 0);
-//         /* and that it will start again when it gets cpu (PREEMPTED) - TASK_TYPE*/
-//           action = (struct t_action *) malloc (sizeof (struct t_action));
-//           action->next = thread_current->action;
-//           action->action = EVEN;
-//           action->desc.even.type  = USER_EVENT_TYPE_TASKTYPE_START_TASK;
-//           action->desc.even.value = thread_current->sstask_type;
-//           thread_current->action  = action;
-//         }
-
 
         thread->event = EVENT_timer (thread_current->min_time_to_be_preempted,
                                      NOT_DAEMON,
@@ -1431,20 +1451,6 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
                                      thread_current,
                                      0);
       }
-
-      /*
-      if (thread_current->doing_context_switch)
-      {
-        thread_current->to_be_preempted = TRUE;
-        account_current->n_preempt_to_me ++; account->n_preempt_to_other ++;
-        if (debug&D_SCH)
-        {
-          printf ("doing context switch (preemption delayed)\n");
-        }
-
-        return (thread);
-      }
-      */
 
       if (debug&D_SCH)
         printf (" min quantum requiered (delayed)\n");
@@ -1494,7 +1500,8 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
     }
 
 // Vladimir: this is a fix to print good prv file with task names and sequence numbers
-   if (thread_current->sstask_id > 0) {
+   if (thread_current->sstask_id > 0) 
+   {
    /* add user events to mark that this task is finished (PREEMPTED) - TASK_ID*/
       PARAVER_Event(cpu->unique_number,
                         IDENTIFIERS (thread_current),
@@ -1511,7 +1518,8 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
       thread_current->action  = action;
    }
 
-   if (thread_current->sstask_type > 0) {
+   if (thread_current->sstask_type > 0) 
+   {
    /* add user events to mark that this task is finished (PREEMPTED) - TASK_TYPE*/
       PARAVER_Event(cpu->unique_number,
                         IDENTIFIERS (thread_current),
@@ -1529,9 +1537,10 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
       thread_current->action  = action;
    }
 
-// Add one empty burst so It could work fine
+    // Add one empty burst so It could work fine
    if ((thread_current->sstask_id > 0) ||
-       (thread_current->sstask_type > 0)) {
+       (thread_current->sstask_type > 0)) 
+   {
       // action         = (struct t_action *) malloc (sizeof (struct t_action));
 
       READ_create_action(&action);
@@ -1542,8 +1551,8 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu   *cpu)
       action->desc.compute.cpu_time  = 0.0;
       thread_current->action         = action;
       thread_current->put_into_ready = current_time;
-   }
-//Vladimir: DONE fix
+    }
+    //Vladimir: DONE fix
 
     thread_current->last_paraver = current_time;
   }
@@ -1744,7 +1753,6 @@ void treat_acc_event (struct t_thread *thread, struct t_action *action)
 												current_time);
 	}
 	/* CUDA cpu states */
-
 
 	/* OpenCL cpu states */
 	else if (!block_begin &&

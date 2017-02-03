@@ -51,7 +51,10 @@
 #include "machine.h"
 #include "node.h"
 
-void RR_thread_to_ready (struct t_thread *thread)
+/*while making threads ready we can leave the last one which is 
+assigned to the kernel
+*/ 
+void RR_thread_to_ready (struct t_thread *thread) 
 {
   struct t_node  *node;
   struct t_machine *machine;
@@ -106,6 +109,7 @@ RR_get_execution_time (struct t_thread *thread)
   thread->loose_cpu = TRUE;
   return (ex_time);
 }
+//thread->loose_gpu = FALSE.
 
 struct t_thread *
 RR_next_thread_to_run (struct t_node *node)

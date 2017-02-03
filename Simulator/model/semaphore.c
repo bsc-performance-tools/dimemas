@@ -164,8 +164,7 @@ void SEMAPHORE_End()
   }
 }
 
-void
-SEMAPHORE_signal (int sem_id, struct t_thread *thread)
+void SEMAPHORE_signal (int sem_id, struct t_thread *thread)
 {
   struct t_semaphore *sem;
   struct t_task  *task;

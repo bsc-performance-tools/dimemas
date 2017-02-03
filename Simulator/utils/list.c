@@ -74,7 +74,6 @@ inFIFO_queue(struct t_queue *queue, char  *content)
    tmp = queue->last;           /* The ancient last */
    queue->last = new_item;      /* The young last */
    new_item->next = NULL;      /* don't have next */
-
    if (tmp != NULL)
    {                            /* If no top of queue */
       tmp->next = new_item;     /* set the next */
@@ -86,7 +85,7 @@ inFIFO_queue(struct t_queue *queue, char  *content)
       new_item->prev = NULL;  /* has no previous */
    }
 
-   queue->count++;              /* One more in queue */
+    queue->count++;              /* One more in queue */
 }
 
 /*
@@ -466,16 +465,19 @@ char* query_prio_queue(struct t_queue *queue, t_priority prio)
   {
     if (element->order.priority == prio)
     {
+      //printf(" list 469 next element is: %d with element content: %d \n", element->next, element->content);
       break;
     }
   }
 
   if (element != NULL)
   {
+    //printf("returned element is %d\n",element->content );
     return (element->content);
   }
   else
   {
+    //printf("i don't imagine it will come here ..... list 481\n");
     return (A_NIL);
   }
 }

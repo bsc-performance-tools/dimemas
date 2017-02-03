@@ -72,7 +72,9 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
                                    int   map_definition,
                                    int   tasks_per_node);
 
-void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid, t_boolean acc_task);
+//void TASK_New_Task(struct t_Ptask *Ptask, int taskid,int nodeid, t_boolean acc_task);
+//modified task_new_task to update the filling node.
+void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task);
 
 
 /* Synthetic burst generation functions */

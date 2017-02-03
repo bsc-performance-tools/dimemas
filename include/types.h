@@ -728,7 +728,7 @@ struct t_task
   int             nodeid;
   // struct t_queue  threads;
 
-/*Vladimir: for optimization, when a task has many threads*/
+  /*Vladimir: for optimization, when a task has many threads*/
   int               threads_count;
   struct t_thread **threads;
 
@@ -1107,6 +1107,8 @@ struct t_cpu
   double           utilization;
   struct t_queue  *io;
   int              unique_number;
+
+  t_boolean is_gpu; // to create GPU *C
 };
 
 struct t_bus_utilization

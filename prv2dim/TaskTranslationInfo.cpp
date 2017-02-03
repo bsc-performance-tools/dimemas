@@ -134,7 +134,8 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 	cout << endl;
 #endif
 
-	if (ThreadId == 1) {	/* First CPU Burst only appears in the Host (main) thread */
+	if (ThreadId == 1) 
+	{	/* First CPU Burst only appears in the Host (main) thread */
 		if (Dimemas_CPU_Burst(TemporaryFile,
 				      TaskId - 1, ThreadId - 1, 0.0) < 0) {
 			SetError(true);
@@ -143,7 +144,8 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 		}
 	}
 
-	else if (AcceleratorThread == ACCELERATOR_KERNEL) {	/*GPU thread case, needs CPU burst in first record */
+	else if (AcceleratorThread == ACCELERATOR_KERNEL) 
+	{	/*GPU thread case, needs CPU burst in first record */
 		if (Dimemas_CPU_Burst(TemporaryFile,
 				      TaskId - 1, ThreadId - 1, 0.0) < 0) {
 			SetError(true);
@@ -288,7 +290,7 @@ bool TaskTranslationInfo::PushRecord(ParaverRecord_t Record)
         // or when the next record is after the last record and not at same
         // time
         //
-		if (LastRecord->operator<(*Record)) 
+		if (LastRecord->operator < (*Record)) 
         {
 			if (!ReorderAndFlush())
 				return false;
@@ -455,7 +457,7 @@ bool TaskTranslationInfo::ReorderAndFlush(void)
 #ifdef DEBUG
             fprintf(stdout,"[%03d:%02d] OutBlockComparison\n",TaskId,1);
 #endif
-            sort(RecordStack.begin(), RecordStack.end(),OutBlockComparison());
+            sort(RecordStack.begin(), RecordStack.end(), OutBlockComparison());
         }
     }
 
@@ -2436,7 +2438,8 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
         printf("FINALIZING GlobalOp Fields = %d\n", GlobalOpFields);
 #endif
 
-		if (GlobalOpFields >= 2) {
+		if (GlobalOpFields >= 2) 
+		{
 			if (CurrentEvent->GetFirstType() == MPITYPE_COLLECTIVE)
             {
                 ToDimemas(PartialGlobalOp);

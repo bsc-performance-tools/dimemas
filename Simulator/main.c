@@ -783,8 +783,8 @@ int main (int argc, char *argv[])
   /* Configuration file (target machine description and application mapping)
    * parsing */
   // CONFIGURATION_Init(config_file);
-  RANDOM_Init ();
   TASK_Init(sintetic_io_applications);
+  RANDOM_Init ();
 
   if (Critical_Path_Analysis)
   {
@@ -939,7 +939,6 @@ int main (int argc, char *argv[])
 
   PARAVER_end();
   TASK_end ();
-
 
   struct rusage usage;
 

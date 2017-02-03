@@ -111,7 +111,9 @@ void TASK_module_new_general (unsigned long int module_type,
 
 void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask);
 
+
 int *TASK_Map_Filling_Nodes(int task_count);
+void Update_Node_Info(struct t_task *tasks, int task_count, int * task_mapping);
 int *TASK_Map_N_Tasks_Per_Node(int task_count, int n_tasks_per_node);
 int *TASK_Map_Interleaved(int task_count);
 
@@ -162,10 +164,10 @@ void TASK_Init(int sintetic_io_applications)
           Ptask->tracefile,
           DATA_ACCESS_get_error());
     }
-
     /*
      * Initalize ptask threads
      */
+
     if (!DATA_ACCESS_get_ptask_structure(Ptask->Ptaskid, &ptask_structure))
     {
       die("Error retrieving application %d information from trace: %s",
@@ -175,7 +177,7 @@ void TASK_Init(int sintetic_io_applications)
 
     if (Ptask->map_definition != MAP_NO_PREDEFINED)
     { // We must initialize the tasks mapping here
-      Ptask->tasks_count = ptask_structure->tasks_count;
+      Ptask->tasks_count = ptask_structure->tasks_count;      
       TASK_Initialize_Ptask_Mapping(Ptask);
     }
     else
@@ -197,6 +199,7 @@ void TASK_Init(int sintetic_io_applications)
     for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
       task = &(Ptask->tasks[tasks_it]);
+      //printf(" in line 203 task-id = %d \n",task->taskid);
       /* Allocate memory for the task threads */
       task->threads_count = ptask_structure->threads_per_task[tasks_it];
 
@@ -212,7 +215,6 @@ void TASK_Init(int sintetic_io_applications)
         TASK_add_thread_to_task(task, threads_it);
       }
     }
-
     /*
      * Initialize application communicators
      */
@@ -237,20 +239,11 @@ void TASK_Init(int sintetic_io_applications)
        Ptask != P_NIL;
        Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
-    /* Load initial actions to each thread */
-    /* JGG (2012/01/17): new way to navigate through tasks and threads
-    for ( task  = (struct t_task *) head_queue (&(Ptask->tasks));
-          task != T_NIL;
-          task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-    {
-      for (thread  = (struct t_thread *) head_queue (&(task->threads));
-           thread != TH_NIL;
-           thread  = (struct t_thread *) next_queue (&(task->threads)))
-      {
-      */
+
     for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
       task = &(Ptask->tasks[tasks_it]);
+      //printf(" in line 256 taskid = %d\n",task->taskid );
 
       for (threads_it = 0; threads_it < task->threads_count; threads_it++ )
       {
@@ -301,13 +294,6 @@ void TASK_End()
         }
       }
     }
-
-    /* JGG (2012/01/12): New way to navigate through tasks
-    for(task  = (struct t_task *) head_queue (&(Ptask->tasks));
-        task != T_NIL;
-        task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-    {
-    */
     size_t i;
     for(i = 0; i < Ptask->tasks_count; i++)
     {
@@ -322,7 +308,6 @@ void TASK_End()
 
   DATA_ACCESS_end();
 }
-
 /*
  * Create a new Ptask. Ptask is a queue whose elements are tasks
  */
@@ -343,7 +328,6 @@ void TASK_New_Ptask(char *trace_name,
   /* Not used anywhere
   Ptask->configfile = configfile;
   */
-
   Ptask->map_definition = MAP_NO_PREDEFINED;
 
   Ptask->n_rerun    = 0;
@@ -384,7 +368,7 @@ void TASK_New_Ptask(char *trace_name,
 
     for (synth_task = 0; synth_task < Ptask->tasks_count; synth_task++)
     {
-      TASK_New_Task(Ptask, synth_task, synth_task, FALSE);
+      TASK_New_Task(Ptask, synth_task, /*synth_task,*/ FALSE);
     }
   }
   else
@@ -401,19 +385,17 @@ void TASK_New_Ptask(char *trace_name,
 			{
 				if (Ptask->acc_tasks[i] == new_taskid)
 				{
-					TASK_New_Task(Ptask, new_taskid, tasks_mapping[new_taskid], TRUE);
+					TASK_New_Task(Ptask, new_taskid, /*tasks_mapping[new_taskid],*/ TRUE);
 					break;
 				}
 			}
       if (i == Ptask->acc_tasks_count)
-      	TASK_New_Task(Ptask, new_taskid, tasks_mapping[new_taskid], FALSE);
+      	TASK_New_Task(Ptask, new_taskid, /*tasks_mapping[new_taskid],*/ FALSE);
     }
   }
 
   insert_queue(&Ptask_queue, (char*) Ptask, (t_priority) Ptask->Ptaskid);
 }
-
-
 /*
  * Create a new Ptask, using a predefined map information
  */
@@ -428,17 +410,14 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
   Ptask->Ptaskid    = Ptask_ids++;
 
   Ptask->tracefile  = strdup(trace_name);
-
   /* Unknown number of total tasks */
   Ptask->tasks_count    = 0;
 
   Ptask->map_definition = map_definition;
   Ptask->tasks_per_node = tasks_per_node;
-
   /* Not used anywhere
   Ptask->configfile = configfile;
   */
-
   Ptask->n_rerun    = 0;
 //mmap: changing to mmap
 //   Ptask->file = (FILE *) NULL;
@@ -449,52 +428,45 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
   Ptask->acc_tasks_count			 = -1;	//-1:	search for acc_tasks not done, >= 0 otherwise
   Ptask->acc_tasks						 = (int *) NULL;
 
-  // create_queue (&(Ptask->tasks));
-
   create_queue (&(Ptask->global_operation));
   create_queue (&(Ptask->Communicator));
   create_queue (&(Ptask->Window));
   create_queue (&(Ptask->MPI_IO_fh_to_commid));
   create_queue (&(Ptask->MPI_IO_request_thread));
-  // create_queue (&(Ptask->Modules));
   create_modules_map(&(Ptask->Modules));
   create_queue (&(Ptask->Filesd));
   create_queue (&(Ptask->UserEventsInfo));
 
   insert_queue(&Ptask_queue, (char*) Ptask, (t_priority) Ptask->Ptaskid);
 }
-
 /**
  * This method is used when reading the configuration, so the task structure
  * is not fully defined. When the tracefile is read each task definition is
  * completed with the rest of information (threads count, communicators, etc.)
  */
-void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid, t_boolean acc_task)
+//void TASK_New_Task(struct t_Ptask *Ptask, int taskid, /*int nodeid, */t_boolean acc_task)
+void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
 {
   struct t_task *task;
   struct t_node *node;
-  int            in_mem_links, out_mem_links, i;
+  int nodeid;
+  int  i;
   struct t_link *link;
-
-  // assert(taskid < 0 || taskid >= Ptask->tasks_count);
-
+  
   node = get_node_by_id(nodeid);
   if (acc_task && !NODE_get_acc(node))
-  { /*	when mapping a task with accelerator (indicated in Dimemas header)
-  	 *	in a non-accelerator node (indicated in configuration file)
-  	 */
-  	die("Error mapping accelerator task %d in non-accelerator node %d", taskid, nodeid);
+  { /*  when mapping a task with accelerator (indicated in Dimemas header)
+     *  in a non-accelerator node (indicated in configuration file)
+     */
+    die("Error mapping accelerator task %d in non-accelerator node %d", taskid, nodeid);
   }
 
-
   task = &(Ptask->tasks[taskid]);
-
   task->taskid    = taskid;
   task->nodeid    = nodeid;
   task->Ptask     = Ptask;
+  task->accelerator = acc_task;
   task->io_thread = FALSE;
-  task->accelerator	= acc_task;
-
   task->threads_count = 0;
   task->threads       = NULL;
 
@@ -505,57 +477,9 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid, t_boolean acc_
   create_queue (&(task->send_without_recv));
   create_queue (&(task->irecvs_executed));
 
-  if (node->in_mem_links == 0 && node->out_mem_links == 0)
-  {
-    node->infinite_mem_links = TRUE;
-  }
-  else if (node->in_mem_links == 0 || node->out_mem_links == 0)
-  {
-    int links;
-
-    task->half_duplex_links  = TRUE;
-
-    links = MAX(node->in_mem_links, node->out_mem_links);
-
-    in_mem_links  = links;
-    out_mem_links = links;
-  }
-  else
-  {
-    in_mem_links  = node->in_mem_links;
-    out_mem_links = node->out_mem_links;
-  }
-
-  create_queue (&(task->free_in_links));
-  for (i = 0; i < in_mem_links; i++)
-  {
-    link = (struct t_link*) malloc (sizeof(struct t_link));
-
-    link->linkid    = i + 1;
-    link->info.task = task;
-    link->kind      = MEM_LINK;
-    link->type      = IN_LINK;
-    link->thread    = TH_NIL;
-
-    ASS_ALL_TIMER (link->assigned_on, current_time);
-    inFIFO_queue (&(task->free_in_links), (char*) link);
-  }
-
-  create_queue (&(task->free_out_links));
-  for (i = 0; i < out_mem_links; i++)
-  {
-    link = (struct t_link*) malloc (sizeof(struct t_link));
-
-    link->linkid    = i + 1;
-    link->info.task = task;
-    link->kind      = MEM_LINK;
-    link->type      = OUT_LINK;
-    link->thread    = TH_NIL;
-
-    ASS_ALL_TIMER (link->assigned_on, current_time);
-    inFIFO_queue (&(task->free_out_links), (char*) link);
-  }
-
+/********************************/
+/* Rest of the function is defined in Update_Node_Info () 
+*********************************/
   create_queue (&(task->busy_in_links));
   create_queue (&(task->busy_out_links));
   create_queue (&(task->th_for_in));
@@ -630,7 +554,6 @@ double SYNT_BURST_get_burst_value( int burst_category_id)
   return RANDOM_GenerateRandom(&(burst_category->values));
 }
 
-
 /* Preemption overhead functions */
 void PREEMP_init(struct t_Ptask *Ptask)
 {
@@ -700,82 +623,6 @@ void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
 
   insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);
 }
-
-/* JGG: DEPRECATED, NOW ONLY DIM FORMAT
-void add_identificator_to_communicator(struct t_Ptask *Ptask,
-                                       int             communicator_id,
-                                       int             taskid)
-{
-  register struct t_communicator *comm;
-  int                            *mtaskid;
-  size_t                          i;
-
-  comm = (struct t_communicator *)query_prio_queue(&Ptask->Communicator,
-                                                  (t_priority)communicator_id);
-
-  if (comm == NULL)
-  {
-      panic("Unable to locate communicator %d for P%d\n",
-            communicator_id,
-            Ptask->Ptaskid);
-  }
-
-  if (taskid == -1)
-  {
-    for (i = 0; i <  Ptask->tasks_count; i++)
-    {
-      mtaskid = (int *)malloc(sizeof(int));
-      *mtaskid = i+1;
-      inFIFO_queue (&comm->global_ranks, (char*)mtaskid);
-    }
-    return;
-  }
-
-  if (taskid > Ptask->tasks_count)
-  {
-    panic(
-      "Communicator definition: Specified rank %d not valid in this Ptask\n",
-      taskid);
-  }
-
-  mtaskid = (int*) malloc(sizeof(int));
-  *mtaskid = taskid+1;
-  inFIFO_queue (&comm->global_ranks, (char *)mtaskid);
-}
-
-void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
-                                           int             communicator_id)
-{
-  register struct t_communicator *comm;
-  int *mtaskid;
-  int  i;
-  int *trips;
-
-  comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
-      (t_priority)communicator_id);
-
-  if (comm==(struct t_communicator *)0)
-  {
-      panic ("Unable to locate communicator %d for P%d\n",
-             communicator_id,
-             Ptask->Ptaskid);
-  }
-  trips = (int*) malloc (3*count_queue(&comm->global_ranks)*sizeof(int));
-  i=0;
-  for (mtaskid=(int *)head_queue(&comm->global_ranks);
-       mtaskid!=(int *)0;
-       mtaskid=(int *)next_queue(&comm->global_ranks))
-  {
-    trips[i] = *mtaskid;
-    i++;
-    trips[i] = *mtaskid;
-    i++;
-    trips[i] = 1;
-    i++;
-  }
-  free (trips);
-}
-*/
 
 void
 new_window_definition (struct t_Ptask *Ptask, int window_id)
@@ -856,10 +703,6 @@ void add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taski
 void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id)
 {
   register struct t_window *win;
-//   int *mtaskid;
-//   int  i;
-//   int *trips;
-
   win = (struct t_window *)query_prio_queue (&Ptask->Window,
       (t_priority)window_id);
 
@@ -869,26 +712,7 @@ void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id)
           window_id,
           Ptask->Ptaskid);
   }
-  /* FEC: Aqui no s'esta fent res!!!!!!!
-   * Per fer aixo ja es pot retornar! Per tant, ho comento.
-  trips = (int*) malloc (3*count_queue(&win->global_ranks)*sizeof(int));
-  i=0;
-  for (mtaskid=(int *)head_queue(&win->global_ranks);
-       mtaskid!=(int *)0;
-       mtaskid=(int *)next_queue(&win->global_ranks))
-  {
-    trips[i] = *mtaskid;
-    i++;
-    trips[i] = *mtaskid;
-    i++;
-    trips[i] = 1;
-    i++;
-  }
-  free (trips);
-  */
 }
-
-
 /*
  * Set to 0 an account entry
  */
@@ -911,7 +735,6 @@ void clear_account (struct t_account *account)
 
   account->n_sends = 0;
   account->n_bytes_send = 0;
-
   account->n_recvs = 0;
   account->n_bytes_recv = 0;
   account->n_recvs_on_processor = 0;
@@ -933,7 +756,6 @@ struct t_account* new_accounter()
   clear_account (res);
   return (res);
 }
-
 /*
  * Create new account entry Initializes to 0
  */
@@ -948,7 +770,6 @@ void new_account (struct t_queue *acc, int nodeid)
   new_acc->initial_time = current_time;
   inFIFO_queue (acc, (char *) new_acc);
 }
-
 /*
  * Sumarize from account to account
  */
@@ -1093,8 +914,6 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   {
     panic("Incorrect node identifier %d in  T%d\n",
           task->nodeid,
-//           Ptask->tracefile,
-//           Ptask->Ptaskid,
           task->taskid);
   }
 
@@ -1157,7 +976,7 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
 
   /* making these queues separate for every thread
      only DEPENDENCIES go to this queues
-     REAL MPI TRANSFERS go the the queues of the task    */
+     REAL MPI TRANSFERS go the the queues of the task */
   create_queue (&(thread->mess_recv));
   create_queue (&(thread->recv));
   create_queue (&(thread->send));
@@ -1246,8 +1065,6 @@ struct t_thread *locate_thread_of_task (struct t_task *task, int thid)
   return (thread);
 }
 
-
-
 struct t_thread* locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
 {
   struct t_task   *task;
@@ -1266,7 +1083,6 @@ struct t_thread* locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
   // this is optimized by indexing threads in tasks
   thread = locate_thread_of_task (task, thid);
 
-
   if (thread == TH_NIL)
     panic("Incorrect thread identifier %d in trace file %s for P%d T%d\n",
           thid,
@@ -1276,7 +1092,6 @@ struct t_thread* locate_thread (struct t_Ptask *Ptask, int taskid, int thid)
 
   return (thread);
 }
-
 /*
  * Append an action to action list of specific thread.
  *
@@ -1329,14 +1144,10 @@ void new_action_to_thread (struct t_Ptask *Ptask,
 struct t_account* current_account(struct t_thread *thread)
 {
   struct t_account *temp;
-//  printf("current_account step 0, thread_account.first == %p\n", thread->account.first);
-
   temp = ((struct t_account*) tail_queue (&(thread->account)));
 
   return temp;
-//((struct t_account *) tail_queue (&(thread->account)));
 }
-
 /*
  * Find task into Ptask with taskid
  */
@@ -1514,13 +1325,7 @@ struct t_thread *promote_to_original (struct t_thread *copy_thread, struct t_thr
    copy_thread->base_priority            = thread->base_priority;
    copy_thread->sch_parameters           = thread->sch_parameters;
    copy_thread->seek_position            = thread->seek_position;
-
-//I think this should not be changed
-/*  copy_thread->logical_send             = thread->logical_send;
-  copy_thread->logical_recv             = thread->logical_recv;
-  copy_thread->physical_send            = thread->physical_send;
-  copy_thread->physical_recv            = thread->physical_recv*/;
-  copy_thread->last_cp_node             = thread->last_cp_node;
+   copy_thread->last_cp_node             = thread->last_cp_node;
 
 //   (*SCH[machine->scheduler.policy].init_scheduler_parameters) (copy_thread);
   SCHEDULER_copy_parameters (thread, copy_thread);
@@ -1538,7 +1343,6 @@ struct t_thread *promote_to_original2 (struct t_thread *copy_thread, struct t_th
 //   struct t_thread *copy_thread;
   printf("\n copy_thread->action == %p and the next action is %p \n\n", copy_thread->action, copy_thread->action->next);
 
-
   struct t_thread *temp_thread;
   printf("step 1\n");
   temp_thread = thread;
@@ -1555,45 +1359,7 @@ struct t_thread *promote_to_original2 (struct t_thread *copy_thread, struct t_th
   node = get_node_of_thread (thread);
   machine = node->machine;
 
-
   printf("\n copy_thread->action == %p and the next action is %p \n\n", thread->action, thread->action->next);
-
- /* I'm not sure what to do with this
-
-  copy_thread->original_thread          = TRUE;
-  thread->original_thread               = FALSE;
-
-  copy_thread->twin_thread              = NULL;
-  thread->twin_thread              = copy_thread;
-*/
-
-/*
-  copy_thread->doing_context_switch     = thread->doing_context_switch;
-  copy_thread->min_time_to_be_preempted = thread->min_time_to_be_preempted;
-  copy_thread->doing_busy_wait          = thread->doing_busy_wait;
-  copy_thread->threadid                 = thread->threadid;
-  copy_thread->task                     = thread->task;
-  copy_thread->put_into_ready           = thread->put_into_ready;
-  copy_thread->last_action              = thread->last_action;
-  copy_thread->account               = thread->account;
-  copy_thread->local_link               = thread->local_link;
-  copy_thread->partner_link             = thread->partner_link;
-  copy_thread->local_hd_link            = thread->local_hd_link;
-  copy_thread->partner_hd_link          = thread->partner_hd_link;
-  copy_thread->last_paraver             = thread->last_paraver;
-  copy_thread->base_priority            = thread->base_priority;
-  copy_thread->sch_parameters           = thread->sch_parameters;
-  copy_thread->seek_position            = thread->seek_position;
-
-*/
-
-/* I do not know will I need this
-
-  copy_thread->local_link               = thread->local_link;
-  copy_thread->partner_link             = thread->partner_link;
-  copy_thread->local_hd_link            = thread->local_hd_link;
-  copy_thread->partner_hd_link          = thread->partner_hd_link;
-*/
 
   thread->logical_send                    = copy_thread->logical_send;
   thread->logical_recv                    = copy_thread->logical_recv;
@@ -1632,7 +1398,6 @@ struct t_thread *promote_to_original2 (struct t_thread *copy_thread, struct t_th
   return (thread);
 }
 
-
 void delete_duplicate_thread (struct t_thread *thread)
 {
   struct t_thread *twin_thread;
@@ -1640,68 +1405,15 @@ void delete_duplicate_thread (struct t_thread *thread)
   struct t_account *acc_th_copia, *acc_th_original;
 
   SCHEDULER_free_parameters (thread);
-
-  // printf("Deleting duplicated thread %p\n", thread);
-
-  /* Intent d'afegir les dades d'accounting al thread original. */
   acc_th_copia = current_account (thread);
-
-/*  printf("delete duplicate step 11 original thread %p is original %d  twin thread == %p is original %d  account original %p, account twin %p\n",
-              thread, thread->original_thread, twin_thread, twin_thread->original_thread, &thread->account, &twin_thread->account);
-
-  printf("WHAT HAPPENS HERE delete dupl account thread and twin 21\n");
-  COMMUNIC_debug_the_senders_list(thread);
-  COMMUNIC_debug_the_senders_list(twin_thread);
-  printf("WHAT HAPPENS HERE delete dupl account thread and twin 22\n");
-*/
-
-//  if (&(thread->account) != &(thread->twin_thread->account))
-//  {
-
   acc_th_original = current_account (thread->twin_thread);
   add_account(acc_th_original, acc_th_copia);
 
-/*
-  printf("WHAT HAPPENS HERE delete dupl account thread and twin 41\n");
-  COMMUNIC_debug_the_senders_list(twin_thread);
-  printf("WHAT HAPPENS HERE delete dupl account thread and twin 42\n");
-  printf("delete duplicate thread step 13\n");
-  printf("WHAT HAPPENS HERE delete dupl account only twin 511\n");
-  COMMUNIC_debug_the_senders_list(twin_thread);
-  printf("WHAT HAPPENS HERE delete dupl account only twin 512\n");
-  printf("........twin_thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
-           thread->twin_thread, thread->twin_thread->original_thread,
-           thread->twin_thread->twin_thread, thread->twin_thread->account.first);
-  printf("........thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
-           thread, thread->original_thread, thread->twin_thread, thread->account.first);
-*/
-
   extract_from_queue(&(thread->account), (char*) acc_th_copia);
-
-/*
-  printf("........twin_thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
-           thread->twin_thread, thread->twin_thread->original_thread,
-           thread->twin_thread->twin_thread, thread->twin_thread->account.first);
-  printf(".... ...thread - original thread %p is original %d\n twin thread == %p account original first %p\n",
-           thread, thread->original_thread, thread->twin_thread, thread->account.first);
-  printf("WHAT HAPPENS HERE delete dupl account only twin 521\n");
-  COMMUNIC_debug_the_senders_list(twin_thread);
-  printf("WHAT HAPPENS HERE delete dupl account only twin 522\n");
-  printf("delete duplicate thread step 3\n");
-*/
 
   free(acc_th_copia);
 
-//  }
-
   READ_free_action(thread->action);
-
-/*
-  printf("delete duplicate thread step 5\n");
-  printf("WHAT HAPPENS HERE delete dupl account ONLY twin 81\n");
-  COMMUNIC_debug_the_senders_list(twin_thread);
-  printf("WHAT HAPPENS HERE delete dupl account thread ONLY twin 82\n");
-*/
 
   free (thread);
 }
@@ -1711,11 +1423,6 @@ static t_boolean more_actions_on_task (struct t_task  *task)
   struct t_thread *thread;
   size_t thread_it;
 
-  /* JGG (2012/01/17): new way to navigate through threads
-  for (thread  = (struct t_thread *) head_queue (&(task->threads));
-       thread != TH_NIL;
-       thread  = (struct t_thread *) next_queue (&(task->threads)))
-  */
   for (thread_it = 0; thread_it < task->threads_count; thread_it++)
   {
     thread = task->threads[thread_it];
@@ -1727,16 +1434,6 @@ static t_boolean more_actions_on_task (struct t_task  *task)
       return TRUE;
   }
 
-//    this task is finished
-//    so check if the array of threads is freed, and if not, do it now
-//    this here LEAKS -> BUT SO DO OTHER THINGS
-//    EVERYTHING LEAKS -> WHO IS FREEING ALL THE THREADS????
-//    TODO: I'm not freeing this array now -> because there might be a restart
-//    if (task->num_of_threads != 0) {
-//      free(/*(struct t_thread**)*/(char *) task->threads_array);
-//      task->num_of_threads = 0;
-//   }
-
   return FALSE;
 }
 
@@ -1745,17 +1442,10 @@ t_boolean more_actions_on_Ptask (struct t_Ptask *Ptask)
   struct t_task  *task;
   size_t          tasks_it;
 
-  /* JGG (2012/01/12): New way to navigate through tasks
-    for(task  = (struct t_task *) head_queue (&(Ptask->tasks));
-        task != T_NIL;
-        task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-    {
-    */
-
   for(tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
   {
     task = &(Ptask->tasks[tasks_it]);
-
+     //printf("\n in line 1761 task-id = %d \n", task->taskid);
     if (more_actions_on_task (task))
     {
       return (TRUE);
@@ -1772,31 +1462,13 @@ void clear_last_actions (struct t_Ptask *Ptask)
   struct t_machine *machine;
   size_t            tasks_it, thread_it;
 
-  /* Locate task in Ptask */
-  /* JGG (2012/01/12): New way to navigate through tasks
-    for(task  = (struct t_task *) head_queue (&(Ptask->tasks));
-        task != T_NIL;
-        task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-    {
-    */
-
   for(tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
   {
     task = &(Ptask->tasks[tasks_it]);
 
-    /* Locate thread onto that task */
-    /* JGG (2012/01/17): new way to navigate through threads
-    for (thread  = (struct t_thread *) head_queue (&(task->threads));
-       thread != TH_NIL;
-       thread  = (struct t_thread *) next_queue (&(task->threads)))
-    */
     for (thread_it = 0; thread_it < task->threads_count; thread_it++)
     {
       thread = task->threads[thread_it];
-      /*
-      if (thread->last_action != AC_NIL)
-        free (thread->last_action);
-      */
       assert(thread->last_action == AC_NIL);
       assert(thread->action == AC_NIL);
       thread->last_paraver  = current_time;
@@ -1861,23 +1533,9 @@ void First_action_to_sintetic_application (struct t_Ptask *Ptask)
 
   size_t tasks_it, threads_it;
 
-/* JGG (2012/01/12): New way to navigate through tasks
-    for(task  = (struct t_task *) head_queue (&(Ptask->tasks));
-        task != T_NIL;
-        task  = (struct t_task *) next_queue (&(Ptask->tasks)))
-    {
-    */
-
   for(tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
   {
     task = &(Ptask->tasks[tasks_it]);
-
-    /* Locate thread onto that task */
-    /* JGG (2012/01/17): new way to navigate through threads
-    for(thread  = (struct t_thread *) head_queue (&(task->threads));
-        thread != TH_NIL;
-        thread  = (struct t_thread *) next_queue (&(task->threads)))
-    */
     for (threads_it = 0; threads_it < task->threads_count; threads_it++)
     {
       thread = task->threads[threads_it];
@@ -1908,7 +1566,6 @@ void create_sintetic_applications (int num)
     // inFIFO_queue (&Ptask_queue, (char *) Ptask);
   }
 }
-
 t_boolean more_actions_to_sintetic (struct t_thread *thread)
 {
   struct t_action *action;
@@ -1970,9 +1627,8 @@ struct t_node *get_node_for_task_by_name (struct t_Ptask *Ptask, int taskid)
            Ptask->Ptaskid);
   }
 
-  task = &(Ptask->tasks[taskid]);
-
-  node = get_node_of_task (task);
+  task = &(Ptask->tasks[taskid]);   
+  node = get_node_of_task(task);
 
   return (node);
 }
@@ -2061,8 +1717,6 @@ void TASK_module_new_general (unsigned long int module_type,
             module_value_ll,
             ratio);
   }
-
-
   // mod = (struct t_module *) query_prio_queue (&Ptask->Modules, (t_priority)identificator);
 
   mod = (struct t_module*) find_module (&(current_Ptask->Modules),
@@ -2096,7 +1750,6 @@ void TASK_module_new_general (unsigned long int module_type,
 
     mod->ratio = ratio;
   }
-
   return;
 }
 
@@ -2104,11 +1757,28 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
 {
   int  new_taskid, i;
   int *task_mapping;
-	int	 found;
-  Ptask->tasks       = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
+  Ptask->tasks = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
+  //Added here to initialize the task first
+  get_acc_tasks_info(Ptask);
+  for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
+  {
+    for (i = 0; i < Ptask->acc_tasks_count; i++)
+    {
+      if (Ptask->acc_tasks[i] == new_taskid)
+      {
+        TASK_New_Task(Ptask, new_taskid, TRUE);      
+        break;
+      }
+    }
+    if (i == Ptask->acc_tasks_count)
+    {       
+      TASK_New_Task(Ptask, new_taskid, FALSE);       
+    }
+  }  
   if (Ptask->map_definition == MAP_FILL_NODES)
   {
+    printf("===> MAPPING FILL_NODES \n \n");
     if ( (task_mapping = TASK_Map_Filling_Nodes(Ptask->tasks_count)) == NULL)
     {
       die("Unable to apply the fill nodes mapping");
@@ -2117,12 +1787,12 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
     if (debug)
     {
       printf(" (Fill nodes mapping)\n");
-    }
+    }   
   }
   else if (Ptask->map_definition == MAP_N_TASKS_PER_NODE)
   {
+     printf("===> Mapping_N-tasks_per_node \n \n");
     task_mapping = TASK_Map_N_Tasks_Per_Node(Ptask->tasks_count, Ptask->tasks_per_node);
-
     if (task_mapping == NULL)
     {
       die("'%d' tasks per node mapping not applicable (%d nodes per %d tasks is less than the application total tasks %d)",
@@ -2131,7 +1801,6 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
           Ptask->tasks_per_node,
           Ptask->tasks_count);
     }
-
     if (debug)
     {
       printf(" (%d tasks per node mapping)\n", Ptask->tasks_per_node);
@@ -2139,8 +1808,9 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   }
   else if (Ptask->map_definition == MAP_INTERLEAVED)
   {
+    printf("===> Task interleaved mapping \n \n");
     task_mapping = TASK_Map_Interleaved(Ptask->tasks_count);
-
+    
     if (debug)
     {
       printf(" (interleaved mapping)\n");
@@ -2154,7 +1824,10 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
 
   if (Ptask->acc_tasks_count == -1)
   {	// -1: search for acc_tasks not done yet
-  	get_acc_tasks_info(Ptask);
+  	printf("\n task count before node filling is;\n"
+	       " %d\n !!!after this will go to the get_acc_tasks_info!!! \n",
+    Ptask->acc_tasks_count);
+    get_acc_tasks_info(Ptask);
 
   	if ( (Ptask->acc_tasks == NULL && Ptask->acc_tasks_count > 0) ||
   			Ptask->acc_tasks_count < 0)
@@ -2163,78 +1836,115 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   				Ptask->Ptaskid);
   	}
   }
-
-  for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
-  {
-    for (i = 0; i < Ptask->acc_tasks_count; i++)
-		{
-			if (Ptask->acc_tasks[i] == new_taskid)
-			{
-				TASK_New_Task(Ptask, new_taskid, task_mapping[new_taskid], TRUE);
-				break;
-			}
-		}
-		if (i == Ptask->acc_tasks_count)
-		{
-			TASK_New_Task(Ptask, new_taskid, task_mapping[new_taskid], FALSE);
-		}
+ 
+  Update_Node_Info(Ptask->tasks, Ptask->tasks_count, task_mapping);
+//only for print temp
+  for(i=0; i<Ptask->tasks_count; ++i)
+  {         
+    printf("TASK id:%d mapped to NODE id:%d (%d)\n", 
+      Ptask->tasks[i].taskid, Ptask->tasks[i].nodeid, task_mapping[i]);
   }
 
-#if DEBUG
+  #if DEBUG
   printf("Mapping = { ");
   for (i = 0; i < Ptask->tasks_count; i++)
   {
     printf("%d ", task_mapping[i]);
   }
   printf("}\n");
-#endif
+  #endif
 
   free(task_mapping);
 }
 
 int* TASK_Map_Filling_Nodes(int task_count)
 {
-  int      *task_mapping;
-  int       last_task_assigned = 0;
+  int                *task_mapping;
+  struct t_Ptask     *Ptask;
   int       n_nodes;
   int      *n_cpus_per_node;
-  int       total_cpus = 0;
-  int       i, j;
-  t_boolean end = FALSE, saturated_node = FALSE;
+  int       i_node, j_cpu;
+  size_t tasks_it;
+  struct t_node *node;
 
+  t_boolean end = FALSE, saturated_node = FALSE;
   task_mapping = malloc(task_count*sizeof(int));
 
-  n_nodes         = SIMULATOR_get_number_of_nodes();
+  int i;
+  for (i=0; i<task_count; ++i)
+  {
+    task_mapping[i] = -1;
+  }
+
+  n_nodes = SIMULATOR_get_number_of_nodes();  
+  n_cpus_per_node=SIMULATOR_get_cpus_per_node();
 
   if ( (n_cpus_per_node = SIMULATOR_get_cpus_per_node()) == NULL)
   {
     return NULL;
   }
 
-  for (i = 0; i < n_nodes && last_task_assigned < task_count; i++)
+  // STEP 1: Map accelerated tasks  
+  for(Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+    Ptask != P_NIL;
+    Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
-    for (j = 0; j < n_cpus_per_node[i] && last_task_assigned < task_count; j++)
+    for(tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
-      task_mapping[last_task_assigned] = i;
-      last_task_assigned++;
-      total_cpus++;
-    }
-  }
+      struct t_task *task = &(Ptask->tasks[tasks_it]);
+      if(task->accelerator)
+      { 
+        for(i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
+        {
+          node = get_node_by_id(i_node);          
+          if(node->accelerator && node->has_accelerated_task==FALSE)
+          {
+            task_mapping[tasks_it] = i_node;
+            n_cpus_per_node[i_node]--; // One CPU is now occupied
+            node->has_accelerated_task = TRUE; // One GPU is now occupied
+            break;
+          }
+  } } } }
 
-  for (;last_task_assigned < task_count; last_task_assigned++)
+  // STEP 2: Map no-accelerated tasks 
+  int last_task_assigned = 0;
+  for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
   {
-    task_mapping[last_task_assigned] = n_nodes-1;
-    saturated_node                   = TRUE;
+    int n_cpus_node = n_cpus_per_node[i_node];
+    node = get_node_by_id(i_node);
+    if (node->accelerator)
+    {
+      n_cpus_node--;
+    }
+
+    for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
+    { 
+      while (last_task_assigned < task_count &&
+        task_mapping[last_task_assigned] != -1) 
+      {
+        last_task_assigned++;
+      }     
+      if (task_mapping[last_task_assigned] == -1)
+      {
+        task_mapping[last_task_assigned] = i_node; 
+        last_task_assigned++;   
+      }
+    }    
+  }  
+  /*** If there is any task that could not be mapped, assign all of them
+  to the last node.***/
+  for (i=0; i < task_count; ++i)
+  {
+    if (task_mapping[i] == -1)
+    {
+      task_mapping[i] = n_nodes-1;
+      saturated_node = TRUE;
+    }
   }
 
   if (saturated_node)
   {
-    /* How to manage this situation?
-    result.errorMessage =  "Total available CPUs ("+totalCpus+") less than the number of tasks\n"+
-                           "Last node in the machine will be saturated";
-
-    return NULL;
-    */
+    printf("\n !!!!!!!!!!!!!node is saturated cannot do anything !!!!!!!!!!!!!!\n");
   }
 
   free(n_cpus_per_node);
@@ -2244,50 +1954,240 @@ int* TASK_Map_Filling_Nodes(int task_count)
 int* TASK_Map_N_Tasks_Per_Node(int task_count, int n_tasks_per_node)
 {
   int *task_mapping;
-  int  last_assigned_node   = 0;
-  int  assigned_tasks_count = 0;
-  int  n_nodes              = SIMULATOR_get_number_of_nodes();
-  int  i;
+  struct t_Ptask *Ptask;
+  int *n_cpus_per_node;  
+  int  last_task_assigned = 0;
+  int  i, i_node, j_cpu;
+  size_t tasks_it;
 
+  int  n_nodes = SIMULATOR_get_number_of_nodes();
+  n_cpus_per_node = SIMULATOR_get_cpus_per_node();
+
+  task_mapping = malloc(task_count*sizeof(int));
+   
   if (n_tasks_per_node * n_nodes < task_count)
+  {
+    return NULL;
+  } 
+
+  for (i=0; i<task_count; ++i)
+  {
+    task_mapping[i] = -1;
+  }
+
+  if ( (n_cpus_per_node = SIMULATOR_get_cpus_per_node()) == NULL)
   {
     return NULL;
   }
 
-  task_mapping = malloc(task_count*sizeof(int));
-
-  for (i = 0; i < task_count; i++)
+  //if task is accelerator /*Chetan*/
+  struct t_node *node;
+  for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+  Ptask != P_NIL;
+  Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
-    if (assigned_tasks_count < n_tasks_per_node)
+    for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
+    {      
+      struct t_task *task = &(Ptask->tasks[tasks_it]);
+      if(task->accelerator)
+      {
+        for (i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
+        {
+          node = get_node_by_id(i_node);          
+          if(node->accelerator == TRUE && node->has_accelerated_task == FALSE && 
+            last_task_assigned < task_count)
+          {                
+            n_cpus_per_node [i_node]--; // One CPU is now occupied           
+            task_mapping[tasks_it] = i_node;            
+            last_task_assigned++;
+            node->has_accelerated_task = TRUE; // One GPU is now occupied
+            break;
+          }
+  } } } }  
+  // STEP 2: Map no-accelerated tasks 
+  for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
+  {
+    int n_cpus_node = n_cpus_per_node[i_node];
+    node = get_node_by_id(i_node);
+    if (node->accelerator)
     {
-      task_mapping[i] = last_assigned_node;
-      assigned_tasks_count++;
+      n_cpus_node--; //GPU must be subtracted
     }
-    else
-    {
-      task_mapping[i]      = ++last_assigned_node;
-      assigned_tasks_count = 1;
+
+    int task_in_node = 0;
+    for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
+    { 
+      while (last_task_assigned < task_count &&
+        task_mapping[last_task_assigned] != -1) 
+      {
+        if(task_mapping[last_task_assigned] == i_node)
+        {
+          task_in_node++;
+        }
+        last_task_assigned++;
+      }     
+      if (task_mapping[last_task_assigned] == -1)
+      {
+        task_mapping[last_task_assigned] = i_node; 
+        last_task_assigned++;
+        task_in_node++;   
+      }
+      if(task_in_node == n_tasks_per_node)
+        break;
     }
   }
-
   return task_mapping;
-
 }
 
 int* TASK_Map_Interleaved(int task_count)
 {
   int *task_mapping;
-  int  n_nodes = SIMULATOR_get_number_of_nodes();
-  int  i;
+  int *n_cpus_per_node;
+  struct t_Ptask *Ptask;
+  int  i, last_task_assigned = 0;
+  size_t tasks_it;
+  int map;
 
+  n_cpus_per_node = SIMULATOR_get_cpus_per_node();  
+  int  n_nodes = SIMULATOR_get_number_of_nodes();
   task_mapping = malloc(task_count*sizeof(int));
 
-  for (i = 0; i < task_count; i++)
+  for (i=0; i<task_count; ++i)
   {
-    task_mapping[i] = i%n_nodes;
+    task_mapping[i] = -1;
   }
 
+  //MAP ACCELERATED TASKS
+  struct t_node *node;
+  int i_node;
+  for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+  Ptask != P_NIL;
+  Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+  {
+    for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
+    {      
+      struct t_task *task = &(Ptask->tasks[tasks_it]);
+      if(task->accelerator)
+      {
+        for (i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
+        {
+          node = get_node_by_id(i_node);          
+          if(node->accelerator == TRUE && node->has_accelerated_task == FALSE) 
+          {                
+            n_cpus_per_node [i_node]--; // One CPU is now occupied           
+            task_mapping[tasks_it] = i_node % n_nodes;            
+            last_task_assigned++;
+            node->has_accelerated_task = TRUE; // One GPU is now occupied
+            break;
+          }
+  } } } }
+  //STEP 2 MAP NON ACCELERATED TASKS
+  int j_cpu, task_per_node;
+  //int n_cpus_node = n_cpus_per_node[i_node];
+  for(i = 0; i < task_count && last_task_assigned < task_count; i++)
+  {
+
+    for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
+    {
+      node = get_node_by_id(i_node);
+      if(node->accelerator)
+      {
+        n_cpus_per_node[i_node]--;
+      }
+      //one condition to subtract a cpu from a accelerated node.
+      while (last_task_assigned < task_count &&
+      task_mapping[last_task_assigned] != -1) 
+      {
+        last_task_assigned++;
+      }
+      if (task_mapping[last_task_assigned] == -1)
+      {
+        task_mapping[last_task_assigned] = i_node%n_nodes; 
+        last_task_assigned++;
+	//task_per_node;   
+      }
+    }  
+  }
   return task_mapping;
+}
+//Added to update the acc node info after the fill/n-task-per-node/task-interleaved nodes
+ /*Chetan*/
+void Update_Node_Info(
+  struct t_task *tasks, /* vector of tasks */
+  int tasks_count,
+  int * task_mapping)
+{
+  
+  int nodeid;
+  t_boolean acc_task;
+  struct t_task *task;
+  struct t_node *node;
+  int            in_mem_links, out_mem_links, i;
+  struct t_link *link;
+  int task_it;
+
+  for (task_it = 0; task_it < tasks_count; task_it++)
+  {
+    task = &tasks[task_it];
+    nodeid = task_mapping[task_it];
+    node = get_node_by_id(nodeid);   
+    task->nodeid = nodeid;
+
+    if (node->in_mem_links == 0 && node->out_mem_links == 0)
+    {
+      node->infinite_mem_links = TRUE;
+    }
+    else if (node->in_mem_links == 0 || node->out_mem_links == 0)
+    {
+      int links;
+
+      task->half_duplex_links  = TRUE;
+
+      links = MAX(node->in_mem_links, node->out_mem_links);
+
+      in_mem_links  = links;
+      out_mem_links = links;
+    }
+    else
+    {
+      in_mem_links  = node->in_mem_links;
+      out_mem_links = node->out_mem_links;
+    }
+
+    create_queue (&(task->free_in_links));
+    for (i = 0; i < in_mem_links; i++)
+    {
+      link = (struct t_link*) malloc (sizeof(struct t_link));
+
+      link->linkid    = i + 1;
+      link->info.task = task;
+      link->kind      = MEM_LINK;
+      link->type      = IN_LINK;
+      link->thread    = TH_NIL;
+
+      ASS_ALL_TIMER (link->assigned_on, current_time);
+      inFIFO_queue (&(task->free_in_links), (char*) link);
+    }
+
+    create_queue (&(task->free_out_links));
+    for (i = 0; i < out_mem_links; i++)
+    {
+      link = (struct t_link*) malloc (sizeof(struct t_link));
+
+      link->linkid    = i + 1;
+      link->info.task = task;
+      link->kind      = MEM_LINK;
+      link->type      = OUT_LINK;
+      link->thread    = TH_NIL;
+
+      ASS_ALL_TIMER (link->assigned_on, current_time);
+      inFIFO_queue (&(task->free_out_links), (char*) link);
+    }
+
+    create_queue (&(task->busy_in_links));
+    create_queue (&(task->busy_out_links));
+
+  }
 }
 
 void module_entrance(struct t_thread  *thread,
@@ -2297,23 +2197,6 @@ void module_entrance(struct t_thread  *thread,
   register struct t_module *mod;
   register struct t_Ptask  *Ptask = thread->task->Ptask;
 
-  /*
-  if (debug&D_TASK)
-  {
-    PRINT_TIMER (current_time);
-    printf (": Going into module: %d for P%02d T%02d (t%02d)\n",identificator,
-            Ptask->Ptaskid, tid, thid);
-  }
-  */
-
-  // thread = locate_thread (Ptask, tid, thid);
-
-  /*
-  mod = (struct t_module*) query_prio_queue(&Ptask->Modules,
-                                            (t_priority)identificator);
-  */
-
-  /* Check if its an idle block */
   if (module_type == IDLE_EVENT_TYPE)
   {
     thread->idle_block = TRUE;
@@ -2352,9 +2235,7 @@ int module_exit (struct t_thread  *thread,
   float fo;
   struct t_machine *machine;
 
-  // thread = locate_thread (Ptask, tid, thid);
-
-#ifdef BLOCK_SPECIAL
+  #ifdef BLOCK_SPECIAL
   if (((identificator ==  3) || (identificator == 6) || (identificator == 7) ||
        (identificator == 13) || (identificator == 4))
       &&
@@ -2392,7 +2273,7 @@ int module_exit (struct t_thread  *thread,
   else
   {
     thread->global_op_done = FALSE;
-#endif
+  #endif
 
     if (module_type == IDLE_EVENT_TYPE)
     {
@@ -2401,81 +2282,25 @@ int module_exit (struct t_thread  *thread,
 
     mod = (struct t_module *) outLIFO_queue(&(thread->modules));
 
-    /* JGG (2012/01/10): now that makes no sense
-    if (mod == M_NIL)
-    {
-
-      /*
-       * FEC: Converteixo aquest panic en un Warning perque si la trac,a s'ha
-       * obtingut a partir de tallar una trac,a paraver, es possible que comenci
-       * amb alguns block end sense que hi haguin hagut els corresponents block
-       * begin.
-      panic("Exiting module %d, but no information recorderd P%02d T%02d (t%02d)\n",
-            identificator,IDENTIFIERS(thread));
-
-      fprintf(stderr,
-              "WARNING: Exiting module [%ld], but no information recorderd P%02d T%02d (t%02d)\n",
-              module_type,
-              IDENTIFIERS(thread));
-
-    }
-
-    else */
-
-    if (mod != M_NIL)
-    {
-      if (mod->type != module_type)
-      {
-        inLIFO_queue (&(thread->modules), (char*) mod);
-      }
-      /*
-      if (mod->type != module_type)
-      {
-        panic("Exiting module [%ld], but this is not the current one [%ld:%ld] for P%02d T%02d (t%02d)\n",
-              module_type,
-              mod->type,
-              mod->value,
-              IDENTIFIERS(thread));
-      }
-      else
-      {
-      */
-      if (debug&D_TASK)
-      {
-        PRINT_TIMER (current_time);
-        printf (": Going out module: [%lu] (Unknown) for P%02d T%02d th%02d\n",
-                module_type,
-                IDENTIFIERS(thread));
-      }
-      //}
-    }
-
-#ifdef BLOCK_SPECIAL
-  }
-#endif
-
-  /*
-  if (debug&D_TASK)
+  if (mod != M_NIL)
   {
-    if (mod != M_NIL)
+    if (mod->type != module_type)
     {
-      PRINT_TIMER (current_time);
-      printf (": Going out module: [%ld:%ld] (%s) for P%02d T%02d Th%02d\n",
-              mod->type,
-              mod->value,
-              mod->module_name,
-              IDENTIFIERS(thread));
+      inLIFO_queue (&(thread->modules), (char*) mod);
     }
-    else
-    {
 
+    if (debug&D_TASK)
+    {
       PRINT_TIMER (current_time);
-      printf (": Going out module: [%ld] (Unknown) for P%02d T%02d th%02d\n",
+      printf (": Going out module: [%lu] (Unknown) for P%02d T%02d th%02d\n",
               module_type,
               IDENTIFIERS(thread));
     }
   }
-  */
+
+  #ifdef BLOCK_SPECIAL
+}
+  #endif
 
   return(0);
 }
@@ -2506,10 +2331,6 @@ void recompute_work_upon_modules(struct t_thread *thread,
     {
       action->desc.compute.cpu_time = action->desc.compute.cpu_time / mod->ratio;
     }
-    /*
-    if (action->desc.compute.cpu_time<1.0)
-      action->desc.compute.cpu_time = 1.0
-    */
   }
 }
 
@@ -2540,7 +2361,6 @@ void user_event_type_name(struct t_Ptask *Ptask,
     free(name);
   }
 }
-
 
 void user_event_value_name (struct t_Ptask *Ptask,
                             int             type,
@@ -2579,12 +2399,11 @@ void user_event_value_name (struct t_Ptask *Ptask,
   else
   {
     printf ("Warning: redefinition of user event value %d for type %d\n",
-            value,
-            type);
+    value,
+    type);
     free(name);
   }
 }
-
 /*
  * Gets accelerator task mapping info and stores it in Ptask
  */
@@ -2605,4 +2424,6 @@ void get_acc_tasks_info(struct t_Ptask *Ptask)
 
 	Ptask->acc_tasks_count = acc_tasks_count;
 	Ptask->acc_tasks = acc_tasks_mapping;
+  printf("\n NUMBER OF ACCELERATED TASKS ARE:[%d]\n", 
+    Ptask->acc_tasks_count);
 }
