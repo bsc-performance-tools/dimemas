@@ -711,6 +711,7 @@ t_boolean parse_multinode_info (char* record_fields)
 
     inter_node_startup = inter_node_startup*1e9;
     intra_node_startup = intra_node_startup*1e9;
+    wan_startup = wan_startup*1e9;
 
     if (!SIMULATOR_set_multiple_node_definition(node_count,
                                                 machine_id,
