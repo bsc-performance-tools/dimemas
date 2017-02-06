@@ -2,8 +2,8 @@
 
 # Update the version numbers manually
 
-MAJOR=6
-MINOR=0
+MAJOR=5
+MINOR=3
 REV=0
 
 # 'svnversion' no longer needed. Always use the manual version
