@@ -2398,31 +2398,48 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
   long int bytes_recv;
   int      synch_type;
 
-  if (sscanf(global_op_str,
-             GLOBAL_OP_REGEXP,
+  int nfields = sscanf(global_op_str, GLOBAL_OP_REGEXP,
              &global_op_id,
              &comm_id,
              &root_task_id,
              &root_thread_id,
              &bytes_sent,
              &bytes_recv,
-             &synch_type) != 7)
+             &synch_type);
+
+  if (nfields == 7)
+  {
+
+    action->action                     = GLOBAL_OP;
+    action->desc.global_op.glop_id     = global_op_id;
+    action->desc.global_op.comm_id     = comm_id;
+    action->desc.global_op.root_rank   = root_task_id;
+    action->desc.global_op.root_thid   = root_thread_id;
+    action->desc.global_op.bytes_send  = bytes_sent;
+    action->desc.global_op.bytes_recvd = bytes_recv;
+    action->desc.global_op.synch_type  = synch_type;
+  }
+  else if (nfields == 6)
+  {
+    action->action                     = GLOBAL_OP;
+    action->desc.global_op.glop_id     = global_op_id;
+    action->desc.global_op.comm_id     = comm_id;
+    action->desc.global_op.root_rank   = root_task_id;
+    action->desc.global_op.root_thid   = root_thread_id;
+    action->desc.global_op.bytes_send  = bytes_sent;
+    action->desc.global_op.bytes_recvd = bytes_recv;
+    action->desc.global_op.synch_type  = 1;
+  }
+  else
   {
     DAP_report_error("wrong global operation (%)", global_op_str);
     return FALSE;
   }
-
-  action->action                     = GLOBAL_OP;
-  action->desc.global_op.glop_id     = global_op_id;
-  action->desc.global_op.comm_id     = comm_id;
-  action->desc.global_op.root_rank   = root_task_id;
-  action->desc.global_op.root_thid   = root_thread_id;
-  action->desc.global_op.bytes_send  = bytes_sent;
-  action->desc.global_op.bytes_recvd = bytes_recv;
-  action->desc.global_op.synch_type  = synch_type;
-
+  
   return TRUE;
+
 }
+
 
 t_boolean DAP_read_event     (const char      *event_str,
                               struct t_action *action)
