@@ -2081,8 +2081,8 @@ t_boolean DAP_read_action (app_struct       *app,
       else
       {
         (*action) = (struct t_action*) malloc(sizeof(struct t_action));
-        (*action)->trace_line = (char *) malloc(bytes_read);
-        memcpy((*action)->trace_line, line, bytes_read);
+        //(*action)->trace_line = (char *) malloc(bytes_read);
+        //memcpy((*action)->trace_line, line, bytes_read);
 
        if ( (*action) == NULL)
         {
@@ -2144,8 +2144,8 @@ t_boolean DAP_read_action (app_struct       *app,
   {
     /* Allocate memory for new action */
     (*action) = (struct t_action*) malloc(sizeof(struct t_action));
-    (*action)->trace_line = (char *) malloc(bytes_read);
-    memcpy((*action)->trace_line, line, bytes_read);
+    //(*action)->trace_line = (char *) malloc(bytes_read);
+    //memcpy((*action)->trace_line, line, bytes_read);
     
     if ( (*action) == NULL)
     {

@@ -94,9 +94,14 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
 
   if (prog >= _end_analysis_tpercent)
   {
-	  printf("**** Deadlock analyzer has been deactivated. Progression %.2f %\n", prog*100);
-	  with_deadlock_analysis = 0;
-	  return FALSE;
+      //res = DEADLOCK_check_end();
+      //if (res == FALSE)
+      //{
+	    printf("**** Deadlock analyzer has been deactivated. Progression %.2f %\n", prog*100);
+	    with_deadlock_analysis = 0;
+	    return FALSE;
+      //}
+      return res;
   }
 
 
@@ -182,6 +187,7 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
           //GRAPH_add_dependency(from_taskid, to_taskid, SOFT_DEP, thread);
         }
       }
+      free(deps);
       break;
     }
     case RECV:
@@ -330,8 +336,11 @@ t_boolean DEADLOCK_manage_global_dependency(struct t_thread * thread)
     int to_collective = comm_threads[j];
     if (from_collective == to_collective) continue;
 
-    struct dependency * dep = GRAPH_get_dependency(to_collective, from_collective,
-                                   GLOP_DEP, from_action->action, TAG_ALL, COMMUNIC_ID_ALL);
+    struct dependency * dep = GRAPH_get_dependency(
+            to_collective, 
+            from_collective,
+            GLOP_DEP, 
+            from_action->action, TAG_ALL, COMMUNIC_ID_ALL);
 
     if (dep != NULL && dep->global_op == from_action->desc.global_op.glop_id)
     {
@@ -399,6 +408,7 @@ t_boolean _is_deadlocked(int from)
 
   if (res)
   {
+      printf("-> [%f] Deadlock detected\n", current_time);
 #if DEBUG
     char msg[100];
     sprintf(msg,"*******************************\n" \
@@ -440,7 +450,8 @@ t_boolean _is_deadlocked(int from)
     else
     {
 #if DEBUG
-      printf("SUCCESS\n");
+        GRAPH_debug_msg("SUCCESS\n");
+        //printf("SUCCESS\n");
 #endif
       task_to_mod_pos = breakChainFrom(dep_chain_queue, deepness);
     }
@@ -470,7 +481,7 @@ t_boolean _is_deadlocked(int from)
     {
       printf("ERROR: Has been an incoherence between Dimemas"
              " models and deadlock analyzer. Try to simulate without --clean-deadlocks flag.\n\n");
-      assert(FALSE);
+      //assert(FALSE);
     }
 #if DEBUG
     sprintf(msg,"-> Action of task %d will be ignored. (file offset: %u)\n",
@@ -480,6 +491,7 @@ t_boolean _is_deadlocked(int from)
     insert_queue(&thread_to_mod->ops_to_be_ignored, (char *)op_to_be_ignored, prio);
     simulation_rebooted = TRUE;
   }
+  free(dep_chain_queue);
   return res;
 }
 
