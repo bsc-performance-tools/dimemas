@@ -121,32 +121,6 @@ class OutBlockComparison
         EventR1 = dynamic_cast<Event_t>(R1);
         EventR2 = dynamic_cast<Event_t>(R2);
 
-        /* Special case for CALLERS */
-        /*
-        if (EventR1->IsCaller() && EventR2->IsCallerLine())
-          return true;
-
-        if (EventR1->IsCallerLine() && EventR2->IsCaller())
-          return false;
-        */
-
-        /* JGG: Test to preserve JUST TRACE ORDER
-        if (EventR1->IsMPIBlockBegin()
-           (EventR2->IsCaller() || EventR2->IsCallerLine()))
-          return true;
-
-        if ((EventR1->IsCaller() || EventR1->IsCallerLine()) &&
-             EventR2->IsDimemasBlockBegin())
-          return false;
-
-        if (EventR1->IsDimemasBlockEnd() &&
-           (EventR2->IsCaller() || EventR2->IsCallerLine()))
-          return false;
-
-        if ((EventR1->IsCaller() || EventR1->IsCallerLine()) &&
-             EventR2->IsDimemasBlockEnd())
-          return true;
-
         /* Special case for PROBE counters */
         if (EventR1->GetFirstType() == MPITYPE_PROBE_SOFTCOUNTER &&
             EventR2->GetFirstType() == MPITYPE_PROBE_TIMECOUNTER)
@@ -183,22 +157,6 @@ class OutBlockComparison
       {
         EventR1 = dynamic_cast<Event_t>(R1);
         CommR2  = dynamic_cast<PartialCommunication_t>(R2);
-
-        /*
-        if (EventR1->IsDimemasBlockBegin())
-          return true;
-        */
-
-
-        /* Changes in name
-        if (EventR1->IsDimemasBlockEnd())
-          return false;
-        */
-
-        /*
-        if (EventR1->IsCaller() || EventR1->IsCallerLine())
-          return true;
-        */
 
         if (EventR1->IsMPIBlockEnd())
           return false;
@@ -253,9 +211,10 @@ class OutBlockComparison
       {
         CommR1 = dynamic_cast<PartialCommunication_t>(R1);
         CommR2 = dynamic_cast<PartialCommunication_t>(R2);
-
+        
         if (CommR1->GetType() == LOGICAL_RECV)
-          return true;
+          //return true;
+          return false;
 
         if (CommR1->GetType() == LOGICAL_SEND &&
             CommR2->GetType() == PHYSICAL_SEND)
@@ -281,7 +240,7 @@ class OutBlockComparison
       }
 
       return true;
-    };
+  };
 
   private:
     bool IsCommunication(ParaverRecord_t R1)
