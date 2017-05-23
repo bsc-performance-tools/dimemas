@@ -199,7 +199,6 @@ void TASK_Init(int sintetic_io_applications)
     for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
       task = &(Ptask->tasks[tasks_it]);
-      //printf(" in line 203 task-id = %d \n",task->taskid);
       /* Allocate memory for the task threads */
       task->threads_count = ptask_structure->threads_per_task[tasks_it];
 
@@ -243,8 +242,6 @@ void TASK_Init(int sintetic_io_applications)
     for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
       task = &(Ptask->tasks[tasks_it]);
-      //printf(" in line 256 taskid = %d\n",task->taskid );
-
       for (threads_it = 0; threads_it < task->threads_count; threads_it++ )
       {
         thread = task->threads[threads_it];
@@ -1445,7 +1442,6 @@ t_boolean more_actions_on_Ptask (struct t_Ptask *Ptask)
   for(tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
   {
     task = &(Ptask->tasks[tasks_it]);
-     //printf("\n in line 1761 task-id = %d \n", task->taskid);
     if (more_actions_on_task (task))
     {
       return (TRUE);
@@ -1778,7 +1774,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   }  
   if (Ptask->map_definition == MAP_FILL_NODES)
   {
-    printf("===> MAPPING FILL_NODES \n \n");
+    //printf("===> MAPPING FILL_NODES \n \n");
     if ( (task_mapping = TASK_Map_Filling_Nodes(Ptask->tasks_count)) == NULL)
     {
       die("Unable to apply the fill nodes mapping");
@@ -1791,7 +1787,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   }
   else if (Ptask->map_definition == MAP_N_TASKS_PER_NODE)
   {
-     printf("===> Mapping_N-tasks_per_node \n \n");
+     //printf("===> Mapping_N-tasks_per_node \n \n");
     task_mapping = TASK_Map_N_Tasks_Per_Node(Ptask->tasks_count, Ptask->tasks_per_node);
     if (task_mapping == NULL)
     {
@@ -1808,7 +1804,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   }
   else if (Ptask->map_definition == MAP_INTERLEAVED)
   {
-    printf("===> Task interleaved mapping \n \n");
+    //printf("===> Task interleaved mapping \n \n");
     task_mapping = TASK_Map_Interleaved(Ptask->tasks_count);
     
     if (debug)
@@ -1824,9 +1820,6 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
 
   if (Ptask->acc_tasks_count == -1)
   {	// -1: search for acc_tasks not done yet
-  	printf("\n task count before node filling is;\n"
-	       " %d\n !!!after this will go to the get_acc_tasks_info!!! \n",
-    Ptask->acc_tasks_count);
     get_acc_tasks_info(Ptask);
 
   	if ( (Ptask->acc_tasks == NULL && Ptask->acc_tasks_count > 0) ||
@@ -1838,12 +1831,6 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   }
  
   Update_Node_Info(Ptask->tasks, Ptask->tasks_count, task_mapping);
-//only for print temp
-  for(i=0; i<Ptask->tasks_count; ++i)
-  {         
-    printf("TASK id:%d mapped to NODE id:%d (%d)\n", 
-      Ptask->tasks[i].taskid, Ptask->tasks[i].nodeid, task_mapping[i]);
-  }
 
   #if DEBUG
   printf("Mapping = { ");
@@ -2424,6 +2411,6 @@ void get_acc_tasks_info(struct t_Ptask *Ptask)
 
 	Ptask->acc_tasks_count = acc_tasks_count;
 	Ptask->acc_tasks = acc_tasks_mapping;
-  printf("\n NUMBER OF ACCELERATED TASKS ARE:[%d]\n", 
-    Ptask->acc_tasks_count);
+  //printf("\n NUMBER OF ACCELERATED TASKS ARE:[%d]\n", 
+    //Ptask->acc_tasks_count);
 }

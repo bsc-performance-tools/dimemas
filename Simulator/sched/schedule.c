@@ -117,22 +117,22 @@ void SCHEDULER_Init()
         /*Chetan*/
         if(thread->kernel)
         {
-          printf("kernel_thread [%d:%d] (%d) assigned to GPU at node %d\n", 
+          /*printf("kernel_thread [%d:%d] (%d) assigned to GPU at node %d\n", 
             thread->task->taskid,
             thread->threadid,
             thread->kernel,
-            node->nodeid);
+            node->nodeid);*/
           thread->loose_cpu = FALSE;
           (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
         }        
         if(!thread->kernel)
         {
-          printf("\n host_thread [%d:%d] (%d) assigned to CPU at node %d\n", 
+          /*printf("\n host_thread [%d:%d] (%d) assigned to CPU at node %d\n", 
             thread->task->taskid,
             thread->threadid,
             thread->kernel,
-            node->nodeid);
+            node->nodeid);*/
           thread->loose_cpu = TRUE ;
           (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
@@ -363,8 +363,8 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
   
    if (cpu->current_thread_context!= thread)
     {
-      printf("==> THREAD %d(%d) [kernel=%d] to CPU %d [GPU=%d] at NODE %d [Het=%d | P.U.=%d] ASSIGNEMENT\n", 
-          /*print which thread is assigned to which cpu and to which node*/
+      /*printf("==> THREAD %d(%d) [kernel=%d] to CPU %d [GPU=%d] at NODE %d [Het=%d | P.U.=%d] ASSIGNEMENT\n", 
+          //print which thread is assigned to which cpu and to which node
           thread->task->taskid, 
           thread->threadid,
           thread->kernel,
@@ -372,7 +372,7 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
           cpu->is_gpu,
           node->nodeid,
           node->accelerator,
-          count_queue(&node->Cpus));
+          count_queue(&node->Cpus));*/
        /* Context switch */
       account->n_th_in_run++;
       cpu->current_thread_context = thread;
