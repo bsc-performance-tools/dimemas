@@ -505,6 +505,9 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, int nodeid, t_boolean acc_
   create_queue (&(task->send_without_recv));
   create_queue (&(task->irecvs_executed));
 
+  in_mem_links = 0;
+  out_mem_links = 0;
+
   if (node->in_mem_links == 0 && node->out_mem_links == 0)
   {
     node->infinite_mem_links = TRUE;
