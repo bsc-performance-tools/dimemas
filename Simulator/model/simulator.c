@@ -256,7 +256,7 @@ int *SIMULATOR_get_cpus_per_node(void)
   return result;
 }
 
-void SIMULATOR_set_number_of_machines(int number_of_machines)
+void  SIMULATOR_set_number_of_machines(int number_of_machines)
 {
   size_t i;
   Simulator.number_machines = number_of_machines;

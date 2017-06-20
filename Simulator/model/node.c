@@ -176,22 +176,6 @@ void NODE_Fill_Node_Fields(struct t_node *node,
   node->in_mem_links        = no_mem_in_links;
   node->out_mem_links       = no_mem_out_links;
 
-  /*
-  for (j = 0; j < no_mem_links; j++)
-  {
-    link = (struct t_link*) malloc (sizeof(struct t_link));
-
-    link->linkid    = j + 1;
-    link->info.node = node;
-    link->kind      = MEM_LINK;
-    // link->type      = OUT_LINK;
-    link->thread    = TH_NIL;
-
-    ASS_ALL_TIMER (link->assigned_on, current_time);
-    inFIFO_queue (&(node->free_mem_links), (char *) link);
-  }
-  */
-
   node->arch                  = strdup(node_name);
 
   node->local_startup         = local_startup;
@@ -223,7 +207,7 @@ void NODE_set_acc(int node_id,
 		panic("Wrong accelerator node id %d, does no exist. Check your configuration file\n", node_id);
 	}
 /*if user select the heterogenous accelerator it will create
-  //a node with GPU *c */
+  //a node with GPU *chetan */
 	node->accelerator				= TRUE;
 	node->acc.bandwidth			= (t_bandwidth) 	bandwith;
 	node->acc.startup 			= (dimemas_timer) latency;

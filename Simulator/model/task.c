@@ -482,7 +482,7 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
   create_queue (&(task->th_for_in));
   create_queue (&(task->th_for_out));
 
-	task->KernelSync 		= TH_NIL;	//Means no thread is waiting
+  task->KernelSync 		= TH_NIL;	//Means no thread is waiting
   task->HostSync	 		= TH_NIL;	//Means no root is waiting
   task->KernelByComm	= -1;	//Means no root is waiting for kernel
 
@@ -1771,10 +1771,11 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
     {       
       TASK_New_Task(Ptask, new_taskid, FALSE);       
     }
-  }  
+  }
+
   if (Ptask->map_definition == MAP_FILL_NODES)
   {
-    //printf("===> MAPPING FILL_NODES \n \n");
+    printf("===> MAPPING FILL_NODES \n \n");
     if ( (task_mapping = TASK_Map_Filling_Nodes(Ptask->tasks_count)) == NULL)
     {
       die("Unable to apply the fill nodes mapping");
@@ -1818,9 +1819,9 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
          Ptask->map_definition);
   }
 
+  get_acc_tasks_info(Ptask);
   if (Ptask->acc_tasks_count == -1)
-  {	// -1: search for acc_tasks not done yet
-    get_acc_tasks_info(Ptask);
+  { // -1: search for acc_tasks not done yet
 
   	if ( (Ptask->acc_tasks == NULL && Ptask->acc_tasks_count > 0) ||
   			Ptask->acc_tasks_count < 0)
@@ -1829,9 +1830,31 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   				Ptask->Ptaskid);
   	}
   }
- 
-  Update_Node_Info(Ptask->tasks, Ptask->tasks_count, task_mapping);
+  //get_acc_tasks_info(Ptask);
+  /*for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
+  {
+    for (i = 0; i < Ptask->acc_tasks_count; i++)
+    {
+      if (Ptask->acc_tasks[i] == new_taskid)
+      {
+        TASK_New_Task(Ptask, new_taskid, TRUE);      
+        break;
+      }
+    }
+    if (i == Ptask->acc_tasks_count)
+    {       
+      TASK_New_Task(Ptask, new_taskid, FALSE);       
+    }
+  }*/
 
+   Update_Node_Info(Ptask->tasks, Ptask->tasks_count, task_mapping);
+  
+  for(i=0; i<Ptask->tasks_count; ++i)
+  {         
+    printf("TASK id:%d mapped to NODE id:%d (%d)\n", 
+      Ptask->tasks[i].taskid, Ptask->tasks[i].nodeid, task_mapping[i]);
+  }
+  
   #if DEBUG
   printf("Mapping = { ");
   for (i = 0; i < Ptask->tasks_count; i++)
@@ -1848,9 +1871,9 @@ int* TASK_Map_Filling_Nodes(int task_count)
 {
   int                *task_mapping;
   struct t_Ptask     *Ptask;
-  int       n_nodes;
+  int       n_nodes; 
   int      *n_cpus_per_node;
-  int       i_node, j_cpu;
+  int       i_node, j_cpu, i_machines;
   size_t tasks_it;
   struct t_node *node;
 
@@ -1862,9 +1885,8 @@ int* TASK_Map_Filling_Nodes(int task_count)
   {
     task_mapping[i] = -1;
   }
-
-  n_nodes = SIMULATOR_get_number_of_nodes();  
-  n_cpus_per_node=SIMULATOR_get_cpus_per_node();
+  n_nodes = SIMULATOR_get_number_of_nodes();
+  n_cpus_per_node = SIMULATOR_get_cpus_per_node();
 
   if ( (n_cpus_per_node = SIMULATOR_get_cpus_per_node()) == NULL)
   {
@@ -1881,20 +1903,22 @@ int* TASK_Map_Filling_Nodes(int task_count)
       struct t_task *task = &(Ptask->tasks[tasks_it]);
       if(task->accelerator)
       { 
-        for(i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
-        {
-          node = get_node_by_id(i_node);          
-          if(node->accelerator && node->has_accelerated_task==FALSE)
+
+          for(i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
           {
-            task_mapping[tasks_it] = i_node;
-            n_cpus_per_node[i_node]--; // One CPU is now occupied
-            node->has_accelerated_task = TRUE; // One GPU is now occupied
-            break;
-          }
-  } } } }
+            node = get_node_by_id(i_node);          
+            if(node->accelerator && node->has_accelerated_task==FALSE)
+            {
+              task_mapping[tasks_it] = i_node;
+              n_cpus_per_node[i_node]--; // One CPU is now occupied
+              node->has_accelerated_task = TRUE; // One GPU is now occupied
+              break;
+            }
+  } } } } 
 
   // STEP 2: Map no-accelerated tasks 
   int last_task_assigned = 0;
+
   for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
   {
     int n_cpus_node = n_cpus_per_node[i_node];
@@ -1903,7 +1927,6 @@ int* TASK_Map_Filling_Nodes(int task_count)
     {
       n_cpus_node--;
     }
-
     for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
     { 
       while (last_task_assigned < task_count &&
@@ -1917,7 +1940,8 @@ int* TASK_Map_Filling_Nodes(int task_count)
         last_task_assigned++;   
       }
     }    
-  }  
+  }
+
   /*** If there is any task that could not be mapped, assign all of them
   to the last node.***/
   for (i=0; i < task_count; ++i)
@@ -2155,7 +2179,6 @@ void Update_Node_Info(
       ASS_ALL_TIMER (link->assigned_on, current_time);
       inFIFO_queue (&(task->free_in_links), (char*) link);
     }
-
     create_queue (&(task->free_out_links));
     for (i = 0; i < out_mem_links; i++)
     {
@@ -2171,9 +2194,17 @@ void Update_Node_Info(
       inFIFO_queue (&(task->free_out_links), (char*) link);
     }
 
-    create_queue (&(task->busy_in_links));
+    /*create_queue (&(task->busy_in_links));
     create_queue (&(task->busy_out_links));
+    create_queue (&(task->th_for_in));
+    create_queue (&(task->th_for_out));
 
+  task->KernelSync    = TH_NIL; //Means no thread is waiting
+  task->HostSync      = TH_NIL; //Means no root is waiting
+  task->KernelByComm  = -1; //Means no root is waiting for kernel
+
+  */
+  //return;
   }
 }
 

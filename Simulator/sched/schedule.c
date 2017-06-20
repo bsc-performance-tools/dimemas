@@ -117,22 +117,22 @@ void SCHEDULER_Init()
         /*Chetan*/
         if(thread->kernel)
         {
-          /*printf("kernel_thread [%d:%d] (%d) assigned to GPU at node %d\n", 
+          printf("kernel_thread [%d:%d] (%d) assigned to GPU at node %d\n", 
             thread->task->taskid,
             thread->threadid,
             thread->kernel,
-            node->nodeid);*/
+            node->nodeid);
           thread->loose_cpu = FALSE;
           (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
-        }        
-        if(!thread->kernel)
+        } 
+        if(thread->host)
         {
-          /*printf("\n host_thread [%d:%d] (%d) assigned to CPU at node %d\n", 
+          printf("\n host_thread [%d:%d] (%d) assigned to CPU at node %d\n", 
             thread->task->taskid,
             thread->threadid,
             thread->kernel,
-            node->nodeid);*/
+            node->nodeid);
           thread->loose_cpu = TRUE ;
           (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
@@ -247,13 +247,13 @@ void SCHEDULER_reload(struct t_Ptask *Ptask)
                IDENTIFIERS (thread));
       }
       //cpu with is_gpu==TRUE cannot loose thread which are kernel thread.
-      if(!thread->kernel)
+      if(thread->host)
       {
         thread->loose_cpu = TRUE;
         SCHEDULER_thread_to_ready (thread);
         (*SCH[machine->scheduler.policy].clear_parameters) (thread);
       }
-      else
+      if(thread->kernel)
       {
         thread->loose_cpu = FALSE;
         SCHEDULER_thread_to_ready(thread); //no need to reload kernel thread in GPU
@@ -289,7 +289,8 @@ struct t_cpu* select_free_cpu(struct t_node *node, struct t_thread *thread)
   return (C_NIL);
 }
 
-static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
+static void 
+put_thread_on_run (struct t_thread *thread, struct t_node *node)
 {
   t_nano           ti;
   struct t_account *account;
@@ -319,6 +320,7 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
       // 0. Ensure that this is an heterogeneous node
     assert (node->accelerator == TRUE);
     assert (thread->kernel == TRUE);
+    //printf("porque peta in kernel !!!%d \n",thread->kernel);
       // 1. Look for CPU with is_gpu = 1  
     for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
         cpu !=C_NIL;
@@ -340,15 +342,7 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
     }
   }
   if(!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE))
-  //else  
-  //if(!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE)
   {
-    /*account = current_account (thread);
-    SUB_TIMER (current_time, thread->put_into_ready, tmp_timer);
-    ADD_TIMER (tmp_timer,
-               account->time_ready_without_cpu,
-               account->time_ready_without_cpu);             
-    */
     assert (!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE ));
     cpu = select_free_cpu (node, thread);
 
@@ -358,21 +352,12 @@ static void put_thread_on_run (struct t_thread *thread, struct t_node *node)
     {
       panic ("Can't get free processor on node %d\n", node->nodeid);
     }
+    //printf("porque peta in host!!!%d \n",thread->host);
     cpu->current_thread = thread;
     thread->cpu = cpu; 
   
    if (cpu->current_thread_context!= thread)
     {
-      /*printf("==> THREAD %d(%d) [kernel=%d] to CPU %d [GPU=%d] at NODE %d [Het=%d | P.U.=%d] ASSIGNEMENT\n", 
-          //print which thread is assigned to which cpu and to which node
-          thread->task->taskid, 
-          thread->threadid,
-          thread->kernel,
-          cpu->cpuid,
-          cpu->is_gpu,
-          node->nodeid,
-          node->accelerator,
-          count_queue(&node->Cpus));*/
        /* Context switch */
       account->n_th_in_run++;
       cpu->current_thread_context = thread;
@@ -493,7 +478,7 @@ void SCHEDULER_thread_to_ready (struct t_thread *thread)
   if(debug&D_SCH)
   	printf ("\t\t  (N) P%02d T%02d (t%02d)\n", IDENTIFIERS (thread));
 
-  if (thread->action->action==FS)
+  if (thread->action->action == FS)
   {
     FS_general (thread->action->desc.fs_op.fs_o.fs_user_event.id, thread);
   }
