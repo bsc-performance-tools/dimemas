@@ -422,10 +422,9 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
   Ptask->mmap_position         = 0;
   Ptask->synthetic_application = FALSE;
 
-  Ptask->acc_tasks_count			 = -1;	//-1:	search for acc_tasks not done, >= 0 otherwise
-  Ptask->acc_tasks						 = (int *) NULL;
+  Ptask->acc_tasks_count = -1;	//-1:	search for acc_tasks not done, >= 0 otherwise
+  Ptask->acc_tasks = (int *) NULL;
 
-  create_queue (&(Ptask->global_operation));
   create_queue (&(Ptask->Communicator));
   create_queue (&(Ptask->Window));
   create_queue (&(Ptask->MPI_IO_fh_to_commid));
@@ -590,7 +589,6 @@ t_nano PREEMP_overhead(struct t_task* task)
 void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
 {
   register struct t_communicator *comm;
-//   printf("called once\n");
   comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
       (t_priority)communicator_id);
   if (comm!=(struct t_communicator *)0)
@@ -830,7 +828,6 @@ void min_account (struct t_account *to, struct t_account *from)
   MIN_TIMER(to->block_due_resources,
             from->block_due_resources,
             to->block_due_resources);
-
   to->n_th_in_run = MIN(from->n_th_in_run,to->n_th_in_run);
 
   to->n_sends = MIN (to->n_sends, from->n_sends);
@@ -963,7 +960,7 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   thread->sstask_type              = 0;
 
   thread->portid                   = port_ids++;
-  PORT_create (thread->portid, thread);
+  PORT_create (thread->portid, thread); 
 
   thread->portid                   = port_ids++;
   PORT_create (thread->portid, thread);
@@ -1756,6 +1753,15 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
 
   Ptask->tasks = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
   //Added here to initialize the task first
+  int n_nodes = SIMULATOR_get_number_of_nodes();
+  int acc_node_count = 0;
+  for (int i_node = 0; i_node < n_nodes ; i_node++)
+  {
+    struct t_node *node;
+    node = get_node_by_id(i_node);
+    if (node->accelerator)
+      acc_node_count++;
+  }           
   get_acc_tasks_info(Ptask);
   for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
   {
@@ -1772,10 +1778,13 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
       TASK_New_Task(Ptask, new_taskid, FALSE);       
     }
   }
-
+  // to check either we have sufficient acc_nodes
+  if (acc_node_count < Ptask->acc_tasks_count)
+  {
+    die("insufficient accelerator NODE check the configuration\n");
+  }
   if (Ptask->map_definition == MAP_FILL_NODES)
   {
-    printf("===> MAPPING FILL_NODES \n \n");
     if ( (task_mapping = TASK_Map_Filling_Nodes(Ptask->tasks_count)) == NULL)
     {
       die("Unable to apply the fill nodes mapping");
@@ -1788,7 +1797,6 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   }
   else if (Ptask->map_definition == MAP_N_TASKS_PER_NODE)
   {
-     //printf("===> Mapping_N-tasks_per_node \n \n");
     task_mapping = TASK_Map_N_Tasks_Per_Node(Ptask->tasks_count, Ptask->tasks_per_node);
     if (task_mapping == NULL)
     {
@@ -1804,8 +1812,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
     }
   }
   else if (Ptask->map_definition == MAP_INTERLEAVED)
-  {
-    //printf("===> Task interleaved mapping \n \n");
+  {    
     task_mapping = TASK_Map_Interleaved(Ptask->tasks_count);
     
     if (debug)
@@ -1818,7 +1825,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
     die ("Unknow predefined map value when initializing task mapping (%d)",
          Ptask->map_definition);
   }
-
+ 
   get_acc_tasks_info(Ptask);
   if (Ptask->acc_tasks_count == -1)
   { // -1: search for acc_tasks not done yet
@@ -1830,30 +1837,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
   				Ptask->Ptaskid);
   	}
   }
-  //get_acc_tasks_info(Ptask);
-  /*for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
-  {
-    for (i = 0; i < Ptask->acc_tasks_count; i++)
-    {
-      if (Ptask->acc_tasks[i] == new_taskid)
-      {
-        TASK_New_Task(Ptask, new_taskid, TRUE);      
-        break;
-      }
-    }
-    if (i == Ptask->acc_tasks_count)
-    {       
-      TASK_New_Task(Ptask, new_taskid, FALSE);       
-    }
-  }*/
-
-   Update_Node_Info(Ptask->tasks, Ptask->tasks_count, task_mapping);
-  
-  for(i=0; i<Ptask->tasks_count; ++i)
-  {         
-    printf("TASK id:%d mapped to NODE id:%d (%d)\n", 
-      Ptask->tasks[i].taskid, Ptask->tasks[i].nodeid, task_mapping[i]);
-  }
+  Update_Node_Info(Ptask->tasks, Ptask->tasks_count, task_mapping);
   
   #if DEBUG
   printf("Mapping = { ");
@@ -1871,7 +1855,6 @@ int* TASK_Map_Filling_Nodes(int task_count)
 {
   int                *task_mapping;
   struct t_Ptask     *Ptask;
-  int       n_nodes; 
   int      *n_cpus_per_node;
   int       i_node, j_cpu, i_machines;
   size_t tasks_it;
@@ -1885,13 +1868,18 @@ int* TASK_Map_Filling_Nodes(int task_count)
   {
     task_mapping[i] = -1;
   }
-  n_nodes = SIMULATOR_get_number_of_nodes();
+  int n_nodes = SIMULATOR_get_number_of_nodes();
   n_cpus_per_node = SIMULATOR_get_cpus_per_node();
 
   if ( (n_cpus_per_node = SIMULATOR_get_cpus_per_node()) == NULL)
   {
     return NULL;
   }
+
+  //get_acc_tasks_info(Ptask);
+  //if(acc_node_count < Ptask->acc_tasks_count)
+  //printf("insufficient acc-nodes\n", acc_node_count);
+  //printf("number of acc_node = %d\n", acc_node_count);
 
   // STEP 1: Map accelerated tasks  
   for(Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
@@ -1990,8 +1978,7 @@ int* TASK_Map_N_Tasks_Per_Node(int task_count, int n_tasks_per_node)
   {
     return NULL;
   }
-
-  //if task is accelerator /*Chetan*/
+//if task is accelerator /*Chetan*/
   struct t_node *node;
   for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
   Ptask != P_NIL;
@@ -2004,8 +1991,8 @@ int* TASK_Map_N_Tasks_Per_Node(int task_count, int n_tasks_per_node)
       {
         for (i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
         {
-          node = get_node_by_id(i_node);          
-          if(node->accelerator == TRUE && node->has_accelerated_task == FALSE && 
+          node = get_node_by_id(i_node);
+         if(node->accelerator == TRUE && node->has_accelerated_task == FALSE && 
             last_task_assigned < task_count)
           {                
             n_cpus_per_node [i_node]--; // One CPU is now occupied           
@@ -2014,7 +2001,7 @@ int* TASK_Map_N_Tasks_Per_Node(int task_count, int n_tasks_per_node)
             node->has_accelerated_task = TRUE; // One GPU is now occupied
             break;
           }
-  } } } }  
+  } } } } 
   // STEP 2: Map no-accelerated tasks 
   for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
   {
@@ -2126,7 +2113,7 @@ int* TASK_Map_Interleaved(int task_count)
 void Update_Node_Info(
   struct t_task *tasks, /* vector of tasks */
   int tasks_count,
-  int * task_mapping)
+  int *task_mapping)
 {
   
   int nodeid;
@@ -2427,11 +2414,9 @@ void user_event_value_name (struct t_Ptask *Ptask,
  */
 void get_acc_tasks_info(struct t_Ptask *Ptask)
 {
-	int		 *acc_tasks_mapping;
-	int			acc_tasks_count;
+	int *acc_tasks_mapping;
+	int acc_tasks_count;
 	char *trace_file_name = Ptask->tracefile;
-
-	//acc_tasks_mapping = malloc(Ptask->tasks_count*sizeof(int));
 	acc_tasks_mapping = (int *) 0;
 	if (DATA_ACCES_get_acc_tasks(trace_file_name, &acc_tasks_count, &acc_tasks_mapping) == FALSE)
 	{
@@ -2439,9 +2424,6 @@ void get_acc_tasks_info(struct t_Ptask *Ptask)
 					 trace_file_name,
 					 DATA_ACCESS_get_error());
 	}
-
 	Ptask->acc_tasks_count = acc_tasks_count;
 	Ptask->acc_tasks = acc_tasks_mapping;
-  //printf("\n NUMBER OF ACCELERATED TASKS ARE:[%d]\n", 
-    //Ptask->acc_tasks_count);
 }

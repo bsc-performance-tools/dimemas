@@ -64,7 +64,6 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
   create_queue (&(node->wait_for_mem_bus));
   create_queue (&(node->threads_in_memory));
 
-
   create_queue (&(node->wait_outlink_port));
   create_queue (&(node->wait_inlink_port));
   create_queue (&(node->wait_in_copy_segment));
@@ -82,7 +81,6 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
 #endif
 
 }
-
 void NODE_Fill_Node_Fields(struct t_node *node,
                            char          *node_name,
                            int            no_processors,
@@ -111,7 +109,6 @@ void NODE_Fill_Node_Fields(struct t_node *node,
     fprintf (stderr, "   * Warning: redefinition of node %d\n", no_number - 1);
   }
   */
-
   for (j = 0; j < no_processors; j++)
   {
     cpu = (struct t_cpu *) malloc (sizeof (struct t_cpu));
@@ -208,12 +205,12 @@ void NODE_set_acc(int node_id,
 	}
 /*if user select the heterogenous accelerator it will create
   //a node with GPU *chetan */
-	node->accelerator				= TRUE;
-	node->acc.bandwidth			= (t_bandwidth) 	bandwith;
-	node->acc.startup 			= (dimemas_timer) latency;
+	node->accelerator = TRUE;
+	node->acc.bandwidth = (t_bandwidth)bandwith;
+	node->acc.startup = (dimemas_timer) latency;
 	node->acc.memory_startup= (dimemas_timer) memory_latency;
 	node->acc.max_messages 	= num_acc_buses;
-	node->acc_relative			= relative;
+	node->acc_relative = relative;
 
 	create_queue(&(node->acc.threads_in_link));
 	create_queue(&(node->acc.wait_for_link));

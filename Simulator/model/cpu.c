@@ -150,7 +150,7 @@ t_boolean is_thread_running (struct t_thread *thread)
 {
   register struct t_cpu *cpu;
   register struct t_node *node;
-  struct t_thread *kernel_thread;
+  register struct t_thread *kernel_thread;
 
   node = get_node_of_thread (thread);
   for (cpu = (struct t_cpu *) head_queue (& (node->Cpus) );

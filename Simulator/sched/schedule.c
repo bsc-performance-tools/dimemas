@@ -117,22 +117,12 @@ void SCHEDULER_Init()
         /*Chetan*/
         if(thread->kernel)
         {
-          printf("kernel_thread [%d:%d] (%d) assigned to GPU at node %d\n", 
-            thread->task->taskid,
-            thread->threadid,
-            thread->kernel,
-            node->nodeid);
           thread->loose_cpu = FALSE;
-          (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
+	 (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
         } 
         if(thread->host)
-        {
-          printf("\n host_thread [%d:%d] (%d) assigned to CPU at node %d\n", 
-            thread->task->taskid,
-            thread->threadid,
-            thread->kernel,
-            node->nodeid);
+        {          
           thread->loose_cpu = TRUE ;
           (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
@@ -256,8 +246,8 @@ void SCHEDULER_reload(struct t_Ptask *Ptask)
       if(thread->kernel)
       {
         thread->loose_cpu = FALSE;
-        SCHEDULER_thread_to_ready(thread); //no need to reload kernel thread in GPU
-        (*SCH[machine->scheduler.policy].clear_parameters) (thread);     
+      //  SCHEDULER_thread_to_ready(thread); //no need to reload kernel thread in GPU
+       // (*SCH[machine->scheduler.policy].clear_parameters) (thread);     
       }
     }
   }
@@ -282,8 +272,8 @@ struct t_cpu* select_free_cpu(struct t_node *node, struct t_thread *thread)
          cpu != C_NIL;
          cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
     {
-      if ((cpu->current_thread == TH_NIL) && //|| ((cpu->current_thread!=thread->kernel) &&
-        (cpu->is_gpu == FALSE))
+      if ((cpu->current_thread == TH_NIL) && 
+           (cpu->is_gpu == FALSE))
         return (cpu);
     }
   return (C_NIL);
@@ -302,12 +292,12 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
 
   if (!thread->kernel && !thread->host)
   {	/* If is a wait in accelerator event block, no wait thrown to fill original trace */
-		PARAVER_Wait (0,
-									IDENTIFIERS (thread),
-									thread->last_paraver,
-									current_time,
-									PRV_SYNC_ST);
-		thread->last_paraver = current_time;
+    PARAVER_Wait (0,
+      IDENTIFIERS (thread),
+      thread->last_paraver,
+      current_time,
+      PRV_SYNC_ST);
+      thread->last_paraver = current_time;
   }
   account = current_account (thread);
   SUB_TIMER (current_time, thread->put_into_ready, tmp_timer);
@@ -317,11 +307,8 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
   /*Chetan*/
   if(thread->task->accelerator && thread->kernel == TRUE)
   {    
-      // 0. Ensure that this is an heterogeneous node
-    assert (node->accelerator == TRUE);
-    assert (thread->kernel == TRUE);
-    //printf("porque peta in kernel !!!%d \n",thread->kernel);
-      // 1. Look for CPU with is_gpu = 1  
+    // 0. Ensure that this is an heterogeneous node
+    // 1. Look for CPU with is_gpu = 1  
     for (cpu = (struct t_cpu *) head_queue (&(node->Cpus));
         cpu !=C_NIL;
         cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
@@ -329,7 +316,7 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
       //check either the cpu has thread or not.
       if (cpu->is_gpu == TRUE && cpu->current_thread == TH_NIL) 
       {
-        // 2.Assigning thread to this GPU                       
+        // 2.Assigning thread to this GPU 
         cpu->current_thread = thread;
         thread->cpu = cpu;
         //context switch
@@ -341,9 +328,9 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
       }
     }
   }
-  if(!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE))
+
+  else if(!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE))
   {
-    assert (!thread->task->accelerator || (thread->task->accelerator && thread->host == TRUE ));
     cpu = select_free_cpu (node, thread);
 
     assert(cpu->is_gpu == FALSE);
@@ -352,17 +339,17 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
     {
       panic ("Can't get free processor on node %d\n", node->nodeid);
     }
-    //printf("porque peta in host!!!%d \n",thread->host);
     cpu->current_thread = thread;
     thread->cpu = cpu; 
   
-   if (cpu->current_thread_context!= thread)
+    if (cpu->current_thread_context!= thread)
     {
        /* Context switch */
       account->n_th_in_run++;
       cpu->current_thread_context = thread;
     }
   }
+
   if (machine->scheduler.context_switch != (t_nano) NO_CONTEXT_SWITCH)
   {
     thread->doing_context_switch = TRUE;
@@ -849,6 +836,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
 
 next_op:
 //       printf("before more_actions(thread)\n");
+
       if (more_actions (thread))
       {
         action = thread->action;
@@ -1033,17 +1021,17 @@ next_op:
              * Not printing event if kernel needs a previous sync (in barrier)
              */
             int printing_event = !thread->acc_recv_sync &&
-            	!(OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)
-								&& thread->kernel && action->desc.even.value == 0);
+              !(OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)
+                  && thread->kernel && action->desc.even.value == 0);
 
             if (printing_event)
             {	/* If it is not an accelerator event that has to wait to be written */
-							cpu = get_cpu_of_thread(thread);
-							PARAVER_Event (cpu->unique_number,
-														 IDENTIFIERS (thread),
-														 current_time,
-														 action->desc.even.type,
-														 action->desc.even.value);
+              cpu = get_cpu_of_thread(thread);
+              PARAVER_Event (cpu->unique_number,
+                IDENTIFIERS (thread),
+                current_time,
+                action->desc.even.type,
+                action->desc.even.value);
             }
 
             thread->action = action->next;
@@ -1216,6 +1204,10 @@ next_op:
         }
       }
 
+      if (thread->kernel == TRUE)
+	thread->loose_cpu = FALSE;
+      	/*assert (thread->loose_cpu == FALSE);*/
+ 
       if ((count_queue (&(node->ready)) != 0) &&
           (num_free_cpu (node) > 0))
       {

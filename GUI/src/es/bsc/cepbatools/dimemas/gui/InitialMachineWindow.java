@@ -211,36 +211,6 @@ public class InitialMachineWindow extends GUIWindow
            // System.out.println("Objects = "+objects);
           }
 
-
-          /*
-          if (tokens.length > 0)
-          {
-            System.out.println("Token_0 = "+tokens[0]+"\n");
-          }
-          */
-
-          /* 0: Trace Name
-           * 1: Offsets
-           * 2: Trace objects
-
-          if (tokens.length != 3)
-          {
-            Tools.showErrorDialog("Wrong header in tracefile. Tokens = " + tokens.length);
-          }
-          else
-          {
-            String[] objects = tokens[2].split(",");
-
-            if (objects.length == 0)
-            {
-              Tools.showErrorDialog("Wrong header in tracefile");
-            }
-            else
-            {
-              tf_tasks.setText(objects[0]);
-            }
-          }
-          */
         }
         else if (line.startsWith("SDDFA;;"))
         {
@@ -264,7 +234,6 @@ public class InitialMachineWindow extends GUIWindow
         Tools.showInformationMessage(ioe.toString());
       }
 
-      // prog.interrupt();
     }
         
   }
@@ -321,33 +290,7 @@ public class InitialMachineWindow extends GUIWindow
 
   public void actionPerformed(ActionEvent e)
   {
-    /*
-    if(e.getSource() == cb_architecture)
-    {
-      if(cb_architecture.getSelectedIndex() != 0)
-      {
-        tf_instrumentedArch.setEditable(false);
-        tf_instrumentedArch.setText(data.machineDB.machine[cb_architecture.getSelectedIndex()-1].getName());
-      }
-      else
-      {
-        tf_instrumentedArch.setEditable(true);
-        tf_instrumentedArch.setText("");
-      }
-    }
-    else
-    if (e.getSource() == cb_tasks)
-    {
-      if(cb_tasks.getSelectedIndex() != 0)
-      {
-        tf_tasks.setText((String)cb_tasks.getSelectedItem());
-      }
-      else
-      {
-        tf_tasks.setText(String.valueOf(data.map.DEFAULT_TASKS));
-      }
-    }
-    else */
+
     if(e.getSource() == b_save)
     {
       if(dataOK())
@@ -357,7 +300,6 @@ public class InitialMachineWindow extends GUIWindow
           //data.map.setTasks(Integer.parseInt(tf_tasks.getText()));
           //data.instrumentedArchitecture = tf_instrumentedArch.getText();
           
-
           for(int i = data.environment.getNumberOfMachines()-1; i >= 0; i--)
           {
             data.environment.machine[i].setArchitecture(data.instrumentedArchitecture);

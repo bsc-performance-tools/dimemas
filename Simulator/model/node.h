@@ -100,6 +100,7 @@ struct t_node
   int messages_in_flight;
 
   //accelerator
+  int acc_nodes_count;
   t_boolean accelerator;
   struct t_accelerator 	acc;
   double acc_relative;
@@ -107,7 +108,7 @@ struct t_node
 };
 
 void NODE_Init_Empty_Node(struct t_machine* machine,
-                          struct t_node*    node);
+                          struct t_node* node);
 
 
 void NODE_Fill_Node_Fields(struct t_node *node,

@@ -67,7 +67,6 @@ public class OptionsMenu extends JMenuBar implements ActionListener
   private final JMenuItem loadConf     = createMenuItem("Load configuration");
   private final JMenuItem saveConf     = createMenuItem("Save configuration");
 
-
   private final JMenuItem exit         = createMenuItem("Exit");
   private final JMenuItem dimemas      = createMenuItem("Dimemas");
   private final JMenuItem critical     = createMenuItem("Critical path analysis");
