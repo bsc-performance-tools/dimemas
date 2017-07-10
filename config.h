@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Current date of compilation */
-#define DATE "Wed May 24 15:00:47 CEST 2017"
+#define DATE "Mon Jul 10 13:02:25 CEST 2017"
 
 /* Use first version of link managing protocol */
 /* #undef GESTIO_LINKS_ORIGINAL */
@@ -62,7 +62,7 @@
 #define HAVE_LIBM 1
 
 /* libz present on the system */
-/* #undef HAVE_LIBZ */
+#define HAVE_LIBZ 1
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
