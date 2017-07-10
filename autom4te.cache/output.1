@@ -17791,7 +17791,7 @@ fi
 
 have_boost="yes"
 
-echo "$as_me: this is boost.m4 serial 25" >&5
+echo "$as_me: this is boost.m4 serial 26" >&5
 boost_save_IFS=$IFS
 boost_version_req=1.36
 IFS=.
@@ -17952,6 +17952,7 @@ boost-lib-version = BOOST_LIB_VERSION
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   grep -v '#' |
+  grep -v '^[[:space:]]*$' |
   tr -d '\r' |
   tr -s '\n' ' ' |
   $SED -n -e "/^boost-lib-version = /{s///;s/[\" ]//g;p;q;}" >conftest.i 2>&1; then :

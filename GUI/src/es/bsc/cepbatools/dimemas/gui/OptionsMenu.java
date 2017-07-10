@@ -59,13 +59,15 @@ public class OptionsMenu extends JMenuBar implements ActionListener
 
   private final JMenu config = new JMenu("Configuration");
   private final JMenu sim    = new JMenu("Simulator");
-  // private JMenu db     = new JMenu("Database");
+  private final JMenu db     = new JMenu("Database");
   private final JMenu info   = new JMenu("Information");
 
   private final JMenuItem initial      = createMenuItem("Select tracefile...");
   private final JMenuItem target       = createMenuItem("Configure target machine");
   private final JMenuItem loadConf     = createMenuItem("Load configuration");
   private final JMenuItem saveConf     = createMenuItem("Save configuration");
+  private final JMenuItem connectdb     = createMenuItem("connect Database");
+
 
   private final JMenuItem exit         = createMenuItem("Exit");
   private final JMenuItem dimemas      = createMenuItem("Dimemas");

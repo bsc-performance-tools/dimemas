@@ -476,67 +476,13 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
 /********************************/
 /* Rest of the function is defined in Update_Node_Info () 
 *********************************/
-  in_mem_links = 0;
-  out_mem_links = 0;
-
-  if (node->in_mem_links == 0 && node->out_mem_links == 0)
-  {
-    node->infinite_mem_links = TRUE;
-  }
-  else if (node->in_mem_links == 0 || node->out_mem_links == 0)
-  {
-    int links;
-
-    task->half_duplex_links  = TRUE;
-
-    links = MAX(node->in_mem_links, node->out_mem_links);
-
-    in_mem_links  = links;
-    out_mem_links = links;
-  }
-  else
-  {
-    in_mem_links  = node->in_mem_links;
-    out_mem_links = node->out_mem_links;
-  }
-
-  create_queue (&(task->free_in_links));
-  for (i = 0; i < in_mem_links; i++)
- 
-    link = (struct t_link*) malloc (sizeof(struct t_link));
-
-    link->linkid    = i + 1;
-    link->info.task = task;
-    link->kind      = MEM_LINK;
-    link->type      = IN_LINK;
-    link->thread    = TH_NIL;
-
-    ASS_ALL_TIMER (link->assigned_on, current_time);
-    inFIFO_queue (&(task->free_in_links), (char*) link);
-  }
-
-  create_queue (&(task->free_out_links));
-  for (i = 0; i < out_mem_links; i++)
-  {
-    link = (struct t_link*) malloc (sizeof(struct t_link));
-
-    link->linkid    = i + 1;
-    link->info.task = task;
-    link->kind      = MEM_LINK;
-    link->type      = OUT_LINK;
-    link->thread    = TH_NIL;
-
-    ASS_ALL_TIMER (link->assigned_on, current_time);
-    inFIFO_queue (&(task->free_out_links), (char*) link);
-  }
-
   create_queue (&(task->busy_in_links));
   create_queue (&(task->busy_out_links));
   create_queue (&(task->th_for_in));
   create_queue (&(task->th_for_out));
 
-  task->KernelSyn = TH_NIL;	//Means no thread is waiting
-  task->HostSyn	= TH_NIL;	//Means no root is waiting
+  task->KernelSync = TH_NIL;	//Means no thread is waiting
+  task->HostSync = TH_NIL;	//Means no root is waiting
   task->KernelByComm	= -1;	//Means no root is waiting for kernel
 
   return;

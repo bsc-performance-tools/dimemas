@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Current date of compilation */
-#define DATE "Mon Jul 10 13:02:25 CEST 2017"
+#define DATE "Mon Jul 10 16:51:57 CEST 2017"
 
 /* Use first version of link managing protocol */
 /* #undef GESTIO_LINKS_ORIGINAL */

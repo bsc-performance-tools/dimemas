@@ -17791,7 +17791,7 @@ fi
 
 have_boost="yes"
 
-echo "$as_me: this is boost.m4 serial 25" >&5
+echo "$as_me: this is boost.m4 serial 26" >&5
 boost_save_IFS=$IFS
 boost_version_req=1.36
 IFS=.
@@ -17952,6 +17952,7 @@ boost-lib-version = BOOST_LIB_VERSION
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   grep -v '#' |
+  grep -v '^[[:space:]]*$' |
   tr -d '\r' |
   tr -s '\n' ' ' |
   $SED -n -e "/^boost-lib-version = /{s///;s/[\" ]//g;p;q;}" >conftest.i 2>&1; then :
@@ -18102,7 +18103,7 @@ else
 JAVA_TEST=Test.java
 CLASS_TEST=Test.class
 cat << \EOF > $JAVA_TEST
-/* #line 18105 "configure" */
+/* #line 18106 "configure" */
 public class Test {
 }
 EOF
@@ -18281,7 +18282,7 @@ EOF
 if uudecode$EXEEXT Test.uue; then
         ac_cv_prog_uudecode_base64=yes
 else
-        echo "configure: 18284: uudecode had trouble decoding base 64 file 'Test.uue'" >&5
+        echo "configure: 18285: uudecode had trouble decoding base 64 file 'Test.uue'" >&5
         echo "configure: failed file was:" >&5
         cat Test.uue >&5
         ac_cv_prog_uudecode_base64=no
@@ -18405,7 +18406,7 @@ else
 JAVA_TEST=Test.java
 CLASS_TEST=Test.class
 cat << \EOF > $JAVA_TEST
-/* #line 18408 "configure" */
+/* #line 18409 "configure" */
 public class Test {
 }
 EOF
@@ -18442,7 +18443,7 @@ JAVA_TEST=Test.java
 CLASS_TEST=Test.class
 TEST=Test
 cat << \EOF > $JAVA_TEST
-/* [#]line 18445 "configure" */
+/* [#]line 18446 "configure" */
 public class Test {
 public static void main (String args[]) {
         System.exit (0);
