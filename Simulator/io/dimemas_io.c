@@ -117,7 +117,6 @@ size_t IO_available_streams(void)
 {
   return (IO_MaximumFileDescriptors - IO_OpenedFileDescriptors);
 }
-
 /**
  * FOPEN(3) wrapper to keep track of the number of descriptors available
  */

@@ -155,7 +155,7 @@ void TASK_Init(int sintetic_io_applications)
   {
     if (debug)
     {
-      printf ("   * Loading Ptask %02d", Ptask->Ptaskid);
+      printf ("* Loading Ptask %02d", Ptask->Ptaskid);
     }
 
     if (!DATA_ACCESS_init(Ptask->Ptaskid, Ptask->tracefile))
@@ -983,12 +983,10 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   // It is best to init them one time per execution than check if it is active 
   // every time that we are reading an action.
   //if (with_deadlock_analysis)
-  //{
   thread->counter_ops_already_ignored = 0;
   thread->counter_ops_already_injected = 0;
   create_queue(&thread->ops_to_be_ignored);
   create_queue(&thread->ops_to_be_injected);
-  //}
 
 
   new_account (&(thread->account), task->nodeid);
@@ -999,7 +997,7 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
   ASS_ALL_TIMER (thread->last_time_event_number,0);
 
   thread->marked_for_deletion = 0;
-//     thread->file_shared         = FALSE;
+// thread->file_shared         = FALSE;
 
   /* JGG (2012/01/12): thread queue not needed anymore */
   // inFIFO_queue (&(task->threads), (char *) thread);
@@ -1024,11 +1022,11 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
 		thread->host	 = FALSE;
 	}
 
-	thread->accelerator_link 				= L_NIL;
+	thread->accelerator_link		= L_NIL;
 	thread->first_acc_event_read		= FALSE;
-	thread->acc_recv_sync						= FALSE;
-	thread->acc_sndr_sync 					= FALSE;
-	thread->doing_acc_comm					= FALSE;
+	thread->acc_recv_sync			= FALSE;
+	thread->acc_sndr_sync 			= FALSE;
+	thread->doing_acc_comm			= FALSE;
 	thread->acc_in_block_event.type = 0;
 	thread->acc_in_block_event.value= 0;
 	thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
@@ -2181,17 +2179,6 @@ void Update_Node_Info(
       inFIFO_queue (&(task->free_out_links), (char*) link);
     }
 
-    /*create_queue (&(task->busy_in_links));
-    create_queue (&(task->busy_out_links));
-    create_queue (&(task->th_for_in));
-    create_queue (&(task->th_for_out));
-
-  task->KernelSync    = TH_NIL; //Means no thread is waiting
-  task->HostSync      = TH_NIL; //Means no root is waiting
-  task->KernelByComm  = -1; //Means no root is waiting for kernel
-
-  */
-  //return;
   }
 }
 
