@@ -115,15 +115,15 @@ void SCHEDULER_Init()
                  IDENTIFIERS (thread));
         }
         /*Chetan*/
-        if(thread->kernel)
+        if(!thread->kernel)
         {
-          thread->loose_cpu = FALSE;
-	 (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
+          thread->loose_cpu = TRUE;
+	        (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
         } 
-        if(thread->host)
+        if(thread->kernel)
         {          
-          thread->loose_cpu = TRUE ;
+          thread->loose_cpu = FALSE ;
           (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
           SCHEDULER_thread_to_ready (thread);
         }

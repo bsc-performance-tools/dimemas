@@ -450,11 +450,12 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
   struct t_link *link;
   
   node = get_node_by_id(nodeid);
-  if (acc_task && !NODE_get_acc(node))
+  if (NODE_get_acc_node(node) < Ptask->acc_tasks_count)// && !NODE_get_acc(node))
   { /*  when mapping a task with accelerator (indicated in Dimemas header)
      *  in a non-accelerator node (indicated in configuration file)
      */
-    die("Error mapping accelerator task %d in non-accelerator node %d", taskid, nodeid);
+    die("cannot mapping %d accelerator task in %d accelerator node \n PLEASE CHECK THE CONFIGURATIOIN", 
+         Ptask->acc_tasks_count, NODE_get_acc_node(node));
   }
 
   task = &(Ptask->tasks[taskid]);
@@ -1753,15 +1754,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
 
   Ptask->tasks = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
   //Added here to initialize the task first
-  int n_nodes = SIMULATOR_get_number_of_nodes();
-  int acc_node_count = 0;
-  for (int i_node = 0; i_node < n_nodes ; i_node++)
-  {
-    struct t_node *node;
-    node = get_node_by_id(i_node);
-    if (node->accelerator)
-      acc_node_count++;
-  }           
+           
   get_acc_tasks_info(Ptask);
   for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
   {
@@ -1777,11 +1770,6 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
     {       
       TASK_New_Task(Ptask, new_taskid, FALSE);       
     }
-  }
-  // to check either we have sufficient acc_nodes
-  if (acc_node_count < Ptask->acc_tasks_count)
-  {
-    die("insufficient accelerator NODE check the configuration\n");
   }
   if (Ptask->map_definition == MAP_FILL_NODES)
   {
@@ -1875,12 +1863,6 @@ int* TASK_Map_Filling_Nodes(int task_count)
   {
     return NULL;
   }
-
-  //get_acc_tasks_info(Ptask);
-  //if(acc_node_count < Ptask->acc_tasks_count)
-  //printf("insufficient acc-nodes\n", acc_node_count);
-  //printf("number of acc_node = %d\n", acc_node_count);
-
   // STEP 1: Map accelerated tasks  
   for(Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
     Ptask != P_NIL;
@@ -1943,7 +1925,7 @@ int* TASK_Map_Filling_Nodes(int task_count)
 
   if (saturated_node)
   {
-    printf("\n !!!!!!!!!!!!!node is saturated cannot do anything !!!!!!!!!!!!!!\n");
+    printf("\n Node is saturated cannot do anything \n");
   }
 
   free(n_cpus_per_node);
@@ -2180,18 +2162,6 @@ void Update_Node_Info(
       ASS_ALL_TIMER (link->assigned_on, current_time);
       inFIFO_queue (&(task->free_out_links), (char*) link);
     }
-
-    /*create_queue (&(task->busy_in_links));
-    create_queue (&(task->busy_out_links));
-    create_queue (&(task->th_for_in));
-    create_queue (&(task->th_for_out));
-
-  task->KernelSync    = TH_NIL; //Means no thread is waiting
-  task->HostSync      = TH_NIL; //Means no root is waiting
-  task->KernelByComm  = -1; //Means no root is waiting for kernel
-
-  */
-  //return;
   }
 }
 
