@@ -149,12 +149,6 @@ void SIMULATOR_Init(char  *simulator_configuration_filename,
         simulator_configuration_filename);
 
   FILE *configuration_file;
-  /*
-  if (MYFREOPEN (simulator_configuration_filename, "r", stdin) == NULL)
-  {
-    die("Can't open configuration file %s\n", simulator_configuration_filename);
-  }
-  */
 
   configuration_filename = strdup(simulator_configuration_filename);
 
@@ -167,13 +161,6 @@ void SIMULATOR_Init(char  *simulator_configuration_filename,
   {
     case OLD_CONFIGURATION:
 
-      /*
-      if (parameter_tracefile != (char*) 0)
-      {
-        warning("Using a previous version of the configuration file, parameter trace '%s' will be ignored\n",
-                parameter_tracefile);
-      }
-      */
 
       if (IO_fseeko(configuration_file, (off_t) 0, SEEK_SET) == -1)
       {

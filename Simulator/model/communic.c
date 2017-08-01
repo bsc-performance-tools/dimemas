@@ -1856,7 +1856,6 @@ static void message_received (struct t_thread *thread)
       assert (thread_partner != TH_NIL);
       inFIFO_queue (& (thread_partner->mess_recv), (char *) thread);
     }
-
   }
   else
   {
@@ -2904,6 +2903,7 @@ void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
 			os_completed (copy_thread);
 			break;
 		case GLOBAL_OP:
+    
 		case RECV:
 			if (thread->doing_acc_comm)
 			{
@@ -2938,128 +2938,6 @@ void COMMUNIC_COM_TIMER_OUT (struct t_thread *thread)
 			delete_duplicate_thread (thread);
 		}
 	}
-
-  /* JGG (2013/03/27): it is a self-message!
-  if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NIL) )
-  {
-    COMMUNIC_memory_COM_TIMER_OUT (thread);
-    return;
-    /* Es una comunicació local al node
-    if (debug & D_COMM)
-    {
-      PRINT_TIMER (current_time);
-      printf (
-        ": COMMUNIC\tP%02d T%02d (t%02d) Local Channel Communication (BUSES)\n",
-        IDENTIFIERS (thread)
-      );
-    }
-
-    if (thread->original_thread)
-    {
-      panic ("Thread with syncronous communication, not implemented\n");
-    }
-    else
-    {
-      if (thread->action->action == SEND)
-      {
-        message_received (thread);
-      }
-      else if (thread->action->action == MPI_OS)
-      {
-        os_completed (thread);
-      }
-    }
-    /* FEC: Com que al message_received no es pot eliminar el thread, si cal,
-     * s'ha de fer aqui.
-    if (thread->marked_for_deletion)
-    {
-      delete_duplicate_thread (thread);
-    }
-    return;
-    */
-  //}
-
-  /*
-  if ( (thread->partner_link == L_NIL) && (thread->local_link == L_NUL) )
-  {
-    /* Es una comunicació amb PORTS
-    if (debug & D_COMM)
-    {
-      PRINT_TIMER (current_time);
-      printf (
-        ": COMMUNIC\tP%02d T%02d (t%02d) Local Channel Communication (PORTS)\n",
-        IDENTIFIERS (thread)
-      );
-    }
-
-    if (thread->original_thread)
-    {
-      panic ("Thread with syncronous communication, not implemented\n");
-    }
-    else
-    {
-
-      if (debug & D_COMM)
-      {
-        PRINT_TIMER (current_time);
-        printf (
-          ": COMMUNIC\tP%02d T%02d (t%02d) Duplicated Thread Deleted\n",
-          IDENTIFIERS (thread)
-        );
-      }
-      delete_duplicate_thread (thread);
-    }
-    return;
-  }
-  */
-
-  /* Si estem aqui es que es una comunicacio entre nodes o entre maquines.
-   * Per saber el tipus de comunicacio nomes cal que mirem el tipus de
-   * qualsevol dels dos links: */
-
-  /*switch (thread->local_link->kind)
-  {
-    case MEM_LINK:
-      COMMUNIC_memory_COM_TIMER_OUT (thread);
-      break;
-
-    case NODE_LINK:
-      COMMUNIC_internal_network_COM_TIMER_OUT (thread);
-      /*if (VC_is_enabled()) {
-        venusmsgs_in_flight--;
-      }*/
-     /* break;
-    case MACHINE_LINK:
-      COMMUNIC_external_network_COM_TIMER_OUT (thread);
-      break;
-    case CONNECTION_LINK:
-      COMMUNIC_dedicated_connection_COM_TIMER_OUT (thread);
-      break;
-    default:
-      panic ("Unknown link type!\n");
-  }
-
-  if (thread->original_thread)
-  {
-    action         = thread->action;
-    thread->action = action->next;
-    READ_free_action(action);
-
-    if (more_actions (thread) )
-    {
-      thread->loose_cpu = FALSE;
-      SCHEDULER_thread_to_ready (thread);
-    }
-  }
-  else
-  {
-    /* FEC: Com que al message_received no es pot eliminar el thread, si cal,
-     * s'ha de fer aqui. */
-    /*if (thread->marked_for_deletion)
-    {
-      delete_duplicate_thread (thread);
-    }
-  }*/
 }
 
 /******************************************************************************
@@ -8387,12 +8265,6 @@ void GLOBAL_wait_operation(struct t_thread *thread)
   struct t_dedicated_connection *connection;
 
   action = thread->action;
-  /*if (action->action != WAIT)
-  {
-    panic ("Calling COMMUNIC_wait and action is not Wait (%d)\n",
-           action->action);
-    }*/
-  
   task   = thread->task;
 
   if (thread->startup_done == FALSE)
@@ -8433,37 +8305,6 @@ void GLOBAL_wait_operation(struct t_thread *thread)
       thread->startup_done = TRUE;
     }
   }
-  
-  /* Copy latency operations */
-  /*if (DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size)
-  {
-    if (thread->copy_done == FALSE)
-    {
-      copy_latency = compute_copy_latency (thread, node_s, mess->mess_size, mess->comm_type);
-
-      if (copy_latency != (t_nano) 0)
-      {
-        thread->loose_cpu     = FALSE;
-        thread->doing_copy    = TRUE;
-
-        account = current_account (thread);
-        FLOAT_TO_TIMER (copy_latency, tmp_timer);
-        ADD_TIMER (account->latency_time, tmp_timer, account->latency_time);
-        SUB_TIMER (account->cpu_time, tmp_timer, account->cpu_time);
-
-        SCHEDULER_thread_to_ready_return (M_COM, thread, copy_latency, 0);
-
-        if (debug & D_COMM)
-        {
-          PRINT_TIMER (current_time);
-          printf (": COMMUNIC_wait\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n",
-                  IDENTIFIERS (thread),
-                  (double) copy_latency / 1e9);
-        }
-        return;
-      }
-    }
-  }*/
 
   /* Startup and Copy checks reset */
   thread->startup_done = FALSE;
@@ -8477,8 +8318,6 @@ void GLOBAL_wait_operation(struct t_thread *thread)
   if (thread->n_nonblock_glob_done == 0)
   {
       thread->n_nonblock_glob_waiting += 1;
-      //thread->n_nonblock_glob_in_flight -= 1;
-
       if (debug & D_COMM)
       {
         PRINT_TIMER (current_time);
@@ -8514,15 +8353,6 @@ void GLOBAL_wait_operation(struct t_thread *thread)
         SCHEDULER_thread_to_ready (thread);
       }
    }
-
-   //printf("%f WAIT (%d:%d) : done=%d waiting=%d flight=%d\n", 
-   //               current_time, 
-   //               thread->task->taskid,
-   //               thread->nb_glob_index,
-   //               thread->n_nonblock_glob_done,
-   //               thread->n_nonblock_glob_waiting,
-   //               thread->n_nonblock_glob_in_flight);
-
 }
 
 void GLOBAL_operation (struct t_thread *thread,
@@ -8700,17 +8530,8 @@ void GLOBAL_operation (struct t_thread *thread,
                   new_nonblock_m_threads_with_links, nb_glob_index);
 
           //communicator->nonblock_current_root;
-
           // Manage the glop with the copy_thread
           thread=copy_thread;
-        
-          //printf("%f START (%d:%d) : done=%d waiting=%d flight=%d\n", 
-          //        current_time,
-          //        thread->task->taskid,
-          //        thread->nb_glob_index,
-          //        thread->n_nonblock_glob_done,
-          //        thread->n_nonblock_glob_waiting,
-          //        thread->n_nonblock_glob_in_flight);
    
           if (debug & D_COMM)
           {

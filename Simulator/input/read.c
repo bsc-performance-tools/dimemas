@@ -1061,28 +1061,6 @@ void READ_get_next_action(struct t_thread *thread)
     {
       new_action->desc.compute.cpu_time += PREEMP_overhead(thread->task);
     }
-
-    /* DEBUG
-    struct t_module* mod;
-    t_priority identificator = 0;
-
-    mod = (struct t_module*) query_prio_queue(&Ptask_current->Modules, (t_priority)identificator);
-
-    if (mod == M_NIL)
-    {
-      mod = (struct t_module*) malloc (sizeof(struct t_module));
-
-      mod->identificator = identificator;
-      mod->ratio         = 1.0;
-      mod->block_name    = (char*)0;
-      mod->activity_name = (char*)0;
-      mod->src_file      = -1;
-      mod->src_line      = -1;
-
-      insert_queue (&Ptask_current->Modules, (char *)mod, (t_priority) identificator);
-    }
-    // inLIFO_queue (&(thread->modules), (char *)mod);
-    */
   }
 
   if (new_action->action == GPU_BURST)

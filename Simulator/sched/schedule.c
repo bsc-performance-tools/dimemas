@@ -114,19 +114,18 @@ void SCHEDULER_Init()
           panic ("P%02d T%02d (t%02d) must begin execution with work\n",
                  IDENTIFIERS (thread));
         }
-        /*Chetan*/
-        if(!thread->kernel)
+
+        if (thread->task->accelerator && thread->kernel)
         {
-          thread->loose_cpu = TRUE;
-	        (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
-          SCHEDULER_thread_to_ready (thread);
-        } 
-        if(thread->kernel)
-        {          
-          thread->loose_cpu = FALSE ;
-          (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
-          SCHEDULER_thread_to_ready (thread);
+          thread->loose_cpu = FALSE;
         }
+        else
+         {
+          thread->loose_cpu = TRUE;
+         }
+        
+        (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
+        SCHEDULER_thread_to_ready (thread);
       }
     }
   }
@@ -236,19 +235,16 @@ void SCHEDULER_reload(struct t_Ptask *Ptask)
         panic ("P%02d T%02d (t%02d) without initial actions\n",
                IDENTIFIERS (thread));
       }
-      //cpu with is_gpu==TRUE cannot loose thread which are kernel thread.
-      if(thread->host)
-      {
-        thread->loose_cpu = TRUE;
-        SCHEDULER_thread_to_ready (thread);
-        (*SCH[machine->scheduler.policy].clear_parameters) (thread);
-      }
-      if(thread->kernel)
+      if (thread->task->accelerator && thread->kernel)
       {
         thread->loose_cpu = FALSE;
-      //  SCHEDULER_thread_to_ready(thread); //no need to reload kernel thread in GPU
-       // (*SCH[machine->scheduler.policy].clear_parameters) (thread);     
       }
+      else
+      {
+        thread->loose_cpu = TRUE;
+      }        
+      (*SCH[machine->scheduler.policy].init_scheduler_parameters) (thread);
+        SCHEDULER_thread_to_ready (thread);
     }
   }
 }
@@ -436,7 +432,7 @@ void SCHEDULER_thread_to_ready (struct t_thread *thread)
          cpu != C_NIL;
          cpu = (struct t_cpu *) next_queue (&(node->Cpus)))
     {
-      if (cpu->current_thread != TH_NIL)// && cpu->is_gpu==FALSE)
+      if (cpu->current_thread != TH_NIL)
       {
         thread_current = cpu->current_thread;
         if (thread_current->doing_busy_wait)
@@ -492,7 +488,7 @@ t_nano SCHEDULER_get_execution_time (struct t_thread *thread)
 
   action = thread->action;
 
-  if (action->action != WORK && action->action != GPU_BURST)
+  if (action->action != WORK && action->action != GPU_BURST) //WORK = 1 && GPU_BRUST = 18 in define.h
   {
     panic ("Trying to work when innaproppiate P%02d T%02d (t%02d) (%d)\n",
            IDENTIFIERS (thread), thread->original_thread);
@@ -525,7 +521,7 @@ void SCHEDULER_next_thread_to_run (struct t_node *node)
       cpu = (struct t_cpu *) next_queue (&(node->Cpus))
     )
     {
-      if (cpu->current_thread != TH_NIL)// && cpu->is_gpu==FALSE)
+      if (cpu->current_thread != TH_NIL)
       {
         thread = cpu->current_thread;
         printf ("\t\t   Running P%02d T%02d (t%02d) node %d cpu %d\n",
@@ -1346,7 +1342,6 @@ void
   action->action                = WORK;
   action->desc.compute.cpu_time = ti;
   thread->action                = action;
-
   SCHEDULER_thread_to_ready (thread);
 }
 
