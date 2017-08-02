@@ -304,7 +304,7 @@ dnl =========================================================================
 if test "x$enable_cflags_setting" = "xyes"; then
   
   dnl Optimization
-  CFLAGS="-g -O3 -Os"
+  CFLAGS="-O3 -Os"
 fi
 
 dnl Large files
@@ -318,7 +318,7 @@ fi
 if test "x$enable_cxxflags_setting" = "xyes"; then
 
   dnl Optimization
-  CXXFLAGS="-g -O3 -Os"
+  CXXFLAGS="-O3 -Os"
 
 fi
 
