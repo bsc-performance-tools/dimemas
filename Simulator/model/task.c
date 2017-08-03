@@ -670,10 +670,10 @@ t_nano PREEMP_overhead(struct t_task* task)
   }
 }
 
+/*
 void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
 {
   register struct t_communicator *comm;
-//   printf("called once\n");
   comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
       (t_priority)communicator_id);
   if (comm!=(struct t_communicator *)0)
@@ -745,6 +745,7 @@ void add_identificator_to_communicator(struct t_Ptask *Ptask,
   *mtaskid = taskid+1;
   inFIFO_queue (&comm->global_ranks, (char *)mtaskid);
 }
+*/
 
 void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
                                            int             communicator_id)
@@ -778,7 +779,6 @@ void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
   }
   free (trips);
 }
-*/
 
 void
 new_window_definition (struct t_Ptask *Ptask, int window_id)

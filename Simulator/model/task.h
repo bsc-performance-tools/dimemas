@@ -82,7 +82,9 @@ void SYNT_BURST_add_new_burst_category(int    burst_category_id,
 
 double SYNT_BURST_get_burst_value( int burst_category_id);
 
+/*
 void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id);
+*/
 
 void new_identificator_to_communicator(struct t_Ptask *, int, int);
 

@@ -1233,6 +1233,8 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
   create_queue (&new_communicator->machines_threads);
   create_queue (&new_communicator->nonblock_global_op_machine_threads);
   create_queue (&new_communicator->m_threads_with_links);
+  create_queue (&new_communicator->nonblock_m_threads_with_links);
+  create_queue (&new_communicator->nonblock_current_root);
 
   // new_communicator->nodes_per_machine = malloc(Simulator.number_machines);
   new_communicator->nodes_per_machine =
