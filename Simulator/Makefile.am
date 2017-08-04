@@ -26,7 +26,8 @@ Dimemas_SOURCES = \
 	main.cpp
 
 Dimemas_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
-Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
+Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include\
+				 $(BOOST_CPPFLAGS) -lboost_program_options
 
 nodist_EXTRA_Dimemas_SOURCES = dummy.cc
 

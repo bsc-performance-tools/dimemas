@@ -23,20 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-/*
- * External declarations
- *
- */
-
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
