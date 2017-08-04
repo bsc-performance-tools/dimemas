@@ -142,10 +142,15 @@
          ) ? 1 : 0)
 
 
-t_boolean UseRendezVous(t_boolean trace_rendez_vous, long long int msg_size)
+t_boolean UseRendezVous(t_boolean trace_rendez_vous, long long int msg_size, t_boolean is_acc_comm)
 {
+  /*
+  "is_acc_comm" which defines it is the cuda communication.
+  we don't want that the cuda communication takes part in eager communications.  
+  */
   if ( (RD_SYNC_use_trace_sync && trace_rendez_vous) ||
-       (RD_SYNC_message_size >= 0 && msg_size >= RD_SYNC_message_size) )
+       (RD_SYNC_message_size >= 0 && msg_size >= RD_SYNC_message_size) || 
+       is_acc_comm == TRUE)
   {
     return TRUE;
   }
@@ -279,7 +284,9 @@ t_boolean DAP_read_CPU_burst (const char      *cpu_burst_str,
                               struct t_action *action);
 
 t_boolean DAP_read_msg_send  (const char      *msg_send_str,
-                              struct t_action *action);
+                              struct t_action *action,
+                              int ori_task_id,
+                              int ori_thread_id);
 
 t_boolean DAP_read_msg_recv  (const char      *msg_recv_str,
                               struct t_action *action);
@@ -2162,7 +2169,7 @@ t_boolean DAP_read_action (app_struct       *app,
         result = DAP_read_CPU_burst(op_fields, *action);
         break;
       case RECORD_MSG_SEND:
-        result = DAP_read_msg_send(op_fields, *action);
+        result = DAP_read_msg_send(op_fields, *action, read_task_id, read_thread_id);
         break;
       case RECORD_MSG_RECV:
         result = DAP_read_msg_recv(op_fields, *action);
@@ -2229,7 +2236,9 @@ t_boolean DAP_read_CPU_burst (const char      *cpu_burst_str,
 }
 
 t_boolean DAP_read_msg_send  (const char      *msg_send_str,
-                              struct t_action *action)
+                              struct t_action *action,
+                              int ori_task_id,
+                              int ori_thread_id)
 {
   int            dest_task_id;
   int            dest_thread_id;
@@ -2278,47 +2287,21 @@ t_boolean DAP_read_msg_send  (const char      *msg_send_str,
   action->desc.send.dest_thread = dest_thread_id;
   action->desc.send.mess_tag    = tag;
   action->desc.send.communic_id = comm_id;
-/*
-#define USE_RENDEZ_VOUS(rende, mida) \
-        (( (RD_SYNC_use_trace_sync && (rende)) || \
-         ((RD_SYNC_message_size >= 0) && ((mida)>=RD_SYNC_message_size)) \
-         ) ? 1 : 0)
-*/
-
-  /* Rendez-vous DEBUG
-  printf("rende = %d, mida = %lld, RD_SYNC_use_trace_sync = %d, RD_SYNC_message_size = %lld\n",
-         sync & 0x01,
-         msg_size,
-         RD_SYNC_use_trace_sync,
-         RD_SYNC_message_size);
+  
+  /*
+  if the ori task and dest tasks are the same it verifies that it is the cuda communication.
   */
-
-  // if ((RD_SYNC_use_trace_sync && (rende)) || ((RD_SYNC_message_size >= 0) && ((mida)>=RD_SYNC_message_size))
-
-  // action->desc.send.rendez_vous = USE_RENDEZ_VOUS((sync & ((int)1)), msg_size);
-  action->desc.send.rendez_vous = UseRendezVous((t_boolean) sync & 0x01, msg_size);
-
-  /* Rendez-vous DEBUG
-  printf("Rendez_vous= %d\n",  action->desc.send.rendez_vous);
-  */
-
+  t_boolean is_acc_comm = (ori_task_id == dest_task_id && ori_thread_id != dest_thread_id);
+  action->desc.send.rendez_vous = UseRendezVous((t_boolean) sync & 0x01, msg_size, is_acc_comm);
 
   if (sync & 0x02)
   {
     action->desc.send.immediate = TRUE;
-    /* Rendez-vous DEBUG
-    printf("Immediate = TRUE\n"); */
   }
   else
   {
     action->desc.send.immediate = FALSE;
-    // printf("Immediate = FALSE\n");
   }
-
-  /* Rendez-vous DEBUG
-  printf("Message size = %lld\n", msg_size);
-  */
-
   return TRUE;
 }
 

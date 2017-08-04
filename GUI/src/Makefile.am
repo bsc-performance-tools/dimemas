@@ -29,7 +29,13 @@ EXTRA_DIST=$(DEPENDENCIES)
 
 #JAVACFLAGS = -Xlint -encoding utf8 -cp $(DEPENDENCIES) -cp $(JAVAROOT)
 #JAVACFLAGS=-Xlint -encoding utf8 -cp $(DEPENDENCIES)
+if JVM_HEAP_RESTRICTION
+JVMFLAGS=-Xmx2048m -Xms256m
+JAVACFLAGS=-J-Xmx2048m -J-Xms256m -encoding utf8 -cp "$(DEPENDENCIES):$(JAVAROOT)"
+else
+JVMFLAGS=
 JAVACFLAGS=-encoding utf8 -cp "$(DEPENDENCIES):$(JAVAROOT)"
+endif
 
 $(jarfile): $(dist_noinst_JAVA) $(dist_noinst_DATA)
 	$(JAR) cfm $@ $(MANIFEST) $(JARFLAGS) $(RESOURCES) `find . -name "*.class"`
@@ -87,8 +93,9 @@ mkversion:
 
 RUNSCRIPT=$(GUIDIR)/DimemasGUI
 runscript: DimemasGUI.in
-	sed 's#@@DIMEMASHOME@@#$(exec_prefix)#' < DimemasGUI.in > $(RUNSCRIPT)_tmp
-	sed 's#@@JARFILE@@#$(basejarfile)#' < $(RUNSCRIPT)_tmp > $(RUNSCRIPT)
+	sed 's#@@DIMEMASHOME@@#$(exec_prefix)#' < DimemasGUI.in > $(RUNSCRIPT)_tmp_1
+	sed 's#@@JARFILE@@#$(basejarfile)#' < $(RUNSCRIPT)_tmp_1 > $(RUNSCRIPT)_tmp
+	sed 's#@@JVMFLAGS@@#$(JVMFLAGS)#' < $(RUNSCRIPT)_tmp > $(RUNSCRIPT)
 
 install-exec-am: $(RUNSCRIPT)
 

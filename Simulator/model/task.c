@@ -454,7 +454,7 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
   { /*  when mapping a task with accelerator (indicated in Dimemas header)
      *  in a non-accelerator node (indicated in configuration file)
      */
-    die("cannot mapping %d accelerator task in %d accelerator node \n PLEASE CHECK THE CONFIGURATIOIN", 
+    die("Cannot map %d accelerator tasks in %d accelerator nodes \n PLEASE CHECK THE CONFIGURATIOIN", 
          Ptask->acc_tasks_count, NODE_get_acc_node(node));
   }
 

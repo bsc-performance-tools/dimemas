@@ -436,6 +436,19 @@ AC_ARG_ENABLE(
 )
 AM_CONDITIONAL(VENUS_ENABLED, test "x$venus_enabled" = "xyes")
 
+dnl ENABLE_JVM_HEAP_RESTRICTION: If defined the heap of the Java Virtual Machine is
+dnl restricted to 2GB
+AC_ARG_ENABLE(
+  jvm-heap-restriction,
+  AC_HELP_STRING(
+    [--enable-jvm-heap-restriction],
+    ["Restrict the heap of the JVM to 2GB"]
+  ),
+  [ jvm_heap_restriction_enabled="yes" ]
+)
+
+AM_CONDITIONAL([JVM_HEAP_RESTRICTION], [test "x$jvm_heap_restriction_enabled" = "xyes"])
+
 
 dnl =======================================================================
 dnl Final Makefile generation
@@ -480,6 +493,7 @@ echo "
   Java VM..........................: ${JAVA:-none}
   Java Compiler....................: ${JAVAC:-none} $JAVACFLAGS
   Jar Utility......................: ${JAR:-none} $JARFLAGS
+  JVM Heap restriction (2GB).......: ${jvm_heap_restriction_enabled:-no}
   Boost Includes...................: ${have_boost:-default} $BOOST_CPPFLAGS
 "
 
