@@ -587,6 +587,7 @@ t_nano PREEMP_overhead(struct t_task* task)
   }
 }
 
+/*
 void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
 {
   register struct t_communicator *comm;
@@ -618,6 +619,40 @@ void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
   comm->in_flight_op = FALSE;
 
   insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);
+}
+*/
+
+void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
+                                           int             communicator_id)
+{
+  register struct t_communicator *comm;
+  int *mtaskid;
+  int  i;
+  int *trips;
+
+  comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
+      (t_priority)communicator_id);
+
+  if (comm==(struct t_communicator *)0)
+  {
+      panic ("Unable to locate communicator %d for P%d\n",
+             communicator_id,
+             Ptask->Ptaskid);
+  }
+  trips = (int*) malloc (3*count_queue(&comm->global_ranks)*sizeof(int));
+  i=0;
+  for (mtaskid=(int *)head_queue(&comm->global_ranks);
+       mtaskid!=(int *)0;
+       mtaskid=(int *)next_queue(&comm->global_ranks))
+  {
+    trips[i] = *mtaskid;
+    i++;
+    trips[i] = *mtaskid;
+    i++;
+    trips[i] = 1;
+    i++;
+  }
+  free (trips);
 }
 
 void
