@@ -163,7 +163,7 @@ t_boolean CONFIGURATION_parse(FILE  *configuration_file,
   return TRUE;
 }
 
-void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename)
+void CONFIGURATION_Set_Scheduling_Configuration_File(const char *sch_filename)
 {
   if (sch_conf_filename != NULL)
   {
@@ -182,7 +182,7 @@ void CONFIGURATION_Set_Scheduling_Configuration_File(char *sch_filename)
   return;
 }
 
-void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_filename)
+void CONFIGURATION_Set_FileSystem_Configuration_File(const char *fs_filename)
 {
 	if (fs_conf_filename != NULL)
 	{
@@ -201,7 +201,7 @@ void CONFIGURATION_Set_FileSystem_Configuration_File(char *fs_filename)
   return;
 }
 
-void CONFIGURATION_Set_Communications_Configuration_File(char *comm_filename)
+void CONFIGURATION_Set_Communications_Configuration_File(const char *comm_filename)
 {
 	if (comm_conf_filename != NULL)
 	{
@@ -221,7 +221,7 @@ void CONFIGURATION_Set_Communications_Configuration_File(char *comm_filename)
 }
 
 
-void  CONFIGURATION_Set_RandomValues_Configuration_File(char* rand_filename)
+void  CONFIGURATION_Set_RandomValues_Configuration_File(const char* rand_filename)
 {
 	if (random_conf_filename != NULL)
 	{

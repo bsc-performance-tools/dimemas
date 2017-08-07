@@ -255,7 +255,7 @@ BOOST_REQUIRE(1.36,
                location by using '--with-boost')
 ]
 )
-
+BOOST_PROGRAM_OPTIONS()
 AM_CONDITIONAL(HAVE_BOOST, test x$have_boost = xyes)
 
 

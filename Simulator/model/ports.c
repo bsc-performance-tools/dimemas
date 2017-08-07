@@ -278,7 +278,7 @@ t_boolean PORT_create (int portid, struct t_thread *thread)
     printf (": PORT create called for portid %d\n", portid);
   }
 
-  if (!assert)
+  if (!extra_assert)
     port = PO_NIL;
   else
   {

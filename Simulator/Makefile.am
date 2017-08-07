@@ -18,7 +18,9 @@ AM_CPPFLAGS = \
 	-I$(simulator_dir)/sched \
 	-I$(simulator_dir)/utils \
 	-I$(simulator_dir)/venusclient \
-	-I$(simulator_dir)/eee_model
+	-I$(simulator_dir)/eee_model \
+	$(BOOST_CPPFLAGS)
+
 
 bin_PROGRAMS = Dimemas DimemasUpdateCFG
 
@@ -26,8 +28,8 @@ Dimemas_SOURCES = \
 	main.cpp
 
 Dimemas_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
-Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include\
-				 $(BOOST_CPPFLAGS) -lboost_program_options
+Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include \
+				 -L$(BOOST_LDPATH) -lboost_program_options
 
 nodist_EXTRA_Dimemas_SOURCES = dummy.cc
 

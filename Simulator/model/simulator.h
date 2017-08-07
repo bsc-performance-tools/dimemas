@@ -95,8 +95,8 @@ extern struct t_queue  Port_queue;
 extern dimemas_timer   current_time;
 extern dimemas_timer   final_statistical_time;
 
-void SIMULATOR_Init(char  *simulator_configuration_filename,
-                    char  *input_tracefile,
+void SIMULATOR_Init(const char  *simulator_configuration_filename,
+                    const char  *input_tracefile,
                     double parameter_bw,
                     double parameter_lat,
                     int    parameter_predefined_map,

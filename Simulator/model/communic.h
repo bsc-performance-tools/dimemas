@@ -66,7 +66,7 @@ extern double param_external_net_gamma;   /* la influencia dels traffics*/
  * Public functions
  *****************************************************************************/
 
-void COMMUNIC_Init(char * parameter_tracefile, float end_analysis_tpercent);
+void COMMUNIC_Init(const char * parameter_tracefile, float end_analysis_tpercent);
 void COMMUNIC_End(void);
 
 void COMMUNIC_general(int value, struct t_thread *thread);

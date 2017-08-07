@@ -282,7 +282,7 @@ int cmpfunc(const void *a, const void *b);
  * Initialization/Finalization of the communications module
  ****************************************************************************/
 
-void COMMUNIC_Init (char * parameter_tracefile, float end_analysis_tpercent)
+void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercent)
 {
   struct t_machine *machine;
   size_t            machines_it;
@@ -1713,7 +1713,7 @@ static void message_received (struct t_thread *thread)
     /* low level transfer - we look for it at the level of threads  */
     thread_partner = locate_thread_of_task (task_partner, mess->dest_thread);
 
-    assert (thread_partner != TH_NIL);
+    assert(thread_partner != TH_NIL);
     partner = locate_receiver_dependencies_synchronization (& (thread_partner->recv),
                                                             task->taskid,
                                                             thread->threadid,
@@ -1724,11 +1724,11 @@ static void message_received (struct t_thread *thread)
 
   if (partner == TH_NIL)
   {
-      //  Vladimir: this is a case that I NEVER SAW: thread in doing_busy_wait
-      //  I MAKE IT AS AN ASSERTATION BECAUSE IT IS NOT SCALABLE
-      /* El thread corresponent no esta bloquejat esperant a rebre.
-      * Cal mirar si esta fent espera activa. */
-    if (assert)
+//  Vladimir: this is a case that I NEVER SAW: thread in doing_busy_wait
+//  I MAKE IT AS AN ASSERTATION BECAUSE IT IS NOT SCALABLE
+    /* El thread corresponent no esta bloquejat esperant a rebre.
+     * Cal mirar si esta fent espera activa. */
+    if (extra_assert)
     {
       size_t i;
 

@@ -76,7 +76,7 @@ extern dimemas_timer current_time;
 extern dimemas_timer final_statistical_time;
 
 extern int      debug;
-extern int      assert;
+extern int      extra_assert;
 extern int      output_level;
 
 
@@ -93,8 +93,8 @@ extern t_boolean wait_logical_recv; /* defined on 'main.cpp' */
 
 extern char     message_buffer[];
 
-extern char         *paraver_file;
-extern char         *paraver_cfg_include_file;
+extern const char         *paraver_file;
+extern const char         *paraver_cfg_include_file;
 extern t_boolean     paraver_binary;
 extern t_boolean     paraver_cfg_include;
 extern dimemas_timer start_paraver;
@@ -118,10 +118,10 @@ extern struct t_communic_actions COMMUNIC[];
 
 extern int      PARAVER_cpu;
 
-extern char    *fichero_sch;
-extern char    *fichero_fs;
-extern char    *fichero_comm;
-extern char    *fichero_random;
+extern const char    *fichero_sch;
+extern const char    *fichero_fs;
+extern const char    *fichero_comm;
+extern const char    *fichero_random;
 
 extern int      greatest_cpuid;
 

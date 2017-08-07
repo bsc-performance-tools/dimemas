@@ -8,7 +8,7 @@
 
 void reload_new_Ptask(struct t_Ptask *Ptask);
 
-void show_statistics(int pallas_output);
+void show_statistics();
 
 void calculate_execution_end_time(void);
 

@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <generate_error.h>
 #include <list.h>
@@ -108,8 +109,8 @@ static char  *SIMULATOR_error_message;
  * Public functions implementation
  ****************************************************************************/
 
-void SIMULATOR_Init(char  *simulator_configuration_filename,
-                    char  *parameter_tracefile,
+void SIMULATOR_Init(const char  *simulator_configuration_filename,
+                    const char  *parameter_tracefile,
                     double parameter_bw,
                     double parameter_lat,
                     int    parameter_predefined_map,

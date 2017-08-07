@@ -61,7 +61,6 @@
 #include <math.h>   /* Per l'arrel quadrada */
 
 struct t_Ptask        *Ptask_current;
-extern t_boolean       NEW_MODIFICATIONS;
 int                    stop_restarts;
 extern t_boolean       reload_while_longest_running;
 
@@ -304,15 +303,6 @@ static void print_statistics(char             *buf,
   FPRINT_TIMER (salida_datos, account->time_waiting_for_message);
 
   fprintf (salida_datos, "\t%03.02f\t", block_time * 100 / tot_time);
-
-  if (NEW_MODIFICATIONS)
-  {
-    FPRINT_TIMER (salida_datos, account->latency_time);
-    fprintf (salida_datos, "\t%03.02f\t", latency_time * 100 / tot_time);
-
-    FPRINT_TIMER (salida_datos, account->block_due_resources);
-    fprintf (salida_datos, "\t%03.02f\t", block_due_resources * 100 / tot_time);
-  }
 
   if ( full_out_info )
   {
@@ -926,10 +916,11 @@ static void show_individual_statistics_pallas (struct t_Ptask *Ptask)
 
 }
 
-void show_statistics (int pallas_output)
+void show_statistics ()
 {
  struct t_Ptask *Ptask;
  t_nano         total_time;
+ t_boolean pallas_output = FALSE;
 
  if (pallas_output)
  {

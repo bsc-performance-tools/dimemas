@@ -12,7 +12,7 @@ extern double *T_eee_lat;          // Latency at each level 1,2,3...
 extern double *T_eee_bw;           // Bandwidth at each network level 1,2,3...
 extern double *T_eee_hop_lat;
 extern int     N_nodes;            // Node count
-extern char   *eee_config_file;    // EEE config File - contains specific format!
+extern const char   *eee_config_file;    // EEE config File - contains specific format!
 extern int     eee_frame_header_size;
 
 //----------------------------------------------------------------------------

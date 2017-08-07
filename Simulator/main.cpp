@@ -23,17 +23,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-
-#include <iostream>
-#include <boost/program_options.hpp>
-#include <boost/program_options/positional_options.hpp>
-
 #include <cmath>
 #include <ctime>
 #include <cerrno>
 #include <csignal>
 #include <cfloat>
 #include <assert.h>
+#include <iostream>
+#include <boost/program_options.hpp>
+#include <boost/program_options/positional_options.hpp>
 
 extern "C"
 {
@@ -78,7 +76,7 @@ extern "C"
 
 // Not exposed functions
 static dimemas_timer read_timer(char *c);
-static long long int read_size(char *c);
+static long long int read_size(const char *c);
 double ddiff(struct timespec start, struct timespec end);
 
 int port_ids = MIN_PORT_NUMBER;
@@ -86,7 +84,7 @@ int port_ids = MIN_PORT_NUMBER;
 // Variables from params
 
 bool critical_path_enabled;
-char *parameter_tracefile;
+const char *parameter_tracefile;
 
 double parameter_bw = DBL_MIN;
 double parameter_lat = DBL_MIN;
@@ -94,7 +92,7 @@ double parameter_lat = DBL_MIN;
 int parameter_predefined_map = MAP_NO_PREDEFINED;
 int parameter_tasks_per_node;
 
-char *config_file;
+const char *config_file;
 int debug = 0;
 
 int reload_limit = 10;
@@ -106,11 +104,11 @@ t_boolean short_out_info = FALSE;
 t_boolean wait_logical_recv = FALSE;
 
 FILE *salida_datos;
-char *fichero_salida     = NULL;
-char *paraver_file       = NULL;
-char *paraver_pcf_insert = NULL;
+const char *fichero_salida     = NULL;
+const char *paraver_file       = NULL;
+const char *paraver_pcf_insert = NULL;
 
-char *file_for_event_to_monitorize = (char *)0;
+const char *file_for_event_to_monitorize = (char *)0;
 FILE *File_for_Event;
 
 static dimemas_timer paraver_start = -DBL_MAX;
@@ -131,19 +129,26 @@ int reboots_counter = 0;
 float danalysis_deactivation_percent = 1;
 t_boolean simulation_rebooted = FALSE;
 
+t_boolean extra_assert=FALSE;
+t_boolean Critical_Path_Analysis = FALSE;
+
 using namespace std;
 
 void print_dimemas_header()
 {
-    cout << "               .-.--"                      << endl;
-    cout << "             ,´,´.´   `."                  << endl;
-    cout << "             | | | BSC |"                  << endl;
-    cout << "             `.`.`. _ .´"                  << endl;
-    cout << "               `·`··"                      << endl;
-    cout << "+--------------------------------------+"  << endl;
-    cout << "|               DIMEMAS                |"  << endl;
-    cout << "| Distributed Memory Machine Simulator |"  << endl;
-    cout << "+--------------------------------------+"  << endl;
+    //cout << "               .-.--"                      << endl;
+    //cout << "             ,´,´.´   `."                  << endl;
+    //cout << "             | | | BSC |"                  << endl;
+    //cout << "             `.`.`. _ .´"                  << endl;
+    //cout << "               `·`··"                      << endl;
+    //cout << "+--------------------------------------+"  << endl;
+    //cout << "|               DIMEMAS                |"  << endl;
+    //cout << "| Distributed Memory Machine Simulator |"  << endl;
+    //cout << "+--------------------------------------+"  << endl;
+    //cout << endl;
+    cout << endl;
+    cout << "Dimemas: Distributed Memory Machine Simulator" << endl;
+    cout << "Barcelona Supercomputing Center" << endl;
     cout << endl;
 }
 
@@ -160,6 +165,14 @@ void parse_arguments(int argc, char *argv[])
     string event_to_monitorize;
     string eager_limit;
 
+    string str_parameter_tracefile;
+    string str_eee_config_file;
+    string str_paraver_file;
+    string str_config_file;
+    string str_fichero_salida;
+    string str_paraver_pcf_insert;
+    string str_file_for_event_to_monitorize;
+
     bool paraver_priorities_enabled;
     bool debug_enabled;
     bool extra_asserts_enabled;
@@ -174,6 +187,7 @@ void parse_arguments(int argc, char *argv[])
     bool map_fill_enabled;
     bool map_interleaved_enabled;
     bool wait_logical_recv_enabled;
+    bool b_eee_enabled;
 
     int debug = 0;
     int sintetic_io_applications;
@@ -192,7 +206,7 @@ void parse_arguments(int argc, char *argv[])
         ("asynch-sends,F", po::bool_switch(&asynch_sends_enabled),
             "All sends are asynchronous")
         ("eager-limit,S", po::value<string>(&eager_limit),
-            "The eager protocol is applied to messages bellow the limit")
+            "Eager limit is set to this value")
         ("sched,s", po::value<string>(&fine_conf_sched), 
             "Scheduler definition filename")
         ("fs,f", po::value<string>(&fine_conf_fs), 
@@ -201,19 +215,19 @@ void parse_arguments(int argc, char *argv[])
             "Communications fine-tunning definition filename")
         ("random,r", po::value<string>(&fine_conf_rand), 
             "Random definition filename")
-        ("dim", po::value<char *>(&parameter_tracefile), 
-            "Dimemas input tracefile")
         ("bandwidth,bw", po::value<double>(&parameter_bw), 
             "Bandwidth for the modeled machine")
         ("latency,lat", po::value<double>(&parameter_lat), 
             "Latency for the modeled machine")
-        ("process-per-node", po::value<int>(&parameter_tasks_per_node), 
-            "Processes per node for the modeled machine")
         ("fill-nodes,fill", po::bool_switch(&map_fill_enabled),
             "Mapping policy where all processors in nodes are filled up")
+        ("process-per-node", po::value<int>(&parameter_tasks_per_node), 
+            "Processes per node for the modeled machine")
         ("interleaved", po::bool_switch(&map_interleaved_enabled),
             "Mapping policy where the processes are mapped"\
             " in an interleaved fashion")
+        ("dim", po::value<string>(&str_parameter_tracefile), 
+            "Dimemas input tracefile")
     ;
 
     po::options_description simulation("Simulation options: This options"\
@@ -229,20 +243,20 @@ void parse_arguments(int argc, char *argv[])
             "Set the simulation stop time")
         ("critical-path-analysis,C", po::bool_switch(&critical_path_enabled),
             "Performs critical path analysis")
-        ("clean-deadlocks", po::value<float>(&danalysis_deactivation_percent), 
-            "Try to recover the deadlocks that can arise from the simulation")
         ("logic-irecv-at-wait,w", po::bool_switch(&wait_logical_recv_enabled),
             "Logic receive of Irecv when MPI_Wait take place")
-        ("eee-enable", po::bool_switch(&eee_enabled),
-            "Enable EEE network model")
-        ("eee-network", po::value<string>(&eee_config_file), 
-            "EEE network definition filename")
-        ("eee-framesize", po::value<double>(&eee_frame_header_size), 
-            "EEE network frame size")
-        ("synthetic-io-app,I", po::<int>(&sintetic_io_applications),
+        ("synthetic-io-app,I", po::value<int>(&sintetic_io_applications),
             "Adds synthetic applications with I/O workloads")
         ("reload,R", po::value<int>(&reload_limit),
             "Reload simulation the indicated times")
+        ("eee-enable", po::bool_switch(&b_eee_enabled),
+            "Enable EEE network model")
+        ("eee-network", po::value<string>(&str_eee_config_file), 
+            "EEE network definition filename")
+        ("eee-framesize", po::value<int>(&eee_frame_header_size), 
+            "EEE network frame size")
+        ("clean-deadlocks", po::value<float>(&danalysis_deactivation_percent), 
+            "Try to recover the deadlocks that can arise from the simulation")
 #ifdef VENUS_ENABLED
         ("venus", po::bool_switch(&venus_enabled),
             "Enable venus (default conn localhost:default_port)")
@@ -253,23 +267,23 @@ void parse_arguments(int argc, char *argv[])
 
     po::options_description mandatory("Mandatory options");
     mandatory.add_options()
-        ("prv-trace,p", po::value<char *>(&paraver_file)->required(), 
+        ("prv-trace,p", po::value<string>(&str_paraver_file)->required(), 
             "Generated paraver trace")
-        ("config-file", po::value<char *>(&config_file)->required(), 
+        ("config-file", po::value<string>(&str_config_file)->required(), 
             "Dimemas configuration file")
     ;
 
     po::options_description output("Output options");
     output.add_options()
-        ("output,o", po::value<char *>(&fichero_salida), "Set output file")
+        ("output,o", po::value<string>(&str_fichero_salida), "Set output file")
         ("only-time,t", po::bool_switch(&short_out_info),
             "Shows just timing information as output")
-        ("pcf-file", po::value<char *>(&paraver_pcf_insert),
-            "Set the pcf output file")
-        ("monitorize-event,e", po::val<string>(&event_to_monitorize),
+        ("monitorize-event,e", po::value<string>(&event_to_monitorize),
             "Show time distance between event occurrences")
-        ("monitorize-event-output,g", po::val<char *>(&file_for_event_to_monitorize),
+        ("monitorize-event-output,g", po::value<string>(&str_file_for_event_to_monitorize),
             "File for output info about event monitoring")
+        ("pcf-file", po::value<string>(&str_paraver_pcf_insert),
+            "Set the pcf output file")
     ;
 
     po::options_description debug_args("Debug options");
@@ -309,12 +323,12 @@ void parse_arguments(int argc, char *argv[])
     {
         print_dimemas_header();
         cout << all << endl;
-        return 1;
+        exit(EXIT_FAILURE);
     }
     else if(varmap.count("version"))
     {
         cout << VERSION << " (" << DATE << ")"<< endl;
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     try
@@ -325,11 +339,20 @@ void parse_arguments(int argc, char *argv[])
     {
         cout << "Error parsing arguments" << endl;
         cout << e.what() << endl;
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // Parameters extra treatment 
     //
+    
+    parameter_tracefile = str_parameter_tracefile.c_str();
+    eee_config_file = str_eee_config_file.c_str();
+    paraver_file = str_paraver_file.c_str();
+    config_file = str_config_file.c_str();
+    fichero_salida = str_fichero_salida.c_str();
+    paraver_pcf_insert = str_paraver_pcf_insert.c_str();
+    file_for_event_to_monitorize = str_file_for_event_to_monitorize.c_str();
+
     if (debug_enabled)
         debug = D_LINKS|D_COMM;
     if (extra_sched_debug_enabled)
@@ -344,17 +367,18 @@ void parse_arguments(int argc, char *argv[])
     paraver_final_timer = (varmap.count("prv-stop-time") != 0);
     paraver_initial_timer = (varmap.count("prv-start-time") != 0);
 
+#if VENUS_ENABLED
     if (venus_enabled)
         VC_enable(venus_conn_url.c_str());
-
+#endif
     if (varmap.count("sched"))
-        CONFIGURATION_Set_Scheduling_Configuration_File(fine_conf_sched);
+        CONFIGURATION_Set_Scheduling_Configuration_File(fine_conf_sched.c_str());
     if (varmap.count("fs"))
-        CONFIGURATION_Set_FileSystem_Configuration_File(fine_conf_fs);
+        CONFIGURATION_Set_FileSystem_Configuration_File(fine_conf_fs.c_str());
     if (varmap.count("comm"))
-        CONFIGURATION_Set_Communications_Configuration_File(fine_conf_comm);
+        CONFIGURATION_Set_Communications_Configuration_File(fine_conf_comm.c_str());
     if (varmap.count("random"))
-        CONFIGURATION_Set_RandomValues_Configuration_File(fine_conf_rand);
+        CONFIGURATION_Set_RandomValues_Configuration_File(fine_conf_rand.c_str());
 
     if (varmap.count("reload"))
         if (reload_limit == 0)
@@ -368,7 +392,7 @@ void parse_arguments(int argc, char *argv[])
     else if (varmap.count("eager-limit"))
     {
         RD_SYNC_use_trace_sync = FALSE;
-        RD_SYNC_message_size = read_size(eager_limit);
+        RD_SYNC_message_size = read_size(eager_limit.c_str());
     }
 
     if (varmap.count("clean-deadlocks"))
@@ -391,8 +415,18 @@ void parse_arguments(int argc, char *argv[])
     else
         wait_logical_recv = FALSE;
 
+    if (b_eee_enabled)
+        eee_enabled = TRUE;
+    else
+        eee_enabled = FALSE;
+
+    if (extra_asserts_enabled)
+        extra_assert = TRUE;
+    else
+        extra_assert = FALSE;
+
     cout << "Configuration: " << config_file << endl;
-    cout << "Paraver:       " << paraver_trace << endl;
+    cout << "Paraver:       " << paraver_file << endl;
     cout << "Debug:         " << debug_enabled << endl; 
 }
 
@@ -420,7 +454,7 @@ static dimemas_timer read_timer(char *c)
     return (tmp_timer);
 }
 
-static long long int read_size(char *c)
+static long long int read_size(const char *c)
 {
     int i;
     long long int mida_tmp, mida;
@@ -517,8 +551,7 @@ int main (int argc, char *argv[])
     EEE_Init();
     EVENT_Init ();
     SCHEDULER_Init ();
-    COMMUNIC_Init (parameter_tracefile, 
-            danalysis_deactivation_percent);
+    COMMUNIC_Init (parameter_tracefile, danalysis_deactivation_percent);
     MEMORY_Init ();
     SEMAPHORE_Init ();
     FS_Init();
@@ -529,15 +562,17 @@ int main (int argc, char *argv[])
 
     if (critical_path_enabled)
     {
+        Critical_Path_Analysis = TRUE;
         create_queue (CP_nodes);
         if (count_queue(&Ptask_queue) != 1)
         {
             printf("Warning: Critical Path analysis not"\
                     " allowed with %d Ptask\n", count_queue(&Ptask_queue));
-            critical_path_enabled = FALSE;
+            Critical_Path_Analysis = FALSE;
         }
     }
-
+    else
+        Critical_Path_Analysis = FALSE;
 
     reload_events ();
 
@@ -680,7 +715,7 @@ REBOOT:
 
     if (fichero_salida != NULL)
     {
-        char *c = "Dimemas_OUTPUT.tmp";
+        const char *c = "Dimemas_OUTPUT.tmp";
         rename (fichero_salida, c);
 
         close (0);
@@ -692,5 +727,3 @@ REBOOT:
     }
     return 0;
 }
-
-
