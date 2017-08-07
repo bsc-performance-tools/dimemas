@@ -147,8 +147,9 @@ void print_dimemas_header()
     //cout << "+--------------------------------------+"  << endl;
     //cout << endl;
     cout << endl;
-    cout << "Dimemas: Distributed Memory Machine Simulator" << endl;
-    cout << "Barcelona Supercomputing Center" << endl;
+    cout << "Dimemas - DIstributed MEmory MAchine Simulator" << endl;
+    cout << "Barcelona Supercomputing Center - Centro Nacional de"\
+        " Supercomputacion" << endl;
     cout << endl;
 }
 
@@ -183,18 +184,17 @@ void parse_arguments(int argc, char *argv[])
     bool venus_enabled;
     bool critical_path_enabled;
     bool asynch_sends_enabled;
-    bool short_out_info;
+    bool b_short_out_info;
     bool map_fill_enabled;
     bool map_interleaved_enabled;
     bool wait_logical_recv_enabled;
     bool b_eee_enabled;
 
-    int debug = 0;
     int sintetic_io_applications;
 
     namespace po = boost::program_options;
 
-    po::options_description general("Miscelanea options");
+    po::options_description general("Miscellany options");
     general.add_options()
         ("help,h", "Show this help message")
         ("version,v", "Show the version")
@@ -256,7 +256,7 @@ void parse_arguments(int argc, char *argv[])
         ("eee-framesize", po::value<int>(&eee_frame_header_size), 
             "EEE network frame size")
         ("clean-deadlocks", po::value<float>(&danalysis_deactivation_percent), 
-            "Try to recover the deadlocks that can arise from the simulation")
+            "Try to recover from deadlocks if any")
 #ifdef VENUS_ENABLED
         ("venus", po::bool_switch(&venus_enabled),
             "Enable venus (default conn localhost:default_port)")
@@ -275,8 +275,8 @@ void parse_arguments(int argc, char *argv[])
 
     po::options_description output("Output options");
     output.add_options()
-        ("output,o", po::value<string>(&str_fichero_salida), "Set output file")
-        ("only-time,t", po::bool_switch(&short_out_info),
+        //("output,o", po::value<string>(&str_fichero_salida), "Set output file")
+        ("only-time,t", po::bool_switch(&b_short_out_info),
             "Shows just timing information as output")
         ("monitorize-event,e", po::value<string>(&event_to_monitorize),
             "Show time distance between event occurrences")
@@ -342,16 +342,59 @@ void parse_arguments(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // Parameters extra treatment 
+    // Parameters extra treatment
+    // Needed because the kernel is c and can not use C++ datatypes
     //
     
-    parameter_tracefile = str_parameter_tracefile.c_str();
-    eee_config_file = str_eee_config_file.c_str();
-    paraver_file = str_paraver_file.c_str();
-    config_file = str_config_file.c_str();
-    fichero_salida = str_fichero_salida.c_str();
-    paraver_pcf_insert = str_paraver_pcf_insert.c_str();
-    file_for_event_to_monitorize = str_file_for_event_to_monitorize.c_str();
+    if (varmap.count("dim"))
+    {
+        parameter_tracefile = (char *)malloc(str_parameter_tracefile.size()+1);
+        memcpy( (void *)parameter_tracefile, 
+            (const void *)str_parameter_tracefile.c_str(),
+            str_parameter_tracefile.size()+1);
+    }
+
+    if (varmap.count("eee-network"))
+    {
+        eee_config_file = (char *)malloc(str_eee_config_file.size()+1);
+        memcpy( (void *)eee_config_file, 
+            (const void *)str_eee_config_file.c_str(),
+            str_eee_config_file.size()+1);
+    }
+
+    if (varmap.count("output"))
+    {
+        fichero_salida = (char *)malloc(str_fichero_salida.size()+1);
+        memcpy( (void *)fichero_salida, 
+            (const void *)str_fichero_salida.c_str(),
+            str_fichero_salida.size()+1);
+    }
+
+    if (varmap.count("pcf-file"))
+    {
+        paraver_pcf_insert = (char *)malloc(str_paraver_pcf_insert.size()+1);
+        memcpy( (void *)paraver_pcf_insert, 
+            (const void *)str_paraver_pcf_insert.c_str(),
+            str_paraver_pcf_insert.size()+1);
+    }
+
+    if (varmap.count("monitorize-event-output"))
+    {
+        file_for_event_to_monitorize = 
+            (char *)malloc(str_file_for_event_to_monitorize.size()+1);
+        memcpy( (void *)file_for_event_to_monitorize, 
+            (const void *)str_file_for_event_to_monitorize.c_str(),
+            str_file_for_event_to_monitorize.size()+1);
+    }
+
+    config_file = (char *)malloc(str_config_file.size()+1);
+    memcpy( (void *)config_file, 
+            (const void *)str_config_file.c_str(),
+            str_config_file.size()+1);
+    paraver_file = (char *)malloc(str_paraver_file.size()+1);
+    memcpy( (void *)paraver_file, 
+            (const void *)str_paraver_file.c_str(),
+            str_paraver_file.size()+1);
 
     if (debug_enabled)
         debug = D_LINKS|D_COMM;
@@ -425,9 +468,10 @@ void parse_arguments(int argc, char *argv[])
     else
         extra_assert = FALSE;
 
-    cout << "Configuration: " << config_file << endl;
-    cout << "Paraver:       " << paraver_file << endl;
-    cout << "Debug:         " << debug_enabled << endl; 
+    if (b_short_out_info)
+        short_out_info = TRUE;
+    else
+        short_out_info = FALSE;
 }
 
 double ddiff(struct timespec start, struct timespec end)
