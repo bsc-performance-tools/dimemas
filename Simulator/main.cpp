@@ -146,6 +146,7 @@ void print_dimemas_header()
     //cout << "| Distributed Memory Machine Simulator |"  << endl;
     //cout << "+--------------------------------------+"  << endl;
     //cout << endl;
+    //
     cout << endl;
     cout << "Dimemas - DIstributed MEmory MAchine Simulator" << endl;
     cout << "Barcelona Supercomputing Center - Centro Nacional de"\
@@ -322,6 +323,9 @@ void parse_arguments(int argc, char *argv[])
     if (varmap.count("help"))
     {
         print_dimemas_header();
+        cout << "USAGE: " << argv[0] << 
+            " -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+        cout << endl;
         cout << all << endl;
         exit(EXIT_FAILURE);
     }

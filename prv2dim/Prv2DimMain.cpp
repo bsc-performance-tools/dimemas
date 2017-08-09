@@ -21,390 +21,118 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-  $Rev:: 1044                                     $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #include <cstdlib>
 #include <cstdio>
 #include <cerrno>
 #include <cstring>
-
 #include <string>
-
 #include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
-
-#include <ezOptionParser.hpp>
-
+#include <boost/program_options.hpp>
+#include <boost/program_options/positional_options.hpp>
 #include <bsc_utils.hpp>
 #include "ParaverTraceTranslator.hpp"
 #include "PCFGeneration.hpp"
 
-/* Main variables */
+using std::cout;
+using std::cerr;
+using std::endl;
+
 std::string PrvTraceName;          /* Paraver (input) trace name */
 std::string DimTraceName;          /* Dimemas (output) trace name */
 std::string ExtraStatisticsName;   /* File that keeps some extra statistics */
-bool extraStatistics = false;
 
+bool extraStatistics = false;
 bool  GenerateFirstIdle;
 bool  GenerateMPIInitBarrier;
-
 double IprobeMissesThreshold; /* Maximun iprobe misses to discard iprobe burst */
 double TestMissesThreshold;
-
-INT32  BurstCounterType;
 double BurstCounterFactor;
 
-void Usage(ez::ezOptionParser& opt)
+int  BurstCounterType;
+
+bool ReadArgs(const int argc, const char *argv[])
 {
-  std::string usage;
-  opt.getUsage(usage);
-  std::cout << usage;
-};
+    namespace po = boost::program_options;
 
-bool ReadArgsNew(const int argc, const char *argv[])
-{
-  ez::ezOptionParser opt;
+    po::options_description mandatory("Mandatory options");
+    mandatory.add_options()
+        ("prv-trace,p", po::value<string>(&PrvTraceName)->required(),
+            "Input paraver trace")
+        ("dim-trace,d", po::value<string>(&DimTraceName)->required(),
+            "Output dimemas trace")
+    ;
 
-  opt.overview = "Paraver to Dimemas trace translator";
-  opt.syntax = "prv2dim [OPTIONS] input_paraver_trace output_dimemas_trace";
-  opt.example = "prv2dim -b 42000059,4,656e-7 trace_paraver.prv trace_dimemas.dim\n";
+    po::options_description optional("Other options");
+    optional.add_options()
+        ("burst-counter-type,b", po::value<int>(&BurstCounterType),
+            "Hardware counter type used to generate burst duration")
+        ("burst-counter-factor,f", po::value<double>(&BurstCounterFactor),
+            "Factor applied to the hardware counter type value that "\
+            "will generate the burst duration")
+        ("iprobe-miss-rate,i", po::value<double>(&IprobeMissesThreshold),
+            "MPI_Iprobe miss rate (ms) to iscard Iprobe area CPU burst")
+        ("test-miss-rate,t", po::value<double>(&TestMissesThreshold),
+            "MPI_Test miss rate (ms) to discard Test area CPU burst")
+        ("initial-idle,n", po::bool_switch(&GenerateFirstIdle), 
+            "Do not generate an initial idle state")
+        ("init-sync,s", po::bool_switch(&GenerateMPIInitBarrier),
+            "Do not generate a synchronization primitive on MPI_Init calls")
+        ("deadlock-extra-statistics,e", po::bool_switch(&extraStatistics),
+            "Generates a file with extra statistics for deadlock analysis")
+    ;
 
-  opt.add(
-      "", // Default.
-      0, // Required?
-      0, // Number of args expected.
-      0, // Delimiter if expecting multiple args.
-      "Display usage instructions.", // Help description.
-      "-h",     // Flag token.
-      "-help",  // Flag token.
-      "--help", // Flag token.
-      "--usage" // Flag token.
-    );
+    po::options_description miscellany("Miscellany options");
+    miscellany.add_options()
+        ("help,h", "Show this help message")
+    ;
 
+    po::options_description all("Allowed options");
+    all.add(mandatory)
+        .add(optional)
+        .add(miscellany);
 
-  opt.add(
-      "0",
-      false,
-      0,
-      0,
-      "Do not generate an initial idle state",
-      "-n",
-      "--initial-idle");
+    po::positional_options_description pd;
+    pd.add("prv-trace", 1)
+        .add("dim-trace", 2);
 
-  opt.add(
-      "",
-      false,
-      0,
-      0,
-      "Do not generate a synchronization primitive on MPI_Init calls",
-      "-s",
-      "--init-sync");
+    po::variables_map varmap;
+    po::store(po::command_line_parser(argc, argv)
+            .options(all)
+            .positional(pd)
+            .run(), varmap);
 
-  opt.add(
-      "0",
-      false,
-      0,
-      0,
-      "Generates a file with extra statistics",
-      "--extra-statistics",
-      "-e"
-      );
-  ez::ezOptionValidator* vD = new ez::ezOptionValidator("d");
-  opt.add(
-      "",
-      false,
-      1,
-      0,
-      "MPI_Test miss rate (per milisecond) to discard Test area CPU burst\n",
-      "-t",
-      "--test-miss-rate",
-      vD);
-
-  opt.add(
-      "",
-      false,
-      1,
-      0,
-      "MPI_Iprobe miss rate (per milisecond) to discard Iprobe area CPU burst\n",
-      "-i",
-      "--iprobe-miss-rate",
-      vD);
-
-  opt.add(
-      "",
-      false,
-      2,
-      ',',
-      "Hardware counter type and factor used to generate burst durations",
-      "-b",
-      "--burst-counter-factor",
-      vD);
-
-  opt.parse(argc, argv);
-
-  if (opt.isSet("-h"))
-  {
-    Usage(opt);
-
-    exit(EXIT_SUCCESS);
-  }
-
-  std::vector<std::string> badOptions;
-
-  if(!opt.gotRequired(badOptions))
-  {
-    for(int i=0; i < badOptions.size(); ++i)
+    // Options treatment
+    //
+    if (varmap.count("help"))
     {
-      std::cerr << "ERROR: Missing required option " << badOptions[i] << ".\n\n";
-    }
-    Usage(opt);
-
-    return false;
-  }
-
-  if(!opt.gotExpected(badOptions))
-  {
-    for(int i=0; i < badOptions.size(); ++i)
-    {
-      std::cerr << "ERROR: Got unexpected number of arguments for option " << badOptions[i] << ".\n\n";
+        cout << endl;
+        cout << "prv2dim - Paraver to Dimemas trace translator" << endl;
+        cout << "Barcelona Supercomputer Center - Centro Nacional de Supercomputacion"
+            << endl;
+        cout << endl;
+        cout << "USAGE: " << argv[0] 
+            << " [--prv-trace] PRVTRACE [--dim-trace] DIMTRACE"
+            << endl;
+        cout << endl;
+        cout << all << endl;
+        exit(EXIT_SUCCESS);
     }
 
-    Usage(opt);
-
-    return false;
-  }
-
-  std::vector<std::string> badArgs;
-  if(!opt.gotValid(badOptions, badArgs))
-  {
-    for(int i=0; i < badOptions.size(); ++i)
-    {
-      std::cerr << "ERROR: Got invalid argument \"" << badArgs[i] << "\" for option " << badOptions[i] << ".\n\n";
-    }
-    //Usage(opt);
-
-    return false;
-  }
-
-  if (opt.isSet("-n"))
-  {
-    GenerateFirstIdle = false;
-  }
-  else
-  {
-    GenerateFirstIdle = true;
-  }
-
-  if (opt.isSet("-s"))
-  {
-    GenerateMPIInitBarrier = false;
-  }
-  else
-  {
-    GenerateMPIInitBarrier = true;
-  }
-
-  // Added by fran
-  if (opt.isSet("-t"))
-  {
-    std::string TestMissesThresholdStr;
-    opt.get("-t")->getString(TestMissesThresholdStr);
-
-    if (bsc_tools::isDouble(TestMissesThresholdStr))
-    {
-      opt.get("-t")->getDouble(TestMissesThreshold);
-    }
-    else
-    {
-      std::cerr << "ERROR: Got invalid argument \"" << TestMissesThresholdStr << "\" for option \"-t\".\n\n";
-      return false;
-    }
-  }
-
-  if (opt.isSet("-i"))
-  {
-    std::string IprobeMissesThresholdStr;
-    opt.get("-i")->getString(IprobeMissesThresholdStr);
-
-    if (bsc_tools::isDouble(IprobeMissesThresholdStr))
-    {
-      opt.get("-i")->getDouble(IprobeMissesThreshold);
-    }
-    else
-    {
-      std::cerr << "ERROR: Got invalid argument \"" << IprobeMissesThresholdStr << "\" for option \"-i\".\n\n";
-      return false;
-    }
-    /* Only valid in C++11
     try
     {
-      IprobeMissesThreshold = std::stod(IprobeMissesThresholdStr);
+        po::notify(varmap);
     }
-    catch (std:exception &e)
+    catch(boost::program_options::required_option& e)
     {
-      std::cerr << "ERROR: Got invalid argument \"" << IprobeMissesThresholdStr << "\" for option \"-i\".\n\n";
-    }
-    */
-  }
-
-  if (opt.isSet("-b"))
-  {
-    vector<string> Values;
-    opt.get("-b")->getStrings(Values);
-
-    if (Values.size() != 2)
-    {
-      std::cerr << "ERROR: Invalid number of arguments (" << Values.size() << ")";
-      std::cerr << " for option \"-b\".\n\n";
+        cout << "Error parsing arguments" << endl;
+        cout << e.what() << endl;
+        return false;
     }
 
-    if (bsc_tools::isLongInt(Values[0]))
-    {
-      cout << "'-b' Values[0] = " << Values[0] << endl;
-      BurstCounterType = (INT32) bsc_tools::getLongInt(Values[0]);
-    }
-    else
-    {
-      std::cerr << "ERROR: Got invalid argument \"" << Values[0] << "\" for option \"-b\".\n\n";
-      return false;
-    }
-
-    if (bsc_tools::isDouble(Values[1]))
-    {
-      BurstCounterFactor = bsc_tools::getDouble(Values[1]);
-    }
-    else
-    {
-      std::cerr << "ERROR: Got invalid argument \"" << Values[1] << "\" for option \"-b\".\n\n";
-      return false;
-    }
-
-    cout << "BurstCounterType = " << BurstCounterType << endl;
-    cout << "BurstCounterFactor = " << BurstCounterFactor << endl;
-  }
-
-  if (opt.lastArgs.size() != 2) {
-    std::cerr << "ERROR: Missing input/output trace names\n\n";
-    Usage(opt);
-    return false;
-  }
-  else
-  {
-    PrvTraceName = *(opt.lastArgs[0]);
-    DimTraceName = *(opt.lastArgs[1]);
-  }
-
-  if (opt.isSet("--extra-statistics"))
-  {
-    string ChoppedFileName;
-    int SubstrPosition = DimTraceName.rfind(".dim");
-
-    ChoppedFileName = DimTraceName.substr(0, SubstrPosition);
-    ExtraStatisticsName = ChoppedFileName+".estats";
-
-    cout << "Extra statistic file = " << ExtraStatisticsName << endl;
-    extraStatistics = true;
-  }
-
-  return true;
+    GenerateFirstIdle = !GenerateFirstIdle;
+    GenerateMPIInitBarrier = !GenerateMPIInitBarrier;
+    return true;
 }
-
-/*
-void ReadArgs(int argc, char *argv[])
-{
-  int   j = 1;
-  char *BurstCounterTypeStr, *BurstCounterFactorStr;
-
-  GenerateFirstIdle = true;
-
-  if (argc == 2 &&
-      ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))
-  {
-    fprintf(stdout, HELP, argv[0]);
-    exit(EXIT_SUCCESS);
-  }
-
-  if (argc > 6 || argc < 3 )
-  {
-    PrintUsage(argv[0]);
-    exit(EXIT_FAILURE);
-  }
-
-  if (argv[1][0] == '-')
-  {
-    for (j = 1; (j < argc - 1) && (argv[j][0] == '-'); j++)
-    {
-      switch (argv[j][1])
-      {
-        case 'n': /* No generate initial idles *
-          GenerateFirstIdle = false;
-          break;
-        case 'i': /* Iprobe misses threshold
-          j++;
-          IprobeMissesThreshold = atof(argv[j]);
-
-          if (IprobeMissesThreshold == 0.0  && errno == EINVAL)
-          {
-            cerr << "Error: Invalid Iprobe threshold value " << endl;
-            exit (EXIT_FAILURE);
-          }
-          break;
-        case 'b': /* Burst duration counter *
-          j++;
-
-          BurstCounterTypeStr = strtok(argv[j], " ,\n");
-
-          if (BurstCounterTypeStr == NULL)
-          {
-            cerr << "Error: Invalid hardware counter type" << endl;
-            exit (EXIT_FAILURE);
-          }
-
-          BurstCounterType = atoi(BurstCounterTypeStr);
-
-          BurstCounterFactorStr = strtok(NULL, " ,\n");
-
-          if (BurstCounterFactorStr == NULL)
-          {
-            cerr << "Error: Invalid factor value to hardware" << endl;
-            exit (EXIT_FAILURE);
-          }
-
-          BurstCounterFactor = atof(BurstCounterFactorStr);
-
-          break;
-        default:
-          cerr << "Invalid parameter " << argv[j][1] << endl;
-          PrintUsage(argv[0]);
-          exit(EXIT_FAILURE);
-          break;
-      }
-    }
-  }
-
-  if (j >= argc)
-  {
-    PrintUsage(argv[0]);
-    exit (EXIT_FAILURE);
-  }
-
-  /* Read Input & Output file names *
-  PrvTraceName = argv[j];
-  j = j+1;
-  DimTraceName = argv[j];
-
-  return;
-}
-*/
 
 void CopyRowFile(string InputTraceName, string OutputTraceName)
 {
@@ -497,7 +225,8 @@ int main(const int argc, const char *argv[])
 
   PCFGeneration *PCFGenerator;
 
-  if (!ReadArgsNew(argc, argv))
+//  if (!ReadArgsNew(argc, argv))
+  if (!ReadArgs(argc, argv))
   {
     exit(EXIT_FAILURE);
   }

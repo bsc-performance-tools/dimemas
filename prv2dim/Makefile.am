@@ -8,7 +8,7 @@ bin_PROGRAMS           = prv2dim
 
 # 'prv2dim' configuration
 prv2dim_CFLAGS         = -DNEW_DIMEMAS_TRACE $(BOOST_CPPFLAGS) 
-prv2dim_CXXFLAGS       = -DNEW_DIMEMAS_TRACE $(BOOST_CPPFLAGS)
+prv2dim_CXXFLAGS       = -DNEW_DIMEMAS_TRACE $(BOOST_CPPFLAGS) 
 
 # Common list of sources
 prv2dim_SOURCES = \
@@ -33,4 +33,5 @@ prv2dim_SOURCES = \
 	PCFGeneration.hpp
 
 prv2dim_LDADD = \
-	$(top_srcdir)/common_utilities/libCommonUtilities.la 
+	$(top_srcdir)/common_utilities/libCommonUtilities.la \
+	-L$(BOOST_LDPATH) -lboost_program_options
