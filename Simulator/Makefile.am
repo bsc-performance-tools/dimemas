@@ -22,7 +22,7 @@ AM_CPPFLAGS = \
 	$(BOOST_CPPFLAGS)
 
 
-bin_PROGRAMS = Dimemas DimemasUpdateCFG
+bin_PROGRAMS = Dimemas
 
 Dimemas_SOURCES = \
 	main.cpp
@@ -46,8 +46,6 @@ Dimemas_LDADD = \
 if VENUS_ENABLED
 Dimemas_LDADD += $(simulator_dir)/venusclient/libDimemasVenusClient.la
 endif
-
-DimemasUpdateCFG_SOURCES = Dimemas_updateCFGs.cpp
 
 LIB_EXTERN_MODEL_SRCS=lib_extern_model/Makefile \
 	lib_extern_model/extern_comm_model.c \

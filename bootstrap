@@ -1,14 +1,9 @@
 #!/bin/sh
 
 # Update the version numbers manually
-
 MAJOR=5
 MINOR=3
-REV=2
-# 'svnversion' no longer needed. Always use the manual version
-#sh -c "svnversion -n . | cut -d: -f2 | cut -dS -f1 | tr -d '\n'" > ./SVN_VERSION
-#SVN_VERSION=`cat ./SVN_VERSION`
-#VERSION="$MAJOR.$MINOR.$REV-r$SVN_VERSION"
+REV=3
 
 VERSION="$MAJOR.$MINOR.$REV"
 
@@ -31,4 +26,3 @@ libtoolize --automake --force --copy \
 && autoheader \
 && automake --gnu --add-missing --copy \
 && autoconf
-
