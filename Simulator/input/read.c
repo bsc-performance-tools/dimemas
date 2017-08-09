@@ -920,7 +920,7 @@ void show_statistics ()
 {
  struct t_Ptask *Ptask;
  t_nano         total_time;
- t_boolean pallas_output = FALSE;
+ t_boolean pallas_output = TRUE;
 
  if (pallas_output)
  {

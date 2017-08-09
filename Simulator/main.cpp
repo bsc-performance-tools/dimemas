@@ -299,8 +299,8 @@ void parse_arguments(int argc, char *argv[])
             "Extra events debug information")
         ("xtra-paraver-debug", po::bool_switch(&extra_paraver_debug_enabled),
             "Extra paraver tracefile generation debug information")
-        ("xtra-task-debug", po::bool_switch(&extra_task_debug_enabled),
-            "Extra task debug information")
+        //("xtra-task-debug", po::bool_switch(&extra_task_debug_enabled),
+        //    "Extra task debug information")
     ;
 
     po::options_description all("Allowed options");
