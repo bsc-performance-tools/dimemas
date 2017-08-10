@@ -131,6 +131,31 @@ bool ReadArgs(const int argc, const char *argv[])
 
     GenerateFirstIdle = !GenerateFirstIdle;
     GenerateMPIInitBarrier = !GenerateMPIInitBarrier;
+
+    if (varmap.count("burst-counter-type") ^ varmap.count("burst-counter-factor"))
+    {
+        cout << "Error parsing arguments" << endl;
+        cout << "\"--burst-counter-type\" and \"--burst-counter-factor\" should "\
+            " appear together" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (varmap.count("burst-counter-type"))
+    {
+        cout << "BURST COUNTER TYPE = " << BurstCounterType << endl;
+        cout << "BURST COUNTER FACTOR = " << BurstCounterFactor << endl;
+    }
+
+    if (varmap.count("deadlock-extra-statistics"))
+    {
+        string ChoppedFileName;
+        int SubstrPosition = DimTraceName.rfind(".dim");
+
+        ChoppedFileName = DimTraceName.substr(0, SubstrPosition);
+        ExtraStatisticsName = ChoppedFileName+".estats";
+
+        cout << "EXTRA STATISTICS NAME = " << ExtraStatisticsName << endl;
+    }
     return true;
 }
 
