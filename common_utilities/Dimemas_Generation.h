@@ -1,6 +1,26 @@
 #ifndef _DIMEMAS_HEADER_H
 #define _DIMEMAS_HEADER_H
 
+
+#define NX_GENERIC_SEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:%d\n"
+#define NX_SEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:0\n"
+#define NX_ISEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:2\n"
+#define NX_ISEND_READY_STRING "2:%d:%d:%d:%d:%d:%lld:%d:3\n"
+#define NX_BSEND_STRING "2:%d:%d:%d:%d:%d:%lld:%d:1\n"
+#define NX_GENERIC_RECV_STRING "3:%d:%d:%d:%d:%d:%lld:%d:%d\n"
+#define NX_RECV_STRING "3:%d:%d:%d:%d:%d:%lld:%d:0\n"
+#define NX_IRECV_STRING "3:%d:%d:%d:%d:%d:%lld:%d:1\n"
+#define NX_WAIT_STRING "3:%d:%d:%d:%d:%d:%lld:%d:2\n"
+#define CPU_BURST_STRING "1:%d:%d:%.9f\n"
+#define COMMUNICATOR_STRING "d:1:%lld:%d"
+#define USER_EVENT_STRING "20:%d:%d:%lld:%lld\n"
+#define BLOCK_BEGIN_STRING "20:%d:%d:%lld:%lld\n"
+#define BLOCK_END_STRING "20:%d:%d:%lld:0\n"
+#define GLOBAL_OP_STRING "10:%d:%d:%d:%d:%d:%d:%lld:%lld:%d\n"
+#define GLOBAL_OP_WAIT_STRING "10:%d:%d:%d:%d:%d:%d:%lld:%lld:2\n"
+#define NOOP_STRING "0:%d:%d\n"
+#define GPU_BURST_STRING "11:%d:%d:%.9f\n"
+
 #ifdef __cplusplus
 extern "C"
 {

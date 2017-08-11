@@ -160,25 +160,6 @@ void SIMULATOR_Init(const char  *simulator_configuration_filename,
 
   switch(check_configuration_file_type(configuration_file))
   {
-    case OLD_CONFIGURATION:
-
-
-      if (IO_fseeko(configuration_file, (off_t) 0, SEEK_SET) == -1)
-      {
-        die ("Error initializing configuration file %s", strerror(errno));
-      }
-
-      if (!CONFIGURATION_parse(configuration_file,
-                               parameter_tracefile,
-                               parameter_bw,
-                               parameter_lat,
-                               parameter_predefined_map,
-                               parameter_tasks_per_node))
-      {
-        die("Error parsing configuration file");
-      }
-      break;
-
     case NEW_CONFIGURATION:
 
       if (IO_fseeko(configuration_file, (off_t) 0, SEEK_SET) == -1)

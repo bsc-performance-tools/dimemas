@@ -61,6 +61,7 @@ extern "C"
 #include "random.h"
 #include "eee_configuration.h"
 #include "dimemas_io.h"
+#include "new_configuration.h"
 #include "configuration.h"
 #include "simulator.h"
 
