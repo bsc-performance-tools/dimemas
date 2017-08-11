@@ -1,12 +1,13 @@
 AUTOMAKE_OPTIONS = foreign no-dependencies
 
+ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS = common_utilities include Simulator prv2dim 
+
 
 if HAVE_JAVA
 SUBDIRS += GUI
 endif
-
-SUBDIRS += trf2dim
 
 EXTRA_DIST = 
 

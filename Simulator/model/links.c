@@ -23,32 +23,21 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-#include "define.h"
-#include "types.h"
-
-#include "links.h"
-
-#include "machine.h"
-#include "node.h"
-
-#include "sched_vars.h"
-#include "communic.h"
-#include "cpu.h"
-#include "extern.h"
-#include "list.h"
-#include "memory.h"
-#include "paraver.h"
-#include "ports.h"
-#include "subr.h"
+#include <math.h>
+#include <define.h>
+#include <types.h>
+#include <links.h>
+#include <machine.h>
+#include <node.h>
+#include <sched_vars.h>
+#include <communic.h>
+#include <cpu.h>
+#include <extern.h>
+#include <list.h>
+#include <memory.h>
+#include <paraver.h>
+#include <ports.h>
+#include <subr.h>
 
 #include "Macros.h" /* Per l'ASSERT */
 

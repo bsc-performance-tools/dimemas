@@ -23,56 +23,53 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #include <define.h>
 #include <types.h>
 #include <extern.h>
 #include <assert.h>
 #include <dlfcn.h>
-
+#include <subr.h>
 #include <float.h>
 #include <math.h>
 
-#include "communic.h"
-#include "eee_configuration.h"
+#include <communic.h>
+#include <eee_configuration.h>
+#include <eee_communic.h>
 
 
-#include "events.h"
-#include "simulator.h"
-#include "sched_vars.h"
-// #include "machine.h"
-#include "node.h"
-#include "paraver.h"
-#include "random.h"
-#include "cpu.h"
-#include "links.h"
+#include <events.h>
+#include <simulator.h>
+#include <sched_vars.h>
+#include <node.h>
+#include <paraver.h>
+#include <random.h>
+#include <cpu.h>
+#include <links.h>
+#include <schedule.h>
+#include <memory.h>
+#include <cp.h>
+#include <configuration.h>
+#include <deadlock_analysis.h>
+#include <EventEncoding.h>
+#include <read.h>
 
 #ifdef USE_EQUEUE
-#include "listE.h"
+#include <listE.h>
 #else
-#include "list.h"
+#include <list.h>
 #endif
 
 #ifdef VENUS_ENABLED
-#include "venusclient.h"
+#include <venusclient.h>
 #endif
 
 #define PERIODIC_TRAFFIC 10e9
+
 // For venus, 10e9 is too much
 #ifdef VENUS_ENABLED
 #define VENUS_PERIODIC_TRAFFIC 1e9
 #endif
 
-#include <deadlock_analysis.h>
-#include "EventEncoding.h"
 
 /******************************************************************************
  * Global variables                                                           *
@@ -317,7 +314,8 @@ void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercen
   if (with_deadlock_analysis)
   {
     struct t_Ptask * Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
-    DEADLOCK_init_deadlock_analysis(/*Machines[0].number_of_nodes*/ Ptask->tasks_count,
+    DEADLOCK_init_deadlock_analysis(/*Machines[0].number_of_nodes*/ 
+            Ptask->tasks_count,
     		parameter_tracefile, end_analysis_tpercent);
   }
 
@@ -7906,7 +7904,8 @@ static void close_global_nonblock_communication(struct t_thread *thread)
 
   nb_glob_index = thread->nb_glob_index;
 
-  struct t_thread* current_root = query_prio_queue(&communicator->nonblock_current_root, nb_glob_index);
+  struct t_thread* current_root = (struct t_thread*)query_prio_queue(
+          &communicator->nonblock_current_root, nb_glob_index);
   extract_from_queue(&communicator->nonblock_current_root, (void *) current_root);
   //communicator->nonblock_current_root[nb_glob_index] = TH_NIL;
   //communicator->in_flight_op = FALSE; // TODO: It is set ??
@@ -8018,7 +8017,8 @@ static void close_global_nonblock_communication(struct t_thread *thread)
     else
     {
         parent_thread->n_nonblock_glob_done += 1;
-        inFIFO_queue(&parent_thread->nonblock_glop_done_threads, others);
+        inFIFO_queue(&parent_thread->nonblock_glop_done_threads, 
+                (char *)others);
     }
 
     parent_thread->n_nonblock_glob_in_flight -= 1;
@@ -8032,7 +8032,8 @@ static void close_global_nonblock_communication(struct t_thread *thread)
     //              parent_thread->n_nonblock_glob_in_flight);
 
   }
-  extract_from_queue(&communicator->nonblock_global_op_threads, nb_glob_threads);
+  extract_from_queue(
+          &communicator->nonblock_global_op_threads, (char *)nb_glob_threads);
 
 }
 
@@ -8270,15 +8271,8 @@ void GLOBAL_wait_operation(struct t_thread *thread)
   if (thread->startup_done == FALSE)
   {
       startup = compute_startup (
-            thread,
-            thread->task->taskid,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            NON_BLOCKING_GLOBAL_OP_COM_TYPE,
-            NULL);
+            thread, thread->task->taskid,0,NULL,NULL,0,0,
+            NON_BLOCKING_GLOBAL_OP_COM_TYPE,NULL);
 
     if (startup != (t_nano) 0)
     {
@@ -8331,7 +8325,7 @@ void GLOBAL_wait_operation(struct t_thread *thread)
 
       thread->n_nonblock_glob_done -= 1;
     
-      struct t_thread * copy_thread = outFIFO_queue(
+      struct t_thread * copy_thread = (struct t_thread*)outFIFO_queue(
               &thread->nonblock_glop_done_threads);
       delete_duplicate_thread(copy_thread);
       
@@ -8440,16 +8434,8 @@ void GLOBAL_operation (struct t_thread *thread,
   {
       if (thread->startup_done == FALSE)
       {
-        int startup = compute_startup (
-                thread,
-                thread->task->taskid,
-                NULL,
-                NULL,
-                NULL,
-                NULL,
-                NULL,
-                NON_BLOCKING_GLOBAL_OP_COM_TYPE,
-                NULL);
+        int startup = compute_startup (thread,thread->task->taskid,0,
+                NULL,NULL,0,0,NON_BLOCKING_GLOBAL_OP_COM_TYPE,NULL);
 
         if (startup != (t_nano) 0)
         {
@@ -8523,11 +8509,11 @@ void GLOBAL_operation (struct t_thread *thread,
           create_queue(new_nonblock_m_threads_with_links);
 
           insert_queue(&communicator->nonblock_global_op_threads, 
-                  new_global_op_threads, nb_glob_index);
+                  (char *)new_global_op_threads, nb_glob_index);
           insert_queue(&communicator->nonblock_global_op_machine_threads, 
-                  new_global_op_machine_threads, nb_glob_index);
+                  (char *)new_global_op_machine_threads, nb_glob_index);
           insert_queue(&communicator->nonblock_m_threads_with_links, 
-                  new_nonblock_m_threads_with_links, nb_glob_index);
+                  (char *)new_nonblock_m_threads_with_links, nb_glob_index);
 
           //communicator->nonblock_current_root;
           // Manage the glop with the copy_thread
@@ -8591,7 +8577,8 @@ void GLOBAL_operation (struct t_thread *thread,
   {
     if (synch_type == GLOBAL_OP_ASYN )
     {
-      insert_queue(&communicator->nonblock_current_root, thread, nb_glob_index);
+      insert_queue(&communicator->nonblock_current_root, 
+              (char*)thread, nb_glob_index);
       //communicator->nonblock_current_root[nb_glob_index] = thread;
     }
     else

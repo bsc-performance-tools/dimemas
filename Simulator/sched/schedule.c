@@ -32,9 +32,12 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <math.h>
 #include "define.h"
 #include "types.h"
-
+#include "EventEncoding.h"
+#include "deadlock_analysis.h"
+#include "configuration.h"
 #include "sched_vars.h"
 #include "communic.h"
 #include "cp.h"

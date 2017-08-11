@@ -1,15 +1,12 @@
 #include <deadlock_analysis.h>
 #include <assert.h>
-#include <string.h> // for strtok
+#include <string.h> 
 #include <graph.h>
 #include <simulator.h>
 #include <file_data_access.h>
+#include <list.h>
+#include <communic.h>
 
-t_boolean DEADLOCK_manage_global_dependency(struct t_thread * thread);
-struct t_thread * get_thread_by_task_id(int taskid);
-int breakChainFrom(int * dep_chain_queue, int size);
-void parse_estats(struct t_estats * epr);
-char * get_name_of_action(int action);
 
 int _get_earlier_task_index(int * dep_chain_queue, int deepness, t_boolean ignore_glops);
 
@@ -20,7 +17,7 @@ int _get_earlier_task_index(int * dep_chain_queue, int deepness, t_boolean ignor
 /*
  * Initialization of the deadlock analyzer
  */
-void DEADLOCK_init_deadlock_analysis(int ranks, char * parameter_tracefile, float end_analysis_tpercent)
+void DEADLOCK_init_deadlock_analysis(int ranks, const char * parameter_tracefile, float end_analysis_tpercent)
 {
   char * to = strstr(parameter_tracefile, ".dim");
   int name_size = (to-parameter_tracefile);
@@ -385,7 +382,7 @@ void DEADLOCK_thread_finalized(struct t_thread * thread)
         op_to_be_ignored->Ptask_id = thread_to_reverse->task->Ptask->Ptaskid;
         op_to_be_ignored->task_id = thread_to_reverse->task->taskid;
         op_to_be_ignored->thread_id = thread_to_reverse->threadid;
-        op_to_be_ignored->file_offset = dep_tome[j]->file_pointer;
+        op_to_be_ignored->file_offset = dep_tome[j]->file_offset;
 
         printf("-> Action %d has finished with dependencies from %d\n", to_taskid, i);
         printf("-> Action of task %d will be ignored. (file offset: %u)\n",
@@ -473,7 +470,7 @@ t_boolean _is_deadlocked(int from)
     op_to_be_ignored->Ptask_id = thread_to_mod->task->Ptask->Ptaskid;
     op_to_be_ignored->task_id = thread_to_mod->task->taskid;
     op_to_be_ignored->thread_id = thread_to_mod->threadid;
-    op_to_be_ignored->file_offset = _dep->file_pointer;
+    op_to_be_ignored->file_offset = _dep->file_offset;
 
     double prio = (double)op_to_be_ignored->file_offset;
 
@@ -907,7 +904,7 @@ t_boolean DEADLOCK_check_end()
       op_to_be_ignored->Ptask_id = thread_to_mod->task->Ptask->Ptaskid;
       op_to_be_ignored->task_id = thread_to_mod->task->taskid;
       op_to_be_ignored->thread_id = thread_to_mod->threadid;
-      op_to_be_ignored->file_offset = pendent[j]->file_pointer;
+      op_to_be_ignored->file_offset = pendent[j]->file_offset;
 
       double prio = (double)op_to_be_ignored->file_offset;
       insert_queue(&thread_to_mod->ops_to_be_ignored, (char *)op_to_be_ignored, prio);

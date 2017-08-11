@@ -23,9 +23,6 @@
 
 #define DEBUG 1
 
-FILE *log;
-int file_index;
-char * log_file_name;
 
 struct dependency_queue
 {
@@ -51,7 +48,7 @@ struct dependency
   int global_op;
   struct t_communicator * communicator;
 
-  FILE * file_pointer;
+  unsigned int file_offset;
   dimemas_timer time;   // Instant when the dependency has been added
 };
 
@@ -80,5 +77,9 @@ struct dependency ** GRAPH_get_dependencies(int from_taskid, int to_taskid, int 
 //int GRAPH_is_dependent_action(int from_taskid, int to_taskid, int type);
 //struct dependency * GRAPH_get_dependency(int from_taskid, int to_taskid, int type, int action);
 //struct dependency ** GRAPH_get_dependencies(int from_taskid, int to_taskid, int type, int action, int * res_size);
+
+t_boolean __look_for_cycle(int from, int root, int * dep_chain_queue, int * deepness);
+
+
 
 #endif

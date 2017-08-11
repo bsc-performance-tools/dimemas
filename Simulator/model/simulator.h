@@ -203,6 +203,7 @@ void SIMULATOR_set_acc_nodes(int node_id,
 
 void SIMULATOR_reset_state();
 
+char* SIMULATOR_Get_Configuration_FileName(void);
 #endif
 
 

@@ -33,6 +33,7 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #include <assert.h>
+#include <math.h>
 
 /* Includes 'por defecto' */
 #include "define.h"
@@ -51,6 +52,7 @@
 #include "simulator.h"
 #include "machine.h"
 #include "node.h"
+#include <read.h>
 
 void PRIO_FIFO_thread_to_ready(struct t_thread *thread)
 {

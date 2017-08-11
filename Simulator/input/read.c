@@ -49,8 +49,6 @@
 #include "list.h"
 // #include "random.h"
 //
-// #include "schedule.h"
-// #include "subr.h"
 #include "task.h"
 #include "communic.h"
 #include "fs.h"
@@ -59,6 +57,9 @@
 
 #include <float.h>
 #include <math.h>   /* Per l'arrel quadrada */
+#include <subr.h>
+#include <file_data_access.h>
+#include <schedule.h>
 
 struct t_Ptask        *Ptask_current;
 int                    stop_restarts;

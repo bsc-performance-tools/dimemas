@@ -30,7 +30,7 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 #include "ParaverTraceTranslator.hpp"
-
+#include <limits.h>
 #include "EventEncoding.h"
 #include "Dimemas_Generation.h"
 #include "define.h"
@@ -921,7 +921,7 @@ ParaverTraceTranslator::Translate(
 
     fprintf(extra_statistics_file, "// #send,#isend,#recv, #irecv, #wait, #glop\n");
 
-    unsigned int min_glops = 10000000000;
+    unsigned int min_glops = UINT_MAX;
     for (int i=0; i < TranslationInfo.size(); ++i)
     {
 			for (int j=0; j < TranslationInfo[i].size(); j++)

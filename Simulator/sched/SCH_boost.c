@@ -32,6 +32,8 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <math.h>
+
 /* Includes 'por defecto' */
 #include "define.h"
 #include "types.h"
@@ -51,6 +53,7 @@
 
 #include "node.h"
 #include "machine.h"
+#include "read.h"
 
 static struct t_boost boost[MAX_MACHINES];
 

@@ -2444,8 +2444,11 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
             {
                 ToDimemas(PartialGlobalOp);
             }
-            else 
+            else
+            {
 				RecordStack.push_back(PartialGlobalOp);
+            }
+            
 
 			GlobalOpFields = 0;
 			PendingGlobalOp = false;

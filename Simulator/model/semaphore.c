@@ -23,25 +23,17 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
+#include <define.h>
+#include <types.h>
+#include <math.h>
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-#include "define.h"
-#include "types.h"
-
-#include "cpu.h"
-#include "extern.h"
-#include "list.h"
-#include "paraver.h"
-#include "schedule.h"
-#include "semaphore.h"
-#include "subr.h"
+#include <cpu.h>
+#include <extern.h>
+#include <list.h>
+#include <paraver.h>
+#include <schedule.h>
+#include <semaphore.h>
+#include <subr.h>
 
 void
 SEMAPHORE_general (int value, struct t_thread *thread)

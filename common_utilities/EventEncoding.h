@@ -1008,25 +1008,23 @@ int ClusterEventEncoding_Is_BlockBegin  (long64_t Op);
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value);
 
 /* CUDA EventEncoding calls	*/
-int      CUDAEventEncoding_Is_CUDABlock  				(long64_t type);
-int      CUDAEventEncoding_Is_BlockBegin 				(long64_t Op);
-int			 CUDAEventEncoding_Is_CUDAComm	 				(long64_t tag);
-int			 CUDAEventEncoding_Is_CUDATransferBlock (struct t_event_block event);
-int			 CUDAEventEconding_Is_CUDAConfigCall		(struct t_event_block event);
-int			 CUDAEventEconding_Is_CUDALaunch				(struct t_event_block event);
-int			 CUDAEventEconding_Is_CUDASync					(struct t_event_block event);
-/* CUDA EventEncoding calls	*/
+int CUDAEventEncoding_Is_CUDABlock(long64_t type);
+int CUDAEventEncoding_Is_BlockBegin(long64_t Op);
+int CUDAEventEncoding_Is_CUDAComm(long64_t tag);
+int CUDAEventEncoding_Is_CUDATransferBlock(struct t_event_block event);
+int CUDAEventEconding_Is_CUDAConfigCall(struct t_event_block event);
+int CUDAEventEconding_Is_CUDALaunch(struct t_event_block event);
+int CUDAEventEconding_Is_CUDASync(struct t_event_block event);
 
 /* OpenCL EventEncoding calls	*/
-int			 OCLEventEncoding_Is_OCLBlock		 			(long64_t type);
-int			 OCLEventEncoding_Is_BlockBegin	 			(long64_t Op);
-int			 OCLEventEncoding_Is_OCLComm	 	 			(long64_t tag);
-int			 OCLEventEncoding_Is_OCLSyncBlock 		(struct t_event_block event);
-int			 OCLEventEncoding_Is_OCLTransferBlock (struct t_event_block event);
-int			 OCLEventEncoding_Is_OCLSchedBlock 		(struct t_event_block event);
-int			 OCLEventEncoding_Is_OCLSchedblock 		(long64_t type, long64_t value);
-int			 OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event);
-/* OpenCL EventEncoding calls	*/
+int OCLEventEncoding_Is_OCLBlock(long64_t type);
+int OCLEventEncoding_Is_BlockBegin(long64_t Op);
+int OCLEventEncoding_Is_OCLComm(long64_t tag);
+int OCLEventEncoding_Is_OCLSyncBlock(struct t_event_block event);
+int OCLEventEncoding_Is_OCLTransferBlock(struct t_event_block event);
+int OCLEventEncoding_Is_OCLSchedBlock(struct t_event_block event);
+int OCLEventEncoding_Is_OCLSchedblock(long64_t type, long64_t value);
+int OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event);
 
 #ifdef __cplusplus
 }

@@ -45,10 +45,17 @@ unsigned int _MAX_GLOPS;
 float _end_analysis_tpercent;
 
 
-void DEADLOCK_init_deadlock_analysis(int ranks, char * parameter_tracefile, float end_analysis_tpercent);
+void DEADLOCK_init_deadlock_analysis(int ranks, const char * parameter_tracefile, float end_analysis_tpercent);
 void DEADLOCK_reset();
 void DEADLOCK_thread_finalized(struct t_thread * thread);
 t_boolean DEADLOCK_new_communic_event(struct t_thread * thread);
 t_boolean DEADLOCK_check_end();
+
+t_boolean DEADLOCK_manage_global_dependency(struct t_thread * thread);
+struct t_thread * get_thread_by_task_id(int taskid);
+int breakChainFrom(int * dep_chain_queue, int size);
+void parse_estats(struct t_estats * epr);
+char * get_name_of_action(int action);
+t_boolean _is_deadlocked(int from);
 
 #endif

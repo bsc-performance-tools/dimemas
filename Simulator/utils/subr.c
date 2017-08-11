@@ -23,21 +23,12 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-#include "define.h"
-#include "types.h"
-
-#include "extern.h"
-#include "subr.h"
-#include "assert.h"
+#include <math.h>
+#include <define.h>
+#include <types.h>
+#include <extern.h>
+#include <subr.h>
+#include <assert.h>
 
 extern char      yy_error_string[];
 extern t_boolean yy_error_filled;

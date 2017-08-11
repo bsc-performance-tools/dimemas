@@ -23,17 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-/*#define BLOCK_SPECIAL 1*/
-
 #include <math.h>
 #include <string.h>
 #include <assert.h>
@@ -41,28 +30,27 @@
 
 #include <EventEncoding.h>
 
-#include "define.h"
-#include "types.h"
-
-#include "aleatorias.h"
-#include "cpu.h"
-#include "events.h"
-#include "extern.h"
-#include "list.h"
-#include "memory.h"
-#include "paraver.h"
-#include "ports.h"
-#include "read.h"
-#include "schedule.h"
-#include "subr.h"
-#include "task.h"
-#include "random.h"
-#include "modules_map.h"
-
-#include "simulator.h"
-#include "machine.h"
-#include "node.h"
-#include "file_data_access.h"
+#include <define.h>
+#include <types.h>
+#include <aleatorias.h>
+#include <cpu.h>
+#include <events.h>
+#include <extern.h>
+#include <list.h>
+#include <memory.h>
+#include <paraver.h>
+#include <ports.h>
+#include <read.h>
+#include <schedule.h>
+#include <subr.h>
+#include <task.h>
+#include <random.h>
+#include <modules_map.h>
+#include <simulator.h>
+#include <machine.h>
+#include <node.h>
+#include <file_data_access.h>
+#include <communic.h>
 
 #define MIN_SERVICE_TIME (t_nano)7000
 #define MAX_SERVICE_TIME (t_nano)13000
@@ -621,39 +609,6 @@ void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
   insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);
 }
 */
-
-void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
-                                           int             communicator_id)
-{
-  register struct t_communicator *comm;
-  int *mtaskid;
-  int  i;
-  int *trips;
-
-  comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
-      (t_priority)communicator_id);
-
-  if (comm==(struct t_communicator *)0)
-  {
-      panic ("Unable to locate communicator %d for P%d\n",
-             communicator_id,
-             Ptask->Ptaskid);
-  }
-  trips = (int*) malloc (3*count_queue(&comm->global_ranks)*sizeof(int));
-  i=0;
-  for (mtaskid=(int *)head_queue(&comm->global_ranks);
-       mtaskid!=(int *)0;
-       mtaskid=(int *)next_queue(&comm->global_ranks))
-  {
-    trips[i] = *mtaskid;
-    i++;
-    trips[i] = *mtaskid;
-    i++;
-    trips[i] = 1;
-    i++;
-  }
-  free (trips);
-}
 
 void
 new_window_definition (struct t_Ptask *Ptask, int window_id)

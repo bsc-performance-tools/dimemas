@@ -1,10 +1,11 @@
+#include <math.h>
+
 #include <types.h>
 #include <define.h>
 #include <extern.h>
-
-#include "cpu.h"
-#include "node.h"
-#include "task.h"
+#include <cpu.h>
+#include <node.h>
+#include <task.h>
 
 #include "eee_configuration.h"
 

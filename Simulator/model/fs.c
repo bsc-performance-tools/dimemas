@@ -23,33 +23,29 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+#include <math.h>
 
 #include <define.h>
 #include <types.h>
+#include <aleatorias.h>
+#include <communic.h>
+#include <cpu.h>
+#include <node.h>
+#include <events.h>
+#include <extern.h>
+#include <fs.h>
+#include <list.h>
+#include <paraver.h>
+#include <schedule.h>
+#include <subr.h>
+#include <task.h>
+#include <read.h>
+#include <configuration.h>
 
-#include "aleatorias.h"
-#include "communic.h"
-#include "cpu.h"
-#include "node.h"
-#include "events.h"
-#include "extern.h"
-#include "fs.h"
-#include "list.h"
 #ifdef USE_EQUEUE
-#include "listE.h"
+#include <listE.h>
 #endif
-#include "paraver.h"
-#include "schedule.h"
-#include "subr.h"
-#include "task.h"
+
 
 static char *Operation_Name[] = {
   "MPI_File_open",

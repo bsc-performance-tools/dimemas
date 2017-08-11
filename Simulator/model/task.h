@@ -179,17 +179,6 @@ void user_event_value_name(struct t_Ptask *Ptask,
 
 void recompute_work_upon_modules(struct t_thread *thread, struct t_action *action);
 
-
-/*
-void add_identificator_to_communicator(struct t_Ptask *Ptask,
-                                  int communicator_id,
-                                  int taskid);
-
-
-void no_more_identificator_to_communicator(struct t_Ptask *Ptask,
-                                      int communicator_id);
-*/
-
 void new_window_definition (struct t_Ptask *Ptask, int window_id);
 
 void add_identificator_to_window(struct t_Ptask *Ptask, int window_id, int taskid);

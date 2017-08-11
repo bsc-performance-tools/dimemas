@@ -32,6 +32,7 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -40,18 +41,18 @@
 #include <float.h>
 #include <list.h>
 #include <generate_error.h>
-
-#include "sddf_records.h"
-#include "configuration.h"
-#include "check.h"
-#include "dimemas_io.h"
-
-/* That shouldn't be used here... */
-#include "simulator.h"
-#include "machine.h"
-#include "random.h"
-#include "sched_vars.h"
-#include "task.h"
+#include <sddf_records.h>
+#include <configuration.h>
+#include <check.h>
+#include <dimemas_io.h>
+#include <simulator.h>
+#include <machine.h>
+#include <random.h>
+#include <sched_vars.h>
+#include <task.h>
+#include <subr.h>
+#include <fs.h>
+#include <file_data_access.h>
 
 static int   current_line;
 static char *error_message;
@@ -103,7 +104,7 @@ char** str_split( char* str, char delim, int* numSplits );
  * Public functions implementation
  ****************************************************************************/
 t_boolean NEW_CONFIGURATION_parse(FILE  *configuration_file,
-                                  char  *parameter_tracefile,
+                                  const char  *parameter_tracefile,
                                   double parameter_bw,
                                   double parameter_lat,
                                   int    parameter_predefined_map,

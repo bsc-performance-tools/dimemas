@@ -10,24 +10,25 @@ char SCH_ss_mpi_cp_c_rcsid[]="$Id: SCH_ss_mpi_cp.c,v 1.3 2010/12/21 16:46:31 par
  */
 
 #include <assert.h>
+#include <math.h>
 
 /* Includes 'por defecto' */
-#include "define.h"
-#include "types.h"
-#include "extern.h"
+#include <define.h>
+#include <types.h>
+#include <extern.h>
 
 /* Include propio */
-#include "SCH_ss_mpi_cp.h"
+#include <SCH_ss_mpi_cp.h>
 
 /* Dependencias con otros fuentes */
-#include "cpu.h"
-#include "list.h"
-#include "schedule.h"
-#include "subr.h"
-
-#include "simulator.h"
-#include "machine.h"
-#include "node.h"
+#include <cpu.h>
+#include <list.h>
+#include <schedule.h>
+#include <subr.h>
+#include <simulator.h>
+#include <machine.h>
+#include <node.h>
+#include <read.h>
 
 void SS_MPI_CP_thread_to_ready(struct t_thread *thread)
 {

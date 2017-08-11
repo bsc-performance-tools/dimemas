@@ -1,6 +1,9 @@
+#include <string.h>
+
 #include <define.h>
 #include <types.h>
 
+#include <subr.h>
 #include "eee_configuration.h"
 #include "dimemas_io.h"
 

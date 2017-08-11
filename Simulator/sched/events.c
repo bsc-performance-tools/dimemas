@@ -23,33 +23,24 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
+#include <math.h>
+#include <define.h>
+#include <types.h>
+#include <extern.h>
+#include <communic.h>
+#include <cpu.h>
+#include <events.h>
+#include <fs.h>
+#include <list.h>
+#include <memory.h>
+#include <ports.h>
+#include <schedule.h>
+#include <subr.h>
+#include <node.h>
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-#include "define.h"
-#include "types.h"
-#include "extern.h"
-
-#include "communic.h"
-#include "cpu.h"
-#include "events.h"
-#include "fs.h"
-#include "list.h"
 #ifdef  USE_EQUEUE
 #include "listE.h"
 #endif
-#include "memory.h"
-#include "ports.h"
-#include "schedule.h"
-#include "subr.h"
-
-#include "node.h"
 
 #ifdef VENUS_ENABLED
 #include "venusclient.h"

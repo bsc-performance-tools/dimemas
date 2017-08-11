@@ -100,10 +100,10 @@ void GLOBAL_operation (struct t_thread *thread,
                        int bytes_recv,
                        int synch_type);
 
-extern struct t_communicator*
+struct t_communicator*
 locate_communicator(struct t_queue *communicator_queue, int commid);
 
-extern void global_op_reserva_links (struct t_thread *thread);
+void global_op_reserva_links (struct t_thread *thread);
 
 /* JGG: Constantes para marcar el FAN_IN y el FAN_OUT */
 #define FAN_IN  0
@@ -111,6 +111,7 @@ extern void global_op_reserva_links (struct t_thread *thread);
 
 void COMMUNIC_reset_deadlock();
 
-extern void ACCELERATOR_synchronization(struct t_thread* thread, int comm_id);
+void ACCELERATOR_synchronization(struct t_thread* thread, int comm_id);
+void add_global_ops (void);
 
 #endif

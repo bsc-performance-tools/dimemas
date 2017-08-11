@@ -23,15 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.#$:  File
-  $Rev:: 35               $:  Revision of last commit
-  $Author:: jgonzale      $:  Author of last commit
-  $Date:: 2012-01-11 19:4#$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -40,13 +31,17 @@
 #include <generate_error.h>
 #include <list.h>
 
-#include "dimemas_io.h"
-#include "simulator.h"
-#include "machine.h"
-#include "node.h"
-#include "task.h"
-#include "configuration.h"
-#include "new_configuration.h"
+#include <dimemas_io.h>
+#include <simulator.h>
+#include <machine.h>
+#include <node.h>
+#include <task.h>
+#include <configuration.h>
+#include <new_configuration.h>
+#include <subr.h>
+#include <read.h>
+#include <file_data_access.h>
+#include <SCH_fifo.h>
 
 #define UNKNOWN_CONFIGURATION   -1
 #define OLD_CONFIGURATION_MAGIC "SDDF"

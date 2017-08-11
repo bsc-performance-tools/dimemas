@@ -32,6 +32,7 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 #include <assert.h>
+#include <math.h>
 
 /* Includes 'por defecto' */
 #include "define.h"
@@ -49,6 +50,7 @@
 #include "paraver.h"
 #include "schedule.h"
 #include "subr.h"
+#include "read.h"
 
 static tsdpent_t           config_ts_dptbl[] = {
 /*  glbpri   qntm   tqexp   slprt   mxwt   lwt  */

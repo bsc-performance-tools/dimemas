@@ -39,11 +39,12 @@
 
 #include <list.h>
 #include <comm_configuration.h>
-#include "dimemas_io.h"
-#include "communic.h"           // To configure the communications
-#include "task.h"               // To configure the preemptions
-#include "sched_vars.h"         // To access to COMMUNIC table
-#include "simulator.h"
+#include <dimemas_io.h>
+#include <communic.h>           // To configure the communications
+#include <task.h>               // To configure the preemptions
+#include <sched_vars.h>         // To access to COMMUNIC table
+#include <simulator.h>
+#include <subr.h>
 
 /*
  * External definitions

@@ -1,5 +1,12 @@
 #include <graph.h>
 #include <assert.h>
+#include <deadlock_analysis.h>
+#include <communic.h>
+#include <file_data_access.h>
+
+FILE *log_file;
+int file_index;
+char * log_file_name;
 
 /*
  * Initialize the graph
@@ -21,7 +28,7 @@ void GRAPH_init(int nodes)
   file_index = 0;
   log_file_name = malloc(sizeof(char)*13);
   sprintf(log_file_name, "log.%04d.txt\0", file_index);
-  log = fopen(log_file_name, "w");
+  log_file = fopen(log_file_name, "w");
 #endif // DEBUG
 }
 
@@ -42,8 +49,9 @@ struct dependency * GRAPH_add_dependency(int from_taskid, int to_taskid, int typ
 
   new_dep->communicator = NO_COMM;
   new_dep->global_op = NO_GLOP;
-  new_dep->file_pointer = DAP_get_offset(thread->task->Ptask->Ptaskid,
-                                         thread->task->taskid, thread->threadid);
+  new_dep->file_offset = 
+      DAP_get_offset(thread->task->Ptask->Ptaskid,
+              thread->task->taskid, thread->threadid);
   switch (type)
   {
   case GLOP_DEP:
@@ -81,7 +89,7 @@ struct dependency * GRAPH_add_dependency(int from_taskid, int to_taskid, int typ
   }
 
   #if DEBUG > 0
-  fprintf(log, "%20f:+:%d:%d:%d:%s:%d:%d\n", current_time, from_taskid, to_taskid,
+  fprintf(log_file, "%20f:+:%d:%d:%d:%s:%d:%d\n", current_time, from_taskid, to_taskid,
 		  type, get_name_of_action(thread->action->action), new_dep->p2p_tag, new_dep->p2p_communic_id);
   #endif // DEBUG
 
@@ -138,7 +146,7 @@ void GRAPH_remove_dependency_p(struct dependency * d)
 {
   int from_taskid = d->from;
   #if DEBUG > 0
-  fprintf(log, "%20f:-:%d:%d:%d:%s:%d:%d\n", current_time, from_taskid,
+  fprintf(log_file, "%20f:-:%d:%d:%d:%s:%d:%d\n", current_time, from_taskid,
 		  d->to, d->type, get_name_of_action(d->action), d->p2p_tag, d->p2p_communic_id);
   #endif // DEBUG
 
@@ -274,12 +282,12 @@ void GRAPH_reset()
   }
 
   #if DEBUG
-  fclose(log);
+  fclose(log_file);
   free(log_file_name);
 
   log_file_name = malloc(sizeof(char)*13);
   sprintf(log_file_name, "log.%04d.txt\0", ++file_index);
-  log = fopen(log_file_name, "w");
+  log_file = fopen(log_file_name, "w");
   #endif // DEBUG
 }
 
@@ -343,7 +351,7 @@ void GRAPH_change_action(struct dependency *d, int new_action)
   d->action = new_action;
 
   #if DEBUG > 0
-  fprintf(log, "%20f:~:%d:%d:%d:%s:%d:%d\n", current_time, d->from, d->to,
+  fprintf(log_file, "%20f:~:%d:%d:%d:%s:%d:%d\n", current_time, d->from, d->to,
           d->type, get_name_of_action(d->action), d->p2p_tag, d->p2p_communic_id);
   #endif // DEBUG
 }
@@ -353,7 +361,7 @@ void GRAPH_print_state(int i)
   struct dependency * d;
 
   #if DEBUG
-  fprintf(log, "From %d -> \n\t", i);
+  fprintf(log_file, "From %d -> \n\t", i);
   #endif // DEBUG
 
   if (_graph_map[i].num_deps > 0)
@@ -364,21 +372,21 @@ void GRAPH_print_state(int i)
       if (last_to != d->to)
       {
         #if DEBUG
-        fprintf(log, "\n\t");
+        fprintf(log_file, "\n\t");
         //#else
         //printf("|");
         #endif
         last_to = d->to;
       }
       #if DEBUG
-      fprintf(log, "%f [->%d] %s(%d):%d:%d \n\t", d->time, d->to, get_name_of_action(d->action), d->type, d->p2p_tag, d->p2p_communic_id);
+      fprintf(log_file, "%f [->%d] %s(%d):%d:%d \n\t", d->time, d->to, get_name_of_action(d->action), d->type, d->p2p_tag, d->p2p_communic_id);
       //#else
       //printf(" %d[%s(%d)] @ %f ", d->to, get_name_of_action(d->action), d->type, d->time/1e6);
       #endif
     }
   }
   #if DEBUG
-  fprintf(log, "\n");
+  fprintf(log_file, "\n");
   //#else
   //printf("\n");
   #endif // DEBUG
@@ -387,7 +395,7 @@ void GRAPH_print_state(int i)
 void GRAPH_fini()
 {
   #if DEBUG
-  fclose(log);
+  fclose(log_file);
   free(log_file_name);
   #endif // DEBUG
 }
@@ -395,7 +403,7 @@ void GRAPH_fini()
 void GRAPH_debug(int from_taskid, int to_taskid, char * msg)
 {
   #if DEBUG
-  fprintf(log, "MSG: [%d->%d] %s\n", from_taskid, to_taskid, msg);
+  fprintf(log_file, "MSG: [%d->%d] %s\n", from_taskid, to_taskid, msg);
   //#else
   //printf("MSG: [%d->%d] %s\n", from_taskid, to_taskid, msg);
   #endif
@@ -404,7 +412,7 @@ void GRAPH_debug(int from_taskid, int to_taskid, char * msg)
 void GRAPH_debug_msg(char * msg)
 {
   #if DEBUG
-  fprintf(log, "%s", msg);
+  fprintf(log_file, "%s", msg);
   //#else
   //printf("%s", msg);
   #endif
@@ -414,7 +422,7 @@ void GRAPH_debug_msg(char * msg)
 {
 
   #if DEBUG > 0
-  fprintf(log, "%20f:-:%d:%d\n", current_time, from_taskid, to_taskid);
+  fprintf(log_file, "%20f:-:%d:%d\n", current_time, from_taskid, to_taskid);
   #endif // DEBUG
 
   t_boolean done = FALSE;

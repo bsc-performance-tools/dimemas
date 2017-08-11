@@ -15,7 +15,7 @@ AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([silent-rules])
 
 AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
-AC_CONFIG_MACRO_DIR([config])
+AC_CONFIG_MACRO_DIR([m4])
 
 LT_INIT
 
@@ -24,6 +24,71 @@ AC_SUBST(version)
 
 AC_DEFINE_UNQUOTED(DATE, ["`date`"], [Current date of compilation] )
 AM_SILENT_RULES([yes])
+
+dnl =========================================================================
+dnl Architecture and OS detection
+dnl =========================================================================
+
+case "$host_cpu*" in
+  i386*    ) Architecture="ia32"    ;;
+  i486*    ) Architecture="ia32"    ;;
+  i586*    ) Architecture="ia32"    ;;
+  i686*    ) Architecture="ia32"    ;;
+  powerpc* ) Architecture="powerpc" ;;
+  ia64*    ) Architecture="ia64"    ;;
+  alpha*   ) Architecture="alpha"   ;;
+  mips*    ) Architecture="mips"    ;;
+esac
+
+case "x$host_os" in
+  xlinux*  ) Operating_System="linux" ;;
+  xaix*    ) Operating_System="aix"   ;;
+  xosf*    ) Operating_System="dec"   ;;
+  xirix*   ) Operating_System="irix"  ;;
+  xdarwin* ) Operating_System="osx"   ;;
+  xcygwin* ) Operating_System="cygwin";;
+esac
+
+AM_CONDITIONAL(ARCH_IA32,    test "${Architecture}"    = "ia32"    )
+AM_CONDITIONAL(ARCH_POWERPC, test "${Architecture}"    = "powerpc" )
+AM_CONDITIONAL(ARCH_IA64,    test "${Architecture}"    = "ia64"    )
+AM_CONDITIONAL(ARCH_ALPHA,   test "${Architecture}"    = "alpha"   )
+AM_CONDITIONAL(ARCH_MIPS,    test "${Architecture}"    = "mips"    )
+AM_CONDITIONAL(OS_LINUX,     test "${OperatingSystem}" = "linux"   )
+AM_CONDITIONAL(OS_AIX,       test "${OperatingSystem}" = "aix"     )
+AM_CONDITIONAL(OS_DEC,       test "${OperatingSystem}" = "dec"     )
+AM_CONDITIONAL(OS_IRIX,      test "${OperatingSystem}" = "irix"    )
+AM_CONDITIONAL(OS_FREEBSD,   test "${OperatingSystem}" = "freebsd" )
+AM_CONDITIONAL(OS_SOLARIS,   test "${OperatingSystem}" = "solaris" )
+AM_CONDITIONAL(OS_MACOSX,    test "${OperatingSystem}" = "osx"     )
+AM_CONDITIONAL(OS_CYGWIN,    test "${OperatingSystem}" = "cygwin"  )
+
+dnl =========================================================================
+dnl Check the existence of the next data types and its size
+dnl =========================================================================
+
+AC_CHECK_TYPES([long, 
+                long long, 
+                char, 
+                int, 
+                float, 
+                long float, 
+                double, 
+                long double])
+AC_CHECK_SIZEOF([long, 
+                long long, 
+                char, 
+                int, 
+                float, 
+                long float, 
+                double, 
+                long double])
+AC_CHECK_TYPES([int64_t, 
+                uint64_t, 
+                int8_t, 
+                uint8_t, 
+                int32_t, 
+                uint32_t])
 
 dnl =======================================================================
 dnl Check if CFLAGS/CXXFLAGS have been defined by user
@@ -45,16 +110,32 @@ else
 fi
 AC_MSG_RESULT($enable_cxxflags_setting)
 
+if test "x$enable_cflags_setting" = "xyes"; then
+    CFLAGS="-O0"
+fi
+
+if test "x$enable_cxxflags_setting" = "xyes"; then
+    CXXFLAGS="-O0"
+fi
+
+AC_PROG_CC(icc gcc)
+AC_PROG_CXX(icpc g++)
+
+dnl Large files
+if test "$Operating_System" = "cygwin"; then
+  CFLAGS="$CFLAGS -D__LARGE64_FILES"
+  CXXFLAGS="$CXXFLAGS -D__LARGE64_FILES"
+elif test "$Operating_System" = "linux" ; then
+  CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
+  CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
+fi
+
+
 dnl =======================================================================
 dnl Check Compilers/Libraries
 dnl =======================================================================
 
-AC_PROG_CC(icc xlc gcc)
-AC_PROG_CXX(icpc xlC g++)
-AC_PROG_CPP
-
 AM_PROG_LIBTOOL
-AM_PROG_CC_C_O
 
 if test -z "$CC"; then 
   AC_MSG_WARN(C compiler not found. Please provide one before continuing) 
@@ -68,10 +149,6 @@ fi
 
 AM_CONFIG_HEADER(config.h)
 
-dnl ========================================================================
-dnl Transforming Program Names When Installing
-dnl ========================================================================
-dnl AC_ARG_PROGRAM
 
 dnl ========================================================================
 dnl Look for the install program
@@ -108,61 +185,6 @@ dnl ========================================================================
 dnl If the package is not flat
 dnl ========================================================================
 AC_PROG_MAKE_SET
-
-
-dnl =========================================================================
-dnl Architecture and OS detection
-dnl =========================================================================
-
-case "$host_cpu*" in
-  i386*    ) Architecture="ia32"    ;;
-  i486*    ) Architecture="ia32"    ;;
-  i586*    ) Architecture="ia32"    ;;
-  i686*    ) Architecture="ia32"    ;;
-  powerpc* ) Architecture="powerpc" ;;
-  ia64*    ) Architecture="ia64"    ;;
-  alpha*   ) Architecture="alpha"   ;;
-  mips*    ) Architecture="mips"    ;;
-esac
-
-case "x$host_os" in
-  xlinux*  ) Operating_System="linux" ;;
-  xaix*    ) Operating_System="aix"   ;;
-  xosf*    ) Operating_System="dec"   ;;
-  xirix*   ) Operating_System="irix"  ;;
-  xdarwin* ) Operating_System="osx"   ;;
-  xcygwin* ) Operating_System="cygwin";;
-esac
-
-AM_CONDITIONAL(ARCH_IA32,    test "${Architecture}"    = "ia32"    )
-AM_CONDITIONAL(ARCH_POWERPC, test "${Architecture}"    = "powerpc" )
-AM_CONDITIONAL(ARCH_IA64,    test "${Architecture}"    = "ia64"    )
-AM_CONDITIONAL(ARCH_ALPHA,   test "${Architecture}"    = "alpha"   )
-AM_CONDITIONAL(ARCH_MIPS,    test "${Architecture}"    = "mips"    )
-
-AM_CONDITIONAL(OS_LINUX,     test "${OperatingSystem}" = "linux"   )
-AM_CONDITIONAL(OS_AIX,       test "${OperatingSystem}" = "aix"     )
-AM_CONDITIONAL(OS_DEC,       test "${OperatingSystem}" = "dec"     )
-AM_CONDITIONAL(OS_IRIX,      test "${OperatingSystem}" = "irix"    )
-AM_CONDITIONAL(OS_FREEBSD,   test "${OperatingSystem}" = "freebsd" )
-AM_CONDITIONAL(OS_SOLARIS,   test "${OperatingSystem}" = "solaris" )
-AM_CONDITIONAL(OS_MACOSX,    test "${OperatingSystem}" = "osx"     )
-AM_CONDITIONAL(OS_CYGWIN,    test "${OperatingSystem}" = "cygwin"  )
-
-dnl =========================================================================
-dnl Check the existence of the next data types and its size
-dnl =========================================================================
-
-AC_CHECK_TYPES([long, long long, char, int, float, long float, double, long double])
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(char)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(float)
-AC_CHECK_SIZEOF(long float)
-AC_CHECK_SIZEOF(double)
-AC_CHECK_SIZEOF(long double)
-AC_CHECK_TYPES([int64_t, uint64_t, int8_t, uint8_t, int32_t, uint32_t])
 
 dnl =========================================================================
 dnl Check whether the compilers need additional parameters
@@ -299,48 +321,6 @@ if test "x$have_java" = "xno"; then
 fi
 
 AM_CONDITIONAL([HAVE_JAVA], [test "x$have_java" = "xyes"])
-
-dnl if test "x$have_java" = xyes; then
-dnl  AC_DEFINE(HAVE_JAVA, 1, Define to 1 if JAVA is installed in the system)
-dnl fi
-
-
-dnl =========================================================================
-dnl Set default xxxFLAGS if not defined
-dnl =========================================================================
-
-if test "x$enable_cflags_setting" = "xyes"; then
-  
-  dnl Optimization
-  CFLAGS="-O1"
-fi
-
-dnl Large files
-if test "$Operating_System" = "cygwin"; then
-  CFLAGS="$CFLAGS -D__LARGE64_FILES"
-elif test "$Operating_System" = "linux" ; then
-  CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
-fi
-
-
-if test "x$enable_cxxflags_setting" = "xyes"; then
-
-  dnl Optimization
-  CXXFLAGS="-O1"
-
-fi
-
-dnl Large files
-if test "$Operating_System" = "cygwin"; then
-  CXXFLAGS="$CXXFLAGS -D__LARGE64_FILES"
-elif test "$Operating_System" = "linux" ; then
-  CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
-fi
-
-CFLAGS="$CFLAGS -DDIMEMAS_COMPILATION"
-CXXFLAGS="$CXXFLAGS -DDIMEMAS_COMPILATION"
-LDFLAGS="$LDFLAGS"
-
 
 
 dnl =======================================================================

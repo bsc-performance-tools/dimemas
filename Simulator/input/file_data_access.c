@@ -23,17 +23,9 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #define _GNU_SOURCE // for getline
 #include <stdio.h>
+#include <math.h>
 
 /* JGG: to use 'USE_RENDEZ_VOUS' macro */
 #include <define.h>
@@ -43,7 +35,6 @@
 #include <sys/stat.h>
 #include <assert.h>
 
-// For tell()
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -56,6 +47,11 @@
 #include <simulator.h>
 #include <dimemas_io.h>
 #include <list.h>
+#include <new_configuration.h>
+#include <sched.h>
+#include <deadlock_analysis.h>
+#include <list.h>
+#include <read.h>
 
 // Definition and configuartion parameters of data access api
 #define DATA_ACCESS_DIMEMAS_HELLO_SIGN "#DIMEMAS"
@@ -2007,7 +2003,10 @@ t_boolean DAP_read_action (app_struct       *app,
 		else if (/*with_deadlock_analysis == 1 && */thread->counter_ops_already_ignored < count_queue(&thread->ops_to_be_ignored))
 		{
 			off_t actual_offset = ftell(stream);
-			struct trace_operation * op_to_be_ignored = query_prio_queue(&thread->ops_to_be_ignored, actual_offset);
+			struct trace_operation * op_to_be_ignored = 
+                (struct trace_operation*)query_prio_queue(
+                        &thread->ops_to_be_ignored, 
+                        actual_offset);
 
 			if (op_to_be_ignored != NULL)
 			{

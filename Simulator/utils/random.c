@@ -23,25 +23,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #include <stdio.h>
 #include <float.h>
 
-
-#include "define.h"
-#include "types.h"
-#include "extern.h"
-#include "subr.h"
-
-#include "aleatorias.h"
+#include <define.h>
+#include <types.h>
+#include <extern.h>
+#include <subr.h>
+#include <configuration.h>
+#include <aleatorias.h>
 
 #include "random.h"
 

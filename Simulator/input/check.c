@@ -32,6 +32,7 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -42,8 +43,9 @@
 #include "list.h"
 #include "sddf_records.h"
 #include "check.h"
-
+#include <simulator.h>
 #include "configuration.h"
+#include <subr.h>
 
 
 static int one_more_record;

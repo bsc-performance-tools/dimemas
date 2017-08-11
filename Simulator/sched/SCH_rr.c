@@ -35,6 +35,7 @@
 /* Includes 'por defecto' */
 #include "define.h"
 #include "types.h"
+#include <math.h>
 
 #include <dimemas_io.h>
 
@@ -50,6 +51,7 @@
 #include "simulator.h"
 #include "machine.h"
 #include "node.h"
+#include "read.h"
 
 /*while making threads ready we can leave the last one which is 
 assigned to the kernel

@@ -23,39 +23,30 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
+#include <math.h>
+#include <define.h>
+#include <types.h>
+#include <sched_vars.h>
+#include <communic.h>
+#include <cpu.h>
+#include <events.h>
+#include <extern.h>
+#include <fs.h>
+#include <links.h>
+#include <list.h>
+#include <memory.h>
+#include <paraver.h>
+#include <random.h>
+#include <schedule.h>
+#include <subr.h>
+#include <task.h>
+#include <machine.h>
+#include <node.h>
+#include <read.h>
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-#include "define.h"
-#include "types.h"
-
-#include "sched_vars.h"
-#include "communic.h"
-#include "cpu.h"
-#include "events.h"
-#include "extern.h"
-#include "fs.h"
-#include "links.h"
-#include "list.h"
 #ifdef USE_EQUEUE
 #include "listE.h"
 #endif
-#include "memory.h"
-#include "paraver.h"
-#include "random.h"
-#include "schedule.h"
-#include "subr.h"
-#include "task.h"
-
-#include "machine.h"
-#include "node.h"
-
 
 static void os_post (struct t_thread *thread,
                      struct t_mpi_os *mpi_os, struct t_window *win);

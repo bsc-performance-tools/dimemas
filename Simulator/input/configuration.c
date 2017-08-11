@@ -39,6 +39,10 @@
 #include <float.h>
 #include <list.h>
 
+#include <subr.h>
+#include <comm_configuration.h>
+#include <schedule.h>
+#include <fs.h>
 #include "sddf_records.h"
 #include "configuration.h"
 #include "check.h"

@@ -36,11 +36,13 @@
 #define _NEW_CONFIGURATION_H_
 
 extern t_boolean NEW_CONFIGURATION_parse(FILE  *configuration_file,
-                                         char  *input_tracefile,
+                                         const char  *input_tracefile,
                                          double parameter_bw,
                                          double parameter_lat,
                                          int    parameter_predefined_map,
                                          int    parameter_tasks_per_node);
 extern char*     NEW_CONFIGURATION_get_last_error(void);
+
+char** str_split( char* str, char delim, int* numSplits );
 
 #endif

@@ -23,21 +23,14 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.#$:  File
-  $Rev:: 35               $:  Revision of last commit
-  $Author:: jgonzale      $:  Author of last commit
-  $Date:: 2012-01-11 19:4#$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #include <stdlib.h>
 #include <string.h>
 
 #include "simulator.h"
 #include "machine.h"
 #include "node.h"
+#include <subr.h>
+#include <list.h>
 
 void MACHINE_Init_Empty_Machine(struct t_machine* machine, int machine_id)
 {
