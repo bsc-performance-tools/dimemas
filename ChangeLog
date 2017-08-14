@@ -1,12 +1,21 @@
 ChangeLog 'Dimemas package'
 
 Structure
-    
+
 Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 
 	FEATURES: explanation of new features 
 	BUGFIX: explanation of bug solved 
 	CHANGES: explanation of codification changes 
+
+2017 / 08 / 14 - Other
+	FEATURE:	Update_CFG and trf2dim has been removed from the package.
+
+2017 / 08 / 14 - jmartine - prv2dim | Simulator
+	FEATURE:	New parameters parsing. It maintains the same parameters like
+				before but now positional arguments can also be used in the
+				standard manner (-x < >, --x-xxx=< >). prv2dim -b argument has 
+				been changed by -b for type and -f for factor.
 
 2017 / 01 / 31 - jmartine - prv2dim | Simulator
 	FEATURE:	Added to the dimemas model the Non-Blocking Collectives
@@ -25,16 +34,24 @@ Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 				The mechanism is the like with --iproble-miss-rate.
 
 2016 / 08 / 13 - gmoren1 - All - 5.2 .13 
-	FEATURES:	GUI now can set, load and save accelerator parameters in the node configuration panel.prv2dim now can translate CUDA and
-				OpenCL events, comms and barriers.If gpu information is found in.row,more than one thread(host and kernel)
-				are going to be translated in the output trace.
-				Also, accelerator tasks information is written at the end of the header of the Dimemas trace to offer it to Dimemas for
-				the mapping. GPU_burst is a new record defined to simulate the GPU execution burst with the GPU speed ratio of the accelerator
-				node. Accelerator barriers are defined with the global_op_id parameter set in negative values:-1 is with a synch with all
+	FEATURES:	GUI now can set, load and save accelerator parameters in the 
+				node configuration panel.prv2dim now can translate CUDA and
+				OpenCL events, comms and barriers.If gpu information is found 
+				in.row,more than one thread(host and kernel) are going to be 
+				translated in the output trace.
+				Also, accelerator tasks information is written at the end of 
+				the header of the Dimemas trace to offer it to Dimemas for
+				the mapping. GPU_burst is a new record defined to simulate 
+				the GPU execution burst with the GPU speed ratio of the accelerator
+				node. Accelerator barriers are defined with the global_op_id 
+				parameter set in negative values:-1 is with a synch with all
 				threads, -2 with the thread 0, -3 with the thread 1... and so. 
-				Dimemas now can simulate accelerator threads(CUDA and OpenCL)and do the mapping between the defined accelerator 
-				nodes(in the cfg with a new record "accelerator node information") and the accelerator tasks(defined in the header of Dimemas trace). 
-				This mapping can be defined in the cfg or randomly assigned, always ensuring accelerator tasks in accelerator nodes.
+				Dimemas now can simulate accelerator threads(CUDA and OpenCL)
+				and do the mapping between the defined accelerator 
+				nodes(in the cfg with a new record "accelerator node information")
+				and the accelerator tasks(defined in the header of Dimemas trace). 
+				This mapping can be defined in the cfg or randomly assigned, 
+				always ensuring accelerator tasks in accelerator nodes.
 
 2016/07/01 - jmartine - GUI
 	CHANGES:	Now, the DIMEMAS_HOME path is set automatically.
