@@ -23,8 +23,7 @@ libCommonUtilities_la_SOURCES = \
 	generate_error.c \
 	generate_error.h \
 	bsc_utils.hpp \
-	bsc_utils.cpp \
-	ezOptionParser.hpp
+	bsc_utils.cpp
 
 if OPEN_MEMSTREAM_MISSING
 libCommonUtilities_la_SOURCES += open_memstream.c\

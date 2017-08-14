@@ -456,7 +456,6 @@ AC_CONFIG_FILES([
   GUI/Makefile
   GUI/src/Makefile
   prv2dim/Makefile
-  trf2dim/Makefile
 ])
 
 AC_OUTPUT
