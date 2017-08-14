@@ -137,5 +137,5 @@ void	NODE_set_acc(int node_id,
 									 double relative);
 
 t_boolean NODE_get_acc(struct t_node *node);
-
+int NODE_get_acc_node(struct t_node *node);
 #endif
