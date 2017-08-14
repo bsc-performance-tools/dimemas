@@ -9,6 +9,5 @@ if HAVE_JAVA
 SUBDIRS += GUI
 endif
 
-EXTRA_DIST = 
+EXTRA_DIST = bootstrap
 
-distdir = $(PACKAGE)-$(VERSION)

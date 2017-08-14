@@ -31,8 +31,6 @@ Dimemas_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
 Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include \
 				 -L$(BOOST_LDPATH) -lboost_program_options
 
-nodist_EXTRA_Dimemas_SOURCES = dummy.cc
-
 Dimemas_LDADD = \
 	$(simulator_dir)/model/libDimemasModel.la \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la \

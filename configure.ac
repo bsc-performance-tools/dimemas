@@ -4,21 +4,19 @@
 
 dnl Process this file with autoconf to produce a configure script.
 
-M4_DEFINE([major],[5])
-M4_DEFINE([minor],[3])
-M4_DEFINE([micro],[3])
-M4_DEFINE([version], [major.minor.micro])
+m4_define([dimemas_major], [5])
+m4_define([dimemas_minor], [3])
+m4_define([dimemas_micro], [3])
 
-AC_INIT(Dimemas, [version], tools@bsc.es)
+m4_define([dimemas_version], [dimemas_major.dimemas_minor.dimemas_micro])
+
+AC_INIT(dimemas, [dimemas_version], tools@bsc.es)
 AC_CANONICAL_SYSTEM
 
 AM_INIT_AUTOMAKE([silent-rules])
 
 AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
 AC_CONFIG_MACRO_DIR([m4])
-
-AC_SUBST(package)
-AC_SUBST(version)
 
 AC_DEFINE_UNQUOTED(DATE, ["`date`"], [Current date of compilation] )
 AM_SILENT_RULES([yes])
