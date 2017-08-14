@@ -17,13 +17,34 @@ AM_INIT_AUTOMAKE([silent-rules])
 AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
 AC_CONFIG_MACRO_DIR([m4])
 
-LT_INIT
-
 AC_SUBST(package)
 AC_SUBST(version)
 
 AC_DEFINE_UNQUOTED(DATE, ["`date`"], [Current date of compilation] )
 AM_SILENT_RULES([yes])
+
+dnl =======================================================================
+dnl Check if CFLAGS/CXXFLAGS have been defined by user
+dnl =======================================================================
+
+AC_MSG_CHECKING([whether configure should try to set CFLAGS])
+if test "x$CFLAGS" = "x"; then
+  enable_cflags_setting=yes
+    CFLAGS="-O3"
+else
+  enable_cflags_setting=no
+fi
+AC_MSG_RESULT($enable_cflags_setting)
+
+AC_MSG_CHECKING([whether configure should try to set CXXFLAGS])
+if test "x$CXXFLAGS" = "x"; then
+  enable_cxxflags_setting=yes
+    CXXFLAGS="-O3"
+else
+  enable_cxxflags_setting=no
+fi
+AC_MSG_RESULT($enable_cxxflags_setting)
+
 
 dnl =========================================================================
 dnl Architecture and OS detection
@@ -91,33 +112,9 @@ AC_CHECK_TYPES([int64_t,
                 uint32_t])
 
 dnl =======================================================================
-dnl Check if CFLAGS/CXXFLAGS have been defined by user
+dnl Check compilers 
 dnl =======================================================================
  
-AC_MSG_CHECKING([whether configure should try to set CFLAGS])
-if test "x$CFLAGS" = "x"; then
-  enable_cflags_setting=yes
-else
-  enable_cflags_setting=no
-fi
-AC_MSG_RESULT($enable_cflags_setting)
-
-AC_MSG_CHECKING([whether configure should try to set CXXFLAGS])
-if test "x$CXXFLAGS" = "x"; then
-  enable_cxxflags_setting=yes
-else
-  enable_cxxflags_setting=no
-fi
-AC_MSG_RESULT($enable_cxxflags_setting)
-
-if test "x$enable_cflags_setting" = "xyes"; then
-    CFLAGS="-O0"
-fi
-
-if test "x$enable_cxxflags_setting" = "xyes"; then
-    CXXFLAGS="-O0"
-fi
-
 AC_PROG_CC(icc gcc)
 AC_PROG_CXX(icpc g++)
 
@@ -135,6 +132,7 @@ dnl =======================================================================
 dnl Check Compilers/Libraries
 dnl =======================================================================
 
+LT_INIT
 AM_PROG_LIBTOOL
 
 if test -z "$CC"; then 

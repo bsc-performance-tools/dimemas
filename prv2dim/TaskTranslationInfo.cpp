@@ -477,24 +477,27 @@ bool TaskTranslationInfo::ReorderAndFlush(void)
 		}
 	}
 
-	ParaverRecord_t CurrentRecord;
-	for (i = 0; i < RecordStack.size(); i++) 
+	for (i = 0; i < RecordStack.size(); ++i) 
     {
-		CurrentRecord = RecordStack[i];
-        bool err = 
-            ToDimemas(CurrentRecord);
-
-		if (!err) 
+	    ParaverRecord_t CurrentRecord = RecordStack[i];
+        if (!ToDimemas(CurrentRecord))
         {
-			if (!FilePointerAvailable) fclose(TemporaryFile);
+			if (!FilePointerAvailable) 
+                fclose(TemporaryFile);
+
 			return false;
 		}
-
-		delete CurrentRecord;
 	}
 
-	if (PendingGlobalOp) FinalizeGlobalOp();
-	if (!FilePointerAvailable) fclose(TemporaryFile);
+    for (i=0; i < RecordStack.size(); ++i)
+    {
+        delete RecordStack[i];
+    }
+
+	if (PendingGlobalOp) 
+        FinalizeGlobalOp();
+	if (!FilePointerAvailable) 
+        fclose(TemporaryFile);
 
 	RecordStack.clear();
 
