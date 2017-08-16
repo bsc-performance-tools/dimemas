@@ -8,7 +8,7 @@ m4_define([major], [5])
 m4_define([minor], [3])
 m4_define([micro], [3])
 
-m4_define([dimemas_version], [dimemas_major.dimemas_minor.dimemas_micro])
+m4_define([dimemas_version], [major.minor.micro])
 
 AC_INIT(dimemas, [dimemas_version], tools@bsc.es)
 AC_CANONICAL_SYSTEM
