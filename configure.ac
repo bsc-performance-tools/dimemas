@@ -295,16 +295,6 @@ dnl =======================================================================
 dnl Conditional defines
 dnl =======================================================================
 
-AC_ARG_ENABLE(
-  enable-static-boost, 
-  AS_HELP_STRING(
-    [--enable-static-boost],
-    [If enabled, the boost libraries will be compiled statically]),
-    [ enable_static_boost="yes" ]
-  
-)
-AM_CONDITIONAL(STATIC_BOOST, test "x$enable_static_boost" = "xyes")
-
 dnl STARTUP_ALS_IRECV: if defined Dimemas considers initial startups on 
 dnl MPI_Irecv functions
 AC_ARG_ENABLE(
@@ -411,8 +401,19 @@ AC_ARG_ENABLE(
   ),
   [ jvm_heap_restriction_enabled="yes" ]
 )
+AM_CONDITIONAL([JVM_HEAP_RESTRICTION], 
+               [test "x$jvm_heap_restriction_enabled" = "xyes"])
 
-AM_CONDITIONAL([JVM_HEAP_RESTRICTION], [test "x$jvm_heap_restriction_enabled" = "xyes"])
+AC_ARG_ENABLE(
+  static-boost, 
+  AC_HELP_STRING(
+    [--enable-static-boost],
+    ["If enabled, the boost libraries will be compiled statically"]
+  ),
+  [ enable_static_boost="yes" ]
+)
+AM_CONDITIONAL(STATIC_BOOST, 
+               test "x$enable_static_boost" = "xyes")
 
 
 dnl =======================================================================
@@ -469,6 +470,7 @@ echo "
   Jar Utility......................: ${JAR:-none} $JARFLAGS
   JVM Heap restriction (2GB).......: ${jvm_heap_restriction_enabled:-no}
   Boost CPPFLAGS...................: $BOOST_CPPFLAGS
-  Boost Program_Options flags......:$BOOST_LDFLAGS $BOOST_PROGRAM_OPTIONS_LIB
+  Boost Program_Options flags......: $BOOST_LDFLAGS
+                                     $BOOST_PROGRAM_OPTIONS_LIB
 "
 
