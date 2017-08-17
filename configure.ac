@@ -86,28 +86,9 @@ dnl =========================================================================
 dnl Check the existence of the next data types and its size
 dnl =========================================================================
 
-AC_CHECK_TYPES([long, 
-                long long, 
-                char, 
-                int, 
-                float, 
-                long float, 
-                double, 
-                long double])
-AC_CHECK_SIZEOF([long, 
-                long long, 
-                char, 
-                int, 
-                float, 
-                long float, 
-                double, 
-                long double])
-AC_CHECK_TYPES([int64_t, 
-                uint64_t, 
-                int8_t, 
-                uint8_t, 
-                int32_t, 
-                uint32_t])
+AC_CHECK_TYPES([long, long long, char, int, float, long float, double, long double])
+AC_CHECK_SIZEOF([long, long long, char, int, float, long float, double, long double])
+AC_CHECK_TYPES([int64_t, uint64_t, int8_t, uint8_t, int32_t, uint32_t])
 
 dnl =======================================================================
 dnl Check compilers 

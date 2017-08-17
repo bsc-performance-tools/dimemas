@@ -24,13 +24,15 @@ AM_CPPFLAGS = \
 
 bin_PROGRAMS = Dimemas
 
-Dimemas_SOURCES = \
-	main.cpp
-
-Dimemas_CFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include
-Dimemas_CXXFLAGS=-I$(top_srcdir) -I$(top_srcdir)/include \
-				 -L$(BOOST_LDPATH) -lboost_program_options
-
+Dimemas_SOURCES = main.cpp
+Dimemas_CFLAGS= \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/include
+Dimemas_CXXFLAGS= \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/include
+Dimemas_LDFLAGS= \
+	$(BOOST_PROGRAM_OPTIONS_LDFLAGS)
 Dimemas_LDADD = \
 	$(simulator_dir)/model/libDimemasModel.la \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la \
@@ -39,7 +41,10 @@ Dimemas_LDADD = \
 	$(simulator_dir)/prv_utils/libDimemas2ParaverUtils.la \
 	$(simulator_dir)/sched/libDimemasScheduling.la \
 	$(simulator_dir)/utils/libDimemasUtils.la \
-	$(simulator_dir)/eee_model/libDimemasEEEModel.la
+	$(simulator_dir)/eee_model/libDimemasEEEModel.la \
+	$(BOOST_PROGRAM_OPTIONS_LIBS)
+
+# Dimemas_LDADD += -L$(BOOST_LDPATH) -lboost_program_options
 
 if VENUS_ENABLED
 Dimemas_LDADD += $(simulator_dir)/venusclient/libDimemasVenusClient.la
