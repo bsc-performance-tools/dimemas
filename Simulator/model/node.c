@@ -226,7 +226,8 @@ int NODE_get_acc_node(struct t_node *node)
 {
     int n_nodes = SIMULATOR_get_number_of_nodes();
     int acc_nodes_count = 0;
-    for (int i_node = 0; i_node < n_nodes ; i_node++)
+    int i_node;
+    for (i_node = 0; i_node < n_nodes ; i_node++)
     {
         node = get_node_by_id(i_node);
         if (node->accelerator)

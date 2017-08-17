@@ -6,12 +6,16 @@ AM_CPPFLAGS = \
 	$(BOOST_CPPFLAGS)
 
 bin_PROGRAMS = prv2dim
+
 prv2dim_CFLAGS = \
 	-DNEW_DIMEMAS_TRACE
+
 prv2dim_CXXFLAGS = \
 	-DNEW_DIMEMAS_TRACE
+
 prv2dim_LDFLAGS = \
-	$(BOOST_PROGRAM_OPTIONS_LDFLAGS)
+	$(BOOST_LDFLAGS)
+
 prv2dim_SOURCES = \
 	ParaverApplicationDescription.cpp\
 	ParaverApplicationDescription.hpp\
@@ -35,4 +39,4 @@ prv2dim_SOURCES = \
 
 prv2dim_LDADD = \
 	$(top_srcdir)/common_utilities/libCommonUtilities.la \
-	$(BOOST_PROGRAM_OPTIONS_LIBS)
+	$(BOOST_PROGRAM_OPTIONS_LIB)

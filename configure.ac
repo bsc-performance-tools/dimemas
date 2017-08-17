@@ -255,17 +255,8 @@ dnl ========================================================================
 dnl BOOST
 dnl ========================================================================
 
-have_boost="yes"
-BOOST_REQUIRE(1.36,
-[
-  AC_MSG_ERROR(Boost libraries not found. Please install them or point its
-               location by using '--with-boost')
-]
-)
-BOOST_PROGRAM_OPTIONS()
-AM_CONDITIONAL(HAVE_BOOST, test x$have_boost = xyes)
-
-
+AX_BOOST_BASE([1.36])
+AX_BOOST_PROGRAM_OPTIONS
 
 dnl =======================================================================
 dnl Java checks
@@ -304,6 +295,15 @@ dnl =======================================================================
 dnl Conditional defines
 dnl =======================================================================
 
+AC_ARG_ENABLE(
+  enable-static-boost, 
+  AS_HELP_STRING(
+    [--enable-static-boost],
+    [If enabled, the boost libraries will be compiled statically]),
+    [ enable_static_boost="yes" ]
+  
+)
+AM_CONDITIONAL(STATIC_BOOST, test "x$enable_static_boost" = "xyes")
 
 dnl STARTUP_ALS_IRECV: if defined Dimemas considers initial startups on 
 dnl MPI_Irecv functions
@@ -416,6 +416,16 @@ AM_CONDITIONAL([JVM_HEAP_RESTRICTION], [test "x$jvm_heap_restriction_enabled" = 
 
 
 dnl =======================================================================
+dnl Just a little tunning about boost linking
+dnl =======================================================================
+
+if test "x$enable_static_boost" = "xyes"; then
+    BOOST_PROGRAM_OPTIONS_LIB="$BOOST_HOME/lib/libboost_program_options.a"
+    BOOST_LDFLAGS=""
+fi
+
+
+dnl =======================================================================
 dnl Final Makefile generation
 dnl =======================================================================
 
@@ -458,6 +468,7 @@ echo "
   Java Compiler....................: ${JAVAC:-none} $JAVACFLAGS
   Jar Utility......................: ${JAR:-none} $JARFLAGS
   JVM Heap restriction (2GB).......: ${jvm_heap_restriction_enabled:-no}
-  Boost Includes...................: ${have_boost:-default} $BOOST_CPPFLAGS
+  Boost CPPFLAGS...................: $BOOST_CPPFLAGS
+  Boost Program_Options flags......:$BOOST_LDFLAGS $BOOST_PROGRAM_OPTIONS_LIB
 "
 
