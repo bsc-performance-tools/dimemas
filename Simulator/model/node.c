@@ -74,6 +74,8 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
     insert_queue (&Node_queue, (char *) node, (t_priority) (node->nodeid));
 #endif
 
+  node->accelerator = FALSE;
+
 }
 void NODE_Fill_Node_Fields(struct t_node *node,
                            char          *node_name,
