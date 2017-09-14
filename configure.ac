@@ -421,7 +421,9 @@ dnl Just a little tunning about boost linking
 dnl =======================================================================
 
 if test "x$enable_static_boost" = "xyes"; then
-    BOOST_PROGRAM_OPTIONS_LIB="$BOOST_HOME/lib/libboost_program_options.a"
+    #BOOST_PROGRAM_OPTIONS_LIB="$BOOST_HOME/lib/libboost_program_options.a"
+    BOOST_PROGRAM_OPTIONS_LIB="$BOOST_LDFLAGS/libboost_program_options.a"
+    BOOST_PROGRAM_OPTIONS_LIB=${BOOST_PROGRAM_OPTIONS_LIB:2}
     BOOST_LDFLAGS=""
 fi
 
