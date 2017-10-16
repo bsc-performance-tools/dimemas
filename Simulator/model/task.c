@@ -1989,27 +1989,27 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
   // STEP 2: Map no-accelerated tasks 
   for(i_node = 0; i_node < n_nodes; i_node++)
   {
-    int n_cpus_node = n_cpus_per_node[i_node];
-    node = get_node_by_id(i_node);
+      if (tasks_in_node[i_node] == n_tasks_per_node)
+          continue;
 
-    if (node->accelerator)
-      n_cpus_node--; //GPU must be subtracted
+      int n_cpus_node = n_cpus_per_node[i_node];
+      node = get_node_by_id(i_node);
 
-    int free_space;
-    for (   free_space=(n_tasks_per_node - tasks_in_node[i_node]); 
-            free_space > 0; 
-            --free_space)
-    {
-        int i_task;
-        for (i_task=0; i_task < total_task_count; ++i_task)
-        {
-            if (task_mapping[i_task] == -1)
-            {
-                task_mapping[i_task] = i_node;
-                ++tasks_in_node[i_node];
-            }
-        }
-    }
+      if (node->accelerator)
+          n_cpus_node--; //GPU must be subtracted
+
+      int i_task;
+      for (i_task=0; i_task < total_task_count; ++i_task)
+      {
+          if (task_mapping[i_task] == -1)
+          {
+              task_mapping[i_task] = i_node;
+              ++tasks_in_node[i_node];
+
+              if (tasks_in_node[i_node] == n_tasks_per_node)
+                  break;
+          }
+      }
   }
   return task_mapping;
 }
