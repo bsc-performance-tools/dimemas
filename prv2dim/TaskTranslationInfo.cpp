@@ -94,11 +94,14 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 
 	this->PreviouslySimulatedTrace = PreviouslySimulatedTrace;
 
-	if (TemporaryFile == NULL) {
+	if (TemporaryFile == NULL) 
+    {
 		FilePointerAvailable = false;
 		this->TemporaryFileName = TemporaryFileName;
 		this->TemporaryFile = NULL;
-	} else {
+	} 
+    else 
+    {
 		FilePointerAvailable = true;
 		this->TemporaryFile = TemporaryFile;
 		this->TemporaryFileName = TemporaryFileName;
@@ -114,7 +117,8 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 	FirstOCLRead = false;
 	this->AcceleratorThread = AcceleratorThread;
 
-	if (!FilePointerAvailable) {
+	if (!FilePointerAvailable) 
+    {
 		if ((TemporaryFile = fopen(TemporaryFileName, "a")) == NULL) {
 			SetError(true);
 			SetErrorMessage("unable to open output temporary file",
