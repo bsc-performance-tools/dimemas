@@ -146,7 +146,7 @@ bool ReadArgs(const int argc, const char *argv[])
         cout << "BURST COUNTER FACTOR = " << BurstCounterFactor << endl;
     }
 
-    if (varmap.count("deadlock-extra-statistics"))
+    if (extraStatistics /*varmap.count("deadlock-extra-statistics")*/)
     {
         string ChoppedFileName;
         int SubstrPosition = DimTraceName.rfind(".dim");
