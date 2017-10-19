@@ -44,6 +44,7 @@
 
 #include "ts.h"
 #include "check.h"
+#include "configuration.h"
 
 #define YYSTYPE long
 /* 20121213 (jgonzale): Bigger grammar stack */
