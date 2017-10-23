@@ -749,9 +749,18 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                     }
                     else
                     {
+                        if (!thread->task->accelerator)
+                        {	/*	It's a CPU burst	*/
+                            PARAVER_Running (cpu->unique_number,
+                                    IDENTIFIERS (thread),
+                                    thread->last_paraver,
+                                    current_time);
+                        }
+
                         if (thread->kernel && (!thread->first_acc_event_read 
                                     || thread->acc_in_block_event.value == 0))
-                        {	/* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
+                        {	
+                            /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
                             /* Not created states between blocks in kernel thread	*/
                             PARAVER_Not_Created(cpu->unique_number,
                                     IDENTIFIERS (thread),
@@ -761,7 +770,8 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                         else if (thread->kernel 
                                 && (CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event) 
                                     || OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)))
-                        {	/*	It's a GPU burst	*/
+                        {	
+                            /*	It's a GPU burst	*/
                             PARAVER_Running(cpu->unique_number,
                                     IDENTIFIERS (thread),
                                     thread->last_paraver,
