@@ -438,17 +438,17 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
   struct t_link *link;
   
   node = get_node_by_id(nodeid);
-  if (NODE_get_acc_node(node) < Ptask->acc_tasks_count)// && !NODE_get_acc(node))
-  { /*  when mapping a task with accelerator (indicated in Dimemas header)
-     *  in a non-accelerator node (indicated in configuration file)
-     */
-    die("Cannot map %d accelerator tasks in %d accelerator nodes \n PLEASE CHECK THE CONFIGURATIOIN", 
+  if (NODE_get_acc_node(node) < Ptask->acc_tasks_count)
+  { 
+    die("Cannot map %d accelerator tasks in %d accelerator nodes \n"\
+            "PLEASE CHECK THE CONFIGURATIOIN", 
          Ptask->acc_tasks_count, NODE_get_acc_node(node));
   }
 
   task = &(Ptask->tasks[taskid]);
   task->taskid    = taskid;
   task->nodeid    = nodeid;
+  task->node      = node;
   task->Ptask     = Ptask;
   task->accelerator = acc_task;
   task->io_thread = FALSE;
@@ -2107,6 +2107,7 @@ void Update_Node_Info(
     nodeid = task_mapping[task_it];
     node = get_node_by_id(nodeid);   
     task->nodeid = nodeid;
+    task->node = node;
 
     if (node->in_mem_links == 0 && node->out_mem_links == 0)
     {

@@ -726,9 +726,7 @@ struct t_task
   struct t_Ptask *Ptask;
   int             taskid;
   int             nodeid;
-  // struct t_queue  threads;
-
-  /*Vladimir: for optimization, when a task has many threads*/
+  struct t_node*  node;
   int               threads_count;
   struct t_thread **threads;
 
