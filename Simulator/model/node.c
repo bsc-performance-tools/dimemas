@@ -32,14 +32,10 @@
 #include <subr.h>
 #include <cpu.h>
 
-/* Thats to generate an unique node id */
-static int unique_nodeid = 0;
 
 void NODE_Init_Empty_Node(struct t_machine* machine,
                           struct t_node*    node)
 {
-  node->nodeid = unique_nodeid++;
-
   create_queue (&(node->Cpus));
   create_queue (&(node->ready));
 
@@ -67,12 +63,6 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
 
   node->initialized = FALSE;
   node->machine     = machine;
-
-#ifdef USE_EQUEUE
-    insert_Equeue (&Node_queue, (char *) node, (t_priority) (node->nodeid));
-#else
-    insert_queue (&Node_queue, (char *) node, (t_priority) (node->nodeid));
-#endif
 
   node->accelerator = FALSE;
 

@@ -343,11 +343,7 @@ void TASK_New_Ptask(char *trace_name,
 
     int synth_task;
 
-#ifdef USE_EQUEUE
-    Ptask->tasks_count = count_Equeue(&Node_queue);
-#else
-    Ptask->tasks_count = count_queue(&Node_queue);
-#endif
+    Ptask->tasks_count = SIMULATOR_get_number_of_nodes();
 
     Ptask->tasks = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
@@ -1364,13 +1360,7 @@ struct t_thread *promote_to_original2 (struct t_thread *copy_thread, struct t_th
 
   account = current_account (thread);
   printf ("Thread without account in promote to original P%d T%d t%d\n", IDENTIFIERS (thread));
-#ifdef USE_EQUEUE
-  node = (struct t_node *) query_prio_Equeue (&Node_queue,
-            (t_priority) account->nodeid);
-#else
-  node = (struct t_node *) query_prio_queue (&Node_queue,
-            (t_priority) account->nodeid);
-#endif
+  node = &nodes[account->nodeid];
   printf ("Unable to locate node in promote_to_original %d for P%d T%d t%d\n",
              account->nodeid, IDENTIFIERS (thread));
 

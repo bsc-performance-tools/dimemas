@@ -24,74 +24,48 @@
  \*****************************************************************************/
 
 
-#include "define.h"
-#include "types.h"
-
-#include "cpu.h"
-#include "node.h"
-#include "extern.h"
-#include "list.h"
-#ifdef USE_EQUEUE
-#include "listE.h"
-#endif
-#include "subr.h"
-#include "task.h"
+#include <define.h>
+#include <types.h>
+#include <cpu.h>
+#include <node.h>
+#include <extern.h>
+#include <list.h>
+#include <subr.h>
+#include <task.h>
+#include <simulator.c>
 
 void CPU_Get_Unique_CPU_IDs (void)
 {
     struct t_node *no;
     struct t_cpu *cpu;
     int number = 1;
-    // add one more cpu as a gpu if t_boolean == TRUE;
-#ifdef USE_EQUEUE
-    for (no  = (struct t_node*) head_Equeue (&Node_queue);
-            no != NULL;
-            no  = (struct t_node*) next_Equeue (&Node_queue) )
-#else
-    for (no  = (struct t_node*) head_queue (&Node_queue);
-            no != NULL;
-            no  = (struct t_node*) next_queue (&Node_queue) )
-#endif
+
+    
+    int node_id;
+    for(node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
+    {
+        struct t_node *node = &nodes[node_id];
+        for (cpu  = (struct t_cpu*) head_queue (& (node->Cpus) );
+                cpu != NULL;
+                cpu  = (struct t_cpu*) next_queue (& (node->Cpus) ) )
         {
-            for (cpu  = (struct t_cpu*) head_queue (& (no->Cpus) );
-                    cpu != NULL;
-                    cpu  = (struct t_cpu*) next_queue (& (no->Cpus) ) )
-            {
-                cpu->unique_number = number;
-                number++;
-            }
+            cpu->unique_number = number;
+            number++;
         }
+    }
 }
 
 /*need to count the number of GPU's if we have more than one gpu in input*/
 struct t_node *get_node_of_thread (struct t_thread *thread)
 {
     struct t_node* node = thread->task->node;
-    
+
     if (node == (struct t_node *) 0)
     {
         panic ("Unable to locate node %d for P%d T%d t%d\n",
                 node->nodeid, IDENTIFIERS (thread) );
     }
     return node;
-
-//    register struct t_account *account;
-//    register struct t_node *node;
-//
-//    account = current_account (thread);
-//    if (account == ACC_NIL)
-//        panic ("Thread without account P%d T%d t%d\n", IDENTIFIERS (thread) );
-//#ifdef USE_EQUEUE
-//    node = (struct t_node *) query_prio_Equeue (&Node_queue,
-//            (t_priority) account->nodeid);
-//#else
-//    node = (struct t_node *) query_prio_queue (&Node_queue,
-//            (t_priority) account->nodeid);
-//#endif
-//    if (node == (struct t_node *) 0)
-//        panic ("Unable to locate node %d for P%d T%d t%d\n",
-//                account->nodeid, IDENTIFIERS (thread) );
-//    return (node);
 }
 
 struct t_node *get_node_of_task (struct t_task *task)
@@ -104,34 +78,24 @@ struct t_node *get_node_of_task (struct t_task *task)
     return (get_node_of_thread (thread) );
 }
 
-struct t_node *get_node_by_id (int nodeid)
+struct t_node *get_node_by_id (int node_id)
 {
-#ifdef USE_EQUEUE
-    return ( (struct t_node *) query_prio_Equeue (&Node_queue, (t_priority) nodeid) );
-#else
-    return ( (struct t_node *) query_prio_queue (&Node_queue, (t_priority) nodeid) );
-#endif
+    return &nodes[node_id];
 }
 
 void check_full_nodes()
 {
     struct t_node  *node;
 
-#ifdef USE_EQUEUE
-    for (node = (struct t_node *) head_Equeue (&Node_queue);
-            node != N_NIL;
-            node = (struct t_node *) next_Equeue (&Node_queue) )
-#else
-        for (node = (struct t_node *) head_queue (&Node_queue);
-                node != N_NIL;
-                node = (struct t_node *) next_queue (&Node_queue) )
-#endif
+    int node_id;
+    for (node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
+    {
+        struct t_node *node = &nodes[node_id];
+        if (count_queue (& (node->Cpus) ) == 0)
         {
-            if (count_queue (& (node->Cpus) ) == 0)
-            {
-                panic ("Node %d non initialized\n", node->nodeid);
-            }
+            panic ("Node %d non initialized\n", node->nodeid);
         }
+    }
 }
 
 int num_free_cpu (struct t_node *node)

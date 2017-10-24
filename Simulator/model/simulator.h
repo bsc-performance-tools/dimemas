@@ -36,7 +36,8 @@
 #define _SIMULATOR_H_
 
 #include <types.h>
-#include "machine.h"
+#include <machine.h>
+#include <extern.h>
 
 #define NO_NODE_ID -1
 
@@ -79,12 +80,6 @@ extern struct t_simulator  Simulator;
 
 extern struct t_machine              *Machines;
 extern struct t_dedicated_connection *Dedicated_Connections;
-
-#ifdef USE_EQUEUE
-extern Equeue  Node_queue;
-#else
-extern struct t_queue  Node_queue;
-#endif
 
 extern struct t_queue  Global_op;
 extern struct t_queue  Port_queue;

@@ -59,11 +59,10 @@ extern struct t_queue Interactive_event_queue;
 #endif
 
 extern struct t_queue Port_queue;
-#ifdef USE_EQUEUE
-extern Equeue Node_queue;
-#else
-extern struct t_queue Node_queue;
-#endif
+
+extern int nodes_size;
+extern struct t_node * nodes;
+
 extern struct t_queue Network_queue;
 extern struct t_queue Global_op;
 

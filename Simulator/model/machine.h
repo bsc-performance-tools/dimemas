@@ -105,6 +105,7 @@ void MACHINE_Fill_Machine_Fields(struct t_machine* machine,
                                  char  *machine_name,
                                  char  *instrumented_architecture,
                                  int    number_of_nodes,
+                                 int first_node_id,
                                  double network_bandwidth,
                                  int    number_of_buses,
                                  int    global_operation_model);
