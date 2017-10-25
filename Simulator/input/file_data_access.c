@@ -31,6 +31,7 @@
 #include <define.h>
 #include <types.h>
 #include <extern.h>
+#include <node.h>
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -1181,6 +1182,7 @@ t_boolean DAP_read_definitions (app_struct *app)
     return TRUE;
 }
 
+
 /**
  * Communicator definition parsing
  */
@@ -1188,14 +1190,12 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
 {
     struct t_communicator *new_communicator;
 
-    int   comm_id;
-    int   comm_tasks_count;
+    int comm_id;
+    int comm_tasks_count;
     char* comm_tasks_str;
-
     char* current_task_str;
-    int   actual_comm_tasks_count;
-
-    int   i;
+    int actual_comm_tasks_count;
+    int i;
 
     comm_tasks_str = malloc(strlen(comm_fields)+1);
 
@@ -1227,7 +1227,6 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
     new_communicator->communicator_id = comm_id;
     new_communicator->current_root    = NULL;
 
-    // create_queue (&new_communicator->global_ranks);
     new_communicator->size         = comm_tasks_count;
     new_communicator->global_ranks = malloc(comm_tasks_count*sizeof(int));
 
@@ -1239,7 +1238,6 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
     create_queue (&new_communicator->nonblock_m_threads_with_links);
     create_queue (&new_communicator->nonblock_current_root);
 
-    // new_communicator->nodes_per_machine = malloc(Simulator.number_machines);
     new_communicator->nodes_per_machine =
         (struct t_queue*) malloc(Simulator.number_machines*sizeof(struct t_queue));
 
@@ -1249,27 +1247,12 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
     }
 
     create_queue(&new_communicator->tasks_per_node);
-
-
     actual_comm_tasks_count = 0;
 
     current_task_str = strtok(comm_tasks_str, ":");
     while (current_task_str != NULL)
     {
         int current_task_ptr = atoi(current_task_str);
-        //  = (int*) malloc(sizeof(int));
-
-        /*
-           if (current_task_ptr == NULL)
-           {
-           DAP_report_error("unable to allocate memory for communicator ranks");
-           }
-           */
-
-        // (*current_task_ptr) = atoi(current_task_str);
-
-
-        // inFIFO_queue(&new_communicator->global_ranks, (char*) current_task_ptr);
         new_communicator->global_ranks[actual_comm_tasks_count] = current_task_ptr;
 
         actual_comm_tasks_count++;
@@ -1278,7 +1261,8 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
 
     if (actual_comm_tasks_count != comm_tasks_count)
     {
-        DAP_report_error("number ranks of communicator %d are different from the defined %d",
+        DAP_report_error("number ranks of communicator %d are different from the "\
+                " defined %d",
                 actual_comm_tasks_count,
                 comm_id,
                 comm_tasks_count);
@@ -1286,7 +1270,7 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
         free(new_communicator);
         return FALSE;
     }
-
+    
     insert_queue(&(app->comms), (char*) new_communicator, (t_priority) comm_id);
 
     return TRUE;

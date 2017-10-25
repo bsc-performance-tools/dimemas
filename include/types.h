@@ -21,16 +21,16 @@
  * The GNU LEsser General Public License is contained in the file COPYING.   *
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
-\*****************************************************************************/
+ \*****************************************************************************/
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-  $URL::                                          $:  File
-  $Rev::                                          $:  Revision of last commit
-  $Author::                                       $:  Author of last commit
-  $Date::                                         $:  Date of last commit
+   $URL::                                          $:  File
+   $Rev::                                          $:  Revision of last commit
+   $Author::                                       $:  Author of last commit
+   $Date::                                         $:  Date of last commit
 
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+   \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef __types_h
 #define __types_h
@@ -47,17 +47,17 @@
 #include <stdint.h>
 
 #ifdef ENABLE_LARGE_TRACES
-  #ifdef OS_CYGWIN
-    #define t_off_fitxer _off64_t
-  #else
-    #ifdef OS_MACOSX
-      #define t_off_fitxer off_t
-    #else
-      #define t_off_fitxer off64_t
-    #endif
-  #endif
+#ifdef OS_CYGWIN
+#define t_off_fitxer _off64_t
 #else
-  #define t_off_fitxer off_t
+#ifdef OS_MACOSX
+#define t_off_fitxer off_t
+#else
+#define t_off_fitxer off64_t
+#endif
+#endif
+#else
+#define t_off_fitxer off_t
 #endif /* ENABLE_LARGE_TRACES */
 
 #define ANSI_COLOR_RED     "\x1b[31m"
@@ -78,8 +78,8 @@ typedef int modules_map;    /* see 'modules_map.h' */
 
 typedef struct
 {
-  unsigned int  hours;
-  unsigned int  micro;
+    unsigned int  hours;
+    unsigned int  micro;
 } dimemas_timer;
 
 #else   /* !PACA */
@@ -95,46 +95,46 @@ typedef int Equeue;
  */
 struct t_item
 {
-  struct t_item  *next;      /* Next item in queue */
-  struct t_item  *prev;      /* Previous item in queue */
-  union
-  {
-    t_priority    priority;  /* priority on sorted priority queues */
-    dimemas_timer list_time; /* time for next event in event queue */
-  } order;
-  void           *content;   /* Real content of item */
+    struct t_item  *next;      /* Next item in queue */
+    struct t_item  *prev;      /* Previous item in queue */
+    union
+    {
+        t_priority    priority;  /* priority on sorted priority queues */
+        dimemas_timer list_time; /* time for next event in event queue */
+    } order;
+    void           *content;   /* Real content of item */
 };
 
 struct t_queue
 {
-  struct t_item  *first; /* First item in queue */
-  struct t_item  *last;  /* Last item in queue */
-  struct t_item  *curr;  /* Current item in sequential search */
-  t_count         count; /* Number of items */
+    struct t_item  *first; /* First item in queue */
+    struct t_item  *last;  /* Last item in queue */
+    struct t_item  *curr;  /* Current item in sequential search */
+    t_count         count; /* Number of items */
 };
 
 struct t_list
 {
-  struct t_list  *next;
+    struct t_list  *next;
 };
 
 struct t_module
 {
-  unsigned long int type;
-  unsigned long int value;
-  double            ratio;
-  double            const_burst_duration; /* JGG (2012/10/19): to substitute bursts durations */
-  int               src_file;
-  int               src_line;
-  int               used;     /* Indica si el bloc ha estat utilitzat (a part de definit) */
-  char             *module_name;
-  char             *activity_name;
+    unsigned long int type;
+    unsigned long int value;
+    double            ratio;
+    double            const_burst_duration; /* JGG (2012/10/19): to substitute bursts durations */
+    int               src_file;
+    int               src_line;
+    int               used;     /* Indica si el bloc ha estat utilitzat (a part de definit) */
+    char             *module_name;
+    char             *activity_name;
 };
 
 struct t_filed
 {
-  int   file_id;
-  char *location;
+    int   file_id;
+    char *location;
 };
 
 
@@ -144,37 +144,37 @@ struct t_filed
 
 struct t_cp_node
 {
-  struct t_cp_node *prev;
-  struct t_cp_node *next;
-  struct t_cp_node *recv;
-  struct t_cp_node *send;
-  int               status; /* Work, block, communication overhead */
-  long long         module_type;
-  long long         module_value;
-  dimemas_timer     final_time;
-  struct t_thread  *thread;
+    struct t_cp_node *prev;
+    struct t_cp_node *next;
+    struct t_cp_node *recv;
+    struct t_cp_node *send;
+    int               status; /* Work, block, communication overhead */
+    long long         module_type;
+    long long         module_value;
+    dimemas_timer     final_time;
+    struct t_thread  *thread;
 };
 
 struct t_module_cp
 {
-  long long module_type;
-  long long module_value;
+    long long module_type;
+    long long module_value;
 
-  dimemas_timer timer;
-  dimemas_timer timer_comm;
+    dimemas_timer timer;
+    dimemas_timer timer_comm;
 };
 /* This structers was previously found on 'random.h' */
 /* Distribution parameters for gaussian and uniform */
 struct t_normal
 {
-  double mean;
-  double stdev;
+    double mean;
+    double stdev;
 };
 
 struct t_uniform
 {
-  double left;
-  double right;
+    double left;
+    double right;
 };
 
 /* Distibution constants */
@@ -184,21 +184,21 @@ struct t_uniform
 
 struct t_rand_type
 {
-  int distribution;
+    int distribution;
 
-  union
-  {
-    struct t_normal  normal;
-    struct t_uniform uniform;
-  } parameters;
+    union
+    {
+        struct t_normal  normal;
+        struct t_uniform uniform;
+    } parameters;
 };
 
 /* JGG (31/03/2006): Structure to store burst categories, used on synthetic
  * burst generation */
 struct _burst_category
 {
-  int                id;
-  struct t_rand_type values;
+    int                id;
+    struct t_rand_type values;
 };
 typedef struct _burst_category* burst_category_t;
 
@@ -206,14 +206,14 @@ typedef struct _burst_category* burst_category_t;
  * receives producidos, y pendientes de ser tratados */
 struct send_notification
 {
-  dimemas_timer    t_stamp;     /* TimeStamp */
-  int              id;
-  int              dest_taskid;
-  int              msg_tag;
-  int              msg_size;
-  int              communic_id;
-  int              send_type;
-  struct t_thread *sender;
+    dimemas_timer    t_stamp;     /* TimeStamp */
+    int              id;
+    int              dest_taskid;
+    int              msg_tag;
+    int              msg_size;
+    int              communic_id;
+    int              send_type;
+    struct t_thread *sender;
 };
 typedef struct send_notification* t_send_notification;
 #define SNDN_NIL (struct send_notification*)0
@@ -224,14 +224,14 @@ typedef struct send_notification* t_send_notification;
 
 struct recv_notification
 {
-  dimemas_timer    t_stamp;     /* TimeStamp */
-  int              id;
-  int              src_taskid;
-  int              msg_tag;
-  int              communic_id;
-  int              recv_type;
-  struct t_thread *receiver;
-  dimemas_timer    logical_recv;
+    dimemas_timer    t_stamp;     /* TimeStamp */
+    int              id;
+    int              src_taskid;
+    int              msg_tag;
+    int              communic_id;
+    int              recv_type;
+    struct t_thread *receiver;
+    dimemas_timer    logical_recv;
 };
 typedef struct recv_notification* t_recv_notification;
 #define RCVN_NIL (struct recv_notification*)0
@@ -242,18 +242,18 @@ typedef struct recv_notification* t_recv_notification;
 */
 struct mesg_notification
 {
-  dimemas_timer    t_stamp;     /* TimeStamp */
-  int              id;
-  int              src_taskid;
-  int              msg_tag;
-  int              size;
-  int              communic_id;
-  t_boolean        used;
-  t_boolean        wait_arrived;
-  struct t_thread *sender;
-  dimemas_timer    logical_send;
-  dimemas_timer    physical_send;
-  dimemas_timer    physical_recv;
+    dimemas_timer    t_stamp;     /* TimeStamp */
+    int              id;
+    int              src_taskid;
+    int              msg_tag;
+    int              size;
+    int              communic_id;
+    t_boolean        used;
+    t_boolean        wait_arrived;
+    struct t_thread *sender;
+    dimemas_timer    logical_send;
+    dimemas_timer    physical_send;
+    dimemas_timer    physical_recv;
 };
 typedef struct mesg_notification* t_mesg_notification;
 #define MSGN_NIL (struct mesg_notification*)0
@@ -269,8 +269,8 @@ typedef struct mesg_notification* t_mesg_notification;
  */
 struct thread_state_
 {
-  int           state;
-  dimemas_timer init_time;
+    int           state;
+    dimemas_timer init_time;
 };
 typedef struct thread_state_ thread_state_t;
 #define STATE_NIL (struct thread_state*)0
@@ -278,38 +278,38 @@ typedef struct thread_state_ thread_state_t;
 
 struct t_dedicated_connection
 {
-  int    id;                /* Connection number */
-  int    source_id;         /* Source machine number */
-  int    destination_id;    /* Destination machine number */
-  double bandwidth;         /* Bandwidth of the connection */
-  int   *tags;              /* List of tags that will use the connection */
-  int    number_of_tags;
-  int    first_message_size;    /* Size of messages in bytes */
-  int    first_size_condition;  /* Size condition that should meet messages to
-                                 * use the connection. 0 <, 1 =, 2 > */
-  int    operation; /*Operation between the conditions: 0 AND, 1 OR */
-  int    second_message_size; /* Size of messages in bytes */
-  int    second_size_condition; /* Size condition that should meet messages to
-                                 * use the connection. 0 <, 1 =, 2 > */
-  int   *communicators; /* List of communicators of collective op. that can use
-                         * the connection */
-  int    number_of_communicators;
-  double startup;  /* Connection startup */
-  double flight_time; /* Connection flight time */
+    int    id;                /* Connection number */
+    int    source_id;         /* Source machine number */
+    int    destination_id;    /* Destination machine number */
+    double bandwidth;         /* Bandwidth of the connection */
+    int   *tags;              /* List of tags that will use the connection */
+    int    number_of_tags;
+    int    first_message_size;    /* Size of messages in bytes */
+    int    first_size_condition;  /* Size condition that should meet messages to
+                                   * use the connection. 0 <, 1 =, 2 > */
+    int    operation; /*Operation between the conditions: 0 AND, 1 OR */
+    int    second_message_size; /* Size of messages in bytes */
+    int    second_size_condition; /* Size condition that should meet messages to
+                                   * use the connection. 0 <, 1 =, 2 > */
+    int   *communicators; /* List of communicators of collective op. that can use
+                           * the connection */
+    int    number_of_communicators;
+    double startup;  /* Connection startup */
+    double flight_time; /* Connection flight time */
 
-  /* Les cues input_links, output_links, in_links i out_links son cues
-   * per si mes endavant es vol tenir connexions amb "mes d'un bus" en
-   * cada sentit. Pero actulament podrien ser punters perque nomes hi
-   * ha un link d'entrada i un de sortida.
-   */
-  t_boolean      infinite_links;       /* TRUE if there are infinite links */
-  t_boolean      half_duplex;    /* Half duplex connection? */
-  struct t_queue free_in_links;  /* Free input links (destination -> source) */
-  struct t_queue free_out_links; /* Free output links (source -> destination) */
-  struct t_queue busy_in_links;  /* Busy input link */
-  struct t_queue busy_out_links; /* Busy output link */
-  struct t_queue th_for_in;      /* Threads awaiting for input link */
-  struct t_queue th_for_out;     /* Threads awaiting for output link */
+    /* Les cues input_links, output_links, in_links i out_links son cues
+     * per si mes endavant es vol tenir connexions amb "mes d'un bus" en
+     * cada sentit. Pero actulament podrien ser punters perque nomes hi
+     * ha un link d'entrada i un de sortida.
+     */
+    t_boolean      infinite_links;       /* TRUE if there are infinite links */
+    t_boolean      half_duplex;    /* Half duplex connection? */
+    struct t_queue free_in_links;  /* Free input links (destination -> source) */
+    struct t_queue free_out_links; /* Free output links (source -> destination) */
+    struct t_queue busy_in_links;  /* Busy input link */
+    struct t_queue busy_out_links; /* Busy output link */
+    struct t_queue th_for_in;      /* Threads awaiting for input link */
+    struct t_queue th_for_out;     /* Threads awaiting for output link */
 };
 
 /*
@@ -317,218 +317,218 @@ struct t_dedicated_connection
  */
 struct t_compute
 {
-  t_nano cpu_time; /* Cpu time wanted */
+    t_nano cpu_time; /* Cpu time wanted */
 };
 
 struct t_send
 {
-  long long int       mess_size;    /* Size of message */
-  int                 dest;         /* Taskid of partner (receiver) */
-  int                 dest_thread;  /* Thread_id of partner (receiver) */
-  int                 mess_tag;     /* Message tag */
-  int                 communic_id;  /* Communicator id */
+    long long int       mess_size;    /* Size of message */
+    int                 dest;         /* Taskid of partner (receiver) */
+    int                 dest_thread;  /* Thread_id of partner (receiver) */
+    int                 mess_tag;     /* Message tag */
+    int                 communic_id;  /* Communicator id */
 
-  t_boolean           rendez_vous;  /* Rendez vous message or not */
-  t_boolean           immediate;    /* Immediate send or not */
+    t_boolean           rendez_vous;  /* Rendez vous message or not */
+    t_boolean           immediate;    /* Immediate send or not */
 
-  int                            comm_type;    /* Communication type (JGG) */
-  struct t_dedicated_connection *connection;
+    int                            comm_type;    /* Communication type (JGG) */
+    struct t_dedicated_connection *connection;
 
-  struct t_thread    *receiver;
-  dimemas_timer       logical_send;
-  dimemas_timer       physical_send;
-  dimemas_timer       physical_recv;
+    struct t_thread    *receiver;
+    dimemas_timer       logical_send;
+    dimemas_timer       physical_send;
+    dimemas_timer       physical_recv;
 };
 
 struct t_recv
 {
-  int           ori;         /* Taskid of partner(sender) */
-  int           ori_thread;  /* Thread_id of partner(sender) */
-  int           mess_tag;    /* Message tag */
-  long long int mess_size;   /* Size of message */
-  int           communic_id; /* Communicator id */
-  int           comm_type;   /* Communication type */
-  int		wait_type;
+    int           ori;         /* Taskid of partner(sender) */
+    int           ori_thread;  /* Thread_id of partner(sender) */
+    int           mess_tag;    /* Message tag */
+    long long int mess_size;   /* Size of message */
+    int           communic_id; /* Communicator id */
+    int           comm_type;   /* Communication type */
+    int		wait_type;
 
-  struct t_thread *sender;
-  dimemas_timer    logical_recv;
+    struct t_thread *sender;
+    dimemas_timer    logical_recv;
 };
 
 struct t_even
 {
-  unsigned long long type;  /* Event type user or compiler */
-  unsigned long long value; /* Value for this event */
+    unsigned long long type;  /* Event type user or compiler */
+    unsigned long long value; /* Value for this event */
 };
 
 struct t_prio
 {
-  int value; /* New priority value for this thread */
+    int value; /* New priority value for this thread */
 };
 
 struct t_open
 {
-  char filename[FILEMAX + 1];
-  int  flags;                 /* Open 2nd parameter */
-  int  initial_size;          /* Number of bytes of file when opened */
-  int  fd;                    /* fd associated to opened file or error */
+    char filename[FILEMAX + 1];
+    int  flags;                 /* Open 2nd parameter */
+    int  initial_size;          /* Number of bytes of file when opened */
+    int  fd;                    /* fd associated to opened file or error */
 };
 
 struct t_read
 {
-  int           fd;
-  int           requested_size;
-  int           delivered_size; /* number of bytes read or error */
-  unsigned long pos;            /* Used by the File System module */
+    int           fd;
+    int           requested_size;
+    int           delivered_size; /* number of bytes read or error */
+    unsigned long pos;            /* Used by the File System module */
 };
 
 struct t_write
 {
-  int           fd;
-  int           requested_size;
-  int           delivered_size; /* number of bytes write or error */
-  unsigned long pos;            /* Used by the File System module */
+    int           fd;
+    int           requested_size;
+    int           delivered_size; /* number of bytes write or error */
+    unsigned long pos;            /* Used by the File System module */
 };
 
 struct t_seek
 {
-  int fd;
-  int offset; /* Position requested */
-  int whence; /* Offset relative position */
-  int result; /* Final position or error */
+    int fd;
+    int offset; /* Position requested */
+    int whence; /* Offset relative position */
+    int result; /* Final position or error */
 };
 
 struct t_close
 {
-  int fd;
+    int fd;
 };
 
 struct t_dup
 {
-  int old_fd;
-  int new_fd;
+    int old_fd;
+    int new_fd;
 };
 
 struct t_unlink
 {
-  char filename[FILEMAX + 1]; /* Space must be allocated on reader */
+    char filename[FILEMAX + 1]; /* Space must be allocated on reader */
 };
 
 struct t_user_event
 {
-  int id;
+    int id;
 };
 
 struct t_fs_op
 {
-  int                   which_fsop;
+    int                   which_fsop;
 
-  union
-  {
-    struct t_open       fs_open;
-    struct t_read       fs_read;
-    struct t_write      fs_write;
-    struct t_seek       fs_seek;
-    struct t_close      fs_close;
-    struct t_dup        fs_dup;
-    struct t_user_event fs_user_event;
-    struct t_unlink     fs_unlink;
-  } fs_o;
+    union
+    {
+        struct t_open       fs_open;
+        struct t_read       fs_read;
+        struct t_write      fs_write;
+        struct t_seek       fs_seek;
+        struct t_close      fs_close;
+        struct t_dup        fs_dup;
+        struct t_user_event fs_user_event;
+        struct t_unlink     fs_unlink;
+    } fs_o;
 };
 
 struct t_sem_op
 {
-  int op;     /* SEM_WAIT/ SEM_SIGNAL / SEM_SIGNAL_N */
-  int sem_id;
-  int n;      /* Only when SEM_SIGNAL_N */
+    int op;     /* SEM_WAIT/ SEM_SIGNAL / SEM_SIGNAL_N */
+    int sem_id;
+    int n;      /* Only when SEM_SIGNAL_N */
 };
 
 struct t_portac
 {
-  int portid;
-  int size;
-  int module;
+    int portid;
+    int size;
+    int module;
 };
 
 struct t_mem
 {
-  int             module;
-  int             size;
-  struct t_node  *source;
-  struct t_node  *dest;
+    int             module;
+    int             size;
+    struct t_node  *source;
+    struct t_node  *dest;
 };
 
 struct t_global_op
 {
-  int           glop_id;     /* Global operation identificator */
-  int           comm_id;     /* Communicator identificator */
-  int           root_rank;   /* Identificator of root task */
-  int           root_thid;   /* Identificator of thread root task */
-  long long int bytes_send;  /* Number of bytes send */
-  long long int bytes_recvd; /* Number of bytes received */
-  int           synch_type;  /* 0: Asynch glop, 1: Synch glop, 2: Wait glop */
+    int           glop_id;     /* Global operation identificator */
+    int           comm_id;     /* Communicator identificator */
+    int           root_rank;   /* Identificator of root task */
+    int           root_thid;   /* Identificator of thread root task */
+    long long int bytes_send;  /* Number of bytes send */
+    long long int bytes_recvd; /* Number of bytes received */
+    int           synch_type;  /* 0: Asynch glop, 1: Synch glop, 2: Wait glop */
 };
 
 struct t_mpi_io
 {
-  int which_io;
-  int commid;      /* Only valid for metadata operation */
-  int fh;          /* File handle */
-  int Oop;         /* Operation */
-  int size;        /* Requested size */
-  int request;     /* Match point for non-blocking operations */
+    int which_io;
+    int commid;      /* Only valid for metadata operation */
+    int fh;          /* File handle */
+    int Oop;         /* Operation */
+    int size;        /* Requested size */
+    int request;     /* Match point for non-blocking operations */
 };
 
 struct t_mpi_os
 {
-  int which_os;
-  int Oop;
-  int target_rank;
-  int window_id;
-  int size;
-  int mode;
-  int post_size;
-  struct t_queue post_ranks;
+    int which_os;
+    int Oop;
+    int target_rank;
+    int window_id;
+    int size;
+    int mode;
+    int post_size;
+    struct t_queue post_ranks;
 };
 
 struct t_action
 {
-  struct t_action *next;   /* Next action for thread */
-  int              action; /* DEAD/WORK/SEND/RECV/IRECV/WAIT/
-                              PRIO/FS/SEM/GLOBAL_OP/MPI_IO/MPI_OS*/
-  char * trace_line;
-  union
-  {
-    struct t_compute   compute;
-    struct t_send      send;
-    struct t_recv      recv;
-    struct t_even      even;
-    struct t_prio      prio;
-    struct t_fs_op     fs_op;
-    struct t_sem_op    sem_op;
-    struct t_portac    port;
-    struct t_mem       memory;
-    struct t_global_op global_op;
-    struct t_mpi_io    mpi_io;
-    struct t_mpi_os    mpi_os;
-  } desc;
+    struct t_action *next;   /* Next action for thread */
+    int              action; /* DEAD/WORK/SEND/RECV/IRECV/WAIT/
+                                PRIO/FS/SEM/GLOBAL_OP/MPI_IO/MPI_OS*/
+    char * trace_line;
+    union
+    {
+        struct t_compute   compute;
+        struct t_send      send;
+        struct t_recv      recv;
+        struct t_even      even;
+        struct t_prio      prio;
+        struct t_fs_op     fs_op;
+        struct t_sem_op    sem_op;
+        struct t_portac    port;
+        struct t_mem       memory;
+        struct t_global_op global_op;
+        struct t_mpi_io    mpi_io;
+        struct t_mpi_os    mpi_os;
+    } desc;
 };
 
 struct t_link
 {
-  union
-  {
-    struct t_task                 *task;       /* Task of the link */
-    struct t_node                 *node;       /* Node of the link */
-    struct t_machine              *machine;    /* Machine link */
-    struct t_dedicated_connection *connection; /* Dedicated connection */
+    union
+    {
+        struct t_task                 *task;       /* Task of the link */
+        struct t_node                 *node;       /* Node of the link */
+        struct t_machine              *machine;    /* Machine link */
+        struct t_dedicated_connection *connection; /* Dedicated connection */
 
-  } info;
+    } info;
 
-  int              kind;        /* NODE_LINK/MACHINE_LINK/CONNECTION_LINK */
-  int              type;        /* IN_LINK/OUT_LINK */
-  int              linkid;      /* Identifier */
-  struct t_thread *thread;      /* Thread belonging the link */
-  dimemas_timer    assigned_on; /* Time when the thread was assigned */
+    int              kind;        /* NODE_LINK/MACHINE_LINK/CONNECTION_LINK */
+    int              type;        /* IN_LINK/OUT_LINK */
+    int              linkid;      /* Identifier */
+    struct t_thread *thread;      /* Thread belonging the link */
+    dimemas_timer    assigned_on; /* Time when the thread was assigned */
 };
 
 // Kar EEE -------------------------- 3 LEVEL NETWORK --------------- 3LEEE----------------
@@ -558,8 +558,8 @@ struct switches
     int switch_level;
     int switch_id;
 
-// in_link ==> lower level to current level -------- UP LINK
-// out_link ==> current level to higher level ------ OUT LINK
+    // in_link ==> lower level to current level -------- UP LINK
+    // out_link ==> current level to higher level ------ OUT LINK
 
     int N_in_links; // in_link ==> lower level to current level -------- UP LINK
     int N_out_links; // out_link ==> current level to higher level ------ OUT LINK
@@ -576,462 +576,457 @@ struct switches
 
 struct t_global_op_definition
 {
-  int identificator;
-  char *name;
+    int identificator;
+    char *name;
 };
 
 struct t_global_op_information
 {
-  int identificator;
-  int FIN_model;                /* 0, CONSTANT, LINEAL, LOGARITHMIC*/
-  int FIN_size;                 /* MIN, MAX, average, 2*MAX, send+recv */
-  int FOUT_model;               /* 0, CONSTANT, LINEAL, LOGARITHMIC*/
-  int FOUT_size;                /* MIN, MAX, average, 2*MAX, send+recv */
+    int identificator;
+    int FIN_model;                /* 0, CONSTANT, LINEAL, LOGARITHMIC*/
+    int FIN_size;                 /* MIN, MAX, average, 2*MAX, send+recv */
+    int FOUT_model;               /* 0, CONSTANT, LINEAL, LOGARITHMIC*/
+    int FOUT_size;                /* MIN, MAX, average, 2*MAX, send+recv */
 };
 
 struct t_communicator
 {
-  int            communicator_id;
-  int            size;
-  int*           global_ranks;
+    int            communicator_id;
+    int            size;
+    int*           global_ranks;
 
-  struct t_queue threads;              /* Threads block until syncronization */
-  struct t_queue machines_threads;     /* One thread from each machine used */
-  struct t_queue m_threads_with_links; /* Els anteriors que ja tenen links
-                                        * reservats */
+    struct t_queue threads;              /* Threads block until syncronization */
+    struct t_queue machines_threads;     /* One thread from each machine used */
+    struct t_queue m_threads_with_links; /* Els anteriors que ja tenen links
+                                          * reservats */
 
-  struct t_queue* nodes_per_machine;    /* Nodes involved on each machine */
-  struct t_queue  tasks_per_node;
-  
-  struct t_thread* current_root;       /* Root thread of the 'in-flight'
-                                          operation */
-  t_boolean in_flight_op;              /* True when simulating an operation */
+    struct t_queue* nodes_per_machine;    /* Nodes involved on each machine */
+    struct t_queue  tasks_per_node;
 
-  // Queue that keeps all threads (copy) that arrives to the non-block
-  // global operation. We need this new queue because the threads queue could be
-  // used by a blocking global op at same time.
+    struct t_thread* current_root;       /* Root thread of the 'in-flight'
+                                            operation */
+    t_boolean in_flight_op;              /* True when simulating an operation */
 
-  /*
-  struct t_queue nonblock_global_op_threads[1000];
-  struct t_queue nonblock_global_op_machine_threads[1000];
-  struct t_thread* nonblock_current_root[1000];
-  struct t_queue nonblock_m_threads_with_links[1000];
-  */
+    // Queue that keeps all threads (copy) that arrives to the non-block
+    // global operation. We need this new queue because the threads queue could be
+    // used by a blocking global op at same time.
 
-  struct t_queue nonblock_global_op_threads;
-  struct t_queue nonblock_global_op_machine_threads;
-  struct t_queue nonblock_current_root;
-  struct t_queue nonblock_m_threads_with_links;
+    struct t_queue nonblock_global_op_threads;
+    struct t_queue nonblock_global_op_machine_threads;
+    struct t_queue nonblock_current_root;
+    struct t_queue nonblock_m_threads_with_links;
 
-
+    int same_machine;
+    int same_node;
+    int sharing_node;
 };
 
 
 
 struct t_window
 {
-  int window_id;
-  struct t_queue global_ranks;            /* Queue of integers, rank of tasks */
-  int mode;                               /* Indicates the current mode of this
-                                           * window */
+    int window_id;
+    struct t_queue global_ranks;            /* Queue of integers, rank of tasks */
+    int mode;                               /* Indicates the current mode of this
+                                             * window */
 
-  struct t_queue fence_tasks;             /* Queue with blocked threads  due
-                                           * fence operation */
-  struct t_queue fence_operations;        /* Queue with threads performing
-                                           * operations and the mode is fence */
+    struct t_queue fence_tasks;             /* Queue with blocked threads  due
+                                             * fence operation */
+    struct t_queue fence_operations;        /* Queue with threads performing
+                                             * operations and the mode is fence */
 
-  struct t_task *task_with_lock;           /* Task with lock */
-  int    lock_mode;                        /* Indicates if it is shared/
-                                            * exclusive */
-  struct t_queue threads_with_lock;        /* Threads holding lock */
-  struct t_queue threads_waiting_lock;
-  struct t_queue threads_waiting_unlock;
-  struct t_queue lock_operations;          /* Threads performing a communiction
-                                            * and the mode is lock */
+    struct t_task *task_with_lock;           /* Task with lock */
+    int    lock_mode;                        /* Indicates if it is shared/
+                                              * exclusive */
+    struct t_queue threads_with_lock;        /* Threads holding lock */
+    struct t_queue threads_waiting_lock;
+    struct t_queue threads_waiting_unlock;
+    struct t_queue lock_operations;          /* Threads performing a communiction
+                                              * and the mode is lock */
 
-  struct t_queue post_done;
-  struct t_queue start_done;
-  struct t_queue pending_of_post;
-  struct t_queue pending_rma_to_complete;  /* block complete until all RMA
-                                            * finish */
-  struct t_queue complete_done;
-  struct t_queue pending_wait_to_complete; /* block wait until complete is done */
-  struct t_queue post_operations;          /* Threads performing a communiction
-                                            * and the mode is post */
+    struct t_queue post_done;
+    struct t_queue start_done;
+    struct t_queue pending_of_post;
+    struct t_queue pending_rma_to_complete;  /* block complete until all RMA
+                                              * finish */
+    struct t_queue complete_done;
+    struct t_queue pending_wait_to_complete; /* block wait until complete is done */
+    struct t_queue post_operations;          /* Threads performing a communiction
+                                              * and the mode is post */
 };
 
 struct t_request_thread
 {
-  int request;
-  struct t_thread *thread;
+    int request;
+    struct t_thread *thread;
 };
 
 struct t_fh_commid
 {
-  int fh;
-  struct t_communicator *communicator;
-  struct t_queue threads;
-  struct t_queue copy;
-  int stage;                    /* For different IO stages */
-  int counter;
+    int fh;
+    struct t_communicator *communicator;
+    struct t_queue threads;
+    struct t_queue copy;
+    int stage;                    /* For different IO stages */
+    int counter;
 };
 
 struct t_event_block
 {
-  unsigned long int	 type;
-  unsigned long int	 value;
-  dimemas_timer			 paraver_time;
+    unsigned long int	 type;
+    unsigned long int	 value;
+    dimemas_timer			 paraver_time;
 };
 
 struct t_Ptask
 {
-  int             Ptaskid;
-  char           *tracefile;
-  char           *configfile;
+    int             Ptaskid;
+    char           *tracefile;
+    char           *configfile;
 
-  int             map_definition;
-  int             tasks_per_node;
-/*
-  HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
-  AND THAN READ THE TRF FILE AS IT WAS A STRING
-*/
-//   FILE           *file;
-  char           *mmapped_file;
-  unsigned long   mmap_position;
-  struct stat     sb;
-  int             is_there_seek_info;
+    int             map_definition;
+    int             tasks_per_node;
+    /*
+       HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
+       AND THAN READ THE TRF FILE AS IT WAS A STRING
+       */
+    //   FILE           *file;
+    char           *mmapped_file;
+    unsigned long   mmap_position;
+    struct stat     sb;
+    int             is_there_seek_info;
 
 
-  int             n_rerun;
-  t_boolean       synthetic_application;
-  // struct t_queue  tasks;
-  size_t         tasks_count;
-  struct t_task *tasks;
-  struct t_queue global_operation; /* Threads pending for sincronization
-                                     * in global operation */
-  struct t_queue      Communicator;
-  struct t_queue      Window;
-  struct t_queue      MPI_IO_fh_to_commid;
-  struct t_queue      MPI_IO_request_thread;
-  modules_map         Modules;
-  struct t_queue      Filesd;
-  struct t_queue      UserEventsInfo; /* Cua amb les informacions dels possibles
-                                       * events d'usuari */
-  int									*acc_tasks;			/* Extra info for accelerator mapping */
-  int									 acc_tasks_count;
+    int             n_rerun;
+    t_boolean       synthetic_application;
+    // struct t_queue  tasks;
+    size_t         tasks_count;
+    struct t_task *tasks;
+    struct t_queue global_operation; /* Threads pending for sincronization
+                                      * in global operation */
+    struct t_queue      Communicator;
+    struct t_queue      Window;
+    struct t_queue      MPI_IO_fh_to_commid;
+    struct t_queue      MPI_IO_request_thread;
+    modules_map         Modules;
+    struct t_queue      Filesd;
+    struct t_queue      UserEventsInfo; /* Cua amb les informacions dels possibles
+                                         * events d'usuari */
+    int									*acc_tasks;			/* Extra info for accelerator mapping */
+    int									 acc_tasks_count;
 };
 
 struct t_task
 {
-  struct t_Ptask *Ptask;
-  int             taskid;
-  int             nodeid;
-  struct t_node*  node;
-  int               threads_count;
-  struct t_thread **threads;
+    struct t_Ptask *Ptask;
+    int             taskid;
+    int             nodeid;
+    struct t_node*  node;
+    int               threads_count;
+    struct t_thread **threads;
 
 
-  struct t_queue  mess_recv;     /* Queue for received messages */
-  struct t_queue  recv;          /* Queue of threads waiting for message */
-  struct t_queue  send;          /* Queue of threads waiting for a partner
-                                  * when sending a message */
-  struct t_thread *current_wait; /* Current WAIT operation, only for IRECV *
-                                     * ES SOLO TEMPORAL, PORQUE SI HAY OpenMP *
-                                     * PUEDE HABER + DE 1 WAIT */
+    struct t_queue  mess_recv;     /* Queue for received messages */
+    struct t_queue  recv;          /* Queue of threads waiting for message */
+    struct t_queue  send;          /* Queue of threads waiting for a partner
+                                    * when sending a message */
+    struct t_thread *current_wait; /* Current WAIT operation, only for IRECV *
+                                    * ES SOLO TEMPORAL, PORQUE SI HAY OpenMP *
+                                    * PUEDE HABER + DE 1 WAIT */
 
-  /****************************************************************************/
-  /* Les dues cues seguents s'han hagut d'afegir per poder tractar
-   * correctament els Irecv/Wait */
-   struct t_queue  recv_without_send; /* Cua de threads (d'aquesta task) que
-                                       * han arribat a un recv o Irecv
-                                       * sense que s'hagi arribat al send
-                                       * corresponent. La diferencia
-                                       * principal amb la cua recv es que el
-                                       * thread original no te perque estar
-                                       * bloquejat (si era irecv). Una altra
-                                       * diferencia es que els threads d'aquesta
-                                       * cua es treuen quan s'arriba al send,
-                                       * no quan s'acaba la transmisio fisica.*/
-   struct t_queue  send_without_recv; /* Aquesta cua es la inversa de
-                                       * l'anterior. Hi ha els threads de
-                                       * qualsevol task que han arribat a un
-                                       * send sense cap a aquesta task que
-                                       * s'hagi arribat al recv o Irecv
-                                       * corresponent.
-                                       * Els threads d'aquesta cua es treuen de
-                                       * seguida que s'arriba al recv o Irecv
-                                       * corresponent, no quan es fa realment
-                                       * la transmisio. */
-  /****************************************************************************/
+    /****************************************************************************/
+    /* Les dues cues seguents s'han hagut d'afegir per poder tractar
+     * correctament els Irecv/Wait */
+    struct t_queue  recv_without_send; /* Cua de threads (d'aquesta task) que
+                                        * han arribat a un recv o Irecv
+                                        * sense que s'hagi arribat al send
+                                        * corresponent. La diferencia
+                                        * principal amb la cua recv es que el
+                                        * thread original no te perque estar
+                                        * bloquejat (si era irecv). Una altra
+                                        * diferencia es que els threads d'aquesta
+                                        * cua es treuen quan s'arriba al send,
+                                        * no quan s'acaba la transmisio fisica.*/
+    struct t_queue  send_without_recv; /* Aquesta cua es la inversa de
+                                        * l'anterior. Hi ha els threads de
+                                        * qualsevol task que han arribat a un
+                                        * send sense cap a aquesta task que
+                                        * s'hagi arribat al recv o Irecv
+                                        * corresponent.
+                                        * Els threads d'aquesta cua es treuen de
+                                        * seguida que s'arriba al recv o Irecv
+                                        * corresponent, no quan es fa realment
+                                        * la transmisio. */
+    /****************************************************************************/
 
-  /* JGG (2014/03/19): this queue stores the t_recv structures from received
-   * messages to mark where the logical_recv time of the possible Irecv
-   * executed */
-  struct t_queue irecvs_executed;
+    /* JGG (2014/03/19): this queue stores the t_recv structures from received
+     * messages to mark where the logical_recv time of the possible Irecv
+     * executed */
+    struct t_queue irecvs_executed;
 
-  struct t_queue  semaphores;
+    struct t_queue  semaphores;
 
-  t_boolean         infinite_links;       /* TRUE if there are infinite links */
-  t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
+    t_boolean         infinite_links;       /* TRUE if there are infinite links */
+    t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
 
-  struct t_queue    free_in_links;        /* Free input links */
-  struct t_queue    free_out_links;       /* Free output link */
-  struct t_queue    busy_in_links;        /* Busy input links */
-  struct t_queue    busy_out_links;       /* Busy output links */
-  struct t_queue    th_for_in;            /* Awaiting for input link */
-  struct t_queue    th_for_out;           /* Awaiting for output link */
+    struct t_queue    free_in_links;        /* Free input links */
+    struct t_queue    free_out_links;       /* Free output link */
+    struct t_queue    busy_in_links;        /* Busy input links */
+    struct t_queue    busy_out_links;       /* Busy output links */
+    struct t_queue    th_for_in;            /* Awaiting for input link */
+    struct t_queue    th_for_out;           /* Awaiting for output link */
 
-  t_boolean       	io_thread;
+    t_boolean       	io_thread;
 
-  t_boolean					accelerator;
-  struct t_thread  *KernelSync;	/*	Kernel thread of sync	*/
-  struct t_thread	 *HostSync;		/*	Host thread of sync	*/
-  int							  KernelByComm;/* Kernel_id indicated in comm_id for global_op */
+    t_boolean					accelerator;
+    struct t_thread  *KernelSync;	/*	Kernel thread of sync	*/
+    struct t_thread	 *HostSync;		/*	Host thread of sync	*/
+    int							  KernelByComm;/* Kernel_id indicated in comm_id for global_op */
 };
 
 struct t_event
 {
-  dimemas_timer    event_time;
-  int              module;
-  struct t_thread *thread;
-  int              info;
-  int              daemon;
+    dimemas_timer    event_time;
+    int              module;
+    struct t_thread *thread;
+    int              info;
+    int              daemon;
 };
 
 struct t_activity
 {
-  char *name;
-  int   number;
-  char *symname;
+    char *name;
+    int   number;
+    char *symname;
 };
 
 struct t_thread
 {
-  int              threadid; /* Thread id within task */
-  struct t_task   *task;
-  struct t_queue   account;
+    int              threadid; /* Thread id within task */
+    struct t_task   *task;
+    struct t_queue   account;
 
-  /* Vladimir: to remember sstask_id and sstask_type of the thread
-     so these events could be marked again when preempting
-  */
-  unsigned long    sstask_id;
-  unsigned long    sstask_type;
+    /* Vladimir: to remember sstask_id and sstask_type of the thread
+       so these events could be marked again when preempting
+       */
+    unsigned long    sstask_id;
+    unsigned long    sstask_type;
 
     // Karthikeyan: EEE CODE
 
-  t_boolean eee_send_done;      // TRUE if comm_send_via_3L_network is over
-  int current_level;            // level in 3L heirarchy -1 -> outside network; 0<1<2 => 3 Levels
-  int routing_dir;              // 1 UP; -1 DOWN;
-  t_boolean link_transmit_done;
-  t_boolean nw_switch_done;
-  t_boolean eee_done_reset_var;
-  int eee_linkid;
-  int eee_switchid;
-  int messages_in_flight;
+    t_boolean eee_send_done;      // TRUE if comm_send_via_3L_network is over
+    int current_level;            // level in 3L heirarchy -1 -> outside network; 0<1<2 => 3 Levels
+    int routing_dir;              // 1 UP; -1 DOWN;
+    t_boolean link_transmit_done;
+    t_boolean nw_switch_done;
+    t_boolean eee_done_reset_var;
+    int eee_linkid;
+    int eee_switchid;
+    int messages_in_flight;
 
-  // Karthikeyan: END OF EEE CODE
+    // Karthikeyan: END OF EEE CODE
 
     /* making these queues separate for every thread
        only DEPENDENCIES go to this queues
        REAL MPI TRANSFERS go the the queues of the task    */
-  struct t_queue  mess_recv; /* Queue for received messages */
-  struct t_queue  recv;      /* Queue of threads waiting for message */
-  struct t_queue  send;      /* Queue of threads waiting for a partner
-                              * when sending a message */
-  /****************************************************************************/
-  /* Les dues cues seguents s'han hagut d'afegir per poder tractar
-   * correctament els Irecv/Wait */
-   struct t_queue  recv_without_send; /* Cua de threads (d'aquesta task) que
-                                       * han arribat a un recv o Irecv
-                                       * sense que s'hagi arribat al send
-                                       * corresponent. La diferencia
-                                       * principal amb la cua recv es que el
-                                       * thread original no te perque estar
-                                       * bloquejat (si era irecv). Una altra
-                                       * diferencia es que els threads d'aquesta
-                                       * cua es treuen quan s'arriba al send,
-                                       * no quan s'acaba la transmisio fisica.*/
-   struct t_queue  send_without_recv; /* Aquesta cua es la inversa de
-                                       * l'anterior. Hi ha els threads de
-                                       * qualsevol task que han arribat a un
-                                       * send sense cap a aquesta task que
-                                       * s'hagi arribat al recv o Irecv
-                                       * corresponent.
-                                       * Els threads d'aquesta cua es treuen de
-                                       * seguida que s'arriba al recv o Irecv
-                                       * corresponent, no quan es fa realment
-                                       * la transmisio. */
-  /****************************************************************************/
-  /* JGG (2014/03/19): this queue stores the t_recv structures from received
-   * messages to mark where the logical_recv time of the possible Irecv
-   * executed */
-  struct t_queue irecvs_executed;
+    struct t_queue  mess_recv; /* Queue for received messages */
+    struct t_queue  recv;      /* Queue of threads waiting for message */
+    struct t_queue  send;      /* Queue of threads waiting for a partner
+                                * when sending a message */
+    /****************************************************************************/
+    /* Les dues cues seguents s'han hagut d'afegir per poder tractar
+     * correctament els Irecv/Wait */
+    struct t_queue  recv_without_send; /* Cua de threads (d'aquesta task) que
+                                        * han arribat a un recv o Irecv
+                                        * sense que s'hagi arribat al send
+                                        * corresponent. La diferencia
+                                        * principal amb la cua recv es que el
+                                        * thread original no te perque estar
+                                        * bloquejat (si era irecv). Una altra
+                                        * diferencia es que els threads d'aquesta
+                                        * cua es treuen quan s'arriba al send,
+                                        * no quan s'acaba la transmisio fisica.*/
+    struct t_queue  send_without_recv; /* Aquesta cua es la inversa de
+                                        * l'anterior. Hi ha els threads de
+                                        * qualsevol task que han arribat a un
+                                        * send sense cap a aquesta task que
+                                        * s'hagi arribat al recv o Irecv
+                                        * corresponent.
+                                        * Els threads d'aquesta cua es treuen de
+                                        * seguida que s'arriba al recv o Irecv
+                                        * corresponent, no quan es fa realment
+                                        * la transmisio. */
+    /****************************************************************************/
+    /* JGG (2014/03/19): this queue stores the t_recv structures from received
+     * messages to mark where the logical_recv time of the possible Irecv
+     * executed */
+    struct t_queue irecvs_executed;
 
-  struct t_action *action;
-  struct t_action *last_action;
-  t_boolean        original_thread;
-  struct t_thread *twin_thread;
-  struct t_cpu    *cpu;
-  struct t_link   *local_link,
-                  *partner_link;
-  struct t_link   *local_hd_link,
-                  *partner_hd_link;   /* Pointers to non used links (HF-DPEX)*/
-  struct t_node   *partner_node;   /* Cal guardar el node desti del missatge */
+    struct t_action *action;
+    struct t_action *last_action;
+    t_boolean        original_thread;
+    struct t_thread *twin_thread;
+    struct t_cpu    *cpu;
+    struct t_link   *local_link,
+                    *partner_link;
+    struct t_link   *local_hd_link,
+                    *partner_hd_link;   /* Pointers to non used links (HF-DPEX)*/
+    struct t_node   *partner_node;   /* Cal guardar el node desti del missatge */
 
-  /*
-  struct t_link   *in_mem_link;
-  struct t_link   *out_mem_link;
-  */
+    /*
+       struct t_link   *in_mem_link;
+       struct t_link   *out_mem_link;
+       */
 
-  dimemas_timer    last_paraver;
-  t_boolean        loose_cpu;
-  int              to_module;
-  char            *sch_parameters;
-  t_off_fitxer     original_seek;
-  t_off_fitxer     seek_position;
-  int              base_priority;
-  t_boolean        doing_context_switch;
-  t_boolean        to_be_preempted;
-  t_boolean        doing_busy_wait;
-  t_boolean        doing_startup;
-  t_boolean        startup_done;
+    dimemas_timer    last_paraver;
+    t_boolean        loose_cpu;
+    int              to_module;
+    char            *sch_parameters;
+    t_off_fitxer     original_seek;
+    t_off_fitxer     seek_position;
+    int              base_priority;
+    t_boolean        doing_context_switch;
+    t_boolean        to_be_preempted;
+    t_boolean        doing_busy_wait;
+    t_boolean        doing_startup;
+    t_boolean        startup_done;
 
-  /* Library copy control fields */
-  t_boolean        doing_copy;
-  t_boolean        copy_done;
-  /* Roundtrip time control fields */
-  t_boolean        doing_roundtrip;
-  t_boolean        roundtrip_done;
+    /* Library copy control fields */
+    t_boolean        doing_copy;
+    t_boolean        copy_done;
+    /* Roundtrip time control fields */
+    t_boolean        doing_roundtrip;
+    t_boolean        roundtrip_done;
 
-  /* JGG (22/04/2005): Communication values */
-  int              comm_action;   /* Marks current Communication operation */
-  dimemas_timer    logical_send;
-  dimemas_timer    logical_recv;
-  dimemas_timer    physical_send;
-  dimemas_timer    physical_recv;
+    /* JGG (22/04/2005): Communication values */
+    int              comm_action;   /* Marks current Communication operation */
+    dimemas_timer    logical_send;
+    dimemas_timer    logical_recv;
+    dimemas_timer    physical_send;
+    dimemas_timer    physical_recv;
 
-  dimemas_timer    put_into_ready;
-  dimemas_timer    start_wait_for_message;
-  dimemas_timer    min_time_to_be_preempted;
-  dimemas_timer    next_event_timer;
-  int              size_port;     /* Number of bytes to send/rec from/to port */
-  struct t_link   *port_send_link,
-                  *port_recv_link;
-  struct t_port   *port;
+    dimemas_timer    put_into_ready;
+    dimemas_timer    start_wait_for_message;
+    dimemas_timer    min_time_to_be_preempted;
+    dimemas_timer    next_event_timer;
+    int              size_port;     /* Number of bytes to send/rec from/to port */
+    struct t_link   *port_send_link,
+                    *port_recv_link;
+    struct t_port   *port;
 
-  struct t_link   *copy_segment_link_source,
-                  *copy_segment_link_dest;
-  int              copy_segment_size;
-  int              portid; /* thread user port */
-  struct t_event  *event;
+    struct t_link   *copy_segment_link_source,
+                    *copy_segment_link_dest;
+    int              copy_segment_size;
+    int              portid; /* thread user port */
+    struct t_event  *event;
 
-  struct t_last_comm
-  {
-    dimemas_timer ti;
-    t_nano       bandwidth;
-    int           bytes;
-  } last_comm;
+    struct t_last_comm
+    {
+        dimemas_timer ti;
+        t_nano       bandwidth;
+        int           bytes;
+    } last_comm;
 
-  dimemas_timer     initial_communication_time;
+    dimemas_timer     initial_communication_time;
 
-/*
-  HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
-  AND THAN READ THE TRF FILE AS IT WAS A STRING
-*/
-//   FILE           *file;
-  char            *mmapped_file;
-  unsigned long   mmap_position;
+    /*
+       HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
+       AND THAN READ THE TRF FILE AS IT WAS A STRING
+       */
+    //   FILE           *file;
+    char            *mmapped_file;
+    unsigned long   mmap_position;
 
-//   FILE             *file;
-//   t_boolean         file_shared;               /* TRUE if sharing file pointer*/
+    //   FILE             *file;
+    //   t_boolean         file_shared;               /* TRUE if sharing file pointer*/
 
 
-  struct t_queue    modules;
-  struct t_queue    Activity;
-  struct t_cp_node *last_cp_node;
-  t_boolean         global_op_done;
-  int               number_buses;
-  dimemas_timer     last_time_event_number;
+    struct t_queue    modules;
+    struct t_queue    Activity;
+    struct t_cp_node *last_cp_node;
+    t_boolean         global_op_done;
+    int               number_buses;
+    dimemas_timer     last_time_event_number;
 
-  struct
-  {
-    dimemas_timer arrive_to_collective;
-    dimemas_timer sync_time;
-    dimemas_timer with_resources;
-    dimemas_timer conclude_communication;
-  } collective_timers;
+    struct
+    {
+        dimemas_timer arrive_to_collective;
+        dimemas_timer sync_time;
+        dimemas_timer with_resources;
+        dimemas_timer conclude_communication;
+    } collective_timers;
 
-  int       IO_blocking_point;
-  t_boolean marked_for_deletion; /* Indica que s'ha d'eliminar quan es pugui */
-  /* JGG IDENTIFICADOR */
-  long int       th_copy_id;
-  t_boolean      locked; /* INDICA SI EL THREAD SE HA BLOQUEADO */
-  // t_thread_state current_state; /* Current state of thread (15/02/2005) */
+    int       IO_blocking_point;
+    t_boolean marked_for_deletion; /* Indica que s'ha d'eliminar quan es pugui */
+    /* JGG IDENTIFICADOR */
+    long int       th_copy_id;
+    t_boolean      locked; /* INDICA SI EL THREAD SE HA BLOQUEADO */
+    // t_thread_state current_state; /* Current state of thread (15/02/2005) */
 
-  t_boolean      idle_block;  /* True if the thread has entered on NULL block */
+    t_boolean      idle_block;  /* True if the thread has entered on NULL block */
 
-  // When a deadlock is detected some operations could be ignored.
-  struct t_queue ops_to_be_ignored;
-  int counter_ops_already_ignored;
+    // When a deadlock is detected some operations could be ignored.
+    struct t_queue ops_to_be_ignored;
+    int counter_ops_already_ignored;
 
-  // Or also the some operations can be injected.
-  struct t_queue ops_to_be_injected;
-  int counter_ops_already_injected;
+    // Or also the some operations can be injected.
+    struct t_queue ops_to_be_injected;
+    int counter_ops_already_injected;
 
-  // Accelerator variables
-  t_boolean			 host; /* Indicates if it's an accelerator host thread	*/
-  t_boolean			 kernel; /* Indicates if it's an accelerator kernel thread	*/
-  struct t_link	*accelerator_link; /* Accelerator link for communications	*/
-  t_boolean			 first_acc_event_read; /* Throws a NOT_CREATED_ST before */
-                                           /* start if it's a kernel thread	*/
-  t_boolean			 acc_recv_sync;	/* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
-  t_boolean			 acc_sndr_sync;	/* Indicates if sender has to wait to receiver receives	*/
-  t_boolean			 doing_acc_comm; /* Do not print startup latencies	*/
-  t_boolean			 blckd_in_global_op; /* To control threads inside acc sync */
-  struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
+    // Accelerator variables
+    t_boolean			 host; /* Indicates if it's an accelerator host thread	*/
+    t_boolean			 kernel; /* Indicates if it's an accelerator kernel thread	*/
+    struct t_link	*accelerator_link; /* Accelerator link for communications	*/
+    t_boolean			 first_acc_event_read; /* Throws a NOT_CREATED_ST before */
+    /* start if it's a kernel thread	*/
+    t_boolean			 acc_recv_sync;	/* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
+    t_boolean			 acc_sndr_sync;	/* Indicates if sender has to wait to receiver receives	*/
+    t_boolean			 doing_acc_comm; /* Do not print startup latencies	*/
+    t_boolean			 blckd_in_global_op; /* To control threads inside acc sync */
+    struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
 
-  // Non-blocking GLOP variables
-  // in_flight: Indicates how many non-block glops are already executing.
-  // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.
-  // waiting: Indicates how many waits are waiting for an in flight non-global op. (max 1)
-  //
-  int nb_glob_index; 
-  int nb_glob_index_master;
-  int n_nonblock_glob_in_flight;
-  int n_nonblock_glob_waiting;
-  int n_nonblock_glob_done;
+    // Non-blocking GLOP variables
+    // in_flight: Indicates how many non-block glops are already executing.
+    // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.
+    // waiting: Indicates how many waits are waiting for an in flight non-global op. (max 1)
+    //
+    int nb_glob_index; 
+    int nb_glob_index_master;
+    int n_nonblock_glob_in_flight;
+    int n_nonblock_glob_waiting;
+    int n_nonblock_glob_done;
 
-  struct t_queue nonblock_glop_done_threads;
+    struct t_queue nonblock_glop_done_threads;
 
-  //t_boolean nonblock_glop_waiting;
-  //t_boolean nonblock_glop_done;
-  //struct t_thread* nonblock_glop_thread;
+    //t_boolean nonblock_glop_waiting;
+    //t_boolean nonblock_glop_done;
+    //struct t_thread* nonblock_glop_thread;
 };
 
 struct t_semaphore
 {
-  int             sem_id;
-  int             counter;
-  struct t_queue  threads;
+    int             sem_id;
+    int             counter;
+    struct t_queue  threads;
 };
 
 struct t_port
 {
-  int              portid; /* Port identifier */
-  struct t_thread *thread; /* Creator thread */
-  struct t_queue   send,   /* Blocked sender threads */
-                   recv;   /* Blocked recv threads */
-  int              sending;
+    int              portid; /* Port identifier */
+    struct t_thread *thread; /* Creator thread */
+    struct t_queue   send,   /* Blocked sender threads */
+                     recv;   /* Blocked recv threads */
+    int              sending;
 };
 
 
 struct t_file_system_parameters
 {
-  double disk_latency;
-  double disk_bandwidth;
-  double block_size;
-  int    concurrent_requests;
-  double hit_ratio;
+    double disk_latency;
+    double disk_bandwidth;
+    double block_size;
+    int    concurrent_requests;
+    double hit_ratio;
 };
 
 /*
@@ -1039,110 +1034,110 @@ struct t_file_system_parameters
  */
 struct t_account
 {
-  int             nodeid;      /* Only when accounting on threads */
-  int             iteration;   /* Iteration number */
-  dimemas_timer   initial_time;
-  dimemas_timer   final_time;
+    int             nodeid;      /* Only when accounting on threads */
+    int             iteration;   /* Iteration number */
+    dimemas_timer   initial_time;
+    dimemas_timer   final_time;
 
-  /* Compute account time */
-  dimemas_timer   cpu_time;            /* Cpu time spent */
-  double          n_th_in_run;         /* Number of times thread goes to run */
-  double          n_preempt_to_me;     /* Number times i've been preempted */
-  double          n_preempt_to_other;  /* Number time i preempt others */
-  dimemas_timer   time_ready_without_cpu; /* Time in ready queue with no
-                                           * processor*/
-  /* Send accounting */
-  double          n_sends;        /* Total amount of sends */
-  double          n_bytes_send;
+    /* Compute account time */
+    dimemas_timer   cpu_time;            /* Cpu time spent */
+    double          n_th_in_run;         /* Number of times thread goes to run */
+    double          n_preempt_to_me;     /* Number times i've been preempted */
+    double          n_preempt_to_other;  /* Number time i preempt others */
+    dimemas_timer   time_ready_without_cpu; /* Time in ready queue with no
+                                             * processor*/
+    /* Send accounting */
+    double          n_sends;        /* Total amount of sends */
+    double          n_bytes_send;
 
-  /* Recv accounting */
-  double          n_recvs;
-  double          n_bytes_recv;
-  double          n_recvs_on_processor; /* Number of receives and message is on
-                                         * processor (no rendez_vous) */
-  double          n_recvs_must_wait;
-  dimemas_timer   time_waiting_for_message;
+    /* Recv accounting */
+    double          n_recvs;
+    double          n_bytes_recv;
+    double          n_recvs_on_processor; /* Number of receives and message is on
+                                           * processor (no rendez_vous) */
+    double          n_recvs_must_wait;
+    dimemas_timer   time_waiting_for_message;
 
-  /* Misc. communication time accounting */
-  dimemas_timer   latency_time;           /* Startup latencies */
-  dimemas_timer   block_due_resources;    /* General Resource blocking */
-  dimemas_timer   initial_wait_link_time; /* Inici del temps d'espera */
-  dimemas_timer   block_due_link;         /* Temps esperant links */
-  dimemas_timer   initial_wait_bus_time;  /* Inici del temps d'espera */
-  dimemas_timer   block_due_buses;        /* Temps esperant busos */
+    /* Misc. communication time accounting */
+    dimemas_timer   latency_time;           /* Startup latencies */
+    dimemas_timer   block_due_resources;    /* General Resource blocking */
+    dimemas_timer   initial_wait_link_time; /* Inici del temps d'espera */
+    dimemas_timer   block_due_link;         /* Temps esperant links */
+    dimemas_timer   initial_wait_bus_time;  /* Inici del temps d'espera */
+    dimemas_timer   block_due_buses;        /* Temps esperant busos */
 
-  /* Disk I/O time accounting */
-  dimemas_timer   initial_io_read_time;  /* Inici del temps d'espera */
-  dimemas_timer   io_read_time;          /* Temps llegint */
-  dimemas_timer   initial_io_write_time; /* Inici del temps d'espera */
-  dimemas_timer   io_write_time;         /* Temps escribint */
-  dimemas_timer   initial_io_call_time;  /* Inici del temps d'espera */
-  dimemas_timer   io_call_time;          /* Temps en IO (si no es separen reads
-                                          * i writes) */
+    /* Disk I/O time accounting */
+    dimemas_timer   initial_io_read_time;  /* Inici del temps d'espera */
+    dimemas_timer   io_read_time;          /* Temps llegint */
+    dimemas_timer   initial_io_write_time; /* Inici del temps d'espera */
+    dimemas_timer   io_write_time;         /* Temps escribint */
+    dimemas_timer   initial_io_call_time;  /* Inici del temps d'espera */
+    dimemas_timer   io_call_time;          /* Temps en IO (si no es separen reads
+                                            * i writes) */
 
-  /* Group operations */
-  double          n_group_operations;
-  dimemas_timer   block_due_group_operations;
-  dimemas_timer   group_operations_time;
+    /* Group operations */
+    double          n_group_operations;
+    dimemas_timer   block_due_group_operations;
+    dimemas_timer   group_operations_time;
 
-  /* Accelerator communication time accounting */
-  //dimemas_timer   acc_latency_time;           /* Accelerator startup latency */
-	//dimemas_timer   acc_block_due_resources;    /* Accelerator general resource blocking */
-	//dimemas_timer   acc_initial_wait_link_time; /* Accelerator initial's wait time */
-	//dimemas_timer   acc_block_due_link;         /* Accelerator links' wait time */
-	//dimemas_timer   acc_initial_wait_bus_time;  /* Accelerator bus initial's wait time */
-	//dimemas_timer   acc_block_due_buses;        /* Accelerator bus blocking's wait time */
+    /* Accelerator communication time accounting */
+    //dimemas_timer   acc_latency_time;           /* Accelerator startup latency */
+    //dimemas_timer   acc_block_due_resources;    /* Accelerator general resource blocking */
+    //dimemas_timer   acc_initial_wait_link_time; /* Accelerator initial's wait time */
+    //dimemas_timer   acc_block_due_link;         /* Accelerator links' wait time */
+    //dimemas_timer   acc_initial_wait_bus_time;  /* Accelerator bus initial's wait time */
+    //dimemas_timer   acc_block_due_buses;        /* Accelerator bus blocking's wait time */
 };
 
 struct t_cpu
 {
-  int              cpuid;
-  struct t_account account; /* Account for this cpu */
-  struct t_thread *current_thread;
-  struct t_thread *current_thread_context;
-  double           current_load;
-  dimemas_timer    last_actualization;
-  double           utilization;
-  struct t_queue  *io;
-  int              unique_number;
+    int              cpuid;
+    struct t_account account; /* Account for this cpu */
+    struct t_thread *current_thread;
+    struct t_thread *current_thread_context;
+    double           current_load;
+    dimemas_timer    last_actualization;
+    double           utilization;
+    struct t_queue  *io;
+    int              unique_number;
 
-  t_boolean is_gpu; // to create GPU *C
+    t_boolean is_gpu; // to create GPU *C
 };
 
 struct t_bus_utilization
 {
-  dimemas_timer    initial_time;
-  struct t_thread *sender;
+    dimemas_timer    initial_time;
+    struct t_thread *sender;
 };
 
 struct t_user_event_value_info
 {
-  int   value;  /* Valor */
-  char *name;   /* Nom d'aquest valor */
+    int   value;  /* Valor */
+    char *name;   /* Nom d'aquest valor */
 };
 
 
 struct t_user_event_info
 {
-  int type;              /* Tipus de l'event */
-  int color;             /* Color del flag al pcf */
-  char *name;            /* Nom d'aquest tipus */
-  struct t_queue values; /* Cua amb les informacions dels possibles valors */
+    int type;              /* Tipus de l'event */
+    int color;             /* Color del flag al pcf */
+    char *name;            /* Nom d'aquest tipus */
+    struct t_queue values; /* Cua amb les informacions dels possibles valors */
 };
 
 struct t_both
 {
-  struct t_port   *port;
-  struct t_thread *thread_s;
-  struct t_thread *thread_r;
+    struct t_port   *port;
+    struct t_thread *thread_s;
+    struct t_thread *thread_r;
 };
 
 struct t_copyseg
 {
-  struct t_thread *thread;
-  struct t_node  *node_s;
-  struct t_node  *node_d;
-  int             size;
+    struct t_thread *thread;
+    struct t_node  *node_s;
+    struct t_node  *node_d;
+    int             size;
 };
 
 #define E_NIL    (struct t_event*) 0
@@ -1176,38 +1171,38 @@ struct t_copyseg
 
 struct t_scheduler_actions
 {
-  char              *name;
-  void             (*thread_to_ready) ();
-  t_nano          (*get_execution_time) ();
-  struct t_thread *(*next_thread_to_run) ();
-  void             (*init_scheduler_parameters) ();
-  void             (*clear_parameters) ();
-  int              (*info) ();
-  void             (*scheduler_init) (char*, struct t_machine*);
-  void             (*scheduler_copy_parameters) ();
-  void             (*scheduler_free_parameters) ();
-  void             (*modify_priority) ();
-  void             (*modify_preemption) ();
+    char              *name;
+    void             (*thread_to_ready) ();
+    t_nano          (*get_execution_time) ();
+    struct t_thread *(*next_thread_to_run) ();
+    void             (*init_scheduler_parameters) ();
+    void             (*clear_parameters) ();
+    int              (*info) ();
+    void             (*scheduler_init) (char*, struct t_machine*);
+    void             (*scheduler_copy_parameters) ();
+    void             (*scheduler_free_parameters) ();
+    void             (*modify_priority) ();
+    void             (*modify_preemption) ();
 };
 
 struct t_communic_actions
 {
-  char *name;
+    char *name;
 };
 
 struct t_disk_action
 {
-  int             taskid;
-  int             threadid;
-  struct t_action action;
+    int             taskid;
+    int             threadid;
+    struct t_action action;
 };
 
-struct trace_operation                                                                                   
+struct trace_operation
 {
-   unsigned int Ptask_id;
-   unsigned int task_id;
-   unsigned int thread_id;
-   unsigned int file_offset;
+    unsigned int Ptask_id;
+    unsigned int task_id;
+    unsigned int thread_id;
+    unsigned int file_offset;
 };
 
 

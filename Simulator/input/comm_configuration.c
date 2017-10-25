@@ -123,13 +123,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition(char* comm_conf_filename,
   char FOUT_size[256];
   double contention;  /* Per motius historics. Actualment no s'utilitza. */
 
-  // PRINT_TIMER (current_time);
   info ("   * Loading communications configuration from file %s\n",
         comm_conf_filename);
-
-
-  /* New parsing using 'getline'
-  while (!(feof(fi))) */
 
   expected_quantum_definition = FALSE;
   while ( (read = getline(&current_line, &lenght, comm_conf_file)) != -1)

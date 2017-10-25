@@ -105,6 +105,14 @@ void Update_Node_Info(struct t_task *tasks, int task_count, int * task_mapping);
 int *TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node);
 int *TASK_Map_Interleaved(int task_count);
 
+/*
+ * Auxiliar function for qsort
+ */
+int cmpfunc(const void *a, const void *b)
+{
+    return ( *(int*)a - *(int*)b );
+}
+
 /*****************************************************************************
 * Public functions implementation
 *****************************************************************************/
@@ -207,16 +215,69 @@ void TASK_Init(int sintetic_io_applications)
      */
     if (!DATA_ACCESS_get_communicators(Ptask->Ptaskid, &comms_queue))
     {
-      die("Error retrieving communicators information from trace: %s", DATA_ACCESS_get_error());
+      die("Error retrieving communicators information from trace: %s",
+              DATA_ACCESS_get_error());
     }
 
     for (comm  = (struct t_communicator*) head_queue (comms_queue);
-         comm != COM_NIL;
-         comm  = (struct t_communicator*) next_queue(comms_queue))
+            comm != COM_NIL;
+            comm  = (struct t_communicator*) next_queue(comms_queue))
     {
-      insert_queue(&Ptask->Communicator,
-                   (char*) comm,
-                   (t_priority)comm->communicator_id);
+        /*
+         * Let's see which tasks are involved in this communicator in 
+         * order to get the correct startup time. If only intra-node 
+         * threads are involved, then just get the intra-node latency. 
+         * If intra-node and inter-node threads are involved, then get 
+         * the maximum one. Same with inter-machine communications.
+         */
+
+        int machines_id[comm->size];
+        int nodes_id[comm->size];
+
+        // Get all threads involved in the communicator
+        int i;
+        for (i=0; i<comm->size; ++i)
+        {
+            int task_id = comm->global_ranks[i];
+            struct t_task *current_task = &Ptask->tasks[task_id];
+            struct t_node *current_node = current_task->node;
+            struct t_machine* current_machine = current_node->machine;
+
+            nodes_id[i] = current_node->nodeid;
+            machines_id[i] = current_machine->id;
+        }
+
+        qsort(nodes_id, comm->size, sizeof(int), cmpfunc);
+        qsort(machines_id, comm->size, sizeof(int), cmpfunc);
+
+        int last_machine_id=machines_id[0];
+        int last_node_id=nodes_id[0];
+
+        int n_machines=1;
+        int n_nodes=1;
+        int n_tasks = comm->size;
+
+        for (i=1; i < comm->size; ++i)
+        {
+            if (machines_id[i] != last_machine_id)
+                n_machines++;
+            if (nodes_id[i] != last_node_id)
+                n_nodes++;
+            last_machine_id=machines_id[i];
+            last_node_id=nodes_id[i];
+        }
+
+        t_boolean same_machine = TRUE;
+        t_boolean same_node = TRUE;
+        t_boolean sharing_node = TRUE;
+
+        comm->same_machine=(n_machines==1);
+        comm->same_node=(n_nodes==1);
+        comm->sharing_node=(n_nodes<n_tasks);
+
+        insert_queue(&Ptask->Communicator,
+                (char*) comm,
+                (t_priority)comm->communicator_id);
     }
 
   } // end of loading the Ptasks.

@@ -279,38 +279,31 @@ int cmpfunc(const void *a, const void *b);
  * Initialization/Finalization of the communications module
  ****************************************************************************/
 
-void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercent)
+void COMMUNIC_Init (
+        const char * parameter_tracefile, 
+        float end_analysis_tpercent)
 {
     struct t_machine *machine;
-    size_t            machines_it;
-
-    char             *external_comm_library_name, *dlsym_error;
+    size_t machines_it;
+    char *external_comm_library_name, *dlsym_error;
 
 
     if (debug & D_COMM)
     {
-        // PRINT_TIMER (current_time);
         printf ("-> COMMUNICATIONS initialization\n");
     }
 
-    /* JGG (2012/01/17): new ways to navigate through machines
-       for (machine  = (struct t_machine *) head_queue(&Machine_queue);
-       machine != MA_NIL;
-       machine  = (struct t_machine *) next_queue(&Machine_queue))
-       {
-       */
     for (machines_it = 0; machines_it < Simulator.number_machines; machines_it++)
     {
         machine = &Machines[machines_it];
 
-        machine->network.utilization         = 0;
+        machine->network.utilization = 0;
         machine->network.total_time_in_queue = 0;
         ASS_ALL_TIMER (machine->network.last_actualization, current_time);
-        machine->network.curr_on_network     = 0;
-        machine->communication.policy        = COMMUNIC_FIFO;
+        machine->network.curr_on_network = 0;
+        machine->communication.policy = COMMUNIC_FIFO;
     }
 
-    /* JFM: Initialization of deadlock analyzer */
     if (with_deadlock_analysis)
     {
         struct t_Ptask * Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
@@ -319,37 +312,12 @@ void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercen
                 parameter_tracefile, end_analysis_tpercent);
     }
 
-    /*
-     * JGG (2012/01/13): Loads the communications explicit configuration, if file
-     * exists
-     */
     CONFIGURATION_Load_Communications_Configuration();
 
-    /*
-       if ((fichero_comm != (char *) 0) && (strcmp(fichero_comm,"") != 0))
-       {
-       free_reserved_pointer(); /* To ensure that 'fichero_comm' can be opened
-
-       fi = IO_fopen (fichero_comm, "r");
-
-       if (fi == (FILE *) 0)
-       {
-       panic ("Can't open communication configuration file %s\n",
-       fichero_comm);
-       }
-
-       read_communication_config_file(fi, fichero_comm);
-
-       IO_fclose (fi);
-       }
-       */
-
     /* S'inicialitza el calcul del traffic de la xarxa externa */
-
     periodic_external_network_traffic_init();
 
     /* Initialization of the possible external library */
-
     if ((external_comm_library_name = getenv("DIMEMAS_EXTERNAL_COMM_LIBRARY")) != NULL)
     {
         external_comm_library = dlopen(external_comm_library_name, RTLD_LAZY);
@@ -361,11 +329,14 @@ void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercen
                     dlerror());
         }
         else
-        { /* Check for all symbols required in the external comms library */
-            external_get_communication_type = dlsym(external_comm_library, "external_get_communication_type");
+        { 
+            external_get_communication_type = dlsym(
+                    external_comm_library, 
+                    "external_get_communication_type");
             if ((dlsym_error = dlerror()) != NULL)
             {
-                warning("-> WARN: Unable to load function \"external_get_communication_type\" from library \"%s\": %s\n",
+                warning("-> WARN: Unable to load function \"external_get_communication_type\""\
+                        " from library \"%s\": %s\n",
                         external_comm_library_name,
                         dlsym_error);
                 return;
@@ -374,7 +345,8 @@ void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercen
             get_startup_value = dlsym(external_comm_library, "get_startup_value");
             if ((dlsym_error = dlerror()) != NULL)
             {
-                warning("-> WARN: Unable to load function \"get_startup_value\" from library \"%s\": %s\n",
+                warning("-> WARN: Unable to load function \"get_startup_value\" from library"\
+                        " \"%s\": %s\n",
                         external_comm_library_name,
                         dlsym_error);
                 return;
@@ -383,7 +355,8 @@ void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercen
             get_bandwidth_value = dlsym(external_comm_library, "get_bandwidth_value");
             if ((dlsym_error = dlerror()) != NULL)
             {
-                warning("-> WARN: Unable to load function \"get_bandwidth_value\" from library \"%s\": %s\n",
+                warning("-> WARN: Unable to load function \"get_bandwidth_value\" from library"\
+                        " \"%s\": %s\n",
                         external_comm_library_name,
                         dlsym_error);
                 return;
@@ -392,23 +365,26 @@ void COMMUNIC_Init (const char * parameter_tracefile, float end_analysis_tpercen
             external_get_global_op_type = dlsym(external_comm_library, "external_get_global_op_type");
             if ((dlsym_error = dlerror()) != NULL)
             {
-                warning("-> WARN: Unable to load function \"external_get_global_op_type\" from library \"%s\": %s\n",
+                warning("-> WARN: Unable to load function \"external_get_global_op_type\" from"\
+                        " library \"%s\": %s\n",
                         external_comm_library_name,
                         dlsym_error);
                 return;
             }
 
-            external_compute_global_operation_time = dlsym(external_comm_library, "external_compute_global_operation_time");
+            external_compute_global_operation_time = dlsym(
+                    external_comm_library, 
+                    "external_compute_global_operation_time");
             if ((dlsym_error = dlerror()) != NULL)
             {
-                warning("-> WARN: Unable to load function \"external_compute_global_operation_time\" from library \"%s\": %s\n",
+                warning("-> WARN: Unable to load function \"external_compute_global_"\
+                        "operation_time\" from library \"%s\": %s\n",
                         external_comm_library_name,
                         dlsym_error);
                 return;
             }
 
             external_comm_library_loaded = TRUE;
-
             printf ("-> External communications modelling library loaded\n");
         }
     }
@@ -656,28 +632,26 @@ t_nano compute_startup (
     switch (kind)
     {
         case MEMORY_COMMUNICATION_TYPE:
-            /* Es un missatge local al node */
             startup  = send_node->local_startup;
             startup += RANDOM_GenerateRandom (&randomness.memory_latency);
             break;
         case INTERNAL_NETWORK_COM_TYPE:
-            /* Es un missatge de la xarxa interna a la maquina */
             startup  = send_node->remote_startup;
             startup += RANDOM_GenerateRandom (&randomness.network_latency);
             break;
         case EXTERNAL_NETWORK_COM_TYPE:
-            /* Es un missatge entre dues maquines diferents per la xarxa externa. */
             startup  = send_node->external_net_startup;
-            startup += RANDOM_GenerateRandom (&randomness.external_network_latency);
+            startup += RANDOM_GenerateRandom (
+                    &randomness.external_network_latency);
             break;
         case DEDICATED_CONNECTION_COM_TYPE:
             /* Es un missatge entre dues maquines diferents per una connexio
              * dedicada. */
             if (connection == NULL)
             {
-                panic ("Error computing startup (P%02 T%02d t%02d) : void connection \n",
+                panic ("Error computing startup (P%02 T%02d t%02d) : void"\
+                        " connection \n",
                         IDENTIFIERS (thread));
-
             }
             startup = connection->startup;
             break;
@@ -685,7 +659,8 @@ t_nano compute_startup (
             /* This message will use an external modelling */
             if (external_comm_library_loaded == FALSE)
             {
-                panic("Error computing startup through the external library (not loaded)\n");
+                panic("Error computing startup through the external"\
+                        " library (not loaded)\n");
             }
             startup = get_startup_value(send_node->nodeid,
                     recv_node->nodeid,
@@ -702,22 +677,27 @@ t_nano compute_startup (
                 panic("Error computing accelerator comm startup \
                         through a non-accelerator node\n");
             }
+
             /* 
-             * Differenciated memory transfers latency and configuration/launch/sync 
-             * latency 
+             * Differenciated memory transfers latency and configuration
+             * /launch/sync latency 
              */
 
-            if (CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) &&
-                    mess_size == 0)
+            if (CUDAEventEncoding_Is_CUDATransferBlock(
+                        thread->acc_in_block_event)
+                    && mess_size == 0)
                 startup = send_node->acc.startup;
 
-            else if (CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event) ||
-                    OCLEventEncoding_Is_OCLTransferBlock(thread->acc_in_block_event))
+            else if (CUDAEventEncoding_Is_CUDATransferBlock(
+                        thread->acc_in_block_event)
+                    || OCLEventEncoding_Is_OCLTransferBlock(
+                        thread->acc_in_block_event))
                 startup = send_node->acc.memory_startup;
 
             else
                 startup = send_node->acc.startup;
-            startup += (dimemas_timer) RANDOM_GenerateRandom(&randomness.acc_memory_latency);
+            startup += (dimemas_timer) RANDOM_GenerateRandom(
+                    &randomness.acc_memory_latency);
 
             break;
 
@@ -726,131 +706,38 @@ t_nano compute_startup (
             struct t_action* action = thread->action;
             struct t_Ptask* Ptask = thread->task->Ptask;
             int comm_id = action->desc.global_op.comm_id;
-            struct t_communicator* comm = locate_communicator (&Ptask->Communicator, comm_id);
-
-            // Let's see which tasks are involved in this communicator in order to get the
-            // correct startup time. If only intra-node threads are involved, then just get
-            // the intra-node latency. If intra-node and inter-node threads are involved, then
-            // get the maximum one. Equal with inter-machine communications.
-            //
-
-            int i;
-            int machines_id[comm->size];
-            int nodes_id[comm->size];
-
-            // Get all threads involved in the communicator
-            for (i=0; i<comm->size; ++i)
-            {
-                // Assuming every task is in the possition its id indicates
-                struct t_node* current_node = Ptask->tasks[comm->global_ranks[i]].node;
-                struct t_machine* current_machine = current_node->machine;
-
-                nodes_id[i] = current_node->nodeid;
-                machines_id[i] = current_machine->id;
-            }
-
-            qsort(nodes_id, comm->size, sizeof(int), cmpfunc);
-            qsort(machines_id, comm->size, sizeof(int), cmpfunc);
-
-            int last_machine_id=machines_id[0];
-            int last_node_id=nodes_id[0];
-
-            int n_machines=1;
-            int n_nodes=1;
-            int n_tasks = comm->size;
-
-            for (i=1; i < comm->size; ++i)
-            {
-                if (machines_id[i] != last_machine_id)
-                    n_machines++;
-                if (nodes_id[i] != last_node_id)
-                    n_nodes++;
-                last_machine_id=machines_id[i];
-                last_node_id=nodes_id[i];
-            }
-
-            t_boolean same_machine = TRUE;
-            t_boolean same_node = TRUE;
-            t_boolean sharing_node = TRUE;
-
-            same_machine=(n_machines==1);
-            same_node=(n_nodes==1);
-            sharing_node=(n_nodes<n_tasks);
+            struct t_communicator* comm = locate_communicator (
+                    &Ptask->Communicator, comm_id);
 
             t_nano inter_machine_lat = 0;
             t_nano inter_node_lat = 0;
             t_nano intra_node_lat = 0;
-            t_nano dummy; // For transmission time
-
-            int glop_id = thread->action->desc.global_op.glop_id;
-
 
             struct t_node* node=get_node_of_thread (thread);
             struct t_machine* machine=node->machine;
 
-            // Get the information about the global operation
-            struct t_global_op_information* glop_info;
-            glop_info = (struct t_global_op_information *)
-                query_prio_queue (&machine->communication.global_ops_info,
-                        (t_priority) glop_id);
-
             // If not all of them are in the same machine, calculate the latency for
             // the inter-machine communications.
             //       
-            if (same_machine == FALSE)
+            if (comm->same_machine == FALSE)
             {
-                /*calcula_fan ( 0, // We do not want to calculate bandwith
-                  n_machines,
-                  0, // Infinits busos
-                  FAN_IN,
-                  glop_info->FIN_model, 
-                  glop_info->FIN_size,
-                  action->desc.global_op.bytes_send,
-                  action->desc.global_op.bytes_recvd,
-                  node->external_net_startup,
-                  &dummy,
-                  &inter_machine_lat);
-                  */
                 inter_machine_lat = node->external_net_startup;
             }
 
             // If not all of them are in the same node, calculate the latency for 
             // inter-node communications.
             //
-            if (same_node == FALSE)
+            if (comm->same_node == FALSE)
             {
-                /*calcula_fan (machine->communication.remote_bandwidth,
-                  n_nodes,
-                  machine->communication.num_messages_on_network,
-                  FAN_IN,
-                  glop_info->FIN_model,
-                  glop_info->FIN_size,
-                  action->desc.global_op.bytes_send,
-                  action->desc.global_op.bytes_recvd,
-                  node->remote_startup,
-                  &dummy,
-                  &inter_node_lat);
-                  */
                 inter_node_lat = node->remote_startup;
             }
 
             // If some tasks are sharing nodes, calculate the latency for
             // intra-node communications.
             //
-            if (sharing_node == TRUE)
+            if (comm->sharing_node == TRUE)
             {
-                /*calcula_temps_maxim_intra_nodes (machine,
-                  comm,
-                  glop_info,
-                  action->desc.global_op.bytes_send,
-                  action->desc.global_op.bytes_recvd,
-                  &dummy,
-                  &intra_node_lat,
-                  &dummy,
-                  &dummy);
-                  */ 
                 intra_node_lat = node->local_startup;
-
             }
 
             // Now, get the maximum latency time and return it!
@@ -860,13 +747,7 @@ t_nano compute_startup (
             if (inter_node_lat > max) max = inter_node_lat;
             if (intra_node_lat > max) max = intra_node_lat;
 
-            /*printf("%d  :  max([%d]%f, [%d]%f, [%d]%f)=%f\n", thread->task->taskid,
-              same_machine, inter_machine_lat, 
-              same_node, inter_node_lat, 
-              sharing_node, intra_node_lat, max);*/
-
             startup = max;
-            //startup = 1000;
             break;
             }
         default:
@@ -8347,6 +8228,7 @@ void GLOBAL_operation (struct t_thread *thread,
     {
         if (thread->startup_done == FALSE)
         {
+            
             int startup = compute_startup (thread,thread->task->taskid,0,
                     NULL,NULL,0,0,NON_BLOCKING_GLOBAL_OP_COM_TYPE,NULL);
 
@@ -9063,10 +8945,4 @@ void ACCELERATOR_check_sync_status(struct t_thread* thread,
     }
 }
 
-/*
- * Auxiliar function for qsort
- */
-int cmpfunc(const void *a, const void *b)
-{
-    return ( *(int*)a - *(int*)b );
-}
+
