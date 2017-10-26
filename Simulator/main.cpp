@@ -137,22 +137,52 @@ using namespace std;
 
 void print_dimemas_header()
 {
-    //cout << "               .-.--"                      << endl;
-    //cout << "             ,´,´.´   `."                  << endl;
-    //cout << "             | | | BSC |"                  << endl;
-    //cout << "             `.`.`. _ .´"                  << endl;
-    //cout << "               `·`··"                      << endl;
-    //cout << "+--------------------------------------+"  << endl;
-    //cout << "|               DIMEMAS                |"  << endl;
-    //cout << "| Distributed Memory Machine Simulator |"  << endl;
-    //cout << "+--------------------------------------+"  << endl;
-    //cout << endl;
-    //
     cout << endl;
     cout << "Dimemas - DIstributed MEmory MAchine Simulator" << endl;
     cout << "Barcelona Supercomputing Center - Centro Nacional de"\
         " Supercomputacion" << endl;
     cout << endl;
+}
+
+static long long int read_size(const char *c)
+{
+    int i;
+    long long int mida_tmp, mida;
+    char unitats;
+
+    i = sscanf (c, "%lld%c", &mida_tmp, &unitats);
+    if (i == 0)
+    {
+        fprintf(stderr,"Incorrect minimum message size"\
+                " to use Rendez vous!\n");
+        exit(EXIT_FAILURE);
+    }
+    else if (i==1)
+        mida = mida_tmp; 
+    else 
+    {
+        switch (unitats)
+        {
+            case 'k': 
+            case 'K':
+                mida=mida_tmp<<10;
+                break;
+            case 'm': 
+            case 'M':
+                mida=mida_tmp<<20;
+                break;
+            case 'g': 
+            case 'G':
+                mida=mida_tmp<<30;
+                break;
+            case 'b':
+            case 'B':
+            default: 
+                mida=mida_tmp;
+                break;
+        }
+    }
+    return(mida);
 }
 
 void parse_arguments(int argc, char *argv[])
@@ -503,47 +533,6 @@ static dimemas_timer read_timer(char *c)
     return (tmp_timer);
 }
 
-static long long int read_size(const char *c)
-{
-    int i;
-    long long int mida_tmp, mida;
-    char unitats;
-
-    i = sscanf (c, "%lld%c", &mida_tmp, &unitats);
-    if (i == 0)
-    {
-        fprintf(stderr,"Incorrect minimum message size"\
-                " to use Rendez vous!\n");
-        exit(EXIT_FAILURE);
-    }
-    else if (i==1)
-        mida = mida_tmp; /* La mida es en bytes */
-    else 
-    {
-        switch (unitats)
-        {
-            case 'k': /* La mida es en Kb */
-            case 'K':
-                mida=mida_tmp<<10;
-                break;
-            case 'm': /* La mida es en Mb */
-            case 'M':
-                mida=mida_tmp<<20;
-                break;
-            case 'g': /* La mida es en Gb */
-            case 'G':
-                mida=mida_tmp<<30;
-                break;
-            case 'b':
-            case 'B':
-            default: /* La mida es en bytes */
-                mida=mida_tmp;
-                break;
-        }
-    }
-    return(mida);
-}
-
 int main (int argc, char *argv[])
 {
     IO_Init();
@@ -572,6 +561,7 @@ int main (int argc, char *argv[])
         salida_datos = stdout;
 
     if (monitorize_event)
+    {
         if (file_for_event_to_monitorize != NULL )
         {
             File_for_Event = IO_fopen (file_for_event_to_monitorize, "w");
@@ -584,9 +574,7 @@ int main (int argc, char *argv[])
         }
         else
             File_for_Event = stdout;
-
-
-    /* Initial routines */
+    }
 
     SIMULATOR_Init(config_file,
             parameter_tracefile,
@@ -623,38 +611,22 @@ int main (int argc, char *argv[])
     else
         Critical_Path_Analysis = FALSE;
 
-    reload_events ();
+    
+    reload_events();
 
-    if (debug)
-    {
-        printf ("\n");
-        PRINT_TIMER (current_time);
-        printf (": START SIMULATION\n\n");
-    }
+    printf ("\n");
+    PRINT_TIMER (current_time);
+    printf (": START SIMULATION\n\n");
 
 REBOOT:
 
-#ifdef USE_EQUEUE
 #ifdef VENUS_ENABLED
-    while ((top_Eevent (&Event_queue) != E_NIL)
-          || (VC_is_enabled() 
-              && (top_Eevent(&Interactive_event_queue) != E_NIL))
-          && !simulation_rebooted)
-#else /* !VENUS_ENABLED */
-    while (top_Eevent (&Event_queue) != E_NIL 
-          && !simulation_rebooted)
+    while ((top_event (&Event_queue) != E_NIL) || (VC_is_enabled() 
+                && (top_event(&Interactive_event_queue) != E_NIL)) 
+            && !simulation_rebooted)
+#else 
+    while (top_event (&Event_queue) != E_NIL && !simulation_rebooted)
 #endif
-#else /* !USE_EQUEUE */
-#ifdef VENUS_ENABLED
-    while ((top_event (&Event_queue) != E_NIL) 
-          || (VC_is_enabled() 
-              && (top_event(&Interactive_event_queue) != E_NIL)) 
-          && !simulation_rebooted)
-#else /* !VENUS_ENABLED */
-    while (top_event (&Event_queue) != E_NIL 
-          && !simulation_rebooted)
-#endif
-#endif /* USE_EQUEUE */
     {
         struct t_event* current_event;
         if (OUT_OF_LIMIT(current_time))
@@ -664,11 +636,7 @@ REBOOT:
             break;
         }
 
-#ifdef USE_EQUEUE
-        current_event = outFIFO_Eevent(&Event_queue);
-#else
         current_event = outFIFO_event(&Event_queue);
-#endif
         event_manager(current_event);
     }
 

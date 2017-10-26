@@ -282,6 +282,7 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
     ADD_TIMER (tmp_timer,
             account->time_ready_without_cpu,
             account->time_ready_without_cpu);
+
     /*Chetan*/
     if(thread->task->accelerator && thread->kernel == TRUE)
     {    

@@ -686,11 +686,6 @@ struct t_Ptask
 
     int             map_definition;
     int             tasks_per_node;
-    /*
-       HERE I WANT TO AVOID USING A FILE POINTER FOR EACH THREAD BUT TO USE MMAP
-       AND THAN READ THE TRF FILE AS IT WAS A STRING
-       */
-    //   FILE           *file;
     char           *mmapped_file;
     unsigned long   mmap_position;
     struct stat     sb;
@@ -884,6 +879,7 @@ struct t_thread
     char            *sch_parameters;
     t_off_fitxer     original_seek;
     t_off_fitxer     seek_position;
+    int              eof_reached;
     int              base_priority;
     t_boolean        doing_context_switch;
     t_boolean        to_be_preempted;
@@ -1001,6 +997,10 @@ struct t_thread
     //t_boolean nonblock_glop_waiting;
     //t_boolean nonblock_glop_done;
     //struct t_thread* nonblock_glop_thread;
+    
+    struct t_action **action_buffer;
+    int *action_buffer_head;
+    int *action_buffer_tail;
 };
 
 struct t_semaphore

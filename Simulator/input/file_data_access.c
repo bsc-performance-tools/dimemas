@@ -54,91 +54,6 @@
 #include <list.h>
 #include <read.h>
 
-// Definition and configuartion parameters of data access api
-#define DATA_ACCESS_DIMEMAS_HELLO_SIGN "#DIMEMAS"
-
-// Configures maximim number of applications supported by API
-#define DATA_ACCESS_MAX_NUM_APP 100
-
-// Configures maximum error message length
-#define DATA_ACCESS_MAX_ERROR_LENGTH 256
-
-// Thereshold value that deterimnates sequential or advanced metrhod for offsets search (2KBytes)
-#define DATA_ACCESS_SEEK_THRESHOLD 2*1024
-
-
-#define DEFINITION d
-#define DEFINITION_REGEXP "d:%d:%[^\n]\n" // d:object_type:{specific_fields}
-
-#define OFFSET        s
-#define OFFSET_REGEXP "s:%d:%[^\n]\n"  // s:task_id:offset_thread_1:(...):offset_thread_n
-
-#define OFFSET_NOT_PRESENT 0
-#define OFFSET_PRESENT     1
-
-#define DEF_COMMUNICATOR 1
-#define COMMUNICATOR_REGEXP "%d:%d:%s" // comm_id:tasks_count:task_id_1:(...):task_id_n
-#define DEF_FILE         2
-#define DEF_ONESIDED_WIN 3
-
-#define ACTION_REGEXP    "%d:%d:%d:%[^\n]\n" // op_id:task_id:thread_id:{specific_fields}
-
-#define RECORD_NOOP      0
-#define NOOP_REGEXP      "0:%d:%d\n"
-
-#define RECORD_CPU_BURST 1
-#define CPU_BURST_REGEXP "%lf" // burst_duration
-
-#define RECORD_MSG_SEND  2
-#define MSG_SEND_REGEXP_MPI  "%d:%lld:%d:%d:%c"     // dest_task_id:msg_size:tag:comm_id:synchronism
-#define MSG_SEND_REGEXP_SS   "%d:%d:%lld:%d:%d:%c"  // dest_task_id:dest_thread_id:msg_size:tag:comm_id:synchronism
-
-#define RECORD_MSG_RECV  3
-#define MSG_RECV_REGEXP_MPI "%d:%lld:%d:%d:%d"     // src_task_id:msg_size:tag:comm_id:recv_type
-#define MSG_RECV_REGEXP_SS  "%d:%d:%lld:%d:%d:%d"  // ssrc_task_id:src_thread_id:msg_size:tag:comm_id:recv_type
-
-#define RECORD_GLOBAL_OP 10
-#define GLOBAL_OP_REGEXP    "%d:%d:%d:%d:%ld:%ld:%d" // global_op_id:comm_id:root_task:root_th:bytes_send:bytes_recv
-
-#define RECORD_EVENT     20
-#define EVENT_REGEXP     "%llu:%llu" // event_type:event_value
-
-#define RECORD_GPU_BURST 11
-#define GPU_BURST_REGEXP "%lf"
-
-#define RECVTYPE_RECV  0
-#define RECVTYPE_IRECV 1
-#define RECVTYPE_WAIT  2
-#define RECVTYPE_WAITALL  3
-
-#define DATA_ACCESS_ERROR -1
-#define DATA_ACCESS_OK     1
-
-/*******************************************************************************
- * Macro per decidir si cal utilitzar rendez vous en un send.
- * Hi ha 4 possibilitats:
- *
- * - TOTES les comunicacions son Asincrones.
- *   Quan no s'hautoritza l'us del camp que indica sincronisme als sends de la
- *   traça (RD_SYNC_use_trace_sync == FALSE) i la mida minima del missatge per
- *   utilitzar sincronisme es negativa (RD_SYNC_message_size < 0).
- *
- * - Nomes s'utilitza comunicacio Sincrona si s'indica de forma explicita. Quan
- *   RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size < 0.
- *
- * - Nomes s'utilitza comunicacio Sincrona si la mida del missatge es >= que la
- *   mida donada. Quan RD_SYNC_use_trace_sync == TRUE i RD_SYNC_message_size>=0.
- *
- * - S'utilitza comunicacio Sincrona si s'indica de forma explicita o la mida
- *   del missatge es >= que la mida donada. Quan RD_SYNC_use_trace_sync == TRUE
- *   i RD_SYNC_message_size >= 0.
- ******************************************************************************/
-#define USE_RENDEZ_VOUS(rende, mida) \
-    (( (RD_SYNC_use_trace_sync && (rende)) || \
-       ((RD_SYNC_message_size >= 0) && ((mida)>=RD_SYNC_message_size)) \
-       ) ? 1 : 0)
-
-
 t_boolean UseRendezVous(t_boolean trace_rendez_vous, long long int msg_size, t_boolean is_acc_comm)
 {
     /*
@@ -275,7 +190,7 @@ t_boolean DAP_allocate_streams(app_struct *app, size_t assigned_streams);
 t_boolean DAP_read_action (app_struct       *app,
         int               task_id,
         int               thread_id,
-        struct t_action **action);
+        struct t_action **action,int *no_more_actions);
 
 t_boolean DAP_read_CPU_burst (const char      *cpu_burst_str,
         struct t_action *action);
@@ -493,15 +408,15 @@ t_boolean DATA_ACCESS_get_communicators (int              ptask_id,
     }
 }
 
-// RETURNS ACCTION
-t_boolean DATA_ACCESS_get_next_action (int               ptask_id,
-        int               task_id,
-        int               thread_id,
-        struct t_action **action)
+t_boolean DATA_ACCESS_get_next_action (
+        int ptask_id,
+        int task_id,
+        int thread_id,
+        struct t_action **action,
+        int *no_more_actions)
 {
     app_struct *app = NULL;
 
-    /* Initialization of the file sharing */
     if (!main_struct.io_init)
     {
         if (!DAP_io_init())
@@ -510,22 +425,14 @@ t_boolean DATA_ACCESS_get_next_action (int               ptask_id,
         }
     }
 
-    /*
-       printf("%s -> Action requested for P%02d T%02d (t%02d)\n",
-       __FUNCTION__,
-       ptask_id,
-       task_id,
-       thread_id);
-       */
-
-    if ( (app = DAP_locate_app_struct (ptask_id)) == NULL)
+    if ((app = DAP_locate_app_struct (ptask_id)) == NULL)
     {
         DAP_report_error ("invalid Ptask id %d", ptask_id);
         return FALSE;
     }
     else
     {
-        return DAP_read_action (app, task_id, thread_id, action);
+        return DAP_read_action (app, task_id, thread_id, action, no_more_actions);
     }
 }
 
@@ -1927,23 +1834,24 @@ t_boolean DAP_reset_app_stream_fps (app_struct *app) {
 /**
  * Reads an operation (action) record from the given task/thread, if available
  */
-t_boolean DAP_read_action (app_struct       *app,
-        int               task_id,
-        int               thread_id,
-        struct t_action **action)
+t_boolean DAP_read_action (
+        app_struct *app,
+        int task_id,
+        int thread_id,
+        struct t_action **action,
+        int *no_more_actions)
 {
+    *no_more_actions = FALSE;
     t_boolean result, empty_line;
-
     FILE *stream;
-
-    char*   line        = NULL;
-    size_t  line_length = 0;
+    char* line = NULL;
+    size_t line_length = 0;
     ssize_t bytes_read;
 
-    int   op_id, read_task_id, read_thread_id;
+    int op_id, read_task_id, read_thread_id;
     char *op_fields;
 
-    if ( (stream = DAP_get_stream(app, task_id, thread_id)) == NULL)
+    if ((stream = DAP_get_stream(app, task_id, thread_id)) == NULL)
     {
         printf("DAP_get_stream failed %d,%d\n", task_id, thread_id);
         return FALSE;
@@ -1951,41 +1859,12 @@ t_boolean DAP_read_action (app_struct       *app,
 
     empty_line = TRUE;
 
-    /* If it is not the thread 0 (not MPI), deadlock analysis is left */
     if (thread_id == 0 && with_deadlock_analysis)
     {
-
         struct t_thread * thread = get_thread_by_task_id(task_id);
 
-        /* Si hay operaciones para inyectar, se ha de hacer al inicio de la traza que es
-         * donde potencialmente hemos cortado algo */
-//        if (thread->counter_ops_already_injected < count_queue(&thread->ops_to_be_injected))
-//        {
-//            struct t_action * actfq = NULL;
-//            struct t_action * action_to_inject = NULL;
-//
-//            actfq = (struct t_action *)query_prio_queue(&thread->ops_to_be_injected, (double)thread->counter_ops_already_injected);
-//            action_to_inject = (struct t_action *)malloc(sizeof(struct t_action));
-//
-//            if (thread->counter_ops_already_injected == 0)
-//            {
-//                action_to_inject->action = WORK;
-//                action_to_inject->desc.compute.cpu_time = 0;
-//
-//                action_to_inject->next = (struct t_action *)malloc(sizeof(struct t_action));
-//                memcpy(action_to_inject->next, actfq, sizeof(struct t_action));
-//            }
-//            else
-//            {
-//                memcpy(action_to_inject, actfq, sizeof(struct t_action));
-//            }
-//            *action = action_to_inject;
-//            thread->counter_ops_already_injected++;
-//
-//            return TRUE;
-//        }
-//        else if (thread->counter_ops_already_ignored < count_queue(&thread->ops_to_be_ignored))
-        if (thread->counter_ops_already_ignored < count_queue(&thread->ops_to_be_ignored))
+        if (thread->counter_ops_already_ignored < count_queue(
+                    &thread->ops_to_be_ignored))
         {
             off_t actual_offset = ftell(stream);
             struct trace_operation * op_to_be_ignored = 
@@ -1996,8 +1875,10 @@ t_boolean DAP_read_action (app_struct       *app,
             if (op_to_be_ignored != NULL)
             {
                 bytes_read = getline(&line, &line_length, stream);
-                app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
-                app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
+                app->last_current_threads_offsets[task_id][thread_id] = 
+                    app->current_threads_offsets[task_id][thread_id];
+                app->current_threads_offsets[task_id][thread_id] += 
+                    (off_t) bytes_read;
 
                 ++thread->counter_ops_already_ignored;
             }
@@ -2006,14 +1887,12 @@ t_boolean DAP_read_action (app_struct       *app,
 
     while (empty_line)
     {
-        if ( (bytes_read = getline(&line,
-                        &line_length,
-                        stream )) == -1)
+        bytes_read = getline(&line,&line_length,stream);
+        if (bytes_read == -1)
         {
             if (feof(stream))
             {
-                /* EOF is not an error */
-                /* printf("EOF reached %d,%d, read %d bytes\n", task_id, thread_id, bytes_read); */
+                *no_more_actions = TRUE;
                 (*action) = NULL;
                 return TRUE;
             }
@@ -2035,16 +1914,10 @@ t_boolean DAP_read_action (app_struct       *app,
         }
     }
 
-    /*
-       PRINT_TIMER (current_time);
-       printf(": App %d read: %s", app->ptask_id, line);
-       fflush(stdout);
-       */
-
-    if ( (op_fields = malloc(bytes_read+1)) == NULL)
+    op_fields = malloc(bytes_read+1);
+    if (op_fields == NULL)
     {
         DAP_report_error("unable to allocate memory to parse an action record");
-
         free(line);
 
         return FALSE;
@@ -2065,6 +1938,7 @@ t_boolean DAP_read_action (app_struct       *app,
         {
             if (read_task_id != task_id || read_thread_id != thread_id)
             {
+                *no_more_actions = TRUE;
                 free(op_fields);
                 free(line);
                 (*action) = NULL;
@@ -2074,8 +1948,6 @@ t_boolean DAP_read_action (app_struct       *app,
             else
             {
                 (*action) = (struct t_action*) malloc(sizeof(struct t_action));
-                //(*action)->trace_line = (char *) malloc(bytes_read);
-                //memcpy((*action)->trace_line, line, bytes_read);
 
                 if ( (*action) == NULL)
                 {
@@ -2090,7 +1962,8 @@ t_boolean DAP_read_action (app_struct       *app,
                 (*action)->next   = NULL;
                 (*action)->action = NOOP;
 
-                app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
+                app->last_current_threads_offsets[task_id][thread_id] = 
+                    app->current_threads_offsets[task_id][thread_id];
                 app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
 
                 free(op_fields);
@@ -2107,8 +1980,8 @@ t_boolean DAP_read_action (app_struct       *app,
         {
             /* 'line' contains an offset record. We have finished the records for
              * last task/thread */
+            *no_more_actions = TRUE;
             (*action) = NULL;
-
             free(op_fields);
             free(line);
 
@@ -2126,6 +1999,7 @@ t_boolean DAP_read_action (app_struct       *app,
     if (read_task_id != task_id || read_thread_id != thread_id)
     {
         /* no more actions for current task/thread */
+        *no_more_actions = TRUE;
         free(op_fields);
         free(line);
 
@@ -2137,8 +2011,6 @@ t_boolean DAP_read_action (app_struct       *app,
     {
         /* Allocate memory for new action */
         (*action) = (struct t_action*) malloc(sizeof(struct t_action));
-        //(*action)->trace_line = (char *) malloc(bytes_read);
-        //memcpy((*action)->trace_line, line, bytes_read);
 
         if ( (*action) == NULL)
         {
@@ -2178,22 +2050,13 @@ t_boolean DAP_read_action (app_struct       *app,
         if (result == FALSE)
         {
             READ_free_action( (*action) );
-            // free( (char*) (*action) );
             (*action) = NULL;
         }
         else
         {
-            app->last_current_threads_offsets[task_id][thread_id] = app->current_threads_offsets[task_id][thread_id];
+            app->last_current_threads_offsets[task_id][thread_id]
+                = app->current_threads_offsets[task_id][thread_id];
             app->current_threads_offsets[task_id][thread_id] += (off_t) bytes_read;
-
-            /* DEBUG
-               PRINT_TIMER (current_time);
-               printf(": [P%02d:T%02d:t%02d] Offset: %jd\n",
-               app->ptask_id,
-               task_id,
-               thread_id,
-               (intmax_t) app->current_threads_offsets[task_id][thread_id]);
-               */
         }
     }
 
