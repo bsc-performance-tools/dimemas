@@ -280,7 +280,9 @@ void TASK_Init(int sintetic_io_applications)
                     (t_priority)comm->communicator_id);
         }
 
-        READ_Init_asynch(Ptask, 1000);
+        // TODO: Take a decission about the size of the buffer.
+        READ_Init_asynch(Ptask, 
+                sizeof(struct t_action)*Simulator.threads_count*1000);
 
     } // end of loading the Ptasks.
 

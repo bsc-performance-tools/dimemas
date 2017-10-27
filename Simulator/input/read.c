@@ -822,17 +822,26 @@ static long living_actions = 0;
 
 void *READ_fill_buffer_asynch(void * vptask)
 {
+    // TODO: Could be a good idea if instead of read just one action per thread
+    // and then go to the next, read a bunch of them. The decision of how many
+    // to read could be decided dynamically depending on the frequency the reader
+    // is taking actions. As higher frequency, less time to read, so just few.
+    // By the other hand if frequency is low, then the bunch of readed actions
+    // by the reader every time should increase.
+    //
+    printf("(->) Asynchronous buffer filling started\n");
     struct t_Ptask *ptask = (struct t_Ptask *)vptask;
 
     int nthreads_ended = 0;
-    int nthreads;
+    int nthreads = 0;
     for (int i=0; i<ptask->tasks_count; ++i)
     {
         nthreads += ptask->tasks[i].threads_count;
     }
 
-    int buffer_index = 0;
     while (nthreads > nthreads_ended)
+    {
+        int buffer_index = 0;
         for (int i=0; i<ptask->tasks_count; ++i)
         {
             struct t_task task = ptask->tasks[i];
@@ -845,31 +854,41 @@ void *READ_fill_buffer_asynch(void * vptask)
                     continue;
                 }
 
-                struct t_action *action;
-                action = _get_next_action(thread);
+                for (int k=0; k<10; k++)
+                {
+                    
+                    // Instead of waiting, let's see for the next thread
+                    if ((buffer_tails[buffer_index]+1)%bsize_per_thread == 
+                            buffer_heads[buffer_index])
+                    {
+                        break;
+                    }
 
-                if (action == A_NIL && thread->eof_reached)
-                    nthreads_ended += 1;
+                    struct t_action *action;
+                    action = _get_next_action(thread);
 
-                // Active wait
-                //while (buffer_heads[buffer_index] == buffer_tails[buffer_index]);
-                // Instead of waiting, let's see for the next thread
-                if (buffer_heads[buffer_index] == buffer_tails[buffer_index])
-                    continue;
+                    if (thread->eof_reached)
+                    {
+                        nthreads_ended += 1;
+                        break;
+                    }
 
-                action_buffer[buffer_tails[buffer_index]] = action;
-                buffer_tails[buffer_index] = 
-                    (buffer_tails[buffer_index]+1)%bsize_per_thread;
-
+                    action_buffer[buffer_index][buffer_tails[buffer_index]] = action;
+                    buffer_tails[buffer_index] = 
+                        (buffer_tails[buffer_index]+1)%bsize_per_thread;
+                }
                 ++buffer_index;
             }
         }
+    }
+    printf("(->) Asynchronous buffer filling ended\n");
+    pthread_exit((void *)0);
     return NULL;
 }
 
 void READ_Init_asynch(struct t_Ptask *ptask, int max_memory)
 {
-
+    printf("-> Initializing asynchronous read\n");
     int ntasks = ptask->tasks_count;
 
     int nthreads;
@@ -878,11 +897,11 @@ void READ_Init_asynch(struct t_Ptask *ptask, int max_memory)
         nthreads += ptask->tasks[i].threads_count;
     }
 
-    action_buffer = malloc(sizeof(struct t_action*)*nthreads);
+    action_buffer = malloc(sizeof(struct t_action***)*nthreads);
     buffer_heads = calloc(sizeof(int), nthreads);
     buffer_tails = calloc(sizeof(int), nthreads);
 
-    int total_elems = max_memory/sizeof(struct t_action*);
+    int total_elems = max_memory/sizeof(struct t_action);
     bsize_per_thread = total_elems/nthreads;
 
     int buffer_index = 0;
@@ -892,14 +911,22 @@ void READ_Init_asynch(struct t_Ptask *ptask, int max_memory)
         for (int j=0; j<nthreads_task; ++j)
         {
             struct t_thread *thread = ptask->tasks[i].threads[j];
-            action_buffer[buffer_index] = malloc(
-                    sizeof(struct t_action*)*bsize_per_thread);
-            thread->action_buffer = &action_buffer[buffer_index];
+            action_buffer[buffer_index] = calloc(
+                    sizeof(struct t_action**),bsize_per_thread);
+            thread->action_buffer = action_buffer[buffer_index];
             thread->action_buffer_head = &buffer_heads[buffer_index];
             thread->action_buffer_tail = &buffer_tails[buffer_index];
+
+            // First action readed in order to not stall the circular
+            // buffer
+            struct t_action *action =_get_next_action(thread);
+            action_buffer[buffer_index][buffer_tails[buffer_index]] = action;
+            buffer_tails[buffer_index]++;
             buffer_index++;
         }
     }
+    printf("   * Buffers initialized. Size=%d actions/thread\n", 
+            bsize_per_thread);
 
     //pthread_mutex_init(&indexes_mutex, NULL);
     pthread_create(&reader_thread, NULL, READ_fill_buffer_asynch, (void *)ptask);
@@ -908,13 +935,22 @@ void READ_Init_asynch(struct t_Ptask *ptask, int max_memory)
 void READ_get_next_action(struct t_thread *thread)
 {
     assert(thread->action == NULL);
-    
+
     // Active wait
-    while (*(thread->action_buffer_head) == *(thread->action_buffer_tail));
+    while (*(thread->action_buffer_head) == *(thread->action_buffer_tail))
+    {
+        if (thread->eof_reached)
+        {
+            thread->action = A_NIL;
+            return;
+        }
+    }
     
+    __sync_synchronize();
+
     struct t_action *new_action;
     new_action = thread->action_buffer[*(thread->action_buffer_head)];
-    *(thread->action_buffer_head) = (*thread->action_buffer_head+1)
+    *(thread->action_buffer_head) = (*(thread->action_buffer_head)+1)
         %bsize_per_thread;
     
     if (new_action->action == WORK)

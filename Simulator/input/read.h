@@ -6,7 +6,7 @@
 pthread_t reader_thread;
 pthread_mutex_t indexes_mutex;
 
-struct t_action **action_buffer;
+struct t_action ***action_buffer;
 int *buffer_heads;
 int *buffer_tails;
 int bsize_per_thread;
