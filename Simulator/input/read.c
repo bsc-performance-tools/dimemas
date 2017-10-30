@@ -23,7 +23,7 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-
+//#include <extrae.h>
 #include <define.h>
 #include <types.h>
 #include <assert.h>
@@ -854,9 +854,10 @@ void *READ_fill_buffer_asynch(void * vptask)
                     continue;
                 }
 
+//                Extrae_event(99000001, buffer_tails[buffer_index]);
+
                 for (int k=0; k<10; k++)
                 {
-                    
                     // Instead of waiting, let's see for the next thread
                     if ((buffer_tails[buffer_index]+1)%bsize_per_thread == 
                             buffer_heads[buffer_index])
@@ -873,10 +874,52 @@ void *READ_fill_buffer_asynch(void * vptask)
                         break;
                     }
 
+                    if (action->action == WORK)
+                    {
+                        struct t_node *node;
+                        action->desc.compute.cpu_time *= 1e9;
+                        recompute_work_upon_modules(thread, action);
+                        node = get_node_of_thread(thread);
+                        if (node->relative <= 0)
+                            action->desc.compute.cpu_time = 0;
+                        else
+                            action->desc.compute.cpu_time /= node->relative;
+                        if (PREEMP_enabled)
+                            action->desc.compute.cpu_time += 
+                                PREEMP_overhead(thread->task);
+                    }
+
+                    if (action->action == GPU_BURST)
+                    {
+                        struct t_node *node;
+                        action->desc.compute.cpu_time *= 1e9;
+                        node = get_node_of_thread(thread);
+
+                        if (node->acc_relative == 0)
+                            action->desc.compute.cpu_time = 0;
+                        else if (node->acc_relative < 0)
+                        {
+                            double burst = node->acc_relative;
+                            burst *= -1;
+                            action->desc.compute.cpu_time = burst;
+                        }
+                        else
+                        {
+                            action->desc.compute.cpu_time /= node->relative;
+                        }
+
+                        if (PREEMP_enabled)
+                            action->desc.compute.cpu_time += 
+                                PREEMP_overhead(thread->task);
+                    }
+
+
                     action_buffer[buffer_index][buffer_tails[buffer_index]] = action;
                     buffer_tails[buffer_index] = 
                         (buffer_tails[buffer_index]+1)%bsize_per_thread;
                 }
+
+//                Extrae_event(99000001, 0);
                 ++buffer_index;
             }
         }
@@ -886,23 +929,17 @@ void *READ_fill_buffer_asynch(void * vptask)
     return NULL;
 }
 
-void READ_Init_asynch(struct t_Ptask *ptask, int max_memory)
+void READ_Init_asynch(struct t_Ptask *ptask, int max_memory, int threads_count)
 {
     printf("-> Initializing asynchronous read\n");
     int ntasks = ptask->tasks_count;
 
-    int nthreads;
-    for (int i=0; i<ntasks; ++i)
-    {
-        nthreads += ptask->tasks[i].threads_count;
-    }
-
-    action_buffer = malloc(sizeof(struct t_action***)*nthreads);
-    buffer_heads = calloc(sizeof(int), nthreads);
-    buffer_tails = calloc(sizeof(int), nthreads);
+    action_buffer = malloc(sizeof(struct t_action***)*threads_count);
+    buffer_heads = calloc(sizeof(int), threads_count);
+    buffer_tails = calloc(sizeof(int), threads_count);
 
     int total_elems = max_memory/sizeof(struct t_action);
-    bsize_per_thread = total_elems/nthreads;
+    bsize_per_thread = total_elems/threads_count;
 
     int buffer_index = 0;
     for (int i=0; i<ntasks; ++i)
@@ -925,8 +962,8 @@ void READ_Init_asynch(struct t_Ptask *ptask, int max_memory)
             buffer_index++;
         }
     }
-    printf("   * Buffers initialized. Size=%d actions/thread\n", 
-            bsize_per_thread);
+    printf("   * Buffers initialized. Size=%d actions/thread (%dB)\n", 
+            bsize_per_thread, max_memory);
 
     //pthread_mutex_init(&indexes_mutex, NULL);
     pthread_create(&reader_thread, NULL, READ_fill_buffer_asynch, (void *)ptask);
@@ -934,9 +971,11 @@ void READ_Init_asynch(struct t_Ptask *ptask, int max_memory)
 
 void READ_get_next_action(struct t_thread *thread)
 {
+//    Extrae_event(99000000, *(thread->action_buffer_head));
     assert(thread->action == NULL);
 
     // Active wait
+    //__sync_synchronize();
     while (*(thread->action_buffer_head) == *(thread->action_buffer_tail))
     {
         if (thread->eof_reached)
@@ -946,54 +985,16 @@ void READ_get_next_action(struct t_thread *thread)
         }
     }
     
-    __sync_synchronize();
 
     struct t_action *new_action;
     new_action = thread->action_buffer[*(thread->action_buffer_head)];
     *(thread->action_buffer_head) = (*(thread->action_buffer_head)+1)
         %bsize_per_thread;
     
-    if (new_action->action == WORK)
-    {
-        struct t_node *node;
-        new_action->desc.compute.cpu_time *= 1e9;
-        recompute_work_upon_modules(thread, new_action);
-
-        node = get_node_of_thread(thread);
-
-        if (node->relative <= 0)
-            new_action->desc.compute.cpu_time = 0;
-        else
-            new_action->desc.compute.cpu_time /= node->relative;
-
-        if (PREEMP_enabled)
-            new_action->desc.compute.cpu_time += PREEMP_overhead(thread->task);
-    }
-
-    if (new_action->action == GPU_BURST)
-    {
-        struct t_node *node;
-        new_action->desc.compute.cpu_time *= 1e9;
-        node = get_node_of_thread(thread);
-
-        if (node->acc_relative == 0)
-            new_action->desc.compute.cpu_time = 0;
-        else if (node->acc_relative < 0)
-        {
-            double burst = node->acc_relative;
-            burst *= -1;
-            new_action->desc.compute.cpu_time = burst;
-        }
-        else
-        {
-            new_action->desc.compute.cpu_time /= node->relative;
-        }
-
-        if (PREEMP_enabled)
-            new_action->desc.compute.cpu_time += PREEMP_overhead(thread->task);
-    }
-    
+        
     thread->action = new_action;
+
+//    Extrae_event(99000000, 0);
 }
 
 struct t_action* _get_next_action(struct t_thread *thread)

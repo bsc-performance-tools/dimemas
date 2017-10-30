@@ -6,9 +6,9 @@
 pthread_t reader_thread;
 pthread_mutex_t indexes_mutex;
 
-struct t_action ***action_buffer;
-int *buffer_heads;
-int *buffer_tails;
+volatile struct t_action ***action_buffer;
+volatile int *buffer_heads;
+volatile int *buffer_tails;
 int bsize_per_thread;
 
 /*
@@ -94,5 +94,6 @@ void READ_free_action(
 
 void READ_Init_asynch(
         struct t_Ptask *ptask, 
-        int max_memory);
+        int max_memory,
+        int threads_count);
 #endif

@@ -998,9 +998,9 @@ struct t_thread
     //t_boolean nonblock_glop_done;
     //struct t_thread* nonblock_glop_thread;
     
-    struct t_action **action_buffer;
-    int *action_buffer_head;
-    int *action_buffer_tail;
+    volatile struct t_action **action_buffer;
+    volatile int *action_buffer_head;
+    volatile int *action_buffer_tail;
 };
 
 struct t_semaphore

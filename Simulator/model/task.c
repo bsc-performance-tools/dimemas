@@ -281,8 +281,10 @@ void TASK_Init(int sintetic_io_applications)
         }
 
         // TODO: Take a decission about the size of the buffer.
-        READ_Init_asynch(Ptask, 
-                sizeof(struct t_action)*Simulator.threads_count*1000);
+        READ_Init_asynch(
+                Ptask, 
+                sizeof(struct t_action)*Simulator.threads_count*10000,
+                Simulator.threads_count);
 
     } // end of loading the Ptasks.
 
