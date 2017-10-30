@@ -152,6 +152,9 @@ extern int with_deadlock_analysis;
 extern t_boolean simulation_rebooted;
 extern int reboots_counter;
 
+extern int asynch_read;
+extern int asynch_buffer_size_mb;
+
 /*
  * Prototypes
  */

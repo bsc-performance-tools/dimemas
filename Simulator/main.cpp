@@ -128,6 +128,8 @@ int  RD_SYNC_use_trace_sync;
 int with_deadlock_analysis = 0;
 int reboots_counter = 0;
 float danalysis_deactivation_percent = 1;
+int asynch_read = FALSE;
+int asynch_buffer_size_mb = 10;
 t_boolean simulation_rebooted = FALSE;
 
 t_boolean extra_assert=FALSE;
@@ -221,6 +223,7 @@ void parse_arguments(int argc, char *argv[])
     bool map_interleaved_enabled;
     bool wait_logical_recv_enabled;
     bool b_eee_enabled;
+    bool asynch_read_bool;
 
     int sintetic_io_applications;
 
@@ -295,6 +298,10 @@ void parse_arguments(int argc, char *argv[])
         ("venuscon", po::value<string>(&venus_conn_url)->default_value(NULL), 
             "Connect to venus server at host:port")
 #endif
+        ("asynch-read", po::bool_switch(&asynch_read_bool), 
+            "Wakes up a new thread for read the input trace")
+        ("asynch-read-buffer", po::value<int>(&asynch_buffer_size_mb), 
+            "Size of the asynch read buffer in MB (default: 10MB)")
     ;
 
     po::options_description mandatory("Mandatory options");
@@ -441,6 +448,9 @@ void parse_arguments(int argc, char *argv[])
         debug |= D_TASK;
     if (extra_event_debug_enabled)
         debug |= D_EV;
+
+    if (asynch_read_bool)
+        asynch_read = TRUE;
 
     paraver_final_timer = (varmap.count("prv-stop-time") != 0);
     paraver_initial_timer = (varmap.count("prv-start-time") != 0);

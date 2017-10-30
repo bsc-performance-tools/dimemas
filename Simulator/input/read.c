@@ -971,30 +971,29 @@ void READ_Init_asynch(struct t_Ptask *ptask, int max_memory, int threads_count)
 
 void READ_get_next_action(struct t_thread *thread)
 {
-//    Extrae_event(99000000, *(thread->action_buffer_head));
     assert(thread->action == NULL);
 
-    // Active wait
-    //__sync_synchronize();
-    while (*(thread->action_buffer_head) == *(thread->action_buffer_tail))
-    {
-        if (thread->eof_reached)
-        {
-            thread->action = A_NIL;
-            return;
-        }
-    }
-    
-
     struct t_action *new_action;
-    new_action = thread->action_buffer[*(thread->action_buffer_head)];
-    *(thread->action_buffer_head) = (*(thread->action_buffer_head)+1)
-        %bsize_per_thread;
-    
-        
-    thread->action = new_action;
+    if (asynch_read)
+    {
+        while (*(thread->action_buffer_head) == *(thread->action_buffer_tail))
+        {
+            if (thread->eof_reached)
+            {
+                thread->action = A_NIL;
+                return;
+            }
+        }
+        new_action = thread->action_buffer[*(thread->action_buffer_head)];
+        *(thread->action_buffer_head) = (*(thread->action_buffer_head)+1)
+            %bsize_per_thread;
+    }
+    else
+    {
+        new_action = _get_next_action(thread);
+    }
 
-//    Extrae_event(99000000, 0);
+    thread->action = new_action;
 }
 
 struct t_action* _get_next_action(struct t_thread *thread)
