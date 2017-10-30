@@ -300,8 +300,8 @@ void parse_arguments(int argc, char *argv[])
 #endif
         ("asynch-read", po::bool_switch(&asynch_read_bool), 
             "Wakes up a new thread for read the input trace")
-        ("asynch-read-buffer", po::value<int>(&asynch_buffer_size_mb), 
-            "Size of the asynch read buffer in MB (default: 10MB)")
+        ("asynch-max-buffer", po::value<int>(&asynch_buffer_size_mb), 
+            "Max size of the asynch read buffer in MB (default: 10MB)")
     ;
 
     po::options_description mandatory("Mandatory options");
