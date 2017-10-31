@@ -473,86 +473,100 @@ t_boolean SIMULATOR_set_node_definition(
 
     if ( (machine = SIMULATOR_get_machine(machine_id)) == NULL)
     {
-        generate_error(&SIMULATOR_error_message, "invalid machine id (%d)", machine_id);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid machine id (%d)", machine_id);
         return FALSE;
     }
 
     if ( (machine->loaded_nodes+1) > machine->number_of_nodes)
     {
-        generate_error(&SIMULATOR_error_message, "more nodes defined than total machine nodes");
+        generate_error(&SIMULATOR_error_message, 
+                "more nodes defined than total machine nodes");
         return FALSE;
     }
 
     node = &nodes[effective_node_id];
     if (node == NULL)
     {
-        generate_error(&SIMULATOR_error_message, "invalid node id (%d)", effective_node_id);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid node id (%d)", effective_node_id);
         return FALSE;
     }
 
     if (no_processors <= 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid number of processors (%d)", no_processors);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid number of processors (%d)", no_processors);
         return FALSE;
     }
 
     if (no_mem_buses < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node buses (%d)", no_mem_buses);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node buses (%d)", no_mem_buses);
         return FALSE;
     }
 
     if (no_mem_in_links < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node input links (%d)", no_mem_in_links);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node input links (%d)", no_mem_in_links);
         return FALSE;
     }
 
     if (no_mem_out_links < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node output links (%d)", no_mem_out_links);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node output links (%d)", no_mem_out_links);
         return FALSE;
     }
 
     if (no_input < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid inter-node input links (%d)", no_input);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid inter-node input links (%d)", no_input);
         return FALSE;
     }
 
     if (no_output < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid inter-node output links (%d)", no_output);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid inter-node output links (%d)", no_output);
         return FALSE;
     }
 
     if (local_startup < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node startup (%lf)", local_startup);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node startup (%lf)", local_startup);
         return FALSE;
     }
 
     if (remote_startup < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid inter-node startup (%lf)", remote_startup);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid inter-node startup (%lf)", remote_startup);
         return FALSE;
     }
 
     if (relative < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid CPU ratio (%lf)", relative);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid CPU ratio (%lf)", relative);
         return FALSE;
     }
 
     if (local_bandwidth < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node bandwidth (%lf)", local_bandwidth);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node bandwidth (%lf)", local_bandwidth);
         return FALSE;
     }
 
     if (external_net_startup < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid WAN startup (%lf)", external_net_startup);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid WAN startup (%lf)", external_net_startup);
         return FALSE;
     }
 
@@ -613,83 +627,96 @@ t_boolean SIMULATOR_set_multiple_node_definition(
 
     if ( (machine->loaded_nodes+node_count) > machine->number_of_nodes)
     {
-        generate_error(&SIMULATOR_error_message, "more nodes defined than total machine nodes");
+        generate_error(&SIMULATOR_error_message, 
+                "more nodes defined than total machine nodes");
         return FALSE;
     }
 
     if (node_count  <= 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid node count (%d)", node_count);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid node count (%d)", node_count);
         return FALSE;
     }
 
     if (no_processors <= 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid number of processors (%d)", no_processors);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid number of processors (%d)", no_processors);
         return FALSE;
     }
 
     if (no_mem_buses < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node buses (%d)", no_mem_buses);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node buses (%d)", no_mem_buses);
         return FALSE;
     }
 
     if (no_mem_in_links < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node input links (%d)", no_mem_in_links);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node input links (%d)", no_mem_in_links);
         return FALSE;
     }
 
     if (no_mem_out_links < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node output links (%d)", no_mem_out_links);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node output links (%d)", no_mem_out_links);
         return FALSE;
     }
 
     if (no_input < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid inter-node input links (%d)", no_input);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid inter-node input links (%d)", no_input);
         return FALSE;
     }
 
     if (no_output < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid inter-node output links (%d)", no_output);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid inter-node output links (%d)", no_output);
         return FALSE;
     }
 
     if (local_startup < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node startup (%lf)", local_startup);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node startup (%lf)", local_startup);
         return FALSE;
     }
 
     if (remote_startup < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid inter-node startup (%lf)", remote_startup);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid inter-node startup (%lf)", remote_startup);
         return FALSE;
     }
 
     if (relative < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid CPU ratio (%lf)", relative);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid CPU ratio (%lf)", relative);
         return FALSE;
     }
 
     if (local_bandwidth < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid intra-node bandwidth (%lf)", local_bandwidth);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid intra-node bandwidth (%lf)", local_bandwidth);
         return FALSE;
     }
 
     if (external_net_startup < 0)
     {
-        generate_error(&SIMULATOR_error_message, "invalid WAN startup (%lf)", external_net_startup);
+        generate_error(&SIMULATOR_error_message, 
+                "invalid WAN startup (%lf)", external_net_startup);
         return FALSE;
     }
 
-    for (i = 0; i < node_count; i++)
+    for (i = machine->first_node_id; i < machine->first_node_id+node_count; i++)
     {
         node = &nodes[i];
         if (node == NULL)

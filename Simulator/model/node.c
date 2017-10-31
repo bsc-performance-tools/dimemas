@@ -65,7 +65,6 @@ void NODE_Init_Empty_Node(struct t_machine* machine,
   node->machine     = machine;
 
   node->accelerator = FALSE;
-
 }
 void NODE_Fill_Node_Fields(struct t_node *node,
                            char          *node_name,

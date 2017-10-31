@@ -130,14 +130,17 @@ void MACHINE_Fill_Machine_Fields(
 
     struct t_node * new_nodes = malloc(
             sizeof(struct t_node)*(nodes_size+number_of_nodes));
-    memcpy(nodes, new_nodes, nodes_size);
-    free(nodes);
+    if (nodes_size > 0)
+    {
+        memcpy(new_nodes, nodes, sizeof(struct t_node)*nodes_size);
+        free(nodes);
+    }
     nodes = new_nodes;
     nodes_size = nodes_size + number_of_nodes;
 
-
+    machine->first_node_id  = first_node_id;
     int node_id;
-    for (node_id = first_node_id; node_id < number_of_nodes; ++node_id)
+    for (node_id = first_node_id; node_id < nodes_size; ++node_id)
     {
         struct t_node *node = &nodes[node_id];
         node->nodeid = node_id;
