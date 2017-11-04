@@ -4,7 +4,6 @@
 #include <pthread.h>
 
 pthread_t reader_thread;
-pthread_mutex_t indexes_mutex;
 
 volatile struct t_action ***action_buffer;
 volatile int *buffer_heads;

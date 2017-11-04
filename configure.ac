@@ -41,6 +41,10 @@ if test "x$CXXFLAGS" = "x"; then
 else
   enable_cxxflags_setting=no
 fi
+
+CFLAGS="$CFLAGS -pthread"
+CXXFLAGS="$CXXFLAGS -pthread"
+
 AC_MSG_RESULT($enable_cxxflags_setting)
 
 
