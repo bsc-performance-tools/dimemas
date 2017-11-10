@@ -102,9 +102,9 @@ install-exec-am: $(RUNSCRIPT)
 CLEANFILES = $(jarfile) $(MANIFEST) $(RUNSCRIPT) new_DIST_NOINST_JAVA.include
 
 install-exec-am: $(jarfile) 
-	mkdir -p $(libdir)/GUI
-	cp $(jarfile) $(libdir)/GUI
-	cp $(DEPENDENCIES) $(libdir)/GUI
+	mkdir -p $(DESTDIR)$(libdir)/GUI
+	cp $(jarfile) $(DESTDIR)$(libdir)/GUI
+	cp $(DEPENDENCIES) $(DESTDIR)$(libdir)/GUI
 	chmod a+x $(RUNSCRIPT)
-	cp $(RUNSCRIPT) $(bindir)
+	cp $(RUNSCRIPT) $(DESTDIR)$(bindir)
 

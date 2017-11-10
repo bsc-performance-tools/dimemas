@@ -57,8 +57,8 @@ LIB_EXTERN_MODEL_SRCS=lib_extern_model/Makefile \
 	lib_extern_model/README
 
 install-data-hook:
-	$(mkdir_p) $(includedir)/
-	$(mkdir_p) $(datadir)/lib_extern_model_example
-	cp -f $(LIB_EXTERN_MODEL_SRCS) $(datadir)/lib_extern_model_example
-	cp -f lib_extern_model/extern_comm_model.h $(includedir)/
+	$(mkdir_p) $(DESTDIR)$(includedir)/
+	$(mkdir_p) $(DESTDIR)$(datadir)/lib_extern_model_example
+	cp -f $(LIB_EXTERN_MODEL_SRCS) $(DESTDIR)$(datadir)/lib_extern_model_example
+	cp -f lib_extern_model/extern_comm_model.h $(DESTDIR)$(includedir)/
 
