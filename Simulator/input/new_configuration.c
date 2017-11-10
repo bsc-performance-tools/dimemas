@@ -821,7 +821,7 @@ t_boolean parse_predef_map_info (char* record_fields)
 {
 
     int   matches;
-    char *tracefile = (char*) malloc(strlen(record_fields)*sizeof(char));
+    char *tracefile = (char*) malloc(strlen(record_fields)*sizeof(char)+1);
     char  predefined_map[strlen(record_fields)];
     t_boolean tracefile_read = TRUE;
     int tasks_per_node;

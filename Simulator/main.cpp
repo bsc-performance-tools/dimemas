@@ -213,7 +213,7 @@ void parse_arguments(int argc, char *argv[])
     bool extra_asserts_enabled;
     bool extra_sched_debug_enabled;
     bool extra_paraver_debug_enabled;
-    bool extra_task_debug_enabled;
+    bool extra_task_debug_enabled = false;
     bool extra_event_debug_enabled;
     bool venus_enabled;
     bool critical_path_enabled;

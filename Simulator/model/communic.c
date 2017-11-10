@@ -491,12 +491,6 @@ void COMMUNIC_End()
                         query_prio_queue (&Global_op,
                                 (t_priority)thread->action->desc.global_op.glop_id);
 
-                    /*
-                       warning(": COMMUNIC_end: tasks P%02d T%02d (t%02d) waiting for global operation %s\n",
-                       IDENTIFIERS(thread),
-                       glop->name);
-                       */
-
                     involved_tasks++;
                 }
 
@@ -1900,30 +1894,33 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
     {
         PRINT_TIMER (current_time);
         printf (
-                ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)  Size: %lld, Comm.Id: %d\n",
+                ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d Tag(%02d)"\
+                " Size: %lld, Comm.Id: %d\n",
                 IDENTIFIERS (thread),
                 mess->ori,
                 mess->mess_tag,
                 mess->mess_size,
                 mess->communic_id);
         PRINT_TIMER (current_time);
-        printf(": COMMUNIC_wait/recv\t** Inspecting received messaged queue **\n");
+        printf(": COMMUNIC_wait/recv\t**"\
+                " Inspecting received messaged queue **\n");
     }
 
-    for (thread_source = (struct t_thread *) head_queue (& (task->mess_recv) ), found = FALSE;
+    found = FALSE;
+    for (thread_source = (struct t_thread *) head_queue (& (task->mess_recv) );
             thread_source != TH_NIL && !found;
             thread_source = (struct t_thread *) next_queue (& (task->mess_recv) ))
     {
         task_source = thread_source->task;
         action      = thread_source->action;
         mess_source = & (action->desc.send);
-        //printf("communication 2093 task source %d \n", task_source->taskid);
 
         if (debug & D_COMM)
         {
             PRINT_TIMER (current_time);
             printf (
-                    ": \t\t\t-> Message Sender: T%02d Tag(%02d)  Size: %lld, Comm.Id: %d\n",
+                    ": \t\t\t-> Message Sender: T%02d Tag(%02d)"\
+                    " Size: %lld, Comm.Id: %d\n",
                     task_source->taskid,
                     mess_source->mess_tag,
                     mess_source->mess_size,
@@ -1931,20 +1928,18 @@ static t_boolean is_message_awaiting_real_MPI_transfer (struct t_task   *task,
                    );
         }
 
-        // JGG (2012/01/17): now, the numbering is 0..(n-1)
-        // assert(mess_source->dest > 0);
         assert (mess_source->dest_thread == -1);
         assert (mess_source->dest == thread->task->taskid);
-        if ( ( (thread_source->threadid  == mess->ori_thread)     || (mess->ori_thread == -1)         ) &&
-                ( (task_source->taskid      == mess->ori)            || (mess->ori == -1)                ) &&
-                (  mess->mess_tag           == mess_source->mess_tag                                     ) &&
-                (  mess->communic_id        == mess_source->communic_id                                  ) &&
-                ( (mess_source->dest_thread == thread->threadid)     || (mess_source->dest_thread == -1) ) )
+        if (((thread_source->threadid  == mess->ori_thread) || (mess->ori_thread == -1)) &&
+                ((task_source->taskid == mess->ori) || (mess->ori == -1)) &&
+                (mess->mess_tag == mess_source->mess_tag) &&
+                (mess->communic_id == mess_source->communic_id) &&
+                ((mess_source->dest_thread == thread->threadid) || (mess_source->dest_thread == -1)))
         {
             dimemas_timer actual_logical_recv;
             account = current_account (thread);
             account->n_bytes_recv += mess_source->mess_size;
-            extract_from_queue (& (task->mess_recv), (char *) thread_source);
+            extract_from_queue (&(task->mess_recv), (char *) thread_source);
             r_node = get_node_of_thread (thread);
             s_node = get_node_of_thread (thread_source);
 
@@ -3303,7 +3298,7 @@ void COMMUNIC_general (int value, struct t_thread *thread)
             COMMUNIC_internal_resources_COM_TIMER_OUT(thread);
             break;
         case COM_TIMER_OUT_RESOURCES_WAN:
-            COMMUNIC_external_network_COM_TIMER_OUT(thread);
+            COMMUNIC_external_resources_COM_TIMER_OUT(thread);
             break;
         case COM_TIMER_OUT_RESOURCES_DED:
             COMMUNIC_dedicated_connection_COM_TIMER_OUT(thread);
@@ -4899,11 +4894,13 @@ void COMMUNIC_wait (struct t_thread *thread)
 
     if (mess->ori_thread == -1)
     {
-        Is_message_awaiting = is_message_awaiting_real_MPI_transfer (task, mess, thread);
+        Is_message_awaiting = is_message_awaiting_real_MPI_transfer (
+                task, mess, thread);
     }
     else
     {
-        Is_message_awaiting = is_message_awaiting_dependency_synchronization (task, mess, thread);
+        Is_message_awaiting = is_message_awaiting_dependency_synchronization (
+                task, mess, thread);
     }
 
     if (Is_message_awaiting)                      /* 'is_message_awaiting'      */
@@ -5866,6 +5863,7 @@ void really_send_external_network (struct t_thread *thread)
            mateix instant de temps. */
         FLOAT_TO_TIMER (t_recursos, tmp_timer);
         ADD_TIMER (current_time, tmp_timer, tmp_timer);
+
         EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_WAN);
         /* Es programa el final de la comunicació punt a punt. */
         FLOAT_TO_TIMER (ti, tmp_timer);

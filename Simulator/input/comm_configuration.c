@@ -622,10 +622,6 @@ t_boolean load_scheduling_quantum(int       machine_id,
   return TRUE;
 }
 
-/************************************************************************
- ** Aquesta funcio llegeix del string donat tots els flight time de la
- ** maquina indicada.
- ************************************************************************/
 t_boolean load_machine_flight_times(int   machine_id,
                                     char *flight_times_str)
 {

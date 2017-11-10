@@ -202,16 +202,22 @@ int *SIMULATOR_get_cpus_per_node(void)
 
 void  SIMULATOR_set_number_of_machines(int number_of_machines)
 {
-    size_t i;
+    size_t i, j;
     Simulator.number_machines = number_of_machines;
 
     /* Flight times matrix */
-    Simulator.wan.flight_times = (double**) malloc(number_of_machines*sizeof(double*));
+    Simulator.wan.flight_times = (double**) malloc(
+            number_of_machines*sizeof(double*));
 
     for (i = 0; i < number_of_machines; i++)
     {
-        Simulator.wan.flight_times[i] = (double*) malloc (number_of_machines*sizeof(double));
+        Simulator.wan.flight_times[i] = (double*) malloc(
+                number_of_machines*sizeof(double));
     }
+
+    for (i = 0; i < number_of_machines; ++i)
+        for (j = 0; j < number_of_machines; ++j)
+            Simulator.wan.flight_times[i][j] = 0;
 
     if (Simulator.wan.flight_times == NULL)
     {
@@ -219,7 +225,8 @@ void  SIMULATOR_set_number_of_machines(int number_of_machines)
     }
 
     /* Initialize the machines container */
-    Machines = (struct t_machine*) malloc(number_of_machines*sizeof(struct t_machine));
+    Machines = (struct t_machine*) malloc(
+            number_of_machines*sizeof(struct t_machine));
 
     if (Machines == NULL)
     {

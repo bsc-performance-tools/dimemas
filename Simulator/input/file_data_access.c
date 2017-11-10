@@ -1178,6 +1178,8 @@ t_boolean DAP_read_communicator(app_struct *app, const char *comm_fields)
         return FALSE;
     }
     
+    new_communicator->current_root = TH_NIL;
+    new_communicator->in_flight_op = FALSE;
     insert_queue(&(app->comms), (char*) new_communicator, (t_priority) comm_id);
 
     return TRUE;
