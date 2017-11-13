@@ -8,6 +8,30 @@ Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 	BUGFIX: explanation of bug solved 
 	CHANGES: explanation of codification changes 
 
+2017 / 11 / 13 - jmartine - All
+	CHANGE:		5.3.4 version released.
+
+2017 / 11 / 10 - jmartine - Simulator
+	BUGFIX:		Fixed bug in resources free when working with more than one
+				machine.
+
+2017 / 10 / 30 - jmartine - Simulator
+	FEATURE:	Now additional thread can be waked up for reading input trace.
+				It can achieve better speedups with long traces. There are two
+				flags available for govern this feature. --asynch-read for 
+				activate it and --asynch-max-buffer that sets the maximum size
+				of the read buffer (10MB by default).
+
+2017 / 10 / 19 - jmartine - prv2dim
+	BUGFIX:		File descriptors management was broken, so an error arise when 
+				dealing with >1024 tasks.
+
+2017 / 08 / 22 - ckc - Simulator
+	BUGFIX:		kernel (GPU) process mapping has been fixed. There were 
+				situations where kernel processes were progressing in 
+				conventional CPUs. Now pure GPUs objects has been created and
+				kernel processes can not be preempted from there.
+
 2017 / 08 / 14 - Other
 	FEATURE:	Update_CFG and trf2dim has been removed from the package.
 
