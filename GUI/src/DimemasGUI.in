@@ -10,7 +10,7 @@ else
     exit 1
 fi
 
-DIMEMAS_GUI_JAR=$DIMEMAS_HOME/$LIBDIR/GUI/dimemas-gui-5.3.4.jar
+DIMEMAS_GUI_JAR=$DIMEMAS_HOME/$LIBDIR/GUI/@@JARFILE@@
 
 if ! [ -e $DIMEMAS_GUI_JAR ]; then
 	echo "Dimemas GUI 'jar' file (@@JARFILE@@) not found"
