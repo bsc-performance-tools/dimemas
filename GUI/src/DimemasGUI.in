@@ -13,9 +13,9 @@ fi
 DIMEMAS_GUI_JAR=$DIMEMAS_HOME/$LIBDIR/GUI/@@JARFILE@@
 
 if ! [ -e $DIMEMAS_GUI_JAR ]; then
-	echo "Dimemas GUI 'jar' file (@@JARFILE@@) not found"
+    echo "Dimemas GUI 'jar' file (@@JARFILE@@) not found"
     echo "Check your Dimemas instalation."
-	exit 1
+    exit 1
 fi
 
 if  which java >/dev/null 2>&1  ; then
