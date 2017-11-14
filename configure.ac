@@ -249,6 +249,25 @@ AC_CHECK_LIB([m],[sqrt])
 AC_CHECK_LIB([dl],[dlopen])
 
 dnl ========================================================================
+dnl Check readlink and dirname
+dnl ========================================================================
+
+AC_CHECK_PROG(have_rlink, readlink, "yes", "no")
+AC_CHECK_PROG(have_dname, dirname, "yes", "no")
+
+if test "x$have_rlink" = "xno"; then
+    AC_MSG_ERROR("readlink command has not been found")
+fi
+
+if test "x$have_dname" = "xno"; then
+    AC_MSG_ERROR("dirname command has not been found")
+fi
+
+
+dnl AM_CONDITIONAL([HAVE_RLINK], [test "x$have_rlink" = "xyes"])
+dnl AM_CONDITIONAL([HAVE_DNAME], [test "x$have_dname" = "xyes"])
+
+dnl ========================================================================
 dnl Check availability of 'open_memstream' and 'funopen'
 dnl ========================================================================
 AC_CHECK_FUNCS(open_memstream funopen)

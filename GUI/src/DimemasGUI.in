@@ -1,13 +1,20 @@
 #!/bin/sh
-export DIMEMAS_HOME=@@DIMEMASHOME@@
-export DIMEMAS_GUI_JAR=$DIMEMAS_HOME/lib/GUI/@@JARFILE@@
 
-if [ -z $DIMEMAS_HOME ] ; then
-	echo "Please set DIMEMAS_HOME to the Dimemas installation root directory"
-	exit 1
-elif ! [ -e $DIMEMAS_GUI_JAR ]; then
-	echo "Dimemas GUI 'jar' file (@@JARFILE@@) not found in the"
-	echo "$DIMEMAS_HOME/bin directory. Please check the installation"
+DIMEMAS_HOME=$(dirname $(readlink -f $0))/..
+if [ -d "$DIMEMAS_HOME/lib" ]; then
+    LIBDIR="/lib"
+elif [ -d "$DIMEMAS_HOME/lib64" ]; then
+    LIBDIR="/lib64"
+else
+    echo "$DIMEMAS_HOME/{lib|lib64} not found"
+    exit 1
+fi
+
+DIMEMAS_GUI_JAR=$DIMEMAS_HOME/$LIBDIR/GUI/dimemas-gui-5.3.4.jar
+
+if ! [ -e $DIMEMAS_GUI_JAR ]; then
+	echo "Dimemas GUI 'jar' file (@@JARFILE@@) not found"
+    echo "Check your Dimemas instalation."
 	exit 1
 fi
 
