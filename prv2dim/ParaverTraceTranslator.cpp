@@ -1288,12 +1288,13 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
         INT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
 
         bool is_acc_task = false;
-        if (acc_tasks_count == 0)
-        {	/*If any accelerator task, only 1 thread per task will be translated*/
+        /*if (acc_tasks_count == 0)
+        {	//If any accelerator task, only 1 thread per task will be translated
             TaskThreadCount = 1;
             TaskInfo[CurrentTask]->SetThreadCount(TaskThreadCount);
         }
-        else if (!acc_tasks.empty() &&	acc_tasks[CurrentTask])
+        else */
+        if (!acc_tasks.empty() &&	acc_tasks[CurrentTask])
         {
             is_acc_task = true;
         }
