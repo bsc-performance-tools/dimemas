@@ -1457,7 +1457,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 			break;
 		}
 
-		fprintf(stdout, "outside a block!");
+		fprintf(stdout, "outside a block!\n");
 
 #endif
 
