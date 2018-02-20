@@ -479,6 +479,7 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
     Ptask->acc_tasks_count = -1;	//-1:	search for acc_tasks not done, >= 0 otherwise
     Ptask->acc_tasks = (int *) NULL;
 
+    create_queue (&(Ptask->global_operation));
     create_queue (&(Ptask->Communicator));
     create_queue (&(Ptask->Window));
     create_queue (&(Ptask->MPI_IO_fh_to_commid));
@@ -2162,6 +2163,7 @@ void Update_Node_Info(
     struct t_link *link;
     int task_it;
 
+    in_mem_links = out_mem_links = 0;
     for (task_it = 0; task_it < tasks_count; task_it++)
     {
         task = &tasks[task_it];
