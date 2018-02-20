@@ -98,5 +98,6 @@ extern struct t_queue *new_queue_accounter(void);
 #endif
 
 void remove_queue_elements(struct t_queue * queue);
+void remove_queue_threads(struct t_queue * queue);
 void move_queue_elements(struct t_queue * from, struct t_queue * to);
 

@@ -1167,13 +1167,13 @@ void SIMULATOR_reset_state()
         move_queue_elements(&node->busy_in_links, &node->free_in_links);
         move_queue_elements(&node->busy_out_links, &node->free_out_links);
 
-        remove_queue_elements(&node->th_for_in);
-        remove_queue_elements(&node->th_for_out);
+        remove_queue_threads(&node->th_for_in);
+        remove_queue_threads(&node->th_for_out);
 
-        remove_queue_elements(&node->wait_for_mem_bus);
-        remove_queue_elements(&node->threads_in_memory);
+        remove_queue_threads(&node->wait_for_mem_bus);
+        remove_queue_threads(&node->threads_in_memory);
 
-        remove_queue_elements(&node->ready);
+        remove_queue_threads(&node->ready);
 
         struct t_cpu * cpu;
         for (cpu = (struct t_cpu *)head_queue(&node->Cpus); 
@@ -1211,14 +1211,14 @@ void SIMULATOR_reset_state()
             move_queue_elements(&task->busy_in_links, &task->free_in_links);
             move_queue_elements(&task->busy_out_links, &task->busy_out_links);
 
-            remove_queue_elements(&task->th_for_in);
-            remove_queue_elements(&task->th_for_out);
+            remove_queue_threads(&task->th_for_in);
+            remove_queue_threads(&task->th_for_out);
 
             remove_queue_elements(&task->mess_recv);
-            remove_queue_elements(&task->recv);
-            remove_queue_elements(&task->send);
-            remove_queue_elements(&task->recv_without_send);
-            remove_queue_elements(&task->send_without_recv);
+            remove_queue_threads(&task->recv);
+            remove_queue_threads(&task->send);
+            remove_queue_threads(&task->recv_without_send);
+            remove_queue_threads(&task->send_without_recv);
             remove_queue_elements(&task->irecvs_executed);
             remove_queue_elements(&task->semaphores); // ??
 
@@ -1229,9 +1229,9 @@ void SIMULATOR_reset_state()
             {
                 struct t_thread * thread = task->threads[th_id];
 
-                remove_queue_elements(&thread->recv_without_send);
-                remove_queue_elements(&thread->send_without_recv);
-                remove_queue_elements(&thread->irecvs_executed);
+                remove_queue_threads(&thread->recv_without_send);
+                remove_queue_threads(&thread->send_without_recv);
+                remove_queue_threads(&thread->irecvs_executed);
 
                 if (thread->action != A_NIL)
                 {
@@ -1254,6 +1254,9 @@ void SIMULATOR_reset_state()
                   thread->pending_action = A_NIL;
                   }*/
 
+                // TODO: Useless, original thread have no info abour children
+                // They can be removed from different parts on code...
+                // Maybe could be a good idea to have a pool of copy_threads
                 if (thread->original_thread && thread->twin_thread != TH_NIL)
                 {
                     free(thread->twin_thread);

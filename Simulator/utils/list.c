@@ -29,6 +29,7 @@
 #include "extern.h"
 #include "list.h"
 #include "subr.h"
+#include "task.h"
 
 
 #ifdef VENUS_ENABLED
@@ -725,12 +726,14 @@ struct t_queue* new_queue_accounter()
 
 void remove_queue_elements(struct t_queue * queue)
 {
-    if (queue->count == 0) return;
+    
+    if (queue->count == 0) 
+        return;
 
     char * element;
     while ((element = outFIFO_queue(queue)) != NULL)
     {
-        //free(element);
+        free(element);
     }
 
     queue->first = NULL;
@@ -738,6 +741,24 @@ void remove_queue_elements(struct t_queue * queue)
     queue->curr = NULL;
     assert(queue->count == 0);
 
+}
+
+void remove_queue_threads(struct t_queue * queue)
+{
+    if (queue->count == 0)
+        return;
+
+    struct t_thread *th;
+    while ((th = (struct t_thread *)outFIFO_queue(queue)) != NULL)
+    {
+        if (!th->original_thread)
+            delete_duplicate_thread(th);
+    }
+
+    queue->first = NULL;
+    queue->last = NULL;
+    queue->curr = NULL;
+    assert(queue->count == 0);
 }
 
 void move_queue_elements(struct t_queue * from, struct t_queue * to)
