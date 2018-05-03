@@ -353,11 +353,22 @@ void parse_arguments(int argc, char *argv[])
     pd.add("config-file", 1);
 
     po::variables_map varmap;
+   try{
     po::store(po::command_line_parser(argc, argv)
             .options(all)
             .positional(pd)
             .run(), varmap);
+   }
 
+   catch(...)
+   {
+        cout << "Error in the arguments. Please check it again." << endl;
+        cout << "To see help, use -h flag" << endl;
+        cout<< endl;
+        cout << "USAGE: " << argv[0] << 
+            " -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+        exit(EXIT_FAILURE);
+    }
     if (varmap.count("help"))
     {
         print_dimemas_header();
