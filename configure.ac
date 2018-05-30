@@ -98,8 +98,8 @@ dnl =======================================================================
 dnl Check compilers 
 dnl =======================================================================
  
-AC_PROG_CC(icc gcc)
-AC_PROG_CXX(icpc g++)
+AC_PROG_CC(gcc icc)
+AC_PROG_CXX(g++ icpc)
 
 dnl Large files
 if test "$Operating_System" = "cygwin"; then

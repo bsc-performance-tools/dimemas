@@ -8,6 +8,9 @@ Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 	BUGFIX: explanation of bug solved 
 	CHANGES: explanation of codification changes 
 
+2018 / 05 / 30 - gllort - All
+	CHANGE: 	Sets default compilers to GNU toolchain
+
 2017 / 11 / 13 - jmartine - All
 	CHANGE:		5.3.4 version released.
 
