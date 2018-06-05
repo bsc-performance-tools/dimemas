@@ -216,7 +216,7 @@ ParaverRecord_t ParaverTraceParser::GetNextThreadRecord(INT32 TaskId,
     return NULL;
   }
 
-  while (Record->GetTaskId() != TaskId && Record->GetThreadId() != ThreadId)
+  while (Record->GetTaskId() != TaskId || Record->GetThreadId() != ThreadId)
   {
     delete Record;
     if ( (Record = NextTraceRecord(EVENT_REC | STATE_REC)) == NULL)
