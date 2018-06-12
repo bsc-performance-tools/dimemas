@@ -616,7 +616,55 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
     return true;
 }
 
+void CheckIdleState(UINT64 CurrentTaskId, UINT64 CurrentThreadId, 
+        UINT64 max_nthreads, State_t *current_state, 
+        ParaverRecord_t CurrentRecord, TaskTranslationInfo_t tti)
+{
+    State_t last_state = current_state[CurrentTaskId*max_nthreads+CurrentThreadId];
+    if (last_state != NULL)
+    {
+        if (last_state->GetEndTime() < CurrentRecord->GetTimestamp())
+        {
+            UINT64 state_begin_time = last_state->GetEndTime();
+            UINT64 state_end_time = CurrentRecord->GetTimestamp();
 
+            // Adding idle block
+            Event_t BeginIdleEvent = new Event( 
+                    state_begin_time,
+                    CurrentRecord->GetCPU(),
+                    CurrentRecord->GetAppId(),
+                    CurrentRecord->GetTaskId(),
+                    CurrentRecord->GetThreadId());
+
+            Event_t EndIdleEvent = new Event( 
+                    state_end_time,
+                    CurrentRecord->GetCPU(),
+                    CurrentRecord->GetAppId(),
+                    CurrentRecord->GetTaskId(),
+                    CurrentRecord->GetThreadId());
+
+            BeginIdleEvent->AddTypeValue(0,1);
+            EndIdleEvent->AddTypeValue(0,0);
+
+            tti->PushRecord(BeginIdleEvent);
+            tti->PushRecord(EndIdleEvent);
+
+            // Add the new state to last state
+            State_t new_state = new State(
+                    CurrentRecord->GetCPU(),
+                    CurrentRecord->GetAppId(),
+                    CurrentRecord->GetTaskId(),
+                    CurrentRecord->GetThreadId(),
+                    state_begin_time,
+                    state_end_time,
+                    0);
+
+            free(current_state[CurrentTaskId*max_nthreads+CurrentThreadId]); 
+            current_state[CurrentTaskId*max_nthreads+CurrentThreadId]
+                = new_state;
+        }
+    }
+}
 
     bool
 ParaverTraceTranslator::Translate(
@@ -665,8 +713,8 @@ ParaverTraceTranslator::Translate(
        */
 
     cout << flush;
-
     cout << "INITIALIZING TRANSLATION... ";
+
     if (!Parser->Reload())
     {
         cout << " NOK!" << endl;
@@ -814,22 +862,30 @@ ParaverTraceTranslator::Translate(
 
     CurrentRecord = SelectNextRecord();
 
+
+
+    int max_nthreads = 0;
+    for (int task=0; task<TranslationInfo.size(); ++task)
+        if (TranslationInfo[task].size() > max_nthreads)
+            max_nthreads = TranslationInfo[task].size();
+
+    State_t *current_state = (State_t*) calloc(TranslationInfo.size()*max_nthreads, 
+            sizeof(State_t));
+
     while (CurrentRecord != NULL)
     {
         Event_t  CurrentEvent;
+        State_t CurrentState;
         INT32    CurrentTaskId   = CurrentRecord->GetTaskId()-1;
         INT32    CurrentThreadId = CurrentRecord->GetThreadId()-1;
 
         if (CurrentTaskId < 0 || CurrentTaskId >= TranslationInfo.size())
         {
-            /* Wrong record on the trace! */
             WrongRecordsFound ++;
             delete CurrentRecord;
         }
         else if (CurrentThreadId < 0 || CurrentThreadId >= TranslationInfo[CurrentTaskId].size())
         {
-            /* Wrong record on the trace! */
-            /* If accelerator threads are not translated then WrongRecordsFound > 0 */
             WrongRecordsFound ++;
             delete CurrentRecord;
         }
@@ -839,13 +895,13 @@ ParaverTraceTranslator::Translate(
             cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
 #endif
 
-            // Current Record is an event. We split it, if needed
-            //
             if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
-            {             
+            {
+                CheckIdleState(CurrentTaskId, CurrentThreadId, max_nthreads, 
+                        current_state, CurrentRecord, 
+                        TranslationInfo[CurrentTaskId][CurrentThreadId]);
                 if (CurrentEvent->GetTypeValueCount() > 1)
                 {
-
                     for (unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++)
                     {
                         Event_t SubEvent;
@@ -890,8 +946,47 @@ ParaverTraceTranslator::Translate(
                     }
                 }
             }
+            else if ( (CurrentState = dynamic_cast<State_t>(CurrentRecord)) != NULL)
+            {
+                
+                INT32 state_value = CurrentState->GetStateValue();
+                UINT64 state_begin_time = CurrentState->GetBeginTime();
+                UINT64 state_end_time = CurrentState->GetEndTime(); 
+
+                if (state_value == 0) // idle
+                {
+                    Event_t BeginIdleEvent = new Event( 
+                            state_begin_time,
+                            CurrentState->GetCPU(),
+                            CurrentState->GetAppId(),
+                            CurrentState->GetTaskId(),
+                            CurrentState->GetThreadId());
+
+                    Event_t EndIdleEvent = new Event( 
+                            state_end_time,
+                            CurrentState->GetCPU(),
+                            CurrentState->GetAppId(),
+                            CurrentState->GetTaskId(),
+                            CurrentState->GetThreadId());
+
+                    BeginIdleEvent->AddTypeValue(0,1);
+                    EndIdleEvent->AddTypeValue(0,0);
+
+                    bool success = TranslationInfo[CurrentTaskId][CurrentThreadId]
+                        ->PushRecord(BeginIdleEvent);
+
+                    success = TranslationInfo[CurrentTaskId][CurrentThreadId]
+                        ->PushRecord(EndIdleEvent);
+                }
+                
+                free(current_state[CurrentTaskId*max_nthreads+CurrentThreadId]);
+                current_state[CurrentTaskId*max_nthreads+CurrentThreadId] = CurrentState;
+            }
             else
             {
+                CheckIdleState(CurrentTaskId, CurrentThreadId, max_nthreads, 
+                        current_state, CurrentRecord, 
+                        TranslationInfo[CurrentTaskId][CurrentThreadId]);
                 if (!TranslationInfo[CurrentTaskId][CurrentThreadId]
                         ->PushRecord(CurrentRecord))
                 {
@@ -912,6 +1007,11 @@ ParaverTraceTranslator::Translate(
             SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
         }
     }
+
+    for (int i=0; i<TranslationInfo.size()*max_nthreads; ++i)
+        if (current_state[i] != NULL)
+            free(current_state[i]);
+    free(current_state);
 
     if (this->withExtraStats)
     {
@@ -1276,6 +1376,45 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 
     TranslationInfo.resize(TaskInfo.size());
 
+
+    /*
+    if (!Parser->Reload())
+    {
+        SetErrorMessage("Unable to reload Paraver trace",
+                Parser->GetLastError().c_str());
+        return false;
+    }
+
+    // Speed up first record time search
+    UINT64 *first_record_times = (UINT64*) calloc(TaskInfo.size(), sizeof(UINT64));
+    UINT64 done = 0;
+    for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
+    {
+        //INT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
+        //for (CurrentThread = 0; CurrentThread < TaskThreadCount; CurrentThread++)
+        //{
+        ParaverRecord_t Record = Parser->GetNextRecord(EVENT_REC | STATE_REC);
+        if (Record != NULL)
+        {
+            if (first_record_times[Record->GetTaskId()] == 0)
+            {
+                first_record_times[Record->GetTaskId()] = 
+                    Record->GetTimestamp();
+                done++;
+            }
+        }
+        if (done == TaskInfo.size())
+            break;
+        //}
+    }
+    for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
+    {
+        std::cout << "TASK " << CurrentTask << ":" << 
+            first_record_times[CurrentTask] << std::endl;
+    }
+    exit(1);
+    */
+
     for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
     {
 #ifndef DEBUG
@@ -1288,16 +1427,8 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
         INT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
 
         bool is_acc_task = false;
-        /*if (acc_tasks_count == 0)
-        {	//If any accelerator task, only 1 thread per task will be translated
-            TaskThreadCount = 1;
-            TaskInfo[CurrentTask]->SetThreadCount(TaskThreadCount);
-        }
-        else */
         if (!acc_tasks.empty() &&	acc_tasks[CurrentTask])
-        {
             is_acc_task = true;
-        }
 
         TranslationInfo[CurrentTask].resize(TaskThreadCount);
 
@@ -1310,15 +1441,11 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             UINT64          FirstRecordTime = 0;
 
             INT32 AcceleratorThread = ACCELERATOR_NULL;	//not an acc task
-            //always considered as last thread of task
-            if (is_acc_task && CurrentThread != 0)// CurrentThread == TaskThreadCount-1)
-            {	/* Last thread in accelerator task is the kernel thread	*/
+
+            if (is_acc_task && CurrentThread != 0)
                 AcceleratorThread = ACCELERATOR_KERNEL;
-            }
             else if (is_acc_task && CurrentThread == 0)
-            {	/* First thread in accelerator task is the host thread	*/
                 AcceleratorThread = ACCELERATOR_HOST;
-            }
 
             TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 30);
 
@@ -1344,6 +1471,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             else
                 TemporaryFile = NULL;
 
+            
             if (!Parser->Reload())
             {
                 SetErrorMessage("Unable to reload Paraver trace",
@@ -1361,6 +1489,11 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
                 EmptyTask = true;
             else
                 FirstRecordTime = FirstRecord->GetTimestamp();
+            /*
+            FirstRecordTime = first_record_times[CurrentTask];
+            if (FirstRecordTime == 0)
+                EmptyTask = true;
+            */
 
             if (DescriptorShared 
                     || (TemporaryFile == NULL 
@@ -1518,7 +1651,8 @@ ParaverTraceTranslator::SelectNextRecord(void)
     if (LastRecordTrace)
     {
         /* Only events or global ops are needed */
-        CurrentTraceRecord = Parser->GetNextRecord(EVENT_REC | GLOBOP_REC);
+        //CurrentTraceRecord = Parser->GetNextRecord(EVENT_REC | GLOBOP_REC);
+        CurrentTraceRecord = Parser->GetNextRecord(STATE_REC | EVENT_REC | GLOBOP_REC);
     }
 
     if (CurrentTraceRecord == NULL && Parser->GetError())
@@ -1552,14 +1686,12 @@ ParaverTraceTranslator::SelectNextRecord(void)
     CurrentCommunication = Communications[CurrentCommunicationIndex];
 
     if (CurrentTraceRecord->operator<(static_cast<ParaverRecord>(*CurrentCommunication)))
-        /* if (CurrentTraceRecord < CurrentCommunication)*/
     {
         LastRecordTrace = true;
         return CurrentTraceRecord;
     }
 
     if (CurrentTraceRecord->operator>(static_cast<ParaverRecord>(*CurrentCommunication)))
-        /* if (CurrentTraceRecord > CurrentCommunication) */
     {
         LastRecordTrace = false;
         CurrentCommunicationIndex++;
@@ -1573,6 +1705,7 @@ ParaverTraceTranslator::SelectNextRecord(void)
         CurrentCommunicationIndex++;
         return CurrentCommunication;
     }
+
 
     PrvEventRecord = dynamic_cast<Event_t> (CurrentTraceRecord);
 
@@ -1606,12 +1739,13 @@ ParaverTraceTranslator::SelectNextRecord(void)
     }
     else /* Current trace record is a global op */
     {
-        LastRecordTrace = false;
+        //LastRecordTrace = false;
+        LastRecordTrace = true;
         return CurrentTraceRecord;
     }
 }
 
-    TranslationCommunicator_t
+TranslationCommunicator_t
 ParaverTraceTranslator::GetCommunicator(INT32 CommId)
 {
     if (Communicators.size() == 0)

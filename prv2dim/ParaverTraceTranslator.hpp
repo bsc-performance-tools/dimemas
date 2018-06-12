@@ -81,62 +81,46 @@ class ParaverTraceTranslator: public Error
 
     INT32 WrongRecordsFound;
 
-    INT32					AcceleratorType;	/* Indicates if CUDA or OpenCL
-    																	  will be translated */
+    /* Indicates if CUDA or OpenCL will be translated */
+    INT32 AcceleratorType;	
     vector<bool>	acc_tasks;
-    INT32					acc_tasks_count;
+    INT32 acc_tasks_count;
 
   public:
 
     ParaverTraceTranslator(void){};
-
-    ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName, string ExtraStatsName);
-
+    ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName, 
+            string ExtraStatsName);
     ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName);
-
     ParaverTraceTranslator(FILE* ParaverTraceFile, FILE* DimemasTraceFile);
 
     bool InitTranslator(void);
-
     bool EndTranslator(void);
-
     bool SplitCommunications(void);
-
-    bool Translate(bool   GenerateFirstIdle,
-                   double IprobeMissesThreshold,
-		   double TestMissesThreshold,
-                   INT32  BurstCounterType,
-                   double BurstCounterFactor,
-                   bool   GenerateMPIInitBarrier);
+    bool Translate(bool GenerateFirstIdle,double IprobeMissesThreshold,
+            double TestMissesThreshold,INT32  BurstCounterType,
+            double BurstCounterFactor,bool   GenerateMPIInitBarrier);
 
   private:
+    ParaverRecord_t SelectNextRecord(void);
+    TranslationCommunicator_t GetCommunicator(INT32 CommId);
 
     bool InitTranslationStructures(ApplicationDescription_t AppDescription,
                                    double TimeFactor,
                                    bool   GenerateFirstIdle,
                                    double IprobeMissesThreshold,
-		   		   double TestMissesThreshold,
+		   		                   double TestMissesThreshold,
                                    INT32  BurstCounterType,
                                    double BurstCounterFactor,
                                    bool   GenerateMPIInitBarrier);
 
     bool TranslateCommunicators(ApplicationDescription_t AppDescription);
-
-    ParaverRecord_t SelectNextRecord(void);
-
     bool IsDimemasBlockBegin(Event_t EventRecord);
-
     bool IsDimemasBlockEnd(Event_t EventRecord);
-
-    TranslationCommunicator_t GetCommunicator(INT32 CommId);
-
     bool ShareDescriptor(void);
-
-    bool WriteNewFormatHeader(ApplicationDescription_t AppDescription,
-    													int											 acc_tasks_count,
-    													const vector<bool>			*acc_tasks,
-                              off_t                    OffsetsOffset = 0);
-
+    bool WriteNewFormatHeader(ApplicationDescription_t AppDescription, 
+            int acc_tasks_count, const vector<bool> *acc_tasks, 
+            off_t OffsetsOffset = 0);
     bool AcceleratorTasksInfo(INT32 tasks_count);
 };
 

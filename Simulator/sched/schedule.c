@@ -955,7 +955,6 @@ next_op:
                                                 action->desc.even.value,
                                                 IDENTIFIERS(thread));
                                     }
-
                                     module_entrance(thread,
                                             (unsigned long int) action->desc.even.type,
                                             (unsigned long int) action->desc.even.value);
