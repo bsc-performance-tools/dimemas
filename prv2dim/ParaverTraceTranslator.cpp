@@ -1377,7 +1377,6 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
     TranslationInfo.resize(TaskInfo.size());
 
 
-    /*
     if (!Parser->Reload())
     {
         SetErrorMessage("Unable to reload Paraver trace",
@@ -1385,35 +1384,38 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
         return false;
     }
 
-    // Speed up first record time search
-    UINT64 *first_record_times = (UINT64*) calloc(TaskInfo.size(), sizeof(UINT64));
+    int max_nthreads = 0;
+    int total_threads = 0;
+    for (int task=0; task<TaskInfo.size(); ++task)
+    {
+        total_threads += TaskInfo[task]->GetThreadCount();
+        if (TaskInfo[task]->GetThreadCount() > max_nthreads)
+            max_nthreads = TaskInfo[task]->GetThreadCount();
+    }
+
+    INT64 *first_record_times = (INT64*) calloc(
+            TaskInfo.size()*max_nthreads, sizeof(INT64));
+    int i;
+    for (i=0; i<TaskInfo.size()*max_nthreads; ++i)
+        first_record_times[i] = -1;
+
     UINT64 done = 0;
-    for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
+    while (done < total_threads)
     {
-        //INT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
-        //for (CurrentThread = 0; CurrentThread < TaskThreadCount; CurrentThread++)
-        //{
         ParaverRecord_t Record = Parser->GetNextRecord(EVENT_REC | STATE_REC);
-        if (Record != NULL)
-        {
-            if (first_record_times[Record->GetTaskId()] == 0)
-            {
-                first_record_times[Record->GetTaskId()] = 
-                    Record->GetTimestamp();
-                done++;
-            }
-        }
-        if (done == TaskInfo.size())
+        if (Record == NULL)
             break;
-        //}
+
+        UINT64 taskid = Record->GetTaskId() -1;
+        UINT64 threadid = Record->GetThreadId() -1;
+
+        if (first_record_times[taskid*max_nthreads + threadid] == -1)
+        {
+            first_record_times[taskid*max_nthreads + threadid] = 
+                Record->GetTimestamp();
+            done++;
+        }
     }
-    for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
-    {
-        std::cout << "TASK " << CurrentTask << ":" << 
-            first_record_times[CurrentTask] << std::endl;
-    }
-    exit(1);
-    */
 
     for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
     {
@@ -1471,29 +1473,11 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             else
                 TemporaryFile = NULL;
 
-            
-            if (!Parser->Reload())
-            {
-                SetErrorMessage("Unable to reload Paraver trace",
-                        Parser->GetLastError().c_str());
-                return false;
-            }
-
-            Parser->Reload();
-
-            FirstRecord = Parser->GetNextThreadRecord(
-                    (INT32) CurrentTask+1,
-                    (INT32) CurrentThread+1);
-
-            if (FirstRecord == NULL)
+            if (first_record_times[CurrentTask*max_nthreads+CurrentThread] == -1)
                 EmptyTask = true;
             else
-                FirstRecordTime = FirstRecord->GetTimestamp();
-            /*
-            FirstRecordTime = first_record_times[CurrentTask];
-            if (FirstRecordTime == 0)
-                EmptyTask = true;
-            */
+                FirstRecordTime = 
+                    first_record_times[CurrentTask*max_nthreads+CurrentThread];
 
             if (DescriptorShared 
                     || (TemporaryFile == NULL 
@@ -1553,7 +1537,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             }
 
             TranslationInfo[CurrentTask][CurrentThread] = NewTranslationInfo;
-            delete FirstRecord;
+            //delete FirstRecord;
         }
         if (TaskThreadCount > 1 && !is_acc_task)
         { /* if task has an accelerator thread it's not a MultiThreadTrace error */
@@ -1566,6 +1550,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
         }
 #endif
     }
+    free(first_record_times);
 #ifndef DEBUG
     SHOW_PROGRESS_END(stdout,
             "CREATING TRANSLATION STRUCTURES ",
