@@ -59,6 +59,8 @@ LIB_EXTERN_MODEL_SRCS=lib_extern_model/Makefile \
 install-data-hook:
 	$(mkdir_p) $(DESTDIR)$(includedir)/
 	$(mkdir_p) $(DESTDIR)$(datadir)/lib_extern_model_example
+	$(mkdir_p) $(DESTDIR)$(datadir)/cfgs
 	cp -f $(LIB_EXTERN_MODEL_SRCS) $(DESTDIR)$(datadir)/lib_extern_model_example
 	cp -f lib_extern_model/extern_comm_model.h $(DESTDIR)$(includedir)/
+	cp -f ../cfgs/*.cfg $(DESTDIR)$(datadir)/cfgs
 
