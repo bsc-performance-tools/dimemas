@@ -505,6 +505,9 @@ void COMMUNIC_End()
 
             if (count_queue (&(task->recv)) != 0)
             {
+                printf("MACHINE:%d NODE:%d\n", 
+                        task->node->machine->id,
+                        task->node->nodeid);
                 warning (": COMMUNIC_end: Task %02d ends with %d threads waiting to recv a message:\n",
                         task->taskid,
                         count_queue (&(task->recv)));
@@ -544,6 +547,9 @@ void COMMUNIC_End()
 
             if (count_queue (&(task->send)) != 0)
             {
+                printf("MACHINE:%d NODE:%d\n", 
+                        task->node->machine->id,
+                        task->node->nodeid);
                 warning (": COMMUNIC_end: Task %02d ends with %d message(s) pending to send:\n",
                         task->taskid,
                         count_queue (&(task->send)));
@@ -582,6 +588,9 @@ void COMMUNIC_End()
 
             if (count_queue (&(task->mess_recv)) != 0)
             {
+                printf("MACHINE:%d NODE:%d\n", 
+                        task->node->machine->id,
+                        task->node->nodeid);
                 warning (": COMMUNIC_end: Task %02d ends with %d message(s) in reception queue:\n",
                         task->taskid,
                         count_queue (&(task->mess_recv)));
@@ -1596,9 +1605,11 @@ static void message_received (struct t_thread *thread)
                         if (debug & D_COMM)
                         {
                             PRINT_TIMER (current_time);
-                            printf (": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Busy Wait\n",
-                                    IDENTIFIERS (thread),
-                                    mess->dest);
+                            printf (": COMMUNIC_send\t M%02d P%02d T%02d (t%02d)"\
+                                    "-> T%02d Busy Wait\n",
+                                        thread->task->node->machine->id,
+                                        IDENTIFIERS (thread),
+                                        mess->dest);
                         }
 
                         account = current_account (partner);
