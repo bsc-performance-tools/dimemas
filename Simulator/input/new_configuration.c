@@ -212,7 +212,7 @@ static const char PREDEF_MAP_TEXT[] = "\"predefined mapping information\" {%[^}]
 static const char CONF_FILES_TEXT[] = "\"configuration files\" {%[^}]};;\n";
 static const char MOD_INFO_TEXT[]   = "\"modules information\" {%[^}]};;\n";
 static const char FS_PARAMS_TEXT[]  = "\"file system parameters\" {%[^}]};;\n";
-static const char D_CONN_TEXT[]     = "\"dedicated connection information\" {%[^}]};;\n";
+static const char D_CONN_TEXT[]     = "\"dedicated connection information\" {%[^;];\n";
 static const char ACC_NODES_TEXT[]  = "\"accelerator node information\" {%[^}]};;\n";
 
 t_boolean parse_record(char* current_record)
@@ -257,6 +257,8 @@ t_boolean parse_record(char* current_record)
     }
     else if (sscanf(current_record, D_CONN_TEXT, record_fields) == 1)
     {
+        int l = strlen(record_fields);
+        record_fields[l-1]='\0';
         return parse_d_conn(record_fields);
     }
     else if (sscanf(current_record, ACC_NODES_TEXT, record_fields) == 1)
