@@ -2010,8 +2010,9 @@ void connection_link_busy(struct t_thread               *thread,
   /*******************************************************************/
 }
 
-t_boolean LINKS_get_dedicated_connection_links(struct t_thread               *thread,
-                                               struct t_dedicated_connection *connection)
+t_boolean LINKS_get_dedicated_connection_links(
+        struct t_thread *thread,
+        struct t_dedicated_connection *connection)
 {
   struct t_link  *link;
 
@@ -2035,7 +2036,7 @@ second_src_link:
     if (debug&D_LINKS)
     {
       PRINT_TIMER (current_time);
-      printf (": Get connection links for P%02d T%02d (t%02d) unable to get out link for connection %d\n",
+      printf (": (DEDICATED) Get connection links for P%02d T%02d (t%02d) unable to get out link for connection %d\n",
           IDENTIFIERS (thread), connection->id);
     }
 
@@ -2089,7 +2090,7 @@ first_dest:
     if (debug&D_LINKS)
     {
       PRINT_TIMER (current_time);
-      printf (": Get connection links for P%02d T%02d (t%02d) unable to get in link for connection %d\n",
+      printf (": (DEDICATED) Get connection links for P%02d T%02d (t%02d) unable to get in link for connection %d\n",
           IDENTIFIERS (thread),connection->id);
     }
 
@@ -2133,7 +2134,7 @@ end_get_links:
   if (debug&D_LINKS)
   {
     PRINT_TIMER (current_time);
-    printf (": Get connection links for P%02d T%02d (t%02d) connection %d\n",
+    printf (": (DEDICATED) Get connection links for P%02d T%02d (t%02d) connection %d\n",
             IDENTIFIERS (thread), connection->id);
   }
 
@@ -2153,7 +2154,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
     if (debug&D_LINKS)
     {
       PRINT_TIMER (current_time);
-      printf (": Free input links for P%02d T%02d (t%02d) connection %d\n",
+      printf (": (DEDICATED) Free input links for P%02d T%02d (t%02d) connection %d\n",
           IDENTIFIERS (thread),
           connection->id);
     }
@@ -2165,7 +2166,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
       if (debug&D_LINKS)
       {
         PRINT_TIMER (current_time);
-        printf (": Free output links for P%02d T%02d (t%02d) connection %d\n",
+        printf (": (DEDICATED) Free output links for P%02d T%02d (t%02d) connection %d\n",
             IDENTIFIERS (thread),
             connection->id);
       }
@@ -2187,7 +2188,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
         if (debug&D_LINKS)
         {
           PRINT_TIMER (current_time);
-          printf (": free out link full duplex wakeup P%02d T%02d (t%02d) connection %d\n",
+          printf (": (DEDICATED) free out link full duplex wakeup P%02d T%02d (t%02d) connection %d\n",
                  IDENTIFIERS (first), connection->id);
         }
 
@@ -2219,7 +2220,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
       if (debug&D_LINKS)
       {
          PRINT_TIMER (current_time);
-         printf (": free in link wakeup P%02d T%02d (t%02d) connection %d\n",
+         printf (": (DEDICATED) free in link wakeup P%02d T%02d (t%02d) connection %d\n",
              IDENTIFIERS (first), connection->id);
       }
 
@@ -2242,7 +2243,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
     if (debug&D_LINKS)
     {
       PRINT_TIMER (current_time);
-      printf (": Free output links for P%02d T%02d (t%02d) connection %d\n",
+      printf (": (DEDICATED) Free output links for P%02d T%02d (t%02d) connection %d\n",
           IDENTIFIERS (thread),
           connection->id);
     }
@@ -2253,7 +2254,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
       if (debug&D_LINKS)
       {
         PRINT_TIMER (current_time);
-        printf (": Free input links for P%02d T%02d (t%02d) connection %d\n",
+        printf (": (DEDICATED) Free input links for P%02d T%02d (t%02d) connection %d\n",
             IDENTIFIERS (thread),
             connection->id);
       }
@@ -2275,7 +2276,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
         if (debug&D_LINKS)
         {
            PRINT_TIMER (current_time);
-         printf (": free in link full duplex wakeup P%02d T%02d (t%02d) connection %d\n",
+         printf (": (DEDICATED) free in link full duplex wakeup P%02d T%02d (t%02d) connection %d\n",
              IDENTIFIERS (first), connection->id);
         }
 
@@ -2306,7 +2307,7 @@ void LINKS_free_dedicated_connection_link(struct t_link   *link,
       if (debug&D_LINKS)
       {
          PRINT_TIMER (current_time);
-         printf (": free out link wakeup P%02d T%02d (t%02d) connection %d\n",
+         printf (": (DEDICATED) free out link wakeup P%02d T%02d (t%02d) connection %d\n",
              IDENTIFIERS (first), connection->id);
       }
 
