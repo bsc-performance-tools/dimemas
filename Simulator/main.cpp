@@ -728,6 +728,11 @@ REBOOT:
     }
 
     PARAVER_End(TRUE);
+
+
+    std::string  row_file(paraver_file);
+    row_file.replace(row_file.end()-4, row_file.end(), ".row");
+    SIMULATOR_Generate_row(row_file.c_str());
     TASK_End();
 
     struct rusage usage;

@@ -97,6 +97,7 @@ void SIMULATOR_Init(const char  *simulator_configuration_filename,
                     int    parameter_predefined_map,
                     int    parameter_tasks_per_node);
 
+void SIMULATOR_Generate_row(const char *row_filename);
 char *SIMULATOR_get_configuration_filename(void);
 int   SIMULATOR_get_number_of_nodes(void);
 int  *SIMULATOR_get_cpus_per_node(void);
