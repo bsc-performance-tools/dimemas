@@ -793,7 +793,8 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
 
 
     /* We guarantee that this connection exists */
-    assert (d_conn_id < 0 || d_conn_id >= Simulator.dedicated_connections_count);
+    //assert (d_conn_id < 0 || d_conn_id >= Simulator.dedicated_connections_count);
+    assert (d_conn_id > 0 || d_conn_id < Simulator.dedicated_connections_count);
 
     if (!SIMULATOR_dedicated_connection_exists(d_conn_id))
     {
@@ -837,13 +838,13 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
         return FALSE;
     }
 
-    if (!d_conn_check_condition(first_size_cond, &in_first_size_cond))
+    if (!d_conn_check_operand(first_size_cond, &in_first_size_cond))
     {
         generate_error(&SIMULATOR_error_message, "invalid first message size condition (%c)", first_size_cond);
         return FALSE;
     }
 
-    if (!d_conn_check_operand(operation, &in_op))
+    if (!d_conn_check_condition(operation, &in_op))
     {
         generate_error(&SIMULATOR_error_message, "invalid operation (%c)", operation);
         return FALSE;
@@ -855,7 +856,7 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
         return FALSE;
     }
 
-    if (!d_conn_check_condition(second_size_cond, &in_second_size_cond))
+    if (!d_conn_check_operand(second_size_cond, &in_second_size_cond))
     {
         generate_error(&SIMULATOR_error_message, "invalid second message size condition (%c)", second_size_cond);
         return FALSE;
@@ -896,10 +897,10 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
     memcpy(d_con->tags, tags, tags_size*sizeof(int));
 
     d_con->first_message_size      = first_message_size;
-    d_con->first_size_condition    = first_size_cond;
-    d_con->operation               = operation;
+    d_con->first_size_condition    = in_first_size_cond;
+    d_con->operation               = in_op;
     d_con->second_message_size     = second_message_size;
-    d_con->second_size_condition   = second_size_cond;
+    d_con->second_size_condition   = in_second_size_cond;
 
     d_con->number_of_communicators = comms_size;
     d_con->communicators           = (int*) malloc(comms_size*sizeof(int));
@@ -907,6 +908,9 @@ t_boolean SIMULATOR_set_dedicated_connection_definition(int    d_conn_id,
 
     d_con->startup                 = startup;
     d_con->flight_time             = flight_time;
+    /* Should not be initialized here? */
+    d_con->half_duplex = FALSE;
+    d_con->infinite_links = TRUE;
 
     insert_queue (&(Machines[s_machine_id].dedicated_connections.connections),
             (char*) d_con,
@@ -1149,7 +1153,7 @@ t_boolean d_conn_check_condition(char cond, int *out_cond)
         return TRUE;
     }
 
-    return TRUE;
+    return FALSE;
 }
 
 void SIMULATOR_reset_state()

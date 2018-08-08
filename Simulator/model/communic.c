@@ -505,6 +505,9 @@ void COMMUNIC_End()
 
             if (count_queue (&(task->recv)) != 0)
             {
+                printf("MACHINE:%d NODE:%d\n", 
+                        task->node->machine->id,
+                        task->node->nodeid);
                 warning (": COMMUNIC_end: Task %02d ends with %d threads waiting to recv a message:\n",
                         task->taskid,
                         count_queue (&(task->recv)));
@@ -544,6 +547,9 @@ void COMMUNIC_End()
 
             if (count_queue (&(task->send)) != 0)
             {
+                printf("MACHINE:%d NODE:%d\n", 
+                        task->node->machine->id,
+                        task->node->nodeid);
                 warning (": COMMUNIC_end: Task %02d ends with %d message(s) pending to send:\n",
                         task->taskid,
                         count_queue (&(task->send)));
@@ -582,6 +588,9 @@ void COMMUNIC_End()
 
             if (count_queue (&(task->mess_recv)) != 0)
             {
+                printf("MACHINE:%d NODE:%d\n", 
+                        task->node->machine->id,
+                        task->node->nodeid);
                 warning (": COMMUNIC_end: Task %02d ends with %d message(s) in reception queue:\n",
                         task->taskid,
                         count_queue (&(task->mess_recv)));
@@ -1596,9 +1605,11 @@ static void message_received (struct t_thread *thread)
                         if (debug & D_COMM)
                         {
                             PRINT_TIMER (current_time);
-                            printf (": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Busy Wait\n",
-                                    IDENTIFIERS (thread),
-                                    mess->dest);
+                            printf (": COMMUNIC_send\t M%02d P%02d T%02d (t%02d)"\
+                                    "-> T%02d Busy Wait\n",
+                                        thread->task->node->machine->id,
+                                        IDENTIFIERS (thread),
+                                        mess->dest);
                         }
 
                         account = current_account (partner);
@@ -3301,7 +3312,8 @@ void COMMUNIC_general (int value, struct t_thread *thread)
             COMMUNIC_external_resources_COM_TIMER_OUT(thread);
             break;
         case COM_TIMER_OUT_RESOURCES_DED:
-            COMMUNIC_dedicated_connection_COM_TIMER_OUT(thread);
+            //COMMUNIC_dedicated_connection_COM_TIMER_OUT(thread);
+            COMMUNIC_dedicated_resources_COM_TIMER_OUT(thread);
             break;
         case COM_TIMER_OUT_RESOURCES_ACC:
             COM_TIMER_OUT_free_accelerator_resources (thread);
@@ -5896,22 +5908,14 @@ void really_send_dedicated_connection (struct t_thread               *thread,
                 );
         thread->physical_send = current_time;
         thread->last_paraver = current_time;
-        /* ti = transferencia(
+
+        transferencia(
            mess->mess_size,
            DEDICATED_CONNECTION_COM_TYPE,
            thread,
            connection,
-           &t_recursos
-           ); */
-
-        transferencia (
-                mess->mess_size,
-                EXTERNAL_NETWORK_COM_TYPE,
-                thread,
-                NULL,
-                &ti,
-                &t_recursos
-                );
+           &ti,
+           &t_recursos);
 
         if (t_recursos > ti)
         {
@@ -5922,6 +5926,7 @@ void really_send_dedicated_connection (struct t_thread               *thread,
 
             panic ("resources > transmission time!\n");
         }
+
         /* Abans de programar la fi de la comunicacio, es programa la fi de la
            utilització dels recursos reservats. Però, de moment, ho deixo al
            mateix instant de temps. */
@@ -5935,21 +5940,19 @@ void really_send_dedicated_connection (struct t_thread               *thread,
         /* Es programa el final de la comunicació punt a punt. */
         FLOAT_TO_TIMER (ti, tmp_timer);
         ADD_TIMER (current_time, tmp_timer, tmp_timer);
-        thread->event = EVENT_timer (tmp_timer,
-                NOT_DAEMON,
-                M_COM,
-                thread,
-                COM_TIMER_OUT);
+        thread->event = EVENT_timer (
+                            tmp_timer,
+                            NOT_DAEMON,
+                            M_COM,
+                            thread,
+                            COM_TIMER_OUT);
 
         if (debug & D_COMM)
         {
             PRINT_TIMER (current_time);
-            printf (
-                    ": COMMUNIC\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (DEDICATED) message\n",
-                    IDENTIFIERS (thread),
-                    mess->dest,
-                    mess->mess_tag
-                   );
+            printf (": COMMUNIC\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND"\
+                    "(DEDICATED) message\n",IDENTIFIERS (thread),mess->dest,
+                    mess->mess_tag);
         }
     }
 }
@@ -6151,10 +6154,8 @@ void really_send (struct t_thread *thread)
         panic ("Task partner not found!\n");
     }
 
-    /* JGG: Ahora obtenemos el 'kind' por a partir del mensaje
-       kind2 = get_communication_type (task, task_partner, mess->mess_tag,
-       mess->mess_size, &connection);
-       */
+    get_communication_type (task, task_partner, mess->mess_tag,
+            mess->mess_size, &connection);
 
     kind = mess->comm_type;
 
@@ -6184,6 +6185,7 @@ void really_send (struct t_thread *thread)
             really_send_external_network (thread);
             break;
         case DEDICATED_CONNECTION_COM_TYPE:
+            //really_send_external_network (thread);
             really_send_dedicated_connection (thread, connection);
             break;
         case EXTERNAL_MODEL_COM_TYPE:

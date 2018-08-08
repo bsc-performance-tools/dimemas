@@ -443,6 +443,7 @@ void TASK_New_Ptask(char *trace_name,
             if (i == Ptask->acc_tasks_count)
                 TASK_New_Task(Ptask, new_taskid, /*tasks_mapping[new_taskid],*/ FALSE);
         }
+        Update_Node_Info(Ptask->tasks, Ptask->tasks_count, tasks_mapping);
     }
 
     insert_queue(&Ptask_queue, (char*) Ptask, (t_priority) Ptask->Ptaskid);
