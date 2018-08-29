@@ -215,7 +215,7 @@ void SIMULATOR_Generate_row(const char *row_filename)
                 name = "GPU";
             else
                 name = "CPU";
-            fprintf(row_file, "CPU %d.%d.%d\n", nodes[i].machine->id,
+            fprintf(row_file, "%s %d.%d.%d\n",name, nodes[i].machine->id,
                     nodes[i].nodeid, cpu->cpuid);
 
         }
