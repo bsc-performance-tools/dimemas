@@ -8,28 +8,29 @@ Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 	BUGFIX: explanation of bug solved 
 	CHANGES: explanation of codification changes 
 
-2018 / 08 / 08 - Jmartine - All
+2018 / 08 / 08 - Jmartine - Simulator
 	CHANGE: 	Now the paraver ROW file is generated taking in account the hierarchy 
 				and mapping of tasks.
 
-2018 / 08 / 06 - Jmartine - All
-	BUGFIX: 	Didicated connection entity was fixed and added debug information for l				              inks management and some	connection messages management are fixed.
+2018 / 08 / 06 - Jmartine - Simulator
+	BUGFIX: 	Dedicated connection entity was fixed and added debug information for 
+				links management and some	connection messages management are fixed.
 
-2018 / 08 / 03 - Jmartine - All
-	BUGFIX: 	Didicated connection record is  fixed and task mapping when manual 
-				mapping is provuided is fixed.
+2018 / 08 / 03 - Jmartine - Simulator
+	BUGFIX: 	Dedicated connection record is  fixed and task mapping when manual 
+				mapping is provided is fixed.
 
 2018 / 06 / 13 - Jmartine - All
-	BUGFIX: 	Speedup the task initialization by traverse trace file just once instead
-				of for every task in order to get hte first record time and removed 
+	CHANGE: 	Speedup the task initialization by traverse trace file just once instead
+				of for every task in order to get the first record time and removed 
 				unnecesary warnings.
 				
-2018 / 06 / 12 - Jmartine - All
+2018 / 06 / 12 - Jmartine - Simulator
 	CHANGE: 	Injected special events to dimemas trace that informs dimemas about ideal 
 				blocks eliminated. Simulated trace is not translating ideal state as running
 				and null pointers are checkd before free current_state.
 
-2018 / 06 / 12 - ckc - All
+2018 / 06 / 12 - ckc - prv2dim
 	BUGFIX: 	Fix of flag -n during the conversion of trace file from .prv to .dim 
 				prv2dim which Will eliminate the first ideal state.
 
