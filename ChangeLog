@@ -14,10 +14,10 @@ Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 
 2018 / 08 / 06 - Jmartine - Simulator
 	BUGFIX: 	Dedicated connection entity was fixed and added debug information for 
-				links management and some	connection messages management are fixed.
+				links management and some connection messages management are fixed.
 
 2018 / 08 / 03 - Jmartine - Simulator
-	BUGFIX: 	Dedicated connection record is  fixed and task mapping when manual 
+	BUGFIX: 	Dedicated connection record is fixed and task mapping when manual 
 				mapping is provided is fixed.
 
 2018 / 06 / 13 - Jmartine - All
@@ -26,7 +26,7 @@ Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 				unnecesary warnings.
 				
 2018 / 06 / 12 - Jmartine - Simulator
-	CHANGE: 	Injected special events to dimemas trace that informs dimemas about ideal 
+	CHANGE: 	Injected special events to dimemas trace that informs dimemas about idle 
 				blocks eliminated. Simulated trace is not translating ideal state as running
 				and null pointers are checkd before free current_state.
 
