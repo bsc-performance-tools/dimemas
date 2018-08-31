@@ -185,17 +185,33 @@ void SIMULATOR_Generate_row(const char *row_filename)
     
     // Machines information (SYSTEM) 
     // Not yet implemented in paraver
+
     fprintf(row_file, "LEVEL SYSTEM SIZE %d\n",  Simulator.number_machines);
     for (unsigned int i=0; i < Simulator.number_machines; ++i)
-        fprintf(row_file,"Machine %d (%s %s)\n", Machines[i].id, 
-                Machines[i].name, Machines[i].instrumented_arch);
+    {
+        char machine_name[50];
+        if(strlen(Machines[i].name) == 0)
+            sprintf( machine_name, "unnamed_%d", Machines[i].id);
+        else
+            memcpy(machine_name, Machines[i].name, strlen(Machines[i].name)+1);
+        fprintf(row_file,"%s (%s)\n", machine_name, 
+            Machines[i].instrumented_arch);
+    }
     fprintf(row_file, "\n");
     
     // Node information
     fprintf(row_file, "LEVEL NODE SIZE %d\n",  nodes_size);
     for (unsigned int i=0; i < nodes_size; ++i)
-        fprintf(row_file, "Node %d.%d (%s)\n", nodes[i].machine->id, 
-                nodes[i].nodeid, nodes[i].arch);
+    {
+        char machine_name[50];
+        if(strlen(nodes[i].machine->name) == 0)
+            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id);
+        else
+            memcpy(machine_name, nodes[i].machine->name, 
+                    strlen(nodes[i].machine->name)+1);
+        fprintf(row_file, "%s.%d (%s)\n", machine_name,
+            nodes[i].nodeid, nodes[i].arch);
+    }
     fprintf(row_file, "\n");
     
     // CPU information
@@ -205,6 +221,14 @@ void SIMULATOR_Generate_row(const char *row_filename)
 
     fprintf(row_file, "LEVEL CPU SIZE %d\n",  ncpus);
     for (unsigned int i=0; i < nodes_size; ++i)
+    { 
+        char machine_name[50];
+        if(strlen(nodes[i].machine->name) == 0)
+            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id);
+        else
+            memcpy(machine_name, nodes[i].machine->name, 
+                    strlen(nodes[i].machine->name)+1);
+
         for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i].Cpus); 
             cpu != C_NIL; 
             cpu = (struct t_cpu *)next_queue(&nodes[i].Cpus)
@@ -215,10 +239,11 @@ void SIMULATOR_Generate_row(const char *row_filename)
                 name = "GPU";
             else
                 name = "CPU";
-            fprintf(row_file, "%s %d.%d.%d\n",name, nodes[i].machine->id,
-                    nodes[i].nodeid, cpu->cpuid);
+            fprintf(row_file, "%s %s.%d.%d\n", name, machine_name,
+                nodes[i].nodeid, cpu->cpuid);
 
         }
+    }
     fprintf(row_file, "\n");
 
     
