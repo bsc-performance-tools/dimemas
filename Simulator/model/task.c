@@ -218,7 +218,7 @@ void TASK_Init(int sintetic_io_applications)
             die("Error retrieving communicators information from trace: %s",
                     DATA_ACCESS_get_error());
         }
-
+    
         for (comm  = (struct t_communicator*) head_queue (comms_queue);
                 comm != COM_NIL;
                 comm  = (struct t_communicator*) next_queue(comms_queue))
@@ -239,12 +239,19 @@ void TASK_Init(int sintetic_io_applications)
             for (i=0; i<comm->size; ++i)
             {
                 int task_id = comm->global_ranks[i];
-                struct t_task *current_task = &Ptask->tasks[task_id];
-                struct t_node *current_node = current_task->node;
-                struct t_machine* current_machine = current_node->machine;
-
-                nodes_id[i] = current_node->nodeid;
-                machines_id[i] = current_machine->id;
+                if(task_id < 0 || task_id >= Ptask->tasks_count)
+                {
+                    printf("** Warning: Comm_id = %d has invalid task_id = %d **\n",
+                            comm->communicator_id, task_id);
+                }
+                else
+                {
+                    struct t_task *current_task = &Ptask->tasks[task_id];
+                    struct t_node *current_node = current_task->node;
+                    struct t_machine* current_machine = current_node->machine;
+                    nodes_id[i] = current_node->nodeid;
+                    machines_id[i] = current_machine->id;
+                }
             }
 
             qsort(nodes_id, comm->size, sizeof(int), cmpfunc);
