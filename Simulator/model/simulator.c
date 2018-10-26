@@ -288,14 +288,22 @@ void SIMULATOR_Generate_row(const char *row_filename)
         for (unsigned int i=0; i < Ptask->tasks_count; ++i)
             for (unsigned j=0; j<Ptask->tasks[i].threads_count; ++j)
             {
-                char * name;
-                if (Ptask->tasks->threads[j]->host)
-                    name = "THREAD";
-                else
-                    name = "CUDA";
+                if(Ptask->tasks->accelerator)
+                {
+                    char *name;
+                    if (Ptask->tasks->threads[j]->host)
+                        name = "THREAD";
+                    else
+                        name = "CUDA";
 
-                fprintf(row_file, "%s %d.%d.%d\n", 
-                    name,
+                    fprintf(row_file, "%s %d.%d.%d\n", 
+                        name,
+                        Ptask->Ptaskid,
+                        Ptask->tasks[i].taskid, 
+                        Ptask->tasks[i].threads[j]->threadid);
+                }
+                else
+                fprintf(row_file, "THREAD %d.%d.%d\n", 
                     Ptask->Ptaskid,
                     Ptask->tasks[i].taskid, 
                     Ptask->tasks[i].threads[j]->threadid);
