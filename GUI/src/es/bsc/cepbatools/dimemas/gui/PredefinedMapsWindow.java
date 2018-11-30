@@ -163,6 +163,7 @@ public class PredefinedMapsWindow extends GUIWindow {
       }
     });
 
+    b_save.setFont(b_save.getFont());
     b_save.setText("Save");
     b_save.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -250,10 +251,11 @@ public class PredefinedMapsWindow extends GUIWindow {
 
   private void b_closeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_closeActionPerformed
     // TODO add your handling code here:
-    closeEvent();
+   // closeEvent();
+   dispose();
   }//GEN-LAST:event_b_closeActionPerformed
 
-  private void rb_nTasksPerNodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_nTasksPerNodeActionPerformed
+      private void rb_nTasksPerNodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_nTasksPerNodeActionPerformed
 
     MappingData.MapResult result = data.map.new MapResult();
 
@@ -341,10 +343,20 @@ public class PredefinedMapsWindow extends GUIWindow {
     setState();
   }//GEN-LAST:event_tf_nTasksPerNodeActionPerformed
 
-  private void b_saveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_saveActionPerformed
-    
-    /* Check a possible value change in the text field that indicates the
+  private void b_saveActionPerformed(java.awt.event.ActionEvent evt) 
+  {
+    /*GEN-FIRST:event_b_saveActionPerformed
+     Check a possible value change in the text field that indicates the
        tasks per node */
+    data.map.setMapInfo(currentMapInfo);
+    data.map.setMap(currentMap);
+    data.map.setNTasksPerNode(nTasksPerNode);
+   
+    if(data.map.getMapInfo() == Data.NO_MAP)
+    {
+        Tools.showWarningMessage("Please select the mapping first");
+        this.setVisible(true);
+    }
     if (rb_nTasksPerNode.isSelected())
     {
       try
@@ -356,8 +368,10 @@ public class PredefinedMapsWindow extends GUIWindow {
         Tools.showErrorMessage("Wrong tasks per node value");
         return;
       }
+      dispose();
     }
     
+    dispose();
     data.map.setMapInfo(currentMapInfo);
     data.map.setMap(currentMap);
     data.map.setNTasksPerNode(nTasksPerNode);
@@ -386,7 +400,7 @@ public class PredefinedMapsWindow extends GUIWindow {
     }
   }
   
-  private void closeEvent()
+ /* private void closeEvent()
   {
     // ("Closing event!");
     if (data.map.getMapInfo() == Data.NO_MAP)
@@ -398,7 +412,7 @@ public class PredefinedMapsWindow extends GUIWindow {
     {
       dispose();
     }
-  }
+  }*/
   
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JButton b_close;

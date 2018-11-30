@@ -84,6 +84,7 @@ public class NodeWindow extends GUIWindow
   //Accelerator node info
   private JCheckBox  cb_acc				  = new JCheckBox("Heterogenous node");
   private JTextField tf_acc				  = new JTextField(18);
+  private JTextField tf_acc_number	 	  = new JTextField(18);
   private JTextField tf_acc_startup	 	  = new JTextField(18);
   private JTextField tf_acc_mem_startup	  = new JTextField(18);
   private JTextField tf_acc_bandwidth     = new JTextField(18);
@@ -151,6 +152,7 @@ public class NodeWindow extends GUIWindow
     /* If nodes has accelerator information */
     if (data.nodes_information.node[index].getAcc())
     {
+	    tf_acc_number.setText(data.nodes_information.node[index].getAccNumber());
 	    tf_acc_startup.setText(data.nodes_information.node[index].getAccStartup());
 	    tf_acc_mem_startup.setText(data.nodes_information.node[index].getAccMemStartup());
 	    tf_acc_bandwidth.setText(data.nodes_information.node[index].getAccBandwidth());
@@ -305,6 +307,7 @@ public class NodeWindow extends GUIWindow
       /* If heterogenous node checkbox is enabled */
       if (cb_acc.isSelected())
       {
+    	  data.nodes_information.node[index].setAccNumber(tf_acc_startup.getText());
     	  data.nodes_information.node[index].setAccStartup(tf_acc_startup.getText());
     	  data.nodes_information.node[index].setAccMemStartup(tf_acc_mem_startup.getText());
     	  data.nodes_information.node[index].setAccBandwidth(tf_acc_bandwidth.getText());
@@ -478,7 +481,7 @@ public class NodeWindow extends GUIWindow
   private void drawAccPanel(int nodeid)
   {
     JPanel AccPanel = new JPanel();
-    AccPanel.setLayout(new GridLayout(6,2,5,5));
+    AccPanel.setLayout(new GridLayout(7,2,5,5));
     AccPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
                                                                    "Accelerator parameters"));
     /* Checkbox for enabling accelerator information */
@@ -495,6 +498,7 @@ public class NodeWindow extends GUIWindow
 			if (cb_acc.isSelected())
 			{
 				//Enables params
+                tf_acc_number.setEnabled(true);
 				tf_acc_startup.setEnabled(true);
 				tf_acc_mem_startup.setEnabled(true);
 				tf_acc_bandwidth.setEnabled(true);
@@ -504,6 +508,7 @@ public class NodeWindow extends GUIWindow
 			else if (!cb_acc.isSelected())
 			{
 				//Disable params
+                tf_acc_number.setEnabled(false);
 				tf_acc_startup.setEnabled(false);
 				tf_acc_mem_startup.setEnabled(false);
 				tf_acc_bandwidth.setEnabled(false);
@@ -514,6 +519,11 @@ public class NodeWindow extends GUIWindow
 	});
 
     //Accelerator params enabled only if checkbox enabled
+    
+    AccPanel.add(new JLabel("Number of gpu [s]"));
+    tf_acc_number.setEnabled(enable_acc);
+    AccPanel.add(tf_acc_number);
+
     AccPanel.add(new JLabel("Startup [s]"));
     tf_acc_startup.setEnabled(enable_acc);
     AccPanel.add(tf_acc_startup);

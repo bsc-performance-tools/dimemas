@@ -366,11 +366,12 @@ public class NodeData
 	  }
     
       node[nodeId].setAcc(true);
-      node[nodeId].setAccStartup(Tools.blanks(accNodeFields[1]));
-      node[nodeId].setAccMemStartup(Tools.blanks(accNodeFields[2]));
-      node[nodeId].setAccBandwidth(Tools.blanks(accNodeFields[3]));
-      node[nodeId].setAccBuses(Tools.blanks(accNodeFields[4]));
-      node[nodeId].setAccRatio(Tools.blanks(accNodeFields[5]));
+      node[nodeId].setAccNumber(Tools.blanks(accNodeFields[1]));
+      node[nodeId].setAccStartup(Tools.blanks(accNodeFields[2]));
+      node[nodeId].setAccMemStartup(Tools.blanks(accNodeFields[3]));
+      node[nodeId].setAccBandwidth(Tools.blanks(accNodeFields[4]));
+      node[nodeId].setAccBuses(Tools.blanks(accNodeFields[5]));
+      node[nodeId].setAccRatio(Tools.blanks(accNodeFields[6]));
       
     } catch(NumberFormatException e)
     {
@@ -681,6 +682,7 @@ public class NodeData
           aux[i].setWANStartup(node[l].getWANStartup());
           
           aux[i].setAcc(node[l].getAcc());
+          aux[i].setAccNumber(node[l].getAccNumber());
           aux[i].setAccStartup(node[l].getAccStartup());
           aux[i].setAccMemStartup(node[l].getAccMemStartup());
           aux[i].setAccBandwidth(node[l].getAccBandwidth());
@@ -730,6 +732,7 @@ public class NodeData
           aux[l].setWANStartup(node[i].getWANStartup());
           
           aux[l].setAcc(node[i].getAcc());
+          aux[l].setAccNumber(node[i].getAccNumber());
           aux[l].setAccStartup(node[i].getAccStartup());
           aux[l].setAccMemStartup(node[i].getAccMemStartup());
           aux[l].setAccBandwidth(node[i].getAccBandwidth());

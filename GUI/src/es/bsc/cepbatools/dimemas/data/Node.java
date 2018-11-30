@@ -69,6 +69,7 @@ public class Node
   static public final String DEFAULT_WAN_STARTUP          = "0.0";
   
   
+  static public final String DEFAULT_ACC_NUMBER		      = "1";
   static public final String DEFAULT_ACC_STARTUP		  = "0.0";
   static public final String DEFAULT_ACC_MEM_STARTUP	  = "0.0";
   static public final String DEFAULT_ACC_BANDWIDTH		  = "0.0";
@@ -81,7 +82,7 @@ public class Node
   static public final int    NODE_RECORD_WITH_NODE_ID_FIELD_COUNT  = 14;
   static public final int    NODE_RECORD_FIELD_COUNT               = 13;
   
-  static public final int	 ACC_NODE_RECORD_FIELD_COUNT = 6;
+  static public final int	 ACC_NODE_RECORD_FIELD_COUNT = 7;
 
   private String machine_id;           // Machine to which belongs the node.
   private String node_id;              // Node identificator.
@@ -102,6 +103,7 @@ public class Node
   private String wan_startup;          // External net startup.
   
   private Boolean acc;
+  private String acc_number;
   private String acc_startup;
   private String acc_mem_startup;
   private String acc_bandwidth;
@@ -124,7 +126,7 @@ public class Node
     architecture         = DEFAULT_ARCHITECTURE;
     processors           = DEFAULT_PROCESSORS;
     cpu_ratio            = DEFAULT_CPU_RATIO;
-
+    
     intra_node_startup   = DEFAULT_INTRA_NODE_STARTUP;
     intra_node_bandwidth = DEFAULT_INTRA_NODE_BANDWIDTH;
     intra_node_buses     = DEFAULT_INTRA_NODE_BUSES;
@@ -138,6 +140,7 @@ public class Node
     wan_startup          = DEFAULT_WAN_STARTUP;
     
     acc					 = DEFAULT_ACC;
+    acc_number           = DEFAULT_ACC_NUMBER;
     acc_startup			 = DEFAULT_ACC_STARTUP;
     acc_mem_startup 	 = DEFAULT_ACC_MEM_STARTUP;
     acc_bandwidth		 = DEFAULT_ACC_BANDWIDTH;
@@ -154,26 +157,27 @@ public class Node
   */
   public boolean defaultValues()
   {
-    if(machine_id.equalsIgnoreCase(DEFAULT_MACHINE_ID) &&
-       node_id.equalsIgnoreCase(DEFAULT_NODE_ID) &&
-       architecture.equalsIgnoreCase(DEFAULT_ARCHITECTURE) &&
-       processors.equalsIgnoreCase(DEFAULT_PROCESSORS) &&
-       cpu_ratio.equalsIgnoreCase(DEFAULT_CPU_RATIO) &&
-       intra_node_startup.equalsIgnoreCase(DEFAULT_INTRA_NODE_STARTUP) &&
-       intra_node_bandwidth.equalsIgnoreCase(DEFAULT_INTRA_NODE_BANDWIDTH) &&
-       intra_node_buses.equalsIgnoreCase(DEFAULT_INTRA_NODE_BUSES) &&
-       intra_node_in_links.equalsIgnoreCase(DEFAULT_INTRA_NODE_IN_LINKS) &&
-       intra_node_out_links.equalsIgnoreCase(DEFAULT_INTRA_NODE_OUT_LINKS) &&
-       inter_node_startup.equalsIgnoreCase(DEFAULT_INTER_NODE_STARTUP) &&
-       inter_node_in_links.equalsIgnoreCase(DEFAULT_INTER_NODE_IN_LINKS) &&
-       inter_node_out_links.equalsIgnoreCase(DEFAULT_INTER_NODE_OUT_LINKS) &&
-       wan_startup.equalsIgnoreCase(DEFAULT_WAN_STARTUP) &&
+    if(machine_id.equalsIgnoreCase(DEFAULT_MACHINE_ID)                      &&
+       node_id.equalsIgnoreCase(DEFAULT_NODE_ID)                            &&
+       architecture.equalsIgnoreCase(DEFAULT_ARCHITECTURE)                  &&
+       processors.equalsIgnoreCase(DEFAULT_PROCESSORS)                      &&
+       cpu_ratio.equalsIgnoreCase(DEFAULT_CPU_RATIO)                        &&
+       intra_node_startup.equalsIgnoreCase(DEFAULT_INTRA_NODE_STARTUP)      &&
+       intra_node_bandwidth.equalsIgnoreCase(DEFAULT_INTRA_NODE_BANDWIDTH)  &&
+       intra_node_buses.equalsIgnoreCase(DEFAULT_INTRA_NODE_BUSES)          &&
+       intra_node_in_links.equalsIgnoreCase(DEFAULT_INTRA_NODE_IN_LINKS)    &&
+       intra_node_out_links.equalsIgnoreCase(DEFAULT_INTRA_NODE_OUT_LINKS)  &&
+       inter_node_startup.equalsIgnoreCase(DEFAULT_INTER_NODE_STARTUP)      &&
+       inter_node_in_links.equalsIgnoreCase(DEFAULT_INTER_NODE_IN_LINKS)    &&
+       inter_node_out_links.equalsIgnoreCase(DEFAULT_INTER_NODE_OUT_LINKS)  &&
+       wan_startup.equalsIgnoreCase(DEFAULT_WAN_STARTUP)                    &&
        
-       acc.equals(DEFAULT_ACC)							 &&
-       acc_startup.equalsIgnoreCase(DEFAULT_ACC_STARTUP) &&
-       acc_mem_startup.equalsIgnoreCase(DEFAULT_ACC_MEM_STARTUP) &&
-       acc_bandwidth.equalsIgnoreCase(DEFAULT_ACC_BANDWIDTH) &&
-       acc_buses.equalsIgnoreCase(DEFAULT_ACC_BUSES) &&
+       acc.equals(DEFAULT_ACC)							                    &&
+       acc_number.equalsIgnoreCase(DEFAULT_ACC_NUMBER)                      &&
+       acc_startup.equalsIgnoreCase(DEFAULT_ACC_STARTUP)                    &&
+       acc_mem_startup.equalsIgnoreCase(DEFAULT_ACC_MEM_STARTUP)            &&
+       acc_bandwidth.equalsIgnoreCase(DEFAULT_ACC_BANDWIDTH)                &&
+       acc_buses.equalsIgnoreCase(DEFAULT_ACC_BUSES)                        &&
        acc_ratio.equalsIgnoreCase(DEFAULT_ACC_RATIO))
     {
       return true;
@@ -211,6 +215,7 @@ public class Node
            this.inter_node_out_links.equals(otherNode.getInterNodeOutLinks()) &&
            this.wan_startup.equals(otherNode.getWANStartup())				  &&
            this.acc.equals(otherNode.getAcc())								  &&
+           this.acc_number.equals(otherNode.getAccNumber())				      &&
            this.acc_startup.equals(otherNode.getAccStartup())				  &&
            this.acc_mem_startup.equals(otherNode.getAccMemStartup())		  &&
            this.acc_bandwidth.equals(otherNode.getAccBandwidth())			  &&
@@ -266,6 +271,7 @@ public class Node
   {
 	  target.writeBytes(Data.ACC_NODE);
 	  target.writeBytes(getNode_id() + ", ");
+	  target.writeBytes(getAccNumber() + ", ");
 	  target.writeBytes(getAccStartup() + ", ");
 	  target.writeBytes(getAccMemStartup() + ", ");
 	  target.writeBytes(getAccBandwidth() + ", ");
@@ -353,7 +359,10 @@ public class Node
   {
 	  return acc;
   }
-  
+  public String getAccNumber()
+  {
+      return acc_number;
+  }
   public String getAccStartup()
   {
 	  return acc_startup;
@@ -576,7 +585,18 @@ public class Node
 	    throw e;
 	  }
   }
-  
+  public void setAccNumber(String value) throws Exception 
+  {
+      try
+      {
+          Integer.parseInt(value);
+          acc_number = value;
+      }catch(NumberFormatException e)
+      {
+          Tools.showErrorMessage("WRONG ACCELERATOR NUMBER");
+          throw e;
+      }
+  }
   public void setAccStartup(String value) throws Exception
   {
     try
