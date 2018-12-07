@@ -357,6 +357,10 @@ public class PredefinedMapsWindow extends GUIWindow {
         Tools.showWarningMessage("Please select the mapping first");
         this.setVisible(true);
     }
+    else
+    {
+        dispose();
+    }
     if (rb_nTasksPerNode.isSelected())
     {
       try
@@ -370,8 +374,6 @@ public class PredefinedMapsWindow extends GUIWindow {
       }
       dispose();
     }
-    
-    dispose();
     data.map.setMapInfo(currentMapInfo);
     data.map.setMap(currentMap);
     data.map.setNTasksPerNode(nTasksPerNode);
