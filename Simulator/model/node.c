@@ -177,11 +177,12 @@ void NODE_Fill_Node_Fields(struct t_node *node,
 }
 
 void NODE_set_acc(int node_id,
-									double latency,
-									double memory_latency,
-									double bandwith,
-									int num_acc_buses,
-									double relative)
+        int num_gpu_in_node,
+		double latency,
+		double memory_latency,
+		double bandwith,
+		int num_acc_buses,
+		double relative)
 {
 	struct t_node *node = get_node_by_id(node_id);
 	if (node == N_NIL) 
@@ -192,6 +193,7 @@ void NODE_set_acc(int node_id,
     /*if user select the heterogenous accelerator it will create
   //a node with GPU *chetan */
 	node->accelerator = TRUE;
+    node->acc.num_gpu_in_node = num_gpu_in_node;
 	node->acc.bandwidth = (t_bandwidth)bandwith;
 	node->acc.startup = (dimemas_timer) latency;
 	node->acc.memory_startup= (dimemas_timer) memory_latency;
@@ -200,7 +202,7 @@ void NODE_set_acc(int node_id,
 
 	create_queue(&(node->acc.threads_in_link));
 	create_queue(&(node->acc.wait_for_link));
-
+printf("number of gpu(s) = %d \n",num_gpu_in_node);
   /* Adding GPU to heterogeneous node */
   int gpu_id = count_queue(&node->Cpus) +1;
 

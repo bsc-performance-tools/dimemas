@@ -249,13 +249,9 @@ public class PredefinedMapsWindow extends GUIWindow {
     );
   }// </editor-fold>//GEN-END:initComponents
 
-  private void b_closeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_closeActionPerformed
-    // TODO add your handling code here:
-   // closeEvent();
-   dispose();
-  }//GEN-LAST:event_b_closeActionPerformed
 
-      private void rb_nTasksPerNodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_nTasksPerNodeActionPerformed
+    private void rb_nTasksPerNodeActionPerformed(java.awt.event.ActionEvent evt) {
+          //GEN-FIRST:event_rb_nTasksPerNodeActionPerformed
 
     MappingData.MapResult result = data.map.new MapResult();
 
@@ -282,7 +278,8 @@ public class PredefinedMapsWindow extends GUIWindow {
     setState();
   }//GEN-LAST:event_rb_nTasksPerNodeActionPerformed
 
-  private void rb_interleavedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_interleavedActionPerformed
+  private void rb_interleavedActionPerformed(java.awt.event.ActionEvent evt) {
+      //GEN-FIRST:event_rb_interleavedActionPerformed
     MappingData.MapResult result = data.map.new MapResult();
     
     // System.out.println("Interleaved selected");
@@ -299,7 +296,8 @@ public class PredefinedMapsWindow extends GUIWindow {
     setState();
   }//GEN-LAST:event_rb_interleavedActionPerformed
 
-  private void rb_filledNodesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_filledNodesActionPerformed
+  private void rb_filledNodesActionPerformed(java.awt.event.ActionEvent evt) {
+      //GEN-FIRST:event_rb_filledNodesActionPerformed
     MappingData.MapResult result = data.map.new MapResult();
     
     // ("Fill Nodes Selected");
@@ -316,7 +314,8 @@ public class PredefinedMapsWindow extends GUIWindow {
     setState();
   }//GEN-LAST:event_rb_filledNodesActionPerformed
 
-  private void tf_nTasksPerNodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_nTasksPerNodeActionPerformed
+  private void tf_nTasksPerNodeActionPerformed(java.awt.event.ActionEvent evt) {
+      //GEN-FIRST:event_tf_nTasksPerNodeActionPerformed
     
     MappingData.MapResult result = data.map.new MapResult();
 
@@ -348,19 +347,6 @@ public class PredefinedMapsWindow extends GUIWindow {
     /*GEN-FIRST:event_b_saveActionPerformed
      Check a possible value change in the text field that indicates the
        tasks per node */
-    data.map.setMapInfo(currentMapInfo);
-    data.map.setMap(currentMap);
-    data.map.setNTasksPerNode(nTasksPerNode);
-   
-    if(data.map.getMapInfo() == Data.NO_MAP)
-    {
-        Tools.showWarningMessage("Please select the mapping first");
-        this.setVisible(true);
-    }
-    else
-    {
-        dispose();
-    }
     if (rb_nTasksPerNode.isSelected())
     {
       try
@@ -372,12 +358,39 @@ public class PredefinedMapsWindow extends GUIWindow {
         Tools.showErrorMessage("Wrong tasks per node value");
         return;
       }
+     // dispose();
+    }
+    //data.map.setMapInfo(currentMapInfo);
+    //data.map.setMap(currentMap);
+    //data.map.setNTasksPerNode(nTasksPerNode);
+    if(data.map.getMapInfo() == Data.NO_MAP)
+    {
+        Tools.showWarningMessage("Please select the mapping first");
+        this.setVisible(true);
+    }
+  else
+  {
+      dispose();
+  }
+    //dispose();
+   data.map.setMapInfo(currentMapInfo);
+   data.map.setMap(currentMap);
+   data.map.setNTasksPerNode(nTasksPerNode);
+  }//GEN-LAST:event_b_saveActionPerformed
+
+  private void b_closeActionPerformed(java.awt.event.ActionEvent evt) {
+    //GEN-FIRST:event_b_closeActionPerformed
+    // TODO add your handling code here:
+    if (data.map.getMapInfo() == Data.NO_MAP)
+    {
+      Tools.showWarningMessage("Please select a map before closing");
+      this.setVisible(true);
+    }
+    else
+    {
       dispose();
     }
-    data.map.setMapInfo(currentMapInfo);
-    data.map.setMap(currentMap);
-    data.map.setNTasksPerNode(nTasksPerNode);
-  }//GEN-LAST:event_b_saveActionPerformed
+  }//GEN-LAST:event_b_closeActionPerformed
 
   private void setState()
   {
@@ -405,15 +418,6 @@ public class PredefinedMapsWindow extends GUIWindow {
  /* private void closeEvent()
   {
     // ("Closing event!");
-    if (data.map.getMapInfo() == Data.NO_MAP)
-    {
-      Tools.showWarningMessage("Please select a map before closing");
-      this.setVisible(true);
-    }
-    else
-    {
-      dispose();
-    }
   }*/
   
   // Variables declaration - do not modify//GEN-BEGIN:variables

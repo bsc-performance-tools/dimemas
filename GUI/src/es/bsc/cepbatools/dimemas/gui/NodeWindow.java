@@ -232,7 +232,12 @@ public class NodeWindow extends GUIWindow
     /* If heterogenous node checkbox is enabled */
     if (cb_acc.isSelected())
     {
-	    if(tf_acc_startup.getText().equalsIgnoreCase(""))
+        if(tf_acc_number.getText().equalsIgnoreCase(""))
+        {
+            Tools.showWarningMessage("Number of GPU missing");
+            return false;
+        }
+	    else if(tf_acc_startup.getText().equalsIgnoreCase(""))
 	    {
 	      Tools.showWarningMessage("Accelerator startup missing");
 	      return false;

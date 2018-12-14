@@ -69,7 +69,7 @@ public class Node
   static public final String DEFAULT_WAN_STARTUP          = "0.0";
   
   
-  static public final String DEFAULT_ACC_NUMBER		      = "1";
+  static public final String DEFAULT_ACC_NUMBER		      = "DEFAULT_PROCESSORS";
   static public final String DEFAULT_ACC_STARTUP		  = "0.0";
   static public final String DEFAULT_ACC_MEM_STARTUP	  = "0.0";
   static public final String DEFAULT_ACC_BANDWIDTH		  = "0.0";
@@ -593,7 +593,7 @@ public class Node
           acc_number = value;
       }catch(NumberFormatException e)
       {
-          Tools.showErrorMessage("WRONG ACCELERATOR NUMBER");
+          Tools.showErrorMessage("WRONG NUMBER OF GPU'S");
           throw e;
       }
   }

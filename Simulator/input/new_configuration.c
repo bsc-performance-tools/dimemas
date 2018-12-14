@@ -1295,15 +1295,15 @@ t_boolean parse_d_conn (char* record_fields)
    */
 t_boolean parse_acc_nodes(char *record_fields)
 {
-    int 		matches, node_id, i, num_acc_buses;
+    int 		matches, node_id, num_gpu_in_node,i, num_acc_buses;
     double	bandwith, latency, memory_latency, relative;
 
-    if (sscanf(record_fields, "%d, %lf, %lf, %lf, %d, %lf",
-                &node_id, &latency, &memory_latency, &bandwith, &num_acc_buses, &relative) == 6)
+    if (sscanf(record_fields, "%d, %d, %lf, %lf, %lf, %d, %lf",
+                &node_id, &num_gpu_in_node,&latency, &memory_latency, &bandwith, &num_acc_buses, &relative) == 7)
     {
         latency = latency *1e9;
         memory_latency = memory_latency * 1e9;
-        SIMULATOR_set_acc_nodes(node_id, latency, memory_latency, bandwith, num_acc_buses, relative);
+        SIMULATOR_set_acc_nodes(node_id, num_gpu_in_node, latency, memory_latency, bandwith, num_acc_buses, relative);
         //printf("%lf, %lf, %lf, %d", latency, memory_latency, bandwith, num_acc_buses);
     }
     else

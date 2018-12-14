@@ -1099,6 +1099,7 @@ void SIMULATOR_check_correct_definitions(void)
 }
 
 void SIMULATOR_set_acc_nodes(int node_id,
+        int num_gpu_in_node,
         double latency,
         double memory_latency,
         double bandwith,
@@ -1107,6 +1108,10 @@ void SIMULATOR_set_acc_nodes(int node_id,
     if (!SIMULATOR_node_exists(node_id))
     {
         die("Wrong accelerator node id %d, does no exist. Check your configuration file\n", node_id);
+    }
+    if(num_gpu_in_node < 0)
+    {
+        die("invalid gpu number (%d) in accelerator node (%d)", num_gpu_in_node, node_id);
     }
     if (latency < 0.0)
     {
@@ -1133,7 +1138,7 @@ void SIMULATOR_set_acc_nodes(int node_id,
                 relative, num_acc_buses);
     }
 
-    NODE_set_acc(node_id, latency, memory_latency, bandwith, num_acc_buses, relative);
+    NODE_set_acc(node_id, num_gpu_in_node, latency, memory_latency, bandwith, num_acc_buses, relative);
 }
 
 char* SIMULATOR_get_last_error(void)
