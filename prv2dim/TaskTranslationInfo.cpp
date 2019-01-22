@@ -544,7 +544,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 	INT64 Value;
 	UINT64 Timestamp;
 	double OnTraceTime;
-
 #ifdef DEBUG
     cout << "Processing User Event: " << *CurrentEvent;
 #endif
@@ -588,7 +587,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 		DimCollectiveOp GlobalOpId;
 
 		PendingGlobalOp = true;
-
 		CurrentBlock = MPIEventEncoding_DimemasBlockId((MPI_Event_Values) Value);
 		GlobalOpId = MPIEventEncoding_GlobalOpId(CurrentBlock);
 
@@ -1490,6 +1488,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 		switch (CurrentBlockValue)
         {
 		case BLOCK_ID_MPI_Recv:
+        case BLOCK_ID_MPI_Mrecv:
             if (CurrentComm->GetType() == LOGICAL_RECV) 
             {
 #ifdef DEBUG
@@ -1529,6 +1528,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 		case BLOCK_ID_MPI_Rsend:
 		case BLOCK_ID_MPI_Send:
 		case BLOCK_ID_MPI_Ssend:
+        case BLOCK_ID_MPI_Mprobe:
 			if (CurrentComm->GetType() == LOGICAL_SEND) 
             {
 
@@ -1601,6 +1601,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 		case BLOCK_ID_MPI_Isend:
 		case BLOCK_ID_MPI_Issend:
         case BLOCK_ID_MPI_Irsend:
+        case BLOCK_ID_MPI_Iprobe:
 			/* DEBUG
 			   fprintf(stdout, "MPI_ISEND\n");
 			 */
@@ -1674,6 +1675,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 			}
 			break;
 		case BLOCK_ID_MPI_Irecv:
+        case BLOCK_ID_MPI_Imrecv:
 			/* DEBUG
 			   fprintf(stdout, "MPI_IRECV\n");
 			 */

@@ -82,9 +82,13 @@ struct t_block_dimemas2prv block_dimemas2prv[NUM_MPI_ELEMENTS]={
   {MPITYPE_OTHER,      MPI_PACK_VAL},                  /*  77 */
   {MPITYPE_OTHER,      MPI_PACK_SIZE_VAL},             /*  78 */
   {MPITYPE_PTOP,       MPI_PROBE_VAL},                 /*  79 */
+  {MPITYPE_PTOP,       MPI_MPROBE_VAL},
+  {MPITYPE_PTOP,       MPI_MRECV_VAL},
+  {MPITYPE_PTOP,       MPI_IMPROBE_VAL},
+  {MPITYPE_PTOP,       MPI_IMRECV_VAL},
+
   {MPITYPE_PTOP,       MPI_RECV_VAL},                  /*  80 */
   {MPITYPE_PTOP,       MPI_RSEND_VAL},                 /*  81 */
-  {MPITYPE_PTOP,       MPI_RSEND_INIT_VAL},            /*  82 */
   {MPITYPE_PTOP,       MPI_SEND_VAL},                  /*  83 */
   {MPITYPE_PTOP,       MPI_SENDRECV_VAL},              /*  84 */
   {MPITYPE_PTOP,       MPI_SENDRECV_REPLACE_VAL},      /*  85 */
