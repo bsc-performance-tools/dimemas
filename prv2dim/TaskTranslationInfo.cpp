@@ -1280,8 +1280,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 				CurrentEvent->GetTimestamp(),
 				(INT64) CurrentBlock.second,
 				MPIEventEncoding_GetBlockLabel((MPI_Event_Values)
-							       CurrentBlock.
-							       second));
+							       CurrentBlock.second));
 #endif
 
 			LastBlockEnd = Timestamp;
@@ -1528,6 +1527,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 		case BLOCK_ID_MPI_Rsend:
 		case BLOCK_ID_MPI_Send:
 		case BLOCK_ID_MPI_Ssend:
+        case BLOCK_ID_MPI_Probe:
         case BLOCK_ID_MPI_Mprobe:
 			if (CurrentComm->GetType() == LOGICAL_SEND) 
             {

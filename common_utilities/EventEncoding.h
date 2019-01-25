@@ -39,17 +39,6 @@ typedef long long long64_t;
 #define BASE_USERCALL                 10000
 #define BASE_USERBLOCK                20000
 
-/* Noise indetifier Events 
-
-#define Noise_in_computation         99000000 //noise in running(executioin)
-#define Noise_in_Network_communic    99000001 // noise in inter node communication
-#define Noise_in_Memory_communic     99000002 // noise in intra node communication
-
-#define Noise_in_computation_LABEL      "noise in computation"
-#define Noise_in_Memory_communic_LABEL  "noise in memory communication"
-#define Noise_in_Network_communic_LABEL "noise in network communication"
-*/
-
 /* ==========================================================================
    ==== MPI Event Types
    ========================================================================== */

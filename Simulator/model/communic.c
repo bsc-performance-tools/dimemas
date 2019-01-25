@@ -5191,16 +5191,10 @@ void transferencia (long long int                  size,
                 thread->last_comm.bandwidth = bandw;
                 thread->last_comm.bytes     = size;
                 ASS_ALL_TIMER (thread->last_comm.ti, current_time);
-
-                // printf("Available mem. bandwidth = %f\n", bandw);
-
                 temps = (bandw * size);
 
                 /* Transmission time with full bandwidth (actual resource usage) */
                 bandw = bw_ns_per_byte(node->bandwidth);
-
-                // printf("Max. mem. bandwidth = %f\n", bandw);
-
                 t_recursos = (bandw * size);
             }
             break;
