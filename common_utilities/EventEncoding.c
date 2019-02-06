@@ -47,7 +47,6 @@ MPITypeInfo MPIType_Table[ NUM_MPITYPES ] = {
   { MPITYPE_TYPE,        MPITYPE_TYPE_LABEL }*/
 };
 
-// #define NUM_MPICALLS  MPI_TYPE_VECTOR_VAL+1
 MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
 /* 000 */
 { 0,
@@ -364,7 +363,6 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
   MPI_IPROBE_VAL, MPI_IPROBE_LABEL,
   BLOCK_ID_MPI_Iprobe,
   FALSE },
-
 /*
  * RMA MPI calls (Remote Memory Access calls)
  */
@@ -432,11 +430,7 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
 { MPITYPE_RMA,
   MPI_WIN_UNLOCK_VAL, MPI_WIN_UNLOCK_LABEL,
   BLOCK_ID_MPI_Win_unlock,
-  FALSE },
-
-/*
- *
- */ 
+  FALSE }, 
 /* 076 */
 { MPITYPE_OTHER,
   MPI_PACK_VAL, MPI_PACK_LABEL,
@@ -700,7 +694,7 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
 /* 128 */
 { MPITYPE_PTOP,
   MPI_TESTSOME_VAL, MPI_TESTSOME_LABEL,
-  BLOCK_ID_MPI_Test_some,
+  BLOCK_ID_MPI_Testsome,
   FALSE },
 /* 129 */
 { MPITYPE_TYPE,
@@ -758,152 +752,278 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
   BLOCK_ID_MPI_Type_ub,
   FALSE },
 /* 140 */
-/*{ MPITYPE_OTHER,
-  MPI_INIT_THREAD_VAL, MPI_INIT_THREAD_LABEL,
-  BLOCK_ID_MPI_Init_thread,
-  FALSE },*/
-/* 141 */
 { MPITYPE_TYPE,
   MPI_TYPE_VECTOR_VAL, MPI_TYPE_VECTOR_LABEL,
   BLOCK_ID_MPI_Type_vector,
   FALSE },
-/* 142 */
+/* 141 */
 { MPITYPE_IO,
   MPI_FILE_OPEN_VAL, MPI_FILE_OPEN_LABEL,
   BLOCK_ID_MPI_File_open,
   FALSE },
-/* 143 */
+/* 142 */
 { MPITYPE_IO,
   MPI_FILE_CLOSE_VAL, MPI_FILE_CLOSE_LABEL,
   BLOCK_ID_MPI_File_close,
   FALSE },
-/* 144 */
+/* 143 */
 { MPITYPE_IO,
   MPI_FILE_READ_VAL, MPI_FILE_READ_LABEL,
   BLOCK_ID_MPI_File_read,
   FALSE },
-/* 145 */
+/* 144 */
 { MPITYPE_IO,
   MPI_FILE_READ_ALL_VAL, MPI_FILE_READ_ALL_LABEL,
   BLOCK_ID_MPI_File_read_all,
   FALSE },
-/* 146 */
+/* 145 */
 { MPITYPE_IO,
   MPI_FILE_WRITE_VAL, MPI_FILE_WRITE_LABEL,
   BLOCK_ID_MPI_File_write,
   FALSE },
-/* 147 */
+/* 146 */
 { MPITYPE_IO,
   MPI_FILE_WRITE_ALL_VAL, MPI_FILE_WRITE_ALL_LABEL,
   BLOCK_ID_MPI_File_write_all,
   FALSE },
-/* 148 */
+/* 147 */
 { MPITYPE_IO,
   MPI_FILE_READ_AT_VAL, MPI_FILE_READ_AT_LABEL,
   BLOCK_ID_MPI_File_read_at,
   FALSE },
-/* 149 */
+/* 148 */
 { MPITYPE_IO,
   MPI_FILE_READ_AT_ALL_VAL, MPI_FILE_READ_AT_ALL_LABEL,
   BLOCK_ID_MPI_File_read_at_all,
   FALSE },
-/* 150 */
+/* 149 */
 { MPITYPE_IO,
   MPI_FILE_WRITE_AT_VAL, MPI_FILE_WRITE_AT_LABEL,
   BLOCK_ID_MPI_File_write_at,
   FALSE },
-/* 151 */
+/* 150 */
 { MPITYPE_IO,
   MPI_FILE_WRITE_AT_ALL_VAL, MPI_FILE_WRITE_AT_ALL_LABEL,
   BLOCK_ID_MPI_File_write_at_all,
   FALSE },
-/* 152 */
+/* 151 */
 { MPITYPE_COMM,
   MPI_COMM_SPAWN_VAL, MPI_COMM_SPAWN_LABEL,
   BLOCK_ID_MPI_Comm_spawn,
   FALSE },
-/* 153 */
+/* 152 */
 { MPITYPE_COMM,
   MPI_COMM_SPAWN_MULTIPLE_VAL, MPI_COMM_SPAWN_MULTIPLE_LABEL,
   BLOCK_ID_MPI_Comm_spawn_multiple,
   FALSE },
-/* 154 */
+/* 153 */
 { MPITYPE_OTHER,
   MPI_REQUEST_GET_STATUS_VAL, MPI_REQUEST_GET_STATUS_LABEL,
   BLOCK_ID_MPI_Request_get_status,
   FALSE },
-/* 155 */
+/* 154 */
 { MPITYPE_COLLECTIVE,
   MPI_IREDUCE_VAL, MPI_IREDUCE_LABEL,
   BLOCK_ID_MPI_Ireduce,
   FALSE },
-/* 156 */
+/* 155 */
 { MPITYPE_COLLECTIVE,
   MPI_IALLREDUCE_VAL, MPI_IALLREDUCE_LABEL,
   BLOCK_ID_MPI_Iallreduce,
   FALSE },
-/* 157 */
+/* 156 */
 { MPITYPE_COLLECTIVE,
   MPI_IBARRIER_VAL, MPI_IBARRIER_LABEL,
   BLOCK_ID_MPI_Ibarrier,
   FALSE },
-/* 158 */
+/* 157 */
 { MPITYPE_COLLECTIVE,
   MPI_IBCAST_VAL, MPI_IBCAST_LABEL,
   BLOCK_ID_MPI_Ibcast,
   FALSE },
-/* 159 */
+/* 158 */
 { MPITYPE_COLLECTIVE,
   MPI_IALLTOALL_VAL, MPI_IALLTOALL_LABEL,
   BLOCK_ID_MPI_Ialltoall,
   FALSE },
-/* 160 */
+/* 159 */
 { MPITYPE_COLLECTIVE,
   MPI_IALLTOALLV_VAL, MPI_IALLTOALLV_LABEL,
   BLOCK_ID_MPI_Ialltoallv,
   FALSE },
-/* 161 */
+/* 160 */
 { MPITYPE_COLLECTIVE,
   MPI_IALLGATHER_VAL, MPI_IALLGATHER_LABEL,
   BLOCK_ID_MPI_Iallgather,
   FALSE },
-/* 162 */
+/* 161 */
 { MPITYPE_COLLECTIVE,
   MPI_IALLGATHERV_VAL, MPI_IALLGATHERV_LABEL,
   BLOCK_ID_MPI_Iallgatherv,
   FALSE },
-/* 163 */
+/* 162 */
 { MPITYPE_COLLECTIVE,
   MPI_IGATHER_VAL, MPI_IGATHER_LABEL,
   BLOCK_ID_MPI_Igather,
   FALSE },
-/* 164 */
+/* 163 */
 { MPITYPE_COLLECTIVE,
   MPI_IGATHERV_VAL, MPI_IGATHERV_LABEL,
   BLOCK_ID_MPI_Igatherv,
   FALSE },
-/* 165 */
+/* 164 */
 { MPITYPE_COLLECTIVE,
   MPI_ISCATTER_VAL, MPI_ISCATTER_LABEL,
   BLOCK_ID_MPI_Iscatter,
   FALSE },
-/* 166 */
+/* 165 */
 { MPITYPE_COLLECTIVE,
   MPI_ISCATTERV_VAL, MPI_ISCATTERV_LABEL,
   BLOCK_ID_MPI_Iscatterv,
   FALSE },
-/* 167 */
+/* 166 */
 { MPITYPE_COLLECTIVE,
   MPI_IREDUCESCAT_VAL, MPI_IREDUCESCAT_LABEL,
-  BLOCK_ID_MPI_Ireducescat,
+  BLOCK_ID_MPI_Ireduce_scatter,
   FALSE },
-/* 168 */
+/* 167 */
 { MPITYPE_COLLECTIVE,
   MPI_ISCAN_VAL, MPI_ISCAN_LABEL,
   BLOCK_ID_MPI_Iscan,
   FALSE },
+/* 168 */
+{ MPITYPE_COLLECTIVE,
+  MPI_REDUCE_SCATTER_BLOCK_VAL, MPI_REDUCE_SCATTER_BLOCK_LABEL,
+  BLOCK_ID_MPI_Reduce_scatter_block,
+  FALSE},
+/*169 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IREDUCE_SCATTER_BLOCK_VAL, MPI_IREDUCE_SCATTER_BLOCK_LABEL,
+  BLOCK_ID_MPI_Ireduce_scatter_block,
+  FALSE},
+/*170 */
+{ MPITYPE_COLLECTIVE,
+  MPI_ALLTOALLW_VAL, MPI_ALLTOALLW_LABEL,
+  BLOCK_ID_MPI_Alltoallw,
+  FALSE},
+/*171 */
+{ MPITYPE_COLLECTIVE,
+  MPI_IALLTOALLW_VAL, MPI_IALLTOALLW_LABEL,
+  BLOCK_ID_MPI_Ialltoallw,
+  FALSE},
+/*172 */
+{ MPITYPE_RMA,
+  MPI_GET_ACCUMULATE_VAL, MPI_GET_ACCUMULATE_LABEL,
+  BLOCK_ID_MPI_Get_accumulate,
+  FALSE},
+/*173 */
+{ MPITYPE_TOPOLOGIES,
+  MPI_DIST_GRAPH_CREATE_VAL, MPI_DIST_GRAPH_CREATE_LABEL,
+  BLOCK_ID_MPI_Dist_graph_create,
+  FALSE},
+/*174 */
+{ MPITYPE_COLLECTIVE,
+  MPI_NEIGHBOR_ALLGATHER_VAL, MPI_NEIGHBOR_ALLGATHER_LABEL,
+  BLOCK_ID_MPI_Neighbor_allgather,
+  FALSE},
+/*175 */
+{ MPITYPE_COLLECTIVE,
+  MPI_INEIGHBOR_ALLGATHER_VAL, MPI_INEIGHBOR_ALLGATHER_LABEL,
+  BLOCK_ID_MPI_Ineighbor_allgather,
+  FALSE},
+/*176*/
+{ MPITYPE_COLLECTIVE,
+  MPI_NEIGHBOR_ALLGATHERV_VAL, MPI_NEIGHBOR_ALLGATHERV_LABEL,
+  BLOCK_ID_MPI_Neighbor_allgatherv,
+  FALSE},
+/* 177*/
+{ MPITYPE_COLLECTIVE, 
+  MPI_INEIGHBOR_ALLGATHERV_VAL,MPI_INEIGHBOR_ALLGATHERV_LABEL, 
+  BLOCK_ID_MPI_Ineighbor_allgatherv,
+  FALSE},
+/* 178*/
+{ MPITYPE_COLLECTIVE,
+  MPI_NEIGHBOR_ALLTOALL_VAL, MPI_NEIGHBOR_ALLTOALL_LABEL,
+  BLOCK_ID_MPI_Neighbor_alltoall,
+  FALSE},
+/* 179*/
+{ MPITYPE_COLLECTIVE,
+  MPI_INEIGHBOR_ALLTOALL_VAL,MPI_NEIGHBOR_ALLTOALL_LABEL,
+  BLOCK_ID_MPI_Ineighbor_alltoall,
+  FALSE},
+/* 180*/
+{ MPITYPE_COLLECTIVE, 
+  MPI_NEIGHBOR_ALLTOALLV_VAL, MPI_NEIGHBOR_ALLTOALLV_LABEL,
+  BLOCK_ID_MPI_Neighbor_alltoallv,
+  FALSE}, 
+/* 181 */
+{ MPITYPE_COLLECTIVE,
+  MPI_INEIGHBOR_ALLTOALLV_VAL, MPI_INEIGHBOR_ALLTOALLV_LABEL, 
+  BLOCK_ID_MPI_Ineighbor_alltoallv,
+  FALSE},
+/* 182*/
+{ MPITYPE_COLLECTIVE, 
+  MPI_NEIGHBOR_ALLTOALLW_VAL, MPI_NEIGHBOR_ALLTOALLW_LABEL, 
+  BLOCK_ID_MPI_Neighbor_alltoallw,
+  FALSE},
+/*183 */
+{ MPITYPE_COLLECTIVE,
+  MPI_INEIGHBOR_ALLTOALLW_VAL, MPI_INEIGHBOR_ALLTOALLW_LABEL, 
+  BLOCK_ID_MPI_Ineighbor_alltoallw,
+  FALSE},
+/*184*/
+{ MPITYPE_RMA,
+  MPI_FETCH_AND_OP_VAL, MPI_FETCH_AND_OP_LABEL,
+  BLOCK_ID_MPI_Fetch_and_op,
+  FALSE},
+/*185 */
+{ MPITYPE_RMA, 
+  MPI_COMPARE_AND_SWAP_VAL, MPI_COMPARE_AND_SWAP_LABEL, 
+  BLOCK_ID_MPI_Compare_and_swap,
+  FALSE}, 
+/* 186 */
+{ MPITYPE_RMA, 
+  MPI_WIN_FLUSH_VAL, MPI_WIN_FLUSH_LABEL, 
+  BLOCK_ID_MPI_Win_flush,
+  FALSE},
+/*187 */
+{ MPITYPE_RMA,
+  MPI_WIN_FLUSH_ALL_VAL, MPI_WIN_FLUSH_ALL_LABEL, 
+  BLOCK_ID_MPI_Win_flush_all,
+  FALSE},
+/*188 */
+{ MPITYPE_RMA, 
+  MPI_WIN_FLUSH_LOCAL_VAL, MPI_WIN_FLUSH_LOCAL_LABEL, 
+  BLOCK_ID_MPI_Win_flush_local,
+  FALSE},
+/*189 */
+{ MPITYPE_RMA, 
+  MPI_WIN_FLUSH_LOCAL_ALL_VAL, MPI_WIN_FLUSH_LOCAL_ALL_LABEL, 
+  BLOCK_ID_MPI_Win_flush_local_all,
+  FALSE},
+/*190 */
+{ MPITYPE_PTOP,
+  MPI_MPROBE_VAL, MPI_MPROBE_LABEL,
+  BLOCK_ID_MPI_Mprobe,
+  FALSE },
+/*191 */
+{ MPITYPE_PTOP,
+  MPI_IMPROBE_VAL, MPI_IMPROBE_LABEL,
+  BLOCK_ID_MPI_Improbe,
+  FALSE },
+ /*192*/
+{ MPITYPE_PTOP,
+  MPI_MRECV_VAL, MPI_MRECV_LABEL,
+  BLOCK_ID_MPI_Mrecv,
+  FALSE },
+/*193 */
+{ MPITYPE_PTOP,
+  MPI_IMRECV_VAL, MPI_IMRECV_LABEL,
+  BLOCK_ID_MPI_Imrecv,
+  FALSE },
 // In order to have the same Ids than extrae I've moved this
 // MPI from 141 to here.
+/*194*/
 { MPITYPE_OTHER,
   MPI_INIT_THREAD_VAL, MPI_INIT_THREAD_LABEL,
   BLOCK_ID_MPI_Init_thread,
@@ -966,7 +1086,7 @@ void MPIEventEncoding_EnableOperation( MPI_Event_Values Op )
 }
 
 /******************************************************************************
- **      Function name : MPIEventEncoding_EnableOperation
+ **      Function name : MPIEventEncoding_DimemasBlockId
  **      
  **      Description : 
  ******************************************************************************/
@@ -978,6 +1098,7 @@ DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op )
   /* Si no es igual, es que en el typedef enum { ... }MPI_Event_Values; del fitxer
      MPI_EventEncoding.h s'han mogut operacions MPI de lloc i per tant,
      cal reordenar la MPI_Table amb els mateixos canvis. */
+ 
   ASSERT( MPI_Table[ Op ].Op == Op );
   
   return( MPI_Table[ Op ].Block );
@@ -1030,6 +1151,16 @@ int MPIEventEncoding_Is_UserBlock( long64_t Type )
   
   return( FALSE );
 }
+/* 
+int EventEncoding_Is_Noise(long64_t Type)
+{
+    if(Type == (long64_t) Noise_in_computation || 
+            Type == (long64_t) Noise_in_Network_communic ||
+            Type == (long64_t) Noise_in_Memory_communic);
+        return(TRUE);
+
+    return (FALSE);
+}*/
 
 /******************************************************************************
  **      Function name : EventEncoding_Is_IO

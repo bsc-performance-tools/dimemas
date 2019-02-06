@@ -142,7 +142,7 @@ static char *DimemasSDDF[ DIMEMASSDDF_LINES ] =
 };
 
 /* ---------------------------------------------------- Global Variables ----*/
-#define BLOCKDEF_LINES 155
+#define BLOCKDEF_LINES 157
 static char *DimemasBlockDef[ BLOCKDEF_LINES ] =
 {
   "\"block definition\" {   1, \"MPI_Allgather\", \"MPI\", 0, 0 };;",
@@ -299,7 +299,9 @@ static char *DimemasBlockDef[ BLOCKDEF_LINES ] =
   "\"block definition\" { 152, \"LAPI_Address_init\", \"LAPI\", 0, 0 };;",
   "\"block definition\" { 153, \"LAPI_Amsend\", \"LAPI\", 0, 0 };;",
   "\"block definition\" { 154, \"LAPI_Rmw\", \"LAPI\", 0, 0 };;",
-  "\"block definition\" { 155, \"LAPI_Waitcntr\", \"LAPI\", 0, 0 };"
+  "\"block definition\" { 155, \"LAPI_Waitcntr\", \"LAPI\", 0, 0 };",
+  "\"block definition\" { 156, \"MPI_Mprobe\", \"MPI\", 0, 0 };;",
+  "\"block definition\" { 157, \"MPI_Mrecv\", \"MPI\", 0, 0 };;"
 };
 
 /* ---------------------------------------------------- Global Variables ----*/

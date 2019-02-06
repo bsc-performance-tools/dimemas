@@ -176,6 +176,144 @@ void SIMULATOR_Init(const char  *simulator_configuration_filename,
     IO_fclose(configuration_file);
 }
 
+
+void SIMULATOR_Generate_row(const char *row_filename)
+{
+    FILE* row_file = IO_fopen(row_filename, "w");
+    if (row_file == NULL)
+        die("Can't create row file %s\n", row_filename);
+    
+    // Machines information (SYSTEM) 
+    // Not yet implemented in paraver
+
+    fprintf(row_file, "LEVEL SYSTEM SIZE %d\n",  Simulator.number_machines);
+    for (unsigned int i=0; i < Simulator.number_machines; ++i)
+    {
+        char machine_name[50];
+        if(strlen(Machines[i].name) == 0)
+            sprintf( machine_name, "unnamed_%d", Machines[i].id);
+        else
+            memcpy(machine_name, Machines[i].name, strlen(Machines[i].name)+1);
+        fprintf(row_file,"%s (%s)\n", machine_name, 
+            Machines[i].instrumented_arch);
+    }
+    fprintf(row_file, "\n");
+    
+    // Node information
+    fprintf(row_file, "LEVEL NODE SIZE %d\n",  nodes_size);
+    for (unsigned int i=0; i < nodes_size; ++i)
+    {
+        char machine_name[50];
+        if(strlen(nodes[i].machine->name) == 0)
+            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id);
+        else
+            memcpy(machine_name, nodes[i].machine->name, 
+                    strlen(nodes[i].machine->name)+1);
+        fprintf(row_file, "%s.%d (%s)\n", machine_name,
+            nodes[i].nodeid, nodes[i].arch);
+    }
+    fprintf(row_file, "\n");
+    
+    // CPU information
+    long unsigned int ncpus = 0;
+    for (unsigned int i=0; i < nodes_size; ++i)
+        ncpus += count_queue(&(nodes[i].Cpus));
+
+    fprintf(row_file, "LEVEL CPU SIZE %d\n",  ncpus);
+    for (unsigned int i=0; i < nodes_size; ++i)
+    { 
+        char machine_name[50];
+        if(strlen(nodes[i].machine->name) == 0)
+            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id);
+        else
+            memcpy(machine_name, nodes[i].machine->name, 
+                    strlen(nodes[i].machine->name)+1);
+
+        for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i].Cpus); 
+            cpu != C_NIL; 
+            cpu = (struct t_cpu *)next_queue(&nodes[i].Cpus)
+        )
+        {
+            char *name;
+            if (cpu->is_gpu)
+                name = "GPU";
+            else
+                name = "CPU";
+            fprintf(row_file, "%s %s.%d.%d\n", name, machine_name,
+                nodes[i].nodeid, cpu->cpuid);
+
+        }
+    }
+    fprintf(row_file, "\n");
+
+    
+    // Workload information
+    // TODO: Figure out what workload means for dimemas
+    
+    // Application information
+    fprintf(row_file, "LEVEL APPL SIZE %d\n",  count_queue(&Ptask_queue));
+    for (struct t_Ptask* Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+            Ptask != P_NIL;
+            Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+    {
+        fprintf(row_file, "APPL %d\n", Ptask->Ptaskid);
+    }
+    fprintf(row_file, "\n");
+    
+    
+    // Task information
+    long unsigned int ntasks = 0;
+    for (struct t_Ptask* Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+            Ptask != P_NIL;
+            Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+        ntasks += Ptask->tasks_count;
+
+    fprintf(row_file, "LEVEL TASK SIZE %d\n",  ntasks);
+    for (struct t_Ptask* Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+            Ptask != P_NIL;
+            Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+    {
+        for (unsigned int i=0; i < Ptask->tasks_count; ++i)
+            fprintf(row_file, "TASK %d.%d\n", Ptask->Ptaskid,
+                    Ptask->tasks[i].taskid);
+    }
+    fprintf(row_file, "\n");
+    
+    // Thread information
+    fprintf(row_file, "LEVEL THREAD SIZE %d\n",  Simulator.threads_count);
+    for (struct t_Ptask* Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
+            Ptask != P_NIL;
+            Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
+    {
+        for (unsigned int i=0; i < Ptask->tasks_count; ++i)
+            for (unsigned j=0; j<Ptask->tasks[i].threads_count; ++j)
+            {
+                if(Ptask->tasks->accelerator)
+                {
+                    char *name;
+                    if (Ptask->tasks->threads[j]->host)
+                        name = "THREAD";
+                    else
+                        name = "CUDA";
+
+                    fprintf(row_file, "%s %d.%d.%d\n", 
+                        name,
+                        Ptask->Ptaskid,
+                        Ptask->tasks[i].taskid, 
+                        Ptask->tasks[i].threads[j]->threadid);
+                }
+                else
+                fprintf(row_file, "THREAD %d.%d.%d\n", 
+                    Ptask->Ptaskid,
+                    Ptask->tasks[i].taskid, 
+                    Ptask->tasks[i].threads[j]->threadid);
+            }
+    }
+    fprintf(row_file, "\n");
+    
+    IO_fclose(row_file);
+}
+
 char* SIMULATOR_Get_Configuration_FileName(void)
 {
     return configuration_filename;

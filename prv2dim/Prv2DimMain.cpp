@@ -299,7 +299,7 @@ int main(const int argc, const char *argv[])
 
   if (!Translator->Translate(GenerateFirstIdle,
                              IprobeMissesThreshold,
-			                       TestMissesThreshold,
+			                 TestMissesThreshold,
                              BurstCounterType,
                              BurstCounterFactor,
                              GenerateMPIInitBarrier))

@@ -185,10 +185,11 @@ void NODE_set_acc(int node_id,
 {
 	struct t_node *node = get_node_by_id(node_id);
 	if (node == N_NIL) 
-  {
-		panic("Wrong accelerator node id %d, does no exist. Check your configuration file\n", node_id);
+    {
+		panic("Wrong accelerator node id %d, does no exist. Check your"\
+                " configuration file\n", node_id);
 	}
-/*if user select the heterogenous accelerator it will create
+    /*if user select the heterogenous accelerator it will create
   //a node with GPU *chetan */
 	node->accelerator = TRUE;
 	node->acc.bandwidth = (t_bandwidth)bandwith;
