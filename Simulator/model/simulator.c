@@ -191,7 +191,7 @@ void SIMULATOR_Generate_row(const char *row_filename)
     {
         char machine_name[50];
         if(strlen(Machines[i].name) == 0)
-            sprintf( machine_name, "unnamed_%d", Machines[i].id);
+            sprintf( machine_name, "unnamed_%d", Machines[i].id+1);
         else
             memcpy(machine_name, Machines[i].name, strlen(Machines[i].name)+1);
         fprintf(row_file,"%s (%s)\n", machine_name, 
@@ -205,12 +205,12 @@ void SIMULATOR_Generate_row(const char *row_filename)
     {
         char machine_name[50];
         if(strlen(nodes[i].machine->name) == 0)
-            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id);
+            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id+1);
         else
             memcpy(machine_name, nodes[i].machine->name, 
                     strlen(nodes[i].machine->name)+1);
         fprintf(row_file, "%s.%d (%s)\n", machine_name,
-            nodes[i].nodeid, nodes[i].arch);
+            nodes[i].nodeid+1, nodes[i].arch);
     }
     fprintf(row_file, "\n");
     
@@ -224,7 +224,7 @@ void SIMULATOR_Generate_row(const char *row_filename)
     { 
         char machine_name[50];
         if(strlen(nodes[i].machine->name) == 0)
-            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id);
+            sprintf( machine_name, "unnamed_%d", nodes[i].machine->id+1);
         else
             memcpy(machine_name, nodes[i].machine->name, 
                     strlen(nodes[i].machine->name)+1);
@@ -240,7 +240,7 @@ void SIMULATOR_Generate_row(const char *row_filename)
             else
                 name = "CPU";
             fprintf(row_file, "%s %s.%d.%d\n", name, machine_name,
-                nodes[i].nodeid, cpu->cpuid);
+                nodes[i].nodeid+1, cpu->cpuid);
 
         }
     }
@@ -256,7 +256,7 @@ void SIMULATOR_Generate_row(const char *row_filename)
             Ptask != P_NIL;
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
     {
-        fprintf(row_file, "APPL %d\n", Ptask->Ptaskid);
+        fprintf(row_file, "APPL %d\n", Ptask->Ptaskid+1);
     }
     fprintf(row_file, "\n");
     
@@ -274,8 +274,8 @@ void SIMULATOR_Generate_row(const char *row_filename)
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
     {
         for (unsigned int i=0; i < Ptask->tasks_count; ++i)
-            fprintf(row_file, "TASK %d.%d\n", Ptask->Ptaskid,
-                    Ptask->tasks[i].taskid);
+            fprintf(row_file, "TASK %d.%d\n", Ptask->Ptaskid+1,
+                    Ptask->tasks[i].taskid+1);
     }
     fprintf(row_file, "\n");
     
@@ -298,15 +298,15 @@ void SIMULATOR_Generate_row(const char *row_filename)
 
                     fprintf(row_file, "%s %d.%d.%d\n", 
                         name,
-                        Ptask->Ptaskid,
-                        Ptask->tasks[i].taskid, 
-                        Ptask->tasks[i].threads[j]->threadid);
+                        Ptask->Ptaskid+1,
+                        Ptask->tasks[i].taskid+1, 
+                        Ptask->tasks[i].threads[j]->threadid+1);
                 }
                 else
                 fprintf(row_file, "THREAD %d.%d.%d\n", 
-                    Ptask->Ptaskid,
-                    Ptask->tasks[i].taskid, 
-                    Ptask->tasks[i].threads[j]->threadid);
+                    Ptask->Ptaskid+1,
+                    Ptask->tasks[i].taskid+1, 
+                    Ptask->tasks[i].threads[j]->threadid+1);
             }
     }
     fprintf(row_file, "\n");
