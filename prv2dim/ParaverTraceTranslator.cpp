@@ -1163,7 +1163,7 @@ ParaverTraceTranslator::Translate(
            */
         cout << "tasks have communications records outside a communication block" << endl;
         cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
-        cout << "NOTE: If the Paraver trace comes from a trace cut, check the cut limtis" << endl;
+        cout << "NOTE: If the Paraver trace comes from a trace cut, check the cut limits" << endl;
         cout << "********************************************************************************" << endl;
         cout << endl;
     }
@@ -1449,7 +1449,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             else if (is_acc_task && CurrentThread == 0)
                 AcceleratorThread = ACCELERATOR_HOST;
 
-            TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 30);
+            TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 50);
 
             if (TemporaryFileName == NULL)
             {
