@@ -6,5 +6,5 @@ if HAVE_JAVA
 SUBDIRS += GUI
 endif
 
-EXTRA_DIST = bootstrap
+EXTRA_DIST = bootstrap cfgs
 
