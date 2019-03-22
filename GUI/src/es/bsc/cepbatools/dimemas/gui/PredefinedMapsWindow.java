@@ -360,22 +360,22 @@ public class PredefinedMapsWindow extends GUIWindow {
       }
      // dispose();
     }
-    //data.map.setMapInfo(currentMapInfo);
-    //data.map.setMap(currentMap);
-    //data.map.setNTasksPerNode(nTasksPerNode);
+    data.map.setMapInfo(currentMapInfo);
+    data.map.setMap(currentMap);
+    data.map.setNTasksPerNode(nTasksPerNode);
     if(data.map.getMapInfo() == Data.NO_MAP)
     {
         Tools.showWarningMessage("Please select the mapping first");
         this.setVisible(true);
     }
-  else
-  {
+    else
+    {
       dispose();
-  }
+    }
     //dispose();
-   data.map.setMapInfo(currentMapInfo);
-   data.map.setMap(currentMap);
-   data.map.setNTasksPerNode(nTasksPerNode);
+    // data.map.setMapInfo(currentMapInfo);
+    //data.map.setMap(currentMap);
+    //data.map.setNTasksPerNode(nTasksPerNode);
   }//GEN-LAST:event_b_saveActionPerformed
 
   private void b_closeActionPerformed(java.awt.event.ActionEvent evt) {
@@ -385,6 +385,7 @@ public class PredefinedMapsWindow extends GUIWindow {
     {
       Tools.showWarningMessage("Please select a map before closing");
       this.setVisible(true);
+      dispose();
     }
     else
     {
