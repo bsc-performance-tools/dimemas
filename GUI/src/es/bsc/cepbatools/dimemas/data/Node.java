@@ -69,7 +69,7 @@ public class Node
   static public final String DEFAULT_WAN_STARTUP          = "0.0";
   
   
-  static public final String DEFAULT_ACC_NUMBER		      = "DEFAULT_PROCESSORS";
+  static public final String DEFAULT_ACC_NUMBER		      = DEFAULT_PROCESSORS;
   static public final String DEFAULT_ACC_STARTUP		  = "0.0";
   static public final String DEFAULT_ACC_MEM_STARTUP	  = "0.0";
   static public final String DEFAULT_ACC_BANDWIDTH		  = "0.0";
@@ -82,7 +82,7 @@ public class Node
   static public final int    NODE_RECORD_WITH_NODE_ID_FIELD_COUNT  = 14;
   static public final int    NODE_RECORD_FIELD_COUNT               = 13;
   
-  static public final int	 ACC_NODE_RECORD_FIELD_COUNT = 7;
+  static public final int	 ACC_NODE_RECORD_FIELD_COUNT = 6;
 
   private String machine_id;           // Machine to which belongs the node.
   private String node_id;              // Node identificator.
