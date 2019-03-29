@@ -261,8 +261,8 @@ void parse_arguments(int argc, char *argv[])
         ("interleaved", po::bool_switch(&map_interleaved_enabled),
             "Mapping policy where the processes are mapped"\
             " in an interleaved fashion")
-        ("dim", po::value<string>(&str_parameter_tracefile), 
-            "Dimemas input tracefile")
+        //("dim", po::value<string>(&str_parameter_tracefile), 
+          //  "Dimemas input tracefile")
     ;
 
     po::options_description simulation("Simulation options: This options"\
@@ -306,12 +306,20 @@ void parse_arguments(int argc, char *argv[])
 
     po::options_description mandatory("Mandatory options");
     mandatory.add_options()
-        ("prv-trace,p", po::value<string>(&str_paraver_file)->required(), 
-            "Generated paraver trace")
+        ("dim", po::value<string>(&str_parameter_tracefile)->required(), 
+            "Dimemas Input Trace File")
+        //("prv-trace,p", po::value<string>(&str_paraver_file),//->required(), 
+        //    "Generated paraver trace(OPTIONAL)")
         ("config-file", po::value<string>(&str_config_file)->required(), 
             "Dimemas configuration file")
     ;
 
+    po::options_description optional("Optional options :"\
+    " To generate simulated paraver trace file");
+    optional.add_options()
+        ("prv-trace,p", po::value<string>(&str_paraver_file), 
+            "Generate simulated paraver trace file")
+    ;
     po::options_description output("Output options");
     output.add_options()
         //("output,o", po::value<string>(&str_fichero_salida), "Set output file")
@@ -343,6 +351,7 @@ void parse_arguments(int argc, char *argv[])
 
     po::options_description all("Allowed options");
     all.add(mandatory)
+        .add(optional)
         .add(conf)
         .add(simulation)
         .add(output)
@@ -366,14 +375,15 @@ void parse_arguments(int argc, char *argv[])
         cout << "To see help, use -h flag" << endl;
         cout<< endl;
         cout << "USAGE: " << argv[0] << 
-            " -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+            " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
         exit(EXIT_FAILURE);
     }
     if (varmap.count("help"))
     {
         print_dimemas_header();
         cout << "USAGE: " << argv[0] << 
-            " -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+            " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+            //" -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
         cout << endl;
         cout << all << endl;
         exit(EXIT_FAILURE);
@@ -391,6 +401,11 @@ void parse_arguments(int argc, char *argv[])
     catch(boost::program_options::required_option& e)
     {
         cout << "Error parsing arguments" << endl;
+        cout << endl;
+        //cout << "plase specify the dim trace file " << endl;
+        cout<< "USAGE: " << argv[0] <<
+            " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+        cout << endl;
         cout << e.what() << endl;
         exit(EXIT_FAILURE);
     }

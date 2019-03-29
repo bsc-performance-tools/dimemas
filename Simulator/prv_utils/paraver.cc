@@ -61,7 +61,6 @@ extern "C" {
 #include "task.h"
 #include "node.h"
 #include "simulator.h"
-
 #ifdef __cplusplus
 }
 #endif
@@ -306,7 +305,7 @@ void PARAVER_Init(const char   *output_trace,
 void PARAVER_End(int print)
 {
   bool end;
-
+  string ParaverTraceName;
   char* pcf_insert_c_str;
 
   FILE *ParaverTraceFile;
@@ -324,9 +323,8 @@ void PARAVER_End(int print)
   if ( (ParaverTraceFile = IO_fopen(paraver_trace_filename.c_str(), "w")) == NULL )
   {
     // TODO: TraceMerger.CleanTemporalFiles();
-    die("Unable to open output paraver trace %s: %s\n",
-        paraver_trace_filename.c_str(),
-        IO_get_error());
+     warning("The simulated paraver trace file isn't generated\n");
+     final("Please try --help for more info\n");
   }
 
   /* Flush last collapsed events */

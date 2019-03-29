@@ -59,11 +59,25 @@ void die (const char *fmt, ...)
 
   exit (EXIT_FAILURE);
 }
+void final (const char *fmt, ...)
+{
+  va_list args;
+  va_start (args, fmt);
+
+  fprintf (stderr, "\n");
+  fprintf (stderr, "END OF SIMULATION -> ");
+  vfprintf (stderr, fmt, args);
+  fprintf (stderr, "\n");
+  va_end (args);
+  exit(EXIT_FAILURE);
+
+}
 
 void warning(const char *fmt, ...)
 {
   va_list args;
   va_start (args, fmt);
+  fprintf (stderr, "\n");
   fprintf(stdout, "WARNING: ");
   vfprintf (stdout, fmt, args);
   va_end (args);
