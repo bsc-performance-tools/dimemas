@@ -323,8 +323,8 @@ void PARAVER_End(int print)
   if ( (ParaverTraceFile = IO_fopen(paraver_trace_filename.c_str(), "w")) == NULL )
   {
     // TODO: TraceMerger.CleanTemporalFiles();
-     warning("The simulated paraver trace file isn't generated\n");
-     final("Please try --help for more info\n");
+     warning("The simulated paraver trace file wasn't generated\n");
+     final("\n");
   }
 
   /* Flush last collapsed events */
@@ -352,7 +352,7 @@ void PARAVER_End(int print)
   printf("\n");
   printf("Output Paraver trace \"%s\" generated\n",
          paraver_trace_filename.c_str());
-  printf("\n");
+  final("\n");
 
 
   IO_fclose(ParaverTraceFile);

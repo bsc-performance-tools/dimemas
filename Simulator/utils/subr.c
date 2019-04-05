@@ -65,7 +65,7 @@ void final (const char *fmt, ...)
   va_start (args, fmt);
 
   fprintf (stderr, "\n");
-  fprintf (stderr, "END OF SIMULATION -> ");
+  fprintf (stderr, "END OF SIMULATION ");
   vfprintf (stderr, fmt, args);
   fprintf (stderr, "\n");
   va_end (args);

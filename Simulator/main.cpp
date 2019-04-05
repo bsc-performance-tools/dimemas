@@ -261,8 +261,8 @@ void parse_arguments(int argc, char *argv[])
         ("interleaved", po::bool_switch(&map_interleaved_enabled),
             "Mapping policy where the processes are mapped"\
             " in an interleaved fashion")
-        //("dim", po::value<string>(&str_parameter_tracefile), 
-          //  "Dimemas input tracefile")
+        ("dim", po::value<string>(&str_parameter_tracefile), 
+            "Dimemas input tracefile")
     ;
 
     po::options_description simulation("Simulation options: This options"\
@@ -284,12 +284,14 @@ void parse_arguments(int argc, char *argv[])
             "Adds synthetic applications with I/O workloads")
         ("reload,R", po::value<int>(&reload_limit),
             "Reload simulation the indicated times")
+        /*
         ("eee-enable", po::bool_switch(&b_eee_enabled),
             "Enable EEE network model")
         ("eee-network", po::value<string>(&str_eee_config_file), 
             "EEE network definition filename")
         ("eee-framesize", po::value<int>(&eee_frame_header_size), 
             "EEE network frame size")
+        */
         ("clean-deadlocks", po::value<float>(&danalysis_deactivation_percent), 
             "Try to recover from deadlocks if any")
 #ifdef VENUS_ENABLED
@@ -306,8 +308,8 @@ void parse_arguments(int argc, char *argv[])
 
     po::options_description mandatory("Mandatory options");
     mandatory.add_options()
-        ("dim", po::value<string>(&str_parameter_tracefile)->required(), 
-            "Dimemas Input Trace File")
+       // ("dim", po::value<string>(&str_parameter_tracefile)->required(), 
+         //   "Dimemas Input Trace File")
         //("prv-trace,p", po::value<string>(&str_paraver_file),//->required(), 
         //    "Generated paraver trace(OPTIONAL)")
         ("config-file", po::value<string>(&str_config_file)->required(), 
@@ -390,7 +392,7 @@ void parse_arguments(int argc, char *argv[])
     }
     else if(varmap.count("version"))
     {
-        cout << VERSION << " (" << DATE << ")"<< endl;
+        cout << "Dimemas"  << " "  VERSION << " (" << DATE << ")"<< endl;
         exit(EXIT_FAILURE);
     }
 
