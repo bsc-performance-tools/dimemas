@@ -388,12 +388,12 @@ void parse_arguments(int argc, char *argv[])
             //" -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
         cout << endl;
         cout << all << endl;
-        exit(EXIT_FAILURE);
+        exit(EXIT_SUCCESS);
     }
     else if(varmap.count("version"))
     {
         cout << "Dimemas"  << " "  VERSION << " (" << DATE << ")"<< endl;
-        exit(EXIT_FAILURE);
+        exit(EXIT_SUCCESS);
     }
 
     try

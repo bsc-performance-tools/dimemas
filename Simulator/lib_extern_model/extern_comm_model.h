@@ -62,7 +62,7 @@
 #define MPI_ALLREDUCE_ID      11
 #define MPI_REDUCE_SCATTER_ID 12
 #define MPI_SCAN_ID           13
-
+#define MPI_ALLTOALLW_ID      14
 
 #ifndef __types_h
 /* Time resolution, microseconds */

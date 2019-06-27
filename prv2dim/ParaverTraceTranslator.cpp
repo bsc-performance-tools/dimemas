@@ -137,7 +137,6 @@ ParaverTraceTranslator::ParaverTraceTranslator(FILE* ParaverTraceFile,
 {
     this->ParaverTraceFile = ParaverTraceFile;
     this->DimemasTraceFile = DimemasTraceFile;
-
     PreviouslySimulatedTrace = false;
     WrongRecordsFound        = 0;
 }
@@ -154,7 +153,6 @@ bool ParaverTraceTranslator::InitTranslator(void)
     }
 
     cout << "OK!" << endl;
-
     return true;
 }
 
@@ -228,7 +226,7 @@ ParaverTraceTranslator::SplitCommunications(void)
         tmp_dir = strdup(tmp_dir_default);
     }
 
-    CommunicationsFileName = (char*) malloc (strlen(tmp_dir) + 1 + 20);
+    CommunicationsFileName = (char*) malloc (strlen(tmp_dir) + 1 + 50);
 
     if (CommunicationsFileName == NULL)
     {
@@ -238,21 +236,18 @@ ParaverTraceTranslator::SplitCommunications(void)
     }
 
     srand(time(NULL));
-
     sprintf(CommunicationsFileName,
             "%s/ParaverComms_%06d",
             tmp_dir,
             rand()%999999);
-
     AppDescription = Parser->GetApplicationsDescription();
-
     COMM_WORLD_Id = AppDescription[0]->GetCOMM_WORLD_Id();
 
     CommunicationsFile = fopen(CommunicationsFileName, "w+");
 
     /* Uncomment this section when testing finishes
-       CommunicationsFile = tmpfile();
-       */
+      CommunicationsFile = tmpfile();
+      */ 
 
     if (CommunicationsFile == NULL)
     {
@@ -280,7 +275,6 @@ ParaverTraceTranslator::SplitCommunications(void)
     PseudoCommId = 0;
     // CurrentCommunication = Parser->GetNextCommunication();
     CurrentRecord = Parser->GetNextRecord(EVENT_REC | COMM_REC);
-
     while (CurrentRecord != NULL)
     {
         PseudoCommId++;
@@ -330,7 +324,7 @@ ParaverTraceTranslator::SplitCommunications(void)
                 /* If all events are available, generate the the PartialCommunication record */
                 //if (SrcCPU != -1 && SrcAppId != -1 && SrcTaskId != -1 && SrcThreadId != -1 &&
                 if (Type != -1  && PartnerTaskId != -1 &&
-                        Size != -1  && Tag           != -1 && CommId    != -1)
+                        Size != -1  && Tag != -1 && CommId != -1)
                 {
                     INT32  SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
                     INT32  DstCPU, DstAppId, DstTaskId, DstThreadId;
@@ -376,7 +370,6 @@ ParaverTraceTranslator::SplitCommunications(void)
              * JGG (2014/12/17): PseudoCommId is now the CommID of the original
              * execution!
              */
-
             CurrentCommunication = dynamic_cast<Communication_t> (CurrentRecord);
 
             SplittedCommunication = new PartialCommunication(LOGICAL_SEND,
@@ -389,6 +382,11 @@ ParaverTraceTranslator::SplitCommunications(void)
                     PseudoCommId);
             Communications.push_back(SplittedCommunication);
 
+            SplittedCommunication = new PartialCommunication(PHYSICAL_SEND,
+                    CurrentCommunication,
+                    PseudoCommId);
+            Communications.push_back(SplittedCommunication);
+            
             SplittedCommunication = new PartialCommunication(PHYSICAL_RECV,
                     CurrentCommunication,
                     PseudoCommId);
@@ -862,8 +860,6 @@ ParaverTraceTranslator::Translate(
 
     CurrentRecord = SelectNextRecord();
 
-
-
     int max_nthreads = 0;
     for (int task=0; task<TranslationInfo.size(); ++task)
         if (TranslationInfo[task].size() > max_nthreads)
@@ -946,9 +942,8 @@ ParaverTraceTranslator::Translate(
                     }
                 }
             }
-            else if ( (CurrentState = dynamic_cast<State_t>(CurrentRecord)) != NULL)
+            else if ( (CurrentState = dynamic_cast<State_t> (CurrentRecord)) != NULL)
             {
-                
                 INT32 state_value = CurrentState->GetStateValue();
                 UINT64 state_begin_time = CurrentState->GetBeginTime();
                 UINT64 state_end_time = CurrentState->GetEndTime(); 
@@ -1101,7 +1096,6 @@ ParaverTraceTranslator::Translate(
         for (UINT32 j = 0; j < TranslationInfo[i].size(); j++)
         {
             OutputOffsets[i][j] = ftello(DimemasTraceFile);
-
             if (!(TranslationInfo[i][j]->Merge(DimemasTraceFile)))
             {
                 char CurrentError[128];
@@ -1183,7 +1177,7 @@ ParaverTraceTranslator::Translate(
            cout << endl; */
         cout << "tasks have communications records wrapped with not matching blocks" << endl;
         cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
-        cout << "NOTE: Pleasy check the Paraver trace time resolution" << endl;
+        cout << "NOTE: Please check the Paraver trace time resolution" << endl;
         cout << "********************************************************************************" << endl;
         cout << endl;
     }

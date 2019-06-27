@@ -60,6 +60,10 @@
  *****************************************************************************/
 
 /*
+        for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i].Cpus); 
+            cpu != C_NIL; 
+            cpu = (struct t_cpu *)next_queue(&nodes[i].Cpus)
+        )
  * Ptask queue
  */
 struct t_queue Ptask_queue;
@@ -170,7 +174,6 @@ void TASK_Init(int sintetic_io_applications)
                     Ptask->Ptaskid,
                     DATA_ACCESS_get_error());
         }
-
         if (Ptask->map_definition != MAP_NO_PREDEFINED)
         { // We must initialize the tasks mapping here
             Ptask->tasks_count = ptask_structure->tasks_count;      
@@ -421,7 +424,6 @@ void TASK_New_Ptask(char *trace_name,
         int synth_task;
 
         Ptask->tasks_count = SIMULATOR_get_number_of_nodes();
-
         Ptask->tasks = (struct t_task*) malloc(Ptask->tasks_count*sizeof(struct t_task));
 
         for (synth_task = 0; synth_task < Ptask->tasks_count; synth_task++)
@@ -436,7 +438,6 @@ void TASK_New_Ptask(char *trace_name,
 
         /*	gets accelerator tasks info for mapping	*/
         get_acc_tasks_info(Ptask);
-
         for (new_taskid = 0; new_taskid < tasks_count; new_taskid++)
         {	/*	find if any accelerator task is not going to map to an accelerator node	*/
             for (i = 0; i < Ptask->acc_tasks_count && Ptask->acc_tasks != NULL; i++)
@@ -448,7 +449,9 @@ void TASK_New_Ptask(char *trace_name,
                 }
             }
             if (i == Ptask->acc_tasks_count)
+            {
                 TASK_New_Task(Ptask, new_taskid, /*tasks_mapping[new_taskid],*/ FALSE);
+            }
         }
         Update_Node_Info(Ptask->tasks, Ptask->tasks_count, tasks_mapping);
     }
@@ -1905,12 +1908,12 @@ int* TASK_Map_Filling_Nodes(int task_count)
     int       i_node, j_cpu, i_machines;
     size_t tasks_it;
     struct t_node *node;
+    struct t_cpu *cpu;
 
     t_boolean end = FALSE, saturated_node = FALSE;
     task_mapping = malloc(task_count*sizeof(int));
 
-    int i;
-    for (i=0; i<task_count; ++i)
+    for (int i=0; i<task_count; ++i)
     {
         task_mapping[i] = -1;
     }
@@ -1939,6 +1942,8 @@ int* TASK_Map_Filling_Nodes(int task_count)
                     {
                         task_mapping[tasks_it] = i_node;
                         n_cpus_per_node[i_node]--; // One CPU is now occupied
+                            node->used_node = TRUE;
+                            cpu->cpu_is_used = TRUE;
                         node->has_accelerated_task = TRUE; // One GPU is now occupied
                         break;
                     }
@@ -1946,7 +1951,6 @@ int* TASK_Map_Filling_Nodes(int task_count)
 
     // STEP 2: Map no-accelerated tasks 
     int last_task_assigned = 0;
-
     for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
     {
         int n_cpus_node = n_cpus_per_node[i_node];
@@ -1955,7 +1959,11 @@ int* TASK_Map_Filling_Nodes(int task_count)
         {
             n_cpus_node--;
         }
-        for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
+        //for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
+        
+        for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i_node].Cpus); 
+            cpu != C_NIL; 
+            cpu = (struct t_cpu *)next_queue(&nodes[i_node].Cpus))
         { 
             while (last_task_assigned < task_count &&
                     task_mapping[last_task_assigned] != -1) 
@@ -1966,13 +1974,17 @@ int* TASK_Map_Filling_Nodes(int task_count)
             {
                 task_mapping[last_task_assigned] = i_node; 
                 last_task_assigned++;   
+                    node->used_node = TRUE;
+                    cpu->cpu_is_used = TRUE;
+               // printf("the cpu is used %d and cpuid = %d in node id %d\n",
+                 //       cpu->cpu_is_used, cpu->cpuid, node->nodeid);
             }
         }    
     }
 
     /*** If there is any task that could not be mapped, assign all of them
       to the last node.***/
-    for (i=0; i < task_count; ++i)
+    for (int i=0; i < task_count; ++i)
     {
         if (task_mapping[i] == -1)
         {
@@ -1993,7 +2005,7 @@ int* TASK_Map_Filling_Nodes(int task_count)
 int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
 {
     int  last_task_assigned = 0;
-    int  i, i_node, j_cpu;
+    int  i, i_node= 0, j_cpu;
     size_t tasks_it;
 
     int  n_nodes = SIMULATOR_get_number_of_nodes();
@@ -2026,6 +2038,7 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
 
     // STEP 1: Map accelerated tasks
     struct t_node *node;
+    struct t_cpu *cpu;
     for ( Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
             Ptask != P_NIL;
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
@@ -2046,6 +2059,8 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
                         {                
                             task_mapping[tasks_it] = i_node;
                             ++tasks_in_node[i_node];
+                                node->used_node = TRUE;
+                                cpu->cpu_is_used = TRUE;
                             //--n_cpus_per_node[i_node];
                             node->has_accelerated_task = TRUE;
                             break;
@@ -2068,6 +2083,11 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
         if (node->accelerator)
             n_cpus_node--; //GPU must be subtracted
 
+        for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i_node].Cpus); 
+            cpu != C_NIL; 
+            cpu = (struct t_cpu *)next_queue(&nodes[i_node].Cpus))
+        {
+          //  printf("number of cpus %d\n", count_queue(&nodes[i_node].Cpus));
         int i_task;
         for (i_task=0; i_task < total_task_count; ++i_task)
         {
@@ -2075,12 +2095,17 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
             {
                 task_mapping[i_task] = i_node;
                 ++tasks_in_node[i_node];
-
+                    node->used_node = TRUE;
+                    cpu->cpu_is_used = TRUE;
                 if (tasks_in_node[i_node] == n_tasks_per_node)
                     break;
             }
+            //printf("cpu is %d and cpu id == %d in node id %d\n", 
+              //      cpu->cpu_is_used, cpu->cpuid, node->nodeid);
         }
-    }
+                if (tasks_in_node[i_node] == n_tasks_per_node)
+                    break;
+    }}
     return task_mapping;
 }
 
@@ -2104,6 +2129,7 @@ int* TASK_Map_Interleaved(int task_count)
 
     //MAP ACCELERATED TASKS
     struct t_node *node;
+    struct t_cpu *cpu;
     int i_node;
     for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
             Ptask != P_NIL;
@@ -2122,13 +2148,13 @@ int* TASK_Map_Interleaved(int task_count)
                         n_cpus_per_node [i_node]--; // One CPU is now occupied           
                         task_mapping[tasks_it] = i_node % n_nodes;            
                         last_task_assigned++;
+                            node->used_node = TRUE;
+                            cpu->cpu_is_used = TRUE;
                         node->has_accelerated_task = TRUE; // One GPU is now occupied
                         break;
                     }
                 } } } }
     //STEP 2 MAP NON ACCELERATED TASKS
-    int j_cpu, task_per_node;
-    //int n_cpus_node = n_cpus_per_node[i_node];
     for(i = 0; i < task_count && last_task_assigned < task_count; i++)
     {
 
@@ -2149,14 +2175,14 @@ int* TASK_Map_Interleaved(int task_count)
             {
                 task_mapping[last_task_assigned] = i_node%n_nodes; 
                 last_task_assigned++;
-                //task_per_node;   
+                    node->used_node = TRUE;
+                    cpu->cpu_is_used = TRUE;
             }
         }  
     }
     return task_mapping;
 }
 //Added to update the acc node info after the fill/n-task-per-node/task-interleaved nodes
-/*Chetan*/
 void Update_Node_Info(
         struct t_task *tasks, /* vector of tasks */
         int tasks_count,

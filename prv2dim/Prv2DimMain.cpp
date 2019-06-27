@@ -32,7 +32,6 @@
 #include <bsc_utils.hpp>
 #include "ParaverTraceTranslator.hpp"
 #include "PCFGeneration.hpp"
-
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -47,6 +46,8 @@ bool  GenerateMPIInitBarrier;
 double IprobeMissesThreshold; /* Maximun iprobe misses to discard iprobe burst */
 double TestMissesThreshold;
 double BurstCounterFactor;
+bool debug_enabled;
+int debug = 0;
 
 int  BurstCounterType;
 
@@ -81,14 +82,21 @@ bool ReadArgs(const int argc, const char *argv[])
             "Generates a file with extra statistics for deadlock analysis")
     ;
 
+    po::options_description debug_args("Debug options");
+    debug_args.add_options()
+        ("debug,g", po::bool_switch(&debug_enabled), 
+            "Show debug information during the simulation");
+
     po::options_description miscellany("Miscellany options");
     miscellany.add_options()
         ("help,h", "Show this help message")
+        ("version,v", "Show the version")
     ;
 
     po::options_description all("Allowed options");
     all.add(mandatory)
         .add(optional)
+        .add(debug_args)
         .add(miscellany);
 
     po::positional_options_description pd;
@@ -126,6 +134,11 @@ bool ReadArgs(const int argc, const char *argv[])
             << endl;
         cout << endl;
         cout << all << endl;
+        exit(EXIT_SUCCESS);
+    }
+    else if(varmap.count("version"))
+    {
+        cout << "prv2dim"  << " "  VERSION << " (" << DATE << ")"<< endl;
         exit(EXIT_SUCCESS);
     }
 
@@ -167,6 +180,8 @@ bool ReadArgs(const int argc, const char *argv[])
 
         cout << "EXTRA STATISTICS NAME = " << ExtraStatisticsName << endl;
     }
+    if(debug_enabled)
+        debug = D_LINKS|D_COMM|D_SCH|D_EV|D_NONE;
     return true;
 }
 

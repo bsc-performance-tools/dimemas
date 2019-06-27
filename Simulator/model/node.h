@@ -95,6 +95,7 @@ struct t_node
   struct t_machine *machine;
 
   t_boolean         initialized;
+  t_boolean         used_node;
 
   //EEE
   int messages_in_flight;

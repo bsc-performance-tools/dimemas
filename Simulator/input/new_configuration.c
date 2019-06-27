@@ -657,7 +657,6 @@ double  "wan_startup";
 t_boolean parse_multinode_info (char* record_fields)
 {
     int     matches;
-
     int     machine_id, node_count;
     char    simulated_architecture[strlen(record_fields)];
     int     number_of_processors;
@@ -683,7 +682,6 @@ t_boolean parse_multinode_info (char* record_fields)
             &inter_node_input_links,
             &inter_node_output_links,
             &wan_startup);
-
     if (matches == 14)
     {
         if (NEW_CONFIGURATION_parameter_lat != DBL_MIN)
@@ -695,8 +693,8 @@ t_boolean parse_multinode_info (char* record_fields)
         intra_node_startup = intra_node_startup*1e9;
         wan_startup = wan_startup*1e9;
 
-        if (!SIMULATOR_set_multiple_node_definition(node_count,
-                    machine_id,
+        if (!SIMULATOR_set_multiple_node_definition(machine_id,
+                    node_count,
                     erase_quotations(trim_string(simulated_architecture)),
                     number_of_processors,
                     intra_node_buses,

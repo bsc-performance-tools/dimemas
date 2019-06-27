@@ -180,6 +180,7 @@ void SIMULATOR_Init(const char  *simulator_configuration_filename,
 void SIMULATOR_Generate_row(const char *row_filename)
 {
     FILE* row_file = IO_fopen(row_filename, "w");
+
     if (row_file == NULL)
         die("Can't create row file %s\n", row_filename);
     
@@ -199,9 +200,10 @@ void SIMULATOR_Generate_row(const char *row_filename)
     }
     fprintf(row_file, "\n");
     
+    fprintf(row_file, "\n");
     // Node information
     fprintf(row_file, "LEVEL NODE SIZE %d\n",  nodes_size);
-    for (unsigned int i=0; i < nodes_size; ++i)
+    for (unsigned int i=0; i < SIMULATOR_get_number_of_nodes(); ++i)
     {
         char machine_name[50];
         if(strlen(nodes[i].machine->name) == 0)
@@ -209,8 +211,10 @@ void SIMULATOR_Generate_row(const char *row_filename)
         else
             memcpy(machine_name, nodes[i].machine->name, 
                     strlen(nodes[i].machine->name)+1);
-        fprintf(row_file, "%s.%d (%s)\n", machine_name,
-            nodes[i].nodeid+1, nodes[i].arch);
+        struct t_node *node;
+        //if(nodes[i].used_node == TRUE)
+            fprintf(row_file, "%s.%d (%s)\n", machine_name,
+                nodes[i].nodeid+1, nodes[i].arch);
     }
     fprintf(row_file, "\n");
     
@@ -219,8 +223,8 @@ void SIMULATOR_Generate_row(const char *row_filename)
     for (unsigned int i=0; i < nodes_size; ++i)
         ncpus += count_queue(&(nodes[i].Cpus));
 
-    fprintf(row_file, "LEVEL CPU SIZE %d\n",  ncpus);
-    for (unsigned int i=0; i < nodes_size; ++i)
+    fprintf(row_file, "LEVEL CPU SIZE %ld\n",  ncpus);
+    for (unsigned int i=0; i < SIMULATOR_get_number_of_nodes(); ++i)
     { 
         char machine_name[50];
         if(strlen(nodes[i].machine->name) == 0)
@@ -228,7 +232,6 @@ void SIMULATOR_Generate_row(const char *row_filename)
         else
             memcpy(machine_name, nodes[i].machine->name, 
                     strlen(nodes[i].machine->name)+1);
-
         for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i].Cpus); 
             cpu != C_NIL; 
             cpu = (struct t_cpu *)next_queue(&nodes[i].Cpus)
@@ -239,9 +242,11 @@ void SIMULATOR_Generate_row(const char *row_filename)
                 name = "GPU";
             else
                 name = "CPU";
-            fprintf(row_file, "%s %s.%d.%d\n", name, machine_name,
-                nodes[i].nodeid+1, cpu->cpuid);
-
+            //if(cpu->cpu_is_used == TRUE)
+                fprintf(row_file, "%s %s.%d.%d\n", name, machine_name,
+                    nodes[i].nodeid+1, cpu->cpuid);
+            //printf("cpuid %d and cpu is used %d with node id %d\n",
+              //      cpu->cpuid, cpu->cpu_is_used, nodes[i].nodeid+1);
         }
     }
     fprintf(row_file, "\n");
@@ -268,7 +273,7 @@ void SIMULATOR_Generate_row(const char *row_filename)
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
         ntasks += Ptask->tasks_count;
 
-    fprintf(row_file, "LEVEL TASK SIZE %d\n",  ntasks);
+    fprintf(row_file, "LEVEL TASK SIZE %ld\n",  ntasks);
     for (struct t_Ptask* Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
             Ptask != P_NIL;
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
@@ -280,7 +285,7 @@ void SIMULATOR_Generate_row(const char *row_filename)
     fprintf(row_file, "\n");
     
     // Thread information
-    fprintf(row_file, "LEVEL THREAD SIZE %d\n",  Simulator.threads_count);
+    fprintf(row_file, "LEVEL THREAD SIZE %ld\n",  Simulator.threads_count);
     for (struct t_Ptask* Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
             Ptask != P_NIL;
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
@@ -321,6 +326,7 @@ char* SIMULATOR_Get_Configuration_FileName(void)
 
 int  SIMULATOR_get_number_of_nodes(void)
 {
+
     return nodes_size;
 }
 
@@ -605,7 +611,6 @@ t_boolean SIMULATOR_set_node_definition(
     struct t_node *node;
     struct t_machine *machine;
     int effective_node_id;
-
     if (node_id == NO_NODE_ID)
     {
         effective_node_id = SIMULATOR_last_node_id;
@@ -741,8 +746,8 @@ t_boolean SIMULATOR_set_node_definition(
 }
 
 t_boolean SIMULATOR_set_multiple_node_definition(
-        int            node_count,
         int            machine_id,
+        int            node_count,
         char          *node_name,
         int            no_processors,
         int            no_mem_buses,
@@ -763,13 +768,11 @@ t_boolean SIMULATOR_set_multiple_node_definition(
     struct t_node    *node;
     struct t_machine *machine;
     size_t         i;
-
     if ( (machine = SIMULATOR_get_machine(machine_id)) == NULL)
     {
         generate_error(&SIMULATOR_error_message, "invalid machine id (%d)", machine_id);
         return FALSE;
     }
-
     if ( (machine->loaded_nodes+node_count) > machine->number_of_nodes)
     {
         generate_error(&SIMULATOR_error_message, 
@@ -863,7 +866,7 @@ t_boolean SIMULATOR_set_multiple_node_definition(
 
     for (i = machine->first_node_id; i < machine->first_node_id+node_count; i++)
     {
-        node = &nodes[i];
+        node = &nodes[SIMULATOR_last_node_id];
         if (node == NULL)
         {
             generate_error(&SIMULATOR_error_message, "invalid node identifier (%d)", SIMULATOR_last_node_id);
@@ -892,7 +895,6 @@ t_boolean SIMULATOR_set_multiple_node_definition(
     }
 
     machine->loaded_nodes += node_count;
-
     return TRUE;
 }
 
@@ -1078,7 +1080,6 @@ void SIMULATOR_check_correct_definitions(void)
     for ( i = 0; i < Simulator.number_machines; i++)
     {
         current_machine = &Machines[i];
-
         if (current_machine->loaded_nodes != current_machine->number_of_nodes)
         {
             die("Machine %d should have %d nodes, but only %d have been defined. Check your configuration file\n",

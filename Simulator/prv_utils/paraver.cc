@@ -324,7 +324,8 @@ void PARAVER_End(int print)
   {
     // TODO: TraceMerger.CleanTemporalFiles();
      warning("The simulated paraver trace file wasn't generated\n");
-     final("\n");
+    final("\n");
+    exit(EXIT_SUCCESS);
   }
 
   /* Flush last collapsed events */
@@ -353,7 +354,6 @@ void PARAVER_End(int print)
   printf("Output Paraver trace \"%s\" generated\n",
          paraver_trace_filename.c_str());
   final("\n");
-
 
   IO_fclose(ParaverTraceFile);
 
@@ -1133,6 +1133,7 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
   struct t_node*         node;
   struct t_Ptask*        ptask;
   struct t_task*         task;
+  struct t_cpu*          cpu;
   struct t_communicator* communicator;
 
   unsigned int total_communicators = 0;
@@ -1165,18 +1166,53 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
   strftime( Date, 80, "(%d/%m/%y at %H:%M)", tm_str );
 
   Header << "#Paraver " << Date << ":" << (prv_time_t) final_time << "_ns" << ":";
-
-  /*
-   * Iterate through nodes to print the number of CPUs
-   */
-  Header << (unsigned int) nodes_size << "("; 
-
+/*
+  unsigned int used_node_count = 0;
+  unsigned int used_cpu_count = 0;
   int node_id = 0;
   node = &nodes[node_id];
 
+    while(node_id < nodes_size)
+    {
+        if(nodes[node_id].used_node == TRUE)
+        {
+            used_node_count++;
+        }  
+        node = &nodes[++node_id];
+    }
+    Header <<  used_node_count << "(";
+   node_id = 0;
+   // while(node_id < nodes_size)
+   for(int i = 0; i < nodes_size; i++) 
+   {
+        if(nodes[node_id].used_node == TRUE)
+        {
+            //for(int i = 0; i < count_queue(&(nodes[node_id].Cpus)); i++)
+            
+        for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i].Cpus); 
+            cpu != C_NIL; 
+            cpu = (struct t_cpu *)next_queue(&nodes[i].Cpus))
+            {
+                printf("cpu_is_used %d and cpuid %d\n", cpu->cpu_is_used, cpu->cpuid);
+                if(cpu->cpu_is_used == TRUE)
+                    used_cpu_count++;
+            }
+            if(used_cpu_count !=0)
+            Header << used_cpu_count <<",";
+            used_cpu_count = 0;
+        }  
+        node = &nodes[++node_id];
+    }
+    Header << ")";*/
+  /*  
+   * Iterate through nodes to print the number of CPUs
+   */
+  Header << nodes_size << "(";
+  int node_id = 0;
+  node = &nodes[node_id];
   while (node_id < nodes_size)
   {
-    Header << (unsigned int) count_queue(&(node->Cpus)); // Number of CPUs
+      Header << (unsigned int) count_queue(&(node->Cpus)); // Number of CPUs
 
     node = &nodes[++node_id];
 

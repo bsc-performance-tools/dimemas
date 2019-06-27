@@ -69,7 +69,6 @@ void final (const char *fmt, ...)
   vfprintf (stderr, fmt, args);
   fprintf (stderr, "\n");
   va_end (args);
-  exit(EXIT_FAILURE);
 
 }
 
@@ -80,6 +79,7 @@ void warning(const char *fmt, ...)
   fprintf (stderr, "\n");
   fprintf(stdout, "WARNING: ");
   vfprintf (stdout, fmt, args);
+  fprintf (stderr, "\n");
   va_end (args);
 }
 
