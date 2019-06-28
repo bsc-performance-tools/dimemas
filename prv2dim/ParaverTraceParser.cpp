@@ -54,7 +54,6 @@ ParaverTraceParser::ParaverTraceParser(string ParaverTraceName,
 
 
   this->ParaverTraceName = ParaverTraceName;
-
   if (ParaverTraceFile != NULL)
   {
     this->ParaverTraceFile = ParaverTraceFile;
@@ -114,7 +113,6 @@ bool ParaverTraceParser::InitTraceParsing(void)
   }
 
   FirstCommunicatorOffset = ftello(ParaverTraceFile);
-
   /* Initialization of structures needed to trace parsing
    * (task handlers, thread handlers, etc) */
 
@@ -149,7 +147,6 @@ bool ParaverTraceParser::InitTraceParsing(void)
   FirstRecordLine   = CurrentLine;
 
   ParsingInitialized = true;
-
   return true;
 }
 
@@ -270,7 +267,7 @@ bool ParaverTraceParser::Reload(void)
                     strerror(errno));
     return false;
   }
-
+  
   CurrentLine = FirstRecordLine;
   return true;
 }

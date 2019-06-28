@@ -84,10 +84,6 @@ ParaverHeader::ParaverHeader(char* ASCIIHeader, INT32 HeaderLength)
     return;
   }
 
-  /*
-  cout << "Final Time: " << FinalTime << " (" << TimeUnits << ")" << endl;
-  */
-
   ResourceDescriptionPresent = false;
   RsrcList[strlen(RsrcList)] = '\0';
   if (!ProcessResourceList(RsrcList))
@@ -96,6 +92,7 @@ ParaverHeader::ParaverHeader(char* ASCIIHeader, INT32 HeaderLength)
     return;
   }
 
+  
   /*
   cout << "Resources: " << ResourceNumber;
   cout << " (" << ResourceDescription.size() << ")" << endl;
@@ -107,7 +104,7 @@ ParaverHeader::ParaverHeader(char* ASCIIHeader, INT32 HeaderLength)
     return;
   }
 
-  /*
+ /*  
   cout << "Number of applications: " << AppNumber;
   cout << " (" << AppsDescription.size() << ")" << endl;
   for (int i = 0; i < AppNumber; i++)
@@ -115,7 +112,7 @@ ParaverHeader::ParaverHeader(char* ASCIIHeader, INT32 HeaderLength)
     cout << "Application description (" << i << ")" << endl;
     cout << *AppsDescription[i];
   }
-  */
+ */ 
 }
 
 /*****************************************************************************
@@ -136,7 +133,6 @@ ParaverHeader::ProcessFinalTime(char* ASCIIFinalTime)
     FinalTime = strtoull(ASCIIFinalTime, NULL, 0);
     TimeUnits = MICROSECONDS;
   }
-
   return true;
 }
 

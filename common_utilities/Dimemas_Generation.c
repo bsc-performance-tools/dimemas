@@ -142,7 +142,7 @@ static char *DimemasSDDF[ DIMEMASSDDF_LINES ] =
 };
 
 /* ---------------------------------------------------- Global Variables ----*/
-#define BLOCKDEF_LINES 157
+#define BLOCKDEF_LINES 158
 static char *DimemasBlockDef[ BLOCKDEF_LINES ] =
 {
   "\"block definition\" {   1, \"MPI_Allgather\", \"MPI\", 0, 0 };;",
@@ -302,10 +302,11 @@ static char *DimemasBlockDef[ BLOCKDEF_LINES ] =
   "\"block definition\" { 155, \"LAPI_Waitcntr\", \"LAPI\", 0, 0 };",
   "\"block definition\" { 156, \"MPI_Mprobe\", \"MPI\", 0, 0 };;",
   "\"block definition\" { 157, \"MPI_Mrecv\", \"MPI\", 0, 0 };;"
+  "\"block definition\" { 158, \"MPI_Alltoallw\", \"MPI\", 0, 0 };;",
 };
 
 /* ---------------------------------------------------- Global Variables ----*/
-#define COLLECTIVEDEF_LINES   14
+#define COLLECTIVEDEF_LINES   15
 static char *DimemasCollectiveDef[ COLLECTIVEDEF_LINES ] =
 {
   "\"global OP definition\" { 0, \"MPI_Barrier\" };;",
@@ -318,10 +319,11 @@ static char *DimemasCollectiveDef[ COLLECTIVEDEF_LINES ] =
   "\"global OP definition\" { 7, \"MPI_Allgatherv\" };;",
   "\"global OP definition\" { 8, \"MPI_Alltoall\" };;",
   "\"global OP definition\" { 9, \"MPI_Alltoallv\" };;",
-  "\"global OP definition\" {10, \"MPI_Reduce\" };;",
-  "\"global OP definition\" {11, \"MPI_Allreduce\" };;",
-  "\"global OP definition\" {12, \"MPI_Reduce_Scatter\" };;",
-  "\"global OP definition\" {13, \"MPI_Scan\" };;"
+  "\"global OP definition\" {10, \"MPI_Alltoallw\" };;",
+  "\"global OP definition\" {11, \"MPI_Reduce\" };;",
+  "\"global OP definition\" {12, \"MPI_Allreduce\" };;",
+  "\"global OP definition\" {13, \"MPI_Reduce_Scatter\" };;",
+  "\"global OP definition\" {14, \"MPI_Scan\" };;"
 };
 
 /******************************************************************************

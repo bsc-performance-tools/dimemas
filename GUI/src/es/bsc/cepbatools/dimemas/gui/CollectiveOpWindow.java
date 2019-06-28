@@ -89,7 +89,7 @@ public class CollectiveOpWindow extends GUIWindow
   * destinado dicho selector/es.
   *
   * @param: · boolean odd -> columna a la que va destinado el/los selector/es
-  *                          creado/s.
+  *                     4    creado/s.
   *                           - TRUE columna MODEL (0, LOG, LIN Y CT).
   *                           - FALSE columna SIZE (MIN, MAX, MEAN 2MAX y S+R).
   *         · int elements -> número de selectores a crear.
@@ -175,15 +175,15 @@ public class CollectiveOpWindow extends GUIWindow
     buttonPanelBottom.add(b_close);
 
     MPI_panel = new JPanel(new GridLayout(1,1));
-    MPI_names = new JPanel(new GridLayout(16,1));
+    MPI_names = new JPanel(new GridLayout(17,1));
 
     fan_in = new JPanel(new GridLayout(1,2));
     fan_out = new JPanel(new GridLayout(1,2));
 
-    colModelIn = new JPanel(new GridLayout(16,1));
-    colSizeIn = new JPanel(new GridLayout(16,1));
-    colModelOut = new JPanel(new GridLayout(16,1));
-    colSizeOut = new JPanel(new GridLayout(16,1));
+    colModelIn = new JPanel(new GridLayout(17,1));
+    colSizeIn = new JPanel(new GridLayout(17,1));
+    colModelOut = new JPanel(new GridLayout(17,1));
+    colSizeOut = new JPanel(new GridLayout(17,1));
 
     fan_in.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"FAN IN"));
     fan_out.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"FAN OUT"));
@@ -226,6 +226,7 @@ public class CollectiveOpWindow extends GUIWindow
     MPI_names.add(new JLabel("  MPI_Allgatherv",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Alltoall",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Alltoallv",JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Alltoallw",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Reduce",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Allreduce",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Reduce_Scatter",JLabel.LEFT));

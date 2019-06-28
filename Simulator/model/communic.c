@@ -5054,7 +5054,7 @@ void add_global_ops (void)
     }
 }
 
-static void inicialitza_info_nova_globalop (int                            model,
+static void inicialitza_info_nova_globalop (int model,
         struct t_global_op_definition *glop,
         struct t_queue                *cua)
 {
@@ -6806,7 +6806,7 @@ void calcula_fan (t_nano bandw,     /* MB/s */
             if (debug & D_COMM)
             {
                 PRINT_TIMER(current_time);
-                printf(": FAN_CALCULATION LOG Model. Factor %d\n", factor);
+                printf(": FAN_CALCULATION LOG Model. Factor %f\n", factor);
             }
 
             break;
@@ -7452,7 +7452,6 @@ static void start_global_op (struct t_thread *thread, int kind)
             others  = (struct t_thread *) next_queue (&communicator->threads) )
     {
         ASS_ALL_TIMER (others->collective_timers.with_resources, current_time);
-
         PARAVER_Wait (
                 0,
                 IDENTIFIERS (others),

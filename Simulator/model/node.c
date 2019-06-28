@@ -104,6 +104,7 @@ void NODE_Fill_Node_Fields(struct t_node *node,
     cpu->current_load           = (double) 0;
     cpu->io                     = QU_NIL;
     cpu->is_gpu                 = FALSE;
+    cpu->cpu_is_used            = FALSE;
     insert_queue (&(node->Cpus), (char *) cpu, (t_priority) (j + 1));
   }
 
@@ -171,6 +172,7 @@ void NODE_Fill_Node_Fields(struct t_node *node,
   node->local_memory_startup  = local_memory_startup;
   node->remote_memory_startup = remote_memory_startup;
   node->has_accelerated_task = FALSE;
+  node->used_node            = FALSE;
   node->initialized = TRUE;
 
   return;
@@ -213,6 +215,7 @@ printf("number of gpu(s) = %d \n",num_gpu_in_node);
   cpu->current_load           = (double) 0;
   cpu->io                     = QU_NIL;
   cpu->is_gpu                 = TRUE;
+  cpu->cpu_is_used            = FALSE;
   insert_queue (&(node->Cpus), (char *) cpu, (t_priority) gpu_id);
 }
 

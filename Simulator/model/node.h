@@ -52,60 +52,61 @@ struct t_accelerator {
 
 struct t_node
 {
-    char             *arch;
-    int               nodeid;
-    struct t_queue    Cpus;
-    t_nano            relative;
-    t_nano            bandwidth;
-    t_nano            local_startup;
-    t_nano            remote_startup;
-    t_nano            external_net_startup; /* Latencia de la xarxa externa */
-    t_nano            local_port_startup;
-    t_nano            remote_port_startup;
-    t_nano            local_memory_startup;
-    t_nano            remote_memory_startup;
-    struct t_queue    ready;
+  char             *arch;
+  int               nodeid;
+  struct t_queue    Cpus;
+  t_nano            relative;
+  t_nano            bandwidth;
+  t_nano            local_startup;
+  t_nano            remote_startup;
+  t_nano            external_net_startup; /* Latencia de la xarxa externa */
+  t_nano            local_port_startup;
+  t_nano            remote_port_startup;
+  t_nano            local_memory_startup;
+  t_nano            remote_memory_startup;
+  struct t_queue    ready;
 
-    /* Network links */
-    t_boolean         infinite_net_links;   /* TRUE if there are infinite links */
-    t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
-    struct t_queue    free_in_links;        /* Free input links */
-    struct t_queue    free_out_links;       /* Free output link */
-    struct t_queue    busy_in_links;        /* Busy input links */
-    struct t_queue    busy_out_links;       /* Busy output links */
-    struct t_queue    th_for_in;            /* Awaiting for input link */
-    struct t_queue    th_for_out;           /* Awaiting for output link */
+  /* Network links */
+  t_boolean         infinite_net_links;   /* TRUE if there are infinite links */
+  t_boolean         half_duplex_links;    /* TRUE if links are half duplex */
+  struct t_queue    free_in_links;        /* Free input links */
+  struct t_queue    free_out_links;       /* Free output link */
+  struct t_queue    busy_in_links;        /* Busy input links */
+  struct t_queue    busy_out_links;       /* Busy output links */
+  struct t_queue    th_for_in;            /* Awaiting for input link */
+  struct t_queue    th_for_out;           /* Awaiting for output link */
 
-    /* Memory buses */
-    int               max_memory_messages;
-    int               cur_memory_messages;
-    struct t_queue    wait_for_mem_bus;
-    struct t_queue    threads_in_memory;
+  /* Memory buses */
+  int               max_memory_messages;
+  int               cur_memory_messages;
+  struct t_queue    wait_for_mem_bus;
+  struct t_queue    threads_in_memory;
 
-    t_boolean         infinite_mem_links;
-    int               in_mem_links;
-    int               out_mem_links;
+  t_boolean         infinite_mem_links;
+  int               in_mem_links;
+  int               out_mem_links;
 
-    struct t_queue    wait_outlink_port;
-    struct t_queue    wait_inlink_port;
-    struct t_queue    wait_in_copy_segment;
-    struct t_queue    wait_out_copy_segment;
-    struct t_queue    IO_disks;
-    struct t_queue    IO_disks_threads;
+  struct t_queue    wait_outlink_port;
+  struct t_queue    wait_inlink_port;
+  struct t_queue    wait_in_copy_segment;
+  struct t_queue    wait_out_copy_segment;
+  struct t_queue    IO_disks;
+  struct t_queue    IO_disks_threads;
 
-    struct t_machine *machine;
+  struct t_machine *machine;
 
-    t_boolean         initialized;
+  t_boolean         initialized;
+  t_boolean         used_node;
 
-    //EEE
-    int messages_in_flight;
+  //EEE
+  int messages_in_flight;
 
-    //accelerator
-    int acc_nodes_count;
-    t_boolean accelerator;
-    struct t_accelerator 	acc;
-    double acc_relative;
-    t_boolean has_accelerated_task;
+  //accelerator
+  int acc_nodes_count;
+  t_boolean accelerator;
+  struct t_accelerator 	acc;
+  double acc_relative;
+  t_boolean has_accelerated_task;
 };
 
 void NODE_Init_Empty_Node(struct t_machine* machine,

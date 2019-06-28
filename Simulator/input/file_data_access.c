@@ -363,7 +363,6 @@ t_boolean DATA_ACCESS_get_ptask_structure (int                      ptask_id,
 {
     app_struct *app = NULL;
 
-
     if ( (app = DAP_locate_app_struct (ptask_id)) == NULL)
     {
         *ptask_info = NULL;
@@ -2240,7 +2239,6 @@ t_boolean DAP_read_global_op (const char      *global_op_str,
             &bytes_sent,
             &bytes_recv,
             &synch_type);
-
     if (nfields == 7)
     {
 

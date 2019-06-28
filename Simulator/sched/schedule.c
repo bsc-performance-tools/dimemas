@@ -91,7 +91,6 @@ void SCHEDULER_Init()
             task = &(Ptask->tasks[tasks_it]);        
             node    = get_node_of_task (task);
             machine = node->machine;
-
             for (threads_it = 0; threads_it < task->threads_count; threads_it++)
             {
                 thread = task->threads[threads_it];
@@ -283,7 +282,6 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
             account->time_ready_without_cpu,
             account->time_ready_without_cpu);
 
-    /*Chetan*/
     if(thread->task->accelerator && thread->kernel == TRUE)
     {    
         // 0. Ensure that this is an heterogeneous node
@@ -313,7 +311,6 @@ put_thread_on_run (struct t_thread *thread, struct t_node *node)
         cpu = select_free_cpu (node, thread);
 
         assert(cpu->is_gpu == FALSE);
-
         if(cpu == C_NIL)
         {
             panic ("Can't get free processor on node %d\n", node->nodeid);

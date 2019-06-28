@@ -943,7 +943,6 @@ void new_node_info (struct t_queue *q, struct t_entry* en)
     BAD_TYPES(f->tipo, el->type);
   }
   node_id = f->value.dec;
-
   if (!SIMULATOR_node_exists(node_id))
   {
     near_line();

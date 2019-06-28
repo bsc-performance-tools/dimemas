@@ -775,23 +775,22 @@ typedef enum
   GLOP_ID_MPI_Allreduce      = 11,
   GLOP_ID_MPI_Reduce_scatter = 12,
   GLOP_ID_MPI_Scan           = 13,
-
   GLOP_ID_MPI_Ibarrier       = 14,
-  GLOP_ID_MPI_Ibcast         = 15,
-  GLOP_ID_MPI_Igather        = 16,
-  GLOP_ID_MPI_Igatherv       = 17,
-  GLOP_ID_MPI_Iscatter       = 18,
-  GLOP_ID_MPI_Iscatterv      = 19,
-  GLOP_ID_MPI_Iallgather     = 20,
-  GLOP_ID_MPI_Iallgatherv    = 21, 
-  GLOP_ID_MPI_Ialltoall      = 22,
-  GLOP_ID_MPI_Ialltoallv     = 23,
-  GLOP_ID_MPI_Ireduce        = 24,
-  GLOP_ID_MPI_Iallreduce     = 25,
-  GLOP_ID_MPI_Ireduce_scatter= 26,
-  GLOP_ID_MPI_Iscan          = 27
-  
-
+  GLOP_ID_MPI_Alltoallw      = 15,
+  GLOP_ID_MPI_Ibcast         = 16,
+  GLOP_ID_MPI_Igather        = 17,
+  GLOP_ID_MPI_Igatherv       = 18,
+  GLOP_ID_MPI_Iscatter       = 19,
+  GLOP_ID_MPI_Iscatterv      = 20,
+  GLOP_ID_MPI_Iallgather     = 21,
+  GLOP_ID_MPI_Iallgatherv    = 22, 
+  GLOP_ID_MPI_Ialltoall      = 23,
+  GLOP_ID_MPI_Ialltoallv     = 24,
+  GLOP_ID_MPI_Ialltoallw     = 25,
+  GLOP_ID_MPI_Ireduce        = 26,
+  GLOP_ID_MPI_Iallreduce     = 27,
+  GLOP_ID_MPI_Ireduce_scatter= 28,
+  GLOP_ID_MPI_Iscan          = 29
 }DimCollectiveOp;
 
 /* ==========================================================================
@@ -812,6 +811,7 @@ typedef enum
 #define  MPI_BCAST_LABEL                   "MPI_Bcast"
 #define  MPI_ALLTOALL_LABEL                "MPI_Alltoall"
 #define  MPI_ALLTOALLV_LABEL               "MPI_Alltoallv"
+#define  MPI_ALLTOALLW_LABEL               "MPI_Alltoallw"
 #define  MPI_ALLGATHER_LABEL               "MPI_Allgather"
 #define  MPI_ALLGATHERV_LABEL              "MPI_Allgatherv"
 #define  MPI_GATHER_LABEL                  "MPI_Gather"
@@ -821,7 +821,6 @@ typedef enum
 #define  MPI_REDUCE_SCATTER_LABEL          "MPI_Reduce_scatter"
 #define  MPI_SCAN_LABEL                    "MPI_Scan"
 #define  MPI_REDUCE_SCATTER_BLOCK_LABEL    "MPI_Reduce_scatter_block"
-#define  MPI_ALLTOALLW_LABEL               "MPI_Alltoallw"
 
 #define  MPI_IREDUCE_LABEL                 "MPI_Ireduce"
 #define  MPI_IALLREDUCE_LABEL              "MPI_Iallreduce"

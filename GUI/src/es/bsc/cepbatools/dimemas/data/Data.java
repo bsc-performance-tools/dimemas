@@ -93,7 +93,7 @@ public class Data implements Version
   public static final String INTERLEAVE_MAP_STR       = "INTERLEAVED";
 
   // Número de elementos que componen las COLLECTIVE OPERATIONS.
-  static public final int DEFAULT_MPI_ITEMS = 14;
+  static public final int DEFAULT_MPI_ITEMS = 15;
 
   static public final String WAN         = "\"wide area network information\" {";
   static public final String CONNECTION  = "\"dedicated connection information\" {";

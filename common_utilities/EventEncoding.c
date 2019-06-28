@@ -1030,7 +1030,7 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
   FALSE }
 };
 
-#define BLOCKID_TOGLOBALOPID_VALUES 29
+#define BLOCKID_TOGLOBALOPID_VALUES 31
 DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 {
 /* 000 */  GLOP_ID_NULL,
@@ -1039,30 +1039,31 @@ DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 /* 003 */  GLOP_ID_MPI_Allreduce,
 /* 004 */  GLOP_ID_MPI_Alltoall,
 /* 005 */  GLOP_ID_MPI_Alltoallv,
-/* 006 */  GLOP_ID_MPI_Barrier,
-/* 007 */  GLOP_ID_MPI_Bcast,
-/* 008 */  GLOP_ID_MPI_Gather,
-/* 009 */  GLOP_ID_MPI_Gatherv,
-/* 010 */  GLOP_ID_MPI_Reduce_scatter,
-/* 011 */  GLOP_ID_MPI_Reduce,
-/* 012 */  GLOP_ID_MPI_Scan,
-/* 013 */  GLOP_ID_MPI_Scatter,
-/* 014 */  GLOP_ID_MPI_Scatterv,
-/* 015 */  GLOP_ID_MPI_Iallgather,
-/* 016 */  GLOP_ID_MPI_Iallgatherv,
-/* 017 */  GLOP_ID_MPI_Iallreduce,
-/* 018 */  GLOP_ID_MPI_Ialltoall,
-/* 019 */  GLOP_ID_MPI_Ialltoallv,
-/* 020 */  GLOP_ID_MPI_Ibarrier,
-/* 021 */  GLOP_ID_MPI_Ibcast,
-/* 022 */  GLOP_ID_MPI_Igather,
-/* 023 */  GLOP_ID_MPI_Igatherv,
-/* 024 */  GLOP_ID_MPI_Ireduce_scatter,
-/* 025 */  GLOP_ID_MPI_Ireduce,
-/* 026 */  GLOP_ID_MPI_Iscan,
-/* 027 */  GLOP_ID_MPI_Iscatter,
-/* 028 */  GLOP_ID_MPI_Iscatterv
-
+/* 006 */  GLOP_ID_MPI_Alltoallw,
+/* 007 */  GLOP_ID_MPI_Barrier,
+/* 008 */  GLOP_ID_MPI_Bcast,
+/* 009 */  GLOP_ID_MPI_Gather,
+/* 010 */  GLOP_ID_MPI_Gatherv,
+/* 011 */  GLOP_ID_MPI_Reduce_scatter,
+/* 012 */  GLOP_ID_MPI_Reduce,
+/* 013 */  GLOP_ID_MPI_Scan,
+/* 014 */  GLOP_ID_MPI_Scatter,
+/* 015 */  GLOP_ID_MPI_Scatterv,
+/* 016 */  GLOP_ID_MPI_Iallgather,
+/* 017 */  GLOP_ID_MPI_Iallgatherv,
+/* 018 */  GLOP_ID_MPI_Iallreduce,
+/* 019 */  GLOP_ID_MPI_Ialltoall,
+/* 020 */  GLOP_ID_MPI_Ialltoallv,
+/* 020 */  GLOP_ID_MPI_Ialltoallw,
+/* 021 */  GLOP_ID_MPI_Ibarrier,
+/* 022 */  GLOP_ID_MPI_Ibcast,
+/* 023 */  GLOP_ID_MPI_Igather,
+/* 024 */  GLOP_ID_MPI_Igatherv,
+/* 025 */  GLOP_ID_MPI_Ireduce_scatter,
+/* 026 */  GLOP_ID_MPI_Ireduce,
+/* 027 */  GLOP_ID_MPI_Iscan,
+/* 028 */  GLOP_ID_MPI_Iscatter,
+/* 029 */  GLOP_ID_MPI_Iscatterv
 };
 
 
@@ -1100,7 +1101,6 @@ DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op )
      cal reordenar la MPI_Table amb els mateixos canvis. */
  
   ASSERT( MPI_Table[ Op ].Op == Op );
-  
   return( MPI_Table[ Op ].Block );
 }
 
@@ -1114,7 +1114,6 @@ DimCollectiveOp MPIEventEncoding_GlobalOpId (DimBlock BlockId)
 {
     ASSERT (BlockId < NUM_MPICALLS);
     int GlobalOpId=BlockId2GlobalOpId[BlockId]; 
-    
     return GlobalOpId;
 }
 

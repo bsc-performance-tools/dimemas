@@ -175,12 +175,12 @@ extern int StackNumber;
 
 /* PROGRESS MESSAGE */
 #define SHOW_PROGRESS(channel, message, current, total) \
-  fprintf(channel, "\r%s %03d/%03d", message, current, total); \
+  fprintf(channel, "\r%s %03d/%03ld", message, current, total); \
   fflush(channel)
 
 
 #define SHOW_PROGRESS_END(channel, message, total) \
-  fprintf(channel, "\r%s %03d/%03d", message, total, total); \
+  fprintf(channel, "\r%s %03ld/%03ld", message, total, total); \
   fflush(channel)
 
 #define SHOW_PERCENTAGE_PROGRESS(channel, message, percentage) \

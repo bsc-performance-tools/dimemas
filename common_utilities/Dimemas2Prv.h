@@ -57,7 +57,7 @@ struct t_prv_type_info
 /* Els id minim i maxim dels blocks predefinits que apareixen a
    les traces .trf */
 #define MIN_TIPUS_MPI_TRF 1
-#define MAX_TIPUS_MPI_TRF 155
+#define MAX_TIPUS_MPI_TRF 159
 #define NUM_MPI_ELEMENTS (MAX_TIPUS_MPI_TRF-MIN_TIPUS_MPI_TRF+1)
 
 
