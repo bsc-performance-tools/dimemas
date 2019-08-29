@@ -571,6 +571,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             || CurrentEvent->GetFirstType() == 15 
             || CurrentEvent->GetFirstType() == 16) 
     {
+        this->pseudo_logic_recv_events++;
 		return true;
 	}
 
@@ -635,7 +636,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 
 		// If event appears in the middle of a CPU burst it breaks the burst
         //
-		if (LastBlockEnd != Timestamp 
+		if ((LastBlockEnd != Timestamp || (LastBlockEnd == 0 && Timestamp == 0)) 
                 && MPIBlockIdStack.size() == 0 
                 && CUDABlockIdStack.size() == 0 
                 && OCLBlockIdStack.size() == 0)
@@ -2800,54 +2801,57 @@ bool TaskTranslationInfo::PrintPseudoCommunicationEndpoint(INT32 CommType,
 							   INT32 Tag,
 							   INT32 CommId)
 {
-	if (Dimemas_User_Event(TemporaryFile,
-			       TaskId, ThreadId, (INT64) 9, CommType) < 0) {
-		SetError(true);
-		SetErrorMessage("error writing output trace", strerror(errno));
-		return false;
-	}
+    if(this->pseudo_logic_recv_events > 0){
 
-	if (Dimemas_User_Event(TemporaryFile,
-			       TaskId, ThreadId, (INT64) 10, PartnerTaskId) < 0)
-	{
-		SetError(true);
-		SetErrorMessage("error writing output trace", strerror(errno));
-		return false;
-	}
+    	if (Dimemas_User_Event(TemporaryFile,
+	    		       TaskId, ThreadId, (INT64) 9, CommType) < 0) {
+		    SetError(true);
+		    SetErrorMessage("error writing output trace", strerror(errno));
+		    return false;
+	    }
 
-	if (PartnerThreadId != -1) {
-		if (Dimemas_User_Event(TemporaryFile,
-				       TaskId,
-				       ThreadId, (INT64) 11,
-				       PartnerThreadId) < 0) {
-			SetError(true);
-			SetErrorMessage("error writing output trace",
-					strerror(errno));
-			return false;
-		}
-	}
+	    if (Dimemas_User_Event(TemporaryFile,
+		    	       TaskId, ThreadId, (INT64) 10, PartnerTaskId) < 0)
+    	{
+	    	SetError(true);
+	    	SetErrorMessage("error writing output trace", strerror(errno));
+	    	return false;
+	    }
 
-	if (Dimemas_User_Event(TemporaryFile,
+	    if (PartnerThreadId != -1) {
+	    	if (Dimemas_User_Event(TemporaryFile,
+		    		       TaskId,
+			    	       ThreadId, (INT64) 11,
+				           PartnerThreadId) < 0) {
+			    SetError(true);
+			    SetErrorMessage("error writing output trace",
+				    	strerror(errno));
+			    return false;
+		    }
+	    }
+
+	    if (Dimemas_User_Event(TemporaryFile,
 			       TaskId, ThreadId, (INT64) 12, Size) < 0) {
-		SetError(true);
-		SetErrorMessage("error writing output trace", strerror(errno));
-		return false;
-	}
+		    SetError(true);
+		    SetErrorMessage("error writing output trace", strerror(errno));
+		    return false;
+	    }   
 
-	if (Dimemas_User_Event(TemporaryFile,
+	    if (Dimemas_User_Event(TemporaryFile,
 			       TaskId, ThreadId, (INT64) 13, Tag) < 0) {
-		SetError(true);
-		SetErrorMessage("error writing output trace", strerror(errno));
-		return false;
-	}
+		    SetError(true);
+		    SetErrorMessage("error writing output trace", strerror(errno));
+		    return false;
+    	}
 
-	if (Dimemas_User_Event(TemporaryFile,
+	    if (Dimemas_User_Event(TemporaryFile,
 			       TaskId, ThreadId, (INT64) 14, CommId) < 0) {
-		SetError(true);
-		SetErrorMessage("error writing output trace", strerror(errno));
-		return false;
-	}
-
+		    SetError(true);
+	    	SetErrorMessage("error writing output trace", strerror(errno));
+	    	return false;
+        }
+        this->pseudo_logic_recv_events--; 
+    }
 	return true;
 }
 
