@@ -193,7 +193,7 @@ void NODE_set_acc(int node_id,
                 " configuration file\n", node_id);
 	}
     /*if user select the heterogenous accelerator it will create
-  //a node with GPU *chetan */
+  //a node with GPU */
 	node->accelerator = TRUE;
     node->acc.num_gpu_in_node = num_gpu_in_node;
 	node->acc.bandwidth = (t_bandwidth)bandwith;
@@ -204,7 +204,6 @@ void NODE_set_acc(int node_id,
 
 	create_queue(&(node->acc.threads_in_link));
 	create_queue(&(node->acc.wait_for_link));
-printf("number of gpu(s) = %d \n",num_gpu_in_node);
   /* Adding GPU to heterogeneous node */
   int gpu_id = count_queue(&node->Cpus) +1;
 
@@ -224,11 +223,18 @@ int NODE_get_acc_node(struct t_node *node)
     int n_nodes = SIMULATOR_get_number_of_nodes();
     int acc_nodes_count = 0;
     int i_node;
+    int total_number_of_gpus = 0;
     for (i_node = 0; i_node < n_nodes ; i_node++)
     {
         node = get_node_by_id(i_node);
-        if (node->accelerator)
-            acc_nodes_count++;
+       // if (node->accelerator){
+        for(int i = 0; i<node->acc.num_gpu_in_node; i++){
+            total_number_of_gpus++;
+        }
+        acc_nodes_count++;
     }
-	return acc_nodes_count;
+    printf("number_of_gpus %d\n", total_number_of_gpus);
+    printf("number_of-acc_nodes %d\n", acc_nodes_count);
+	//return acc_nodes_count;
+	return total_number_of_gpus;
 }

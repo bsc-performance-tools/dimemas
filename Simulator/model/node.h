@@ -103,6 +103,7 @@ struct t_node
 
   //accelerator
   int acc_nodes_count;
+  int total_number_of_gpus;
   t_boolean accelerator;
   struct t_accelerator 	acc;
   double acc_relative;

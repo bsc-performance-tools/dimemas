@@ -739,6 +739,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                 {	
                                     /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
                                     /* Not created states between blocks in kernel thread	*/
+                                    printf("cpu_unique number is %d\n", cpu->unique_number);
                                     PARAVER_Not_Created(cpu->unique_number,
                                             IDENTIFIERS (thread),
                                             thread->last_paraver,
