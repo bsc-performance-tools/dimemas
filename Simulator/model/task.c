@@ -1919,6 +1919,8 @@ int* TASK_Map_Filling_Nodes(int task_count)
     }
     int n_nodes = SIMULATOR_get_number_of_nodes();
     n_cpus_per_node = SIMULATOR_get_cpus_per_node();
+    int number_of_accelerated_tasks = 0;
+    int number_of_gpus_in_node = 0;
 
     if ( (n_cpus_per_node = SIMULATOR_get_cpus_per_node()) == NULL)
     {
@@ -1929,38 +1931,49 @@ int* TASK_Map_Filling_Nodes(int task_count)
             Ptask != P_NIL;
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
     {
+        printf("tasks_count is %d\n", Ptask->tasks_count);
         for(tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
         {
             struct t_task *task = &(Ptask->tasks[tasks_it]);
             if(task->accelerator)
             { 
+                printf("task_it is accelerated %d\n", tasks_it);
 
                 for(i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
                 {
                     node = get_node_by_id(i_node);          
-                    if(node->accelerator && node->has_accelerated_task==FALSE)
-                    {
-                        task_mapping[tasks_it] = i_node;
-                        n_cpus_per_node[i_node]--; // One CPU is now occupied
+                    if(node->accelerator)// && node->has_accelerated_task==FALSE)
+                    { 
+                       //if(cpu->is_gpu && cpu->cpu_is_used == FALSE && 
+                         if( node->acc.num_gpu_in_node > 0)
+                        {
+                            task_mapping[tasks_it] = i_node;
+                            n_cpus_per_node[i_node]--; // One CPU is now occupied
                             node->used_node = TRUE;
                             cpu->cpu_is_used = TRUE;
-                        node->has_accelerated_task = TRUE; // One GPU is now occupied
+                            number_of_accelerated_tasks++;
+                            node->acc.num_gpu_in_node--;
+                            number_of_gpus_in_node++;
+                            //node->has_accelerated_task = TRUE; // One GPU is now occupied
+                        printf("#_of_accelerated_tasks %d task_id %d cpuID %d nodeID %d\n",
+                                number_of_accelerated_tasks,tasks_it, cpu->cpuid, i_node);
                         break;
-                    }
-                } } } } 
+                    }}//}
+            }}
+        } } 
 
     // STEP 2: Map no-accelerated tasks 
     int last_task_assigned = 0;
     for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
     {
-        int n_cpus_node = n_cpus_per_node[i_node];
+        int n_cpus_node = n_cpus_per_node[i_node];     
         node = get_node_by_id(i_node);
         if (node->accelerator)
-        {
-            n_cpus_node--;
-        }
-        //for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
-        
+            for(int i = 0; i < node->acc.num_gpu_in_node; i++)
+            {
+                n_cpus_node--;
+            }
+       printf("# %d cpus are in node %d\n", n_cpus_node, node->nodeid); 
         for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i_node].Cpus); 
             cpu != C_NIL; 
             cpu = (struct t_cpu *)next_queue(&nodes[i_node].Cpus))
@@ -1969,6 +1982,7 @@ int* TASK_Map_Filling_Nodes(int task_count)
                     task_mapping[last_task_assigned] != -1) 
             {
                 last_task_assigned++;
+                printf("task_assigned %d\n", last_task_assigned);
             }     
             if (task_mapping[last_task_assigned] == -1)
             {
@@ -1976,8 +1990,9 @@ int* TASK_Map_Filling_Nodes(int task_count)
                 last_task_assigned++;   
                     node->used_node = TRUE;
                     cpu->cpu_is_used = TRUE;
-               // printf("the cpu is used %d and cpuid = %d in node id %d\n",
-                 //       cpu->cpu_is_used, cpu->cpuid, node->nodeid);
+                    n_cpus_node --;
+                printf("cpu is used %d and cpuid = %d in node id %d\n",
+                       cpu->cpu_is_used, cpu->cpuid, node->nodeid);
             }
         }    
     }
@@ -2064,12 +2079,7 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
                             //--n_cpus_per_node[i_node];
                             node->has_accelerated_task = TRUE;
                             break;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    }}}}}}
 
     // STEP 2: Map no-accelerated tasks 
     for(i_node = 0; i_node < n_nodes; i_node++)

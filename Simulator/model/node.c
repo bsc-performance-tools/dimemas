@@ -206,16 +206,18 @@ void NODE_set_acc(int node_id,
 	create_queue(&(node->acc.wait_for_link));
   /* Adding GPU to heterogeneous node */
   int gpu_id = count_queue(&node->Cpus) +1;
-
-  struct t_cpu *cpu = (struct t_cpu *) malloc (sizeof (struct t_cpu));
-  cpu->cpuid                  = gpu_id;
-  cpu->current_thread         = TH_NIL;
-  cpu->current_thread_context = TH_NIL;
-  cpu->current_load           = (double) 0;
-  cpu->io                     = QU_NIL;
-  cpu->is_gpu                 = TRUE;
-  cpu->cpu_is_used            = FALSE;
-  insert_queue (&(node->Cpus), (char *) cpu, (t_priority) gpu_id);
+  for(int j = 0; j < num_gpu_in_node ; j++)
+  {
+      struct t_cpu *cpu = (struct t_cpu *) malloc (sizeof (struct t_cpu));
+      cpu->cpuid                  = gpu_id+j;
+      cpu->current_thread         = TH_NIL;
+      cpu->current_thread_context = TH_NIL;
+      cpu->current_load           = (double) 0;
+      cpu->io                     = QU_NIL;
+      cpu->is_gpu                 = TRUE;
+      cpu->cpu_is_used            = FALSE;
+      insert_queue (&(node->Cpus), (char *) cpu, (t_priority) gpu_id);
+  }
 }
 
 int NODE_get_acc_node(struct t_node *node)
@@ -233,8 +235,6 @@ int NODE_get_acc_node(struct t_node *node)
         }
         acc_nodes_count++;
     }
-    printf("number_of_gpus %d\n", total_number_of_gpus);
-    printf("number_of-acc_nodes %d\n", acc_nodes_count);
 	//return acc_nodes_count;
-	return total_number_of_gpus;
+    return total_number_of_gpus;
 }
