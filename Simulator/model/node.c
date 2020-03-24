@@ -218,6 +218,7 @@ void NODE_set_acc(int node_id,
       cpu->cpu_is_used            = FALSE;
       insert_queue (&(node->Cpus), (char *) cpu, (t_priority) gpu_id);
   }
+  return;
 }
 
 int NODE_get_acc_node(struct t_node *node)
@@ -230,7 +231,7 @@ int NODE_get_acc_node(struct t_node *node)
     {
         node = get_node_by_id(i_node);
        // if (node->accelerator){
-        for(int i = 0; i<node->acc.num_gpu_in_node; i++){
+        for(int i = 0; i <  node->acc.num_gpu_in_node; i++){
             total_number_of_gpus++;
         }
         acc_nodes_count++;

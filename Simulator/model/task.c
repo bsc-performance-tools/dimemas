@@ -1942,11 +1942,8 @@ int* TASK_Map_Filling_Nodes(int task_count)
                 for(i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++)
                 {
                     node = get_node_by_id(i_node);          
-                    if(node->accelerator)// && node->has_accelerated_task==FALSE)
+                    if(node->accelerator && node->acc.num_gpu_in_node > 0)
                     { 
-                       //if(cpu->is_gpu && cpu->cpu_is_used == FALSE && 
-                         if( node->acc.num_gpu_in_node > 0)
-                        {
                             task_mapping[tasks_it] = i_node;
                             n_cpus_per_node[i_node]--; // One CPU is now occupied
                             node->used_node = TRUE;
@@ -1954,11 +1951,11 @@ int* TASK_Map_Filling_Nodes(int task_count)
                             number_of_accelerated_tasks++;
                             node->acc.num_gpu_in_node--;
                             number_of_gpus_in_node++;
-                            //node->has_accelerated_task = TRUE; // One GPU is now occupied
+                            node->has_accelerated_task = TRUE; // One GPU is now occupied
                         printf("#_of_accelerated_tasks %d task_id %d cpuID %d nodeID %d\n",
                                 number_of_accelerated_tasks,tasks_it, cpu->cpuid, i_node);
                         break;
-                    }}//}
+                    }
             }}
         } } 
 
