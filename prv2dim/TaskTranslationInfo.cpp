@@ -233,9 +233,6 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 		}
 	}
 
-	/* DEBUG
-	   cout << "Initial Time = " << InitialTime << endl; */
-
 	if (!EmptyTask && !GenerateFirstIdle) {
 		LastBlockEnd = InitialTime;
 	}
@@ -524,7 +521,6 @@ bool TaskTranslationInfo::ToDimemas(ParaverRecord_t Record)
 	Event_t CurrentEvent;
 	PartialCommunication_t CurrentComm;
 	GlobalOp_t CurrentGlobOp;
-	bool InnerResult;
 
 	if ((CurrentEvent=dynamic_cast <Event_t> (Record)) != NULL) 
     {
@@ -561,7 +557,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 	if (CurrentEvent->GetTypeValueCount() != 1) return false;
 
 	// Pseudo logical receive events must be erased during the translation
-    //
+    // after the translation it will be written back
 	if (CurrentEvent->GetFirstType() == 9 
             || CurrentEvent->GetFirstType() == 10 
             || CurrentEvent->GetFirstType() == 11 
@@ -596,10 +592,9 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
     {
 		DimBlock CurrentBlock;
 		DimCollectiveOp GlobalOpId;
-    PendingGlobalOp = true;
+        PendingGlobalOp = true;
 		CurrentBlock = MPIEventEncoding_DimemasBlockId((MPI_Event_Values) Value);
 		GlobalOpId = MPIEventEncoding_GlobalOpId(CurrentBlock);
-
 		PartialGlobalOp = new GlobalOp(
 				Timestamp, 
 				CurrentEvent->GetCPU(), 
@@ -2363,7 +2358,6 @@ bool TaskTranslationInfo::ToDimemas(GlobalOp_t CurrentGlobOp)
 		RootTaskId = 1;
 	else
 		RootTaskId = 0;
-
 	int err = 
         Dimemas_Global_OP(TemporaryFile, CurrentGlobOp->GetTaskId() - 1,
 			    CurrentGlobOp->GetThreadId() - 1, CurrentGlobOp->GetGlobalOpId(),
@@ -2857,9 +2851,8 @@ bool TaskTranslationInfo::PrintPseudoCommunicationEndpoint(INT32 CommType,
 
 void TaskTranslationInfo::PrintStack(void)
 {
-	int i;
 	cout << "Record Stack for Task " << TaskId << endl;
-	for (i = 0; i < RecordStack.size(); i++) {
+	for (unsigned int i = 0; i < RecordStack.size(); i++) {
 		cout << *(RecordStack[i]);
 	}
 	return;

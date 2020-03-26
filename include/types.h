@@ -1200,9 +1200,9 @@ struct t_disk_action
 
 struct trace_operation
 {
-    unsigned int Ptask_id;
-    unsigned int task_id;
-    unsigned int thread_id;
+    int Ptask_id;
+    int task_id;
+    int thread_id;
     unsigned int file_offset;
 };
 

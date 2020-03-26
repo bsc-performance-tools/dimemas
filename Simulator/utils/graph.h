@@ -36,8 +36,8 @@ struct dependency
   struct dependency * previous;
   struct dependency * next;
 
-  unsigned int from;
-  unsigned int to;
+  int from;
+  int to;
   unsigned int action;
 
   int type;
@@ -72,7 +72,6 @@ struct dependency *  GRAPH_get_dependency(int from_taskid, int to_taskid, int ty
 struct dependency ** GRAPH_get_dependencies(int from_taskid, int to_taskid, int type, int action, int mess_tag, int communic_id, int * dep_set_size);
 
 //int GRAPH_get_independent(int from_task);
-//void GRAPH_remove_dependency(int from_taskid, int to_taskid, int type);
 //int GRAPH_is_dependent(int from_taskid, int to_taskid, int type);
 //int GRAPH_is_dependent_action(int from_taskid, int to_taskid, int type);
 //struct dependency * GRAPH_get_dependency(int from_taskid, int to_taskid, int type, int action);

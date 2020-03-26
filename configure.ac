@@ -367,7 +367,7 @@ AC_ARG_WITH(
      be used)]
   ),
   time_limit="$withval",
-  time_limit="2.52e13"
+  time_limit="2.52e17"
 )
 
 AC_DEFINE_UNQUOTED(TIME_LIMIT,

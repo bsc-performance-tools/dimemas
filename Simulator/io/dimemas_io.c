@@ -62,7 +62,6 @@ void IO_Init(void)
 {
   struct        rlimit nofile_limits;
   int           i;
-  struct stat   stats;
 
   if (getrlimit(RLIMIT_NOFILE, &nofile_limits) == -1)
   {
@@ -86,18 +85,6 @@ void IO_Init(void)
       IO_OpenedFileDescriptors++;
     }
   }
-
-  /* Check the number of opened files on initialization
-  for ( i = 0; i <= IO_MaximumFileDescriptors; i++ )
-  {
-    fstat(i, &stats);
-
-    if ( errno != EBADF )
-    {
-      IO_OpenedFileDescriptors++;
-    }
-  }
-  */
 
 #ifdef DEBUG_IO
   printf("%d used file descriptors at IO_Init\n",

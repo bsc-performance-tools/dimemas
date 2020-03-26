@@ -24,7 +24,7 @@
  \*****************************************************************************/
 
 //#include <extrae.h>
-#include <define.h>
+//#include <define.h>
 #include <types.h>
 #include <assert.h>
 #include <float.h>
@@ -165,7 +165,7 @@ void reload_new_Ptask (struct t_Ptask *Ptask)
         i++;
     }
 
-    if ((i == count_queue (&(Ptask_queue)) - sin) || stop_restarts)
+    if ((i == count_queue (&(Ptask_queue)) - sin) || i == stop_restarts)
     {
         if (EQ_0_TIMER(final_statistical_time))
         {
@@ -930,7 +930,6 @@ void READ_Init_asynch(struct t_Ptask *ptask, int max_memory, int threads_count)
 void READ_get_next_action(struct t_thread *thread)
 {
     assert(thread->action == NULL);
-
     struct t_action *new_action;
     if (asynch_read)
     {
@@ -962,7 +961,6 @@ struct t_action* _get_next_action(struct t_thread *thread)
     Ptask_id  = thread->task->Ptask->Ptaskid;
     task_id   = thread->task->taskid;
     thread_id = thread->threadid;
-
     int no_more_actions = FALSE;
     int success = DATA_ACCESS_get_next_action(
             Ptask_id,
@@ -1026,7 +1024,7 @@ struct t_action* _get_next_action(struct t_thread *thread)
     }
 
 
-    /*
+   /*
     if (new_action->action == MPI_IO)
     {
         new_action_aux = thread->action;

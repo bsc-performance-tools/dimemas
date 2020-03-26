@@ -312,7 +312,7 @@ void PARAVER_End(int print)
 
   if (!print)
   {
-	  IO_fclose(ParaverTraceFile);
+	  //IO_fclose(ParaverTraceFile);
 	  IO_fclose(TraceMerger.EventsFile);
 	  IO_fclose(TraceMerger.StatesAndCommsFile);
 	  return;

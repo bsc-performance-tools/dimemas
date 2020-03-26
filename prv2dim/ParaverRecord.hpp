@@ -345,7 +345,7 @@ class GlobalOp: public virtual ParaverRecord
 
     void SetGlobaOpId(INT32 GlobaOpId) { this->GlobalOpId = GlobalOpId; }
 
-		INT32 GetGlobalOpId(void) { if (GlobalOpId >= 14) return GlobalOpId-14; 
+		INT32 GetGlobalOpId(void) { if (GlobalOpId >= 15) return GlobalOpId-15; 
 			                          else return GlobalOpId; };
 
     void SetRootTaskId(INT32 RootTaskId) { this->RootTaskId = RootTaskId; };

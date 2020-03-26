@@ -35,10 +35,10 @@ void DEADLOCK_init_deadlock_analysis(int ranks, const char * parameter_tracefile
 
   GRAPH_init(total_ranks);
 
-  printf("   * Deadlock analysis: Deactivation at %.2f %\n", end_analysis_tpercent*100);
+  printf("   * Deadlock analysis: Deactivation at %.2f\n", end_analysis_tpercent*100);
 }
 
-/*
+/**
  * Manager of new communications
  * It should be called when a new communication has been performed
  */
@@ -56,7 +56,8 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
   // in the simulation, but if it does, it means that we have a lack of coordination
   // between Dimemas and the analyzer.
   int str_deps_size = 0;
-  struct dependency ** str_deps = GRAPH_get_dependencies(from_taskid, GRAPH_TO_ALL,
+  struct dependency ** str_deps =
+    GRAPH_get_dependencies(from_taskid, GRAPH_TO_ALL,
 		  STRG_DEP, GRAPH_ALL_ACTIONS, TAG_ALL, COMMUNIC_ID_ALL, &str_deps_size);
 
   if (str_deps_size > 0)
@@ -75,7 +76,7 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
     printf("\n");
 
     GRAPH_fini();
-    assert(FALSE);
+    //assert(FALSE);
   }
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -94,7 +95,7 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
       //res = DEADLOCK_check_end();
       //if (res == FALSE)
       //{
-	    printf("**** Deadlock analyzer has been deactivated. Progression %.2f %\n", prog*100);
+	    printf("**** Deadlock analyzer has been deactivated. Progression %.2f\n", prog*100);
 	    with_deadlock_analysis = 0;
 	    return FALSE;
       //}
@@ -170,7 +171,7 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
           res = _is_deadlocked(from_taskid);
         }
         else
-       {
+        {
           // In Dimemas, when it is an isend, it does not waits for the recv
           // then, the notification is performed asynchronously. Therefore,
           // when a Wait is performed, the communication has to be resolved.
@@ -261,7 +262,6 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
       #endif // DEBUG
 
       t_boolean blocks = DEADLOCK_manage_global_dependency(thread);
-
       if (blocks)
         res = _is_deadlocked(from_taskid);
 
@@ -309,7 +309,7 @@ t_boolean DEADLOCK_new_communic_event(struct t_thread * thread)
   return res;
 }
 
-/*
+/**
  * A new state of the graph is computed for the special case of
  * global operations.
  */
@@ -323,15 +323,14 @@ t_boolean DEADLOCK_manage_global_dependency(struct t_thread * thread)
   int comm_id = from_action->desc.global_op.comm_id;
 
   communicator = locate_communicator(&thread->task->Ptask->Communicator, comm_id);
-
   int * comm_threads = communicator->global_ranks;
   int size_comm = communicator->size;
-  int j;
 
-  for (j = 0; j < size_comm; ++j)
+  for ( int j = 0; j < size_comm; ++j)
   {
     int to_collective = comm_threads[j];
-    if (from_collective == to_collective) continue;
+    if (from_collective == to_collective)
+        continue;
 
     struct dependency * dep = GRAPH_get_dependency(
             to_collective, 
@@ -352,7 +351,7 @@ t_boolean DEADLOCK_manage_global_dependency(struct t_thread * thread)
   return blocks;
 }
 
-/*
+/**
  * This method should be called when the simulation of a thread
  * is finalized. It is possible that another thread are in a waiting
  * state but w/o having a deadlock. Then, the thread finnishing is
@@ -361,19 +360,18 @@ t_boolean DEADLOCK_manage_global_dependency(struct t_thread * thread)
 void DEADLOCK_thread_finalized(struct t_thread * thread)
 {
   int to_taskid = thread->task->taskid;
-  int dep_set_size;
+  int dep_set_size = 0;
   struct dependency ** dep_tome;
 
-  int i;
-  for (i = 0; i < total_ranks; ++i)
+  for (int i = 0; i < total_ranks; ++i)
   {
-    if (i == to_taskid) continue;
+    if (i == to_taskid) 
+        continue;
 
     dep_tome = GRAPH_get_dependencies(i, to_taskid, STRG_DEP|GLOP_DEP,
 		    GRAPH_ALL_ACTIONS, TAG_ALL, COMMUNIC_ID_ALL, &dep_set_size);
 
-    int j;
-    for (j=0; j < dep_set_size; ++j)
+    for (int j=0; j < dep_set_size; ++j)
     {
         struct t_thread * thread_to_reverse = get_thread_by_task_id(i);
         struct trace_operation * op_to_be_ignored = 
@@ -383,10 +381,6 @@ void DEADLOCK_thread_finalized(struct t_thread * thread)
         op_to_be_ignored->task_id = thread_to_reverse->task->taskid;
         op_to_be_ignored->thread_id = thread_to_reverse->threadid;
         op_to_be_ignored->file_offset = dep_tome[j]->file_offset;
-
-        printf("-> Action %d has finished with dependencies from %d\n", to_taskid, i);
-        printf("-> Action of task %d will be ignored. (file offset: %u)\n",
-             op_to_be_ignored->task_id, op_to_be_ignored->file_offset);
 
         double prio = (double)op_to_be_ignored->file_offset;
         insert_queue(&thread_to_reverse->ops_to_be_ignored, (char *)op_to_be_ignored,prio);
@@ -403,11 +397,12 @@ t_boolean _is_deadlocked(int from)
 
   int res = GRAPH_look_for_cycle(from, dep_chain_queue, &deepness);
 
+        printf("\nthe deepness is ::::::  %d and res is :: %d\n", deepness, res);
   if (res)
   {
       printf("-> [%f] Deadlock detected\n", current_time);
 #if DEBUG
-    char msg[100];
+    char msg[512];
     sprintf(msg,"*******************************\n" \
           "-> [%f ns] Deadlock has been detected\n" \
           "-> Dependency chain (%d) [ ", current_time, deepness);
@@ -466,7 +461,7 @@ t_boolean _is_deadlocked(int from)
     // that we want to ignore, therefore, the info has to be taken from it
     struct t_thread * thread_to_mod = get_thread_by_task_id(dep_chain_queue[task_to_mod_pos]);
     struct trace_operation * op_to_be_ignored = (struct trace_operation *)malloc(sizeof(struct trace_operation));
-
+    
     op_to_be_ignored->Ptask_id = thread_to_mod->task->Ptask->Ptaskid;
     op_to_be_ignored->task_id = thread_to_mod->task->taskid;
     op_to_be_ignored->thread_id = thread_to_mod->threadid;
@@ -538,7 +533,8 @@ int create_communicator(int * tasks_involved, int size)
 }
 
 
-/** \brief Returns the first thread of task that has the id equals to the parameter
+/** 
+ * brief Returns the first thread of task that has the id equals to the parameter
  *         \p taskid
  *  \param taskid int Identification number of the task,
  *  \return struct t_thread* Pointer to the thread of task with \p taskid
@@ -550,14 +546,15 @@ struct t_thread * get_thread_by_task_id(int taskid)
           Ptask != P_NIL;
           Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
   {
-    int tasks_it;
-    for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
+    for (int tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
     {
       struct t_task * task = &(Ptask->tasks[tasks_it]);
       //assert(task->threads_count == 1);
 
       if (task->taskid == taskid)
+      {
         return task->threads[0];
+      }
     }
   }
   return NULL;
@@ -572,7 +569,7 @@ int breakChainFrom(int * dep_chain_queue, int size)
     are_estats_parsed = TRUE;
   }
 
-  int * pendent_pointer = NULL;
+  unsigned int * pendent_pointer = NULL;
   int max_pendent = 0;
   int position_chosed_thread = 0;
   int sum_pendent_glops = 0;
@@ -586,7 +583,6 @@ int breakChainFrom(int * dep_chain_queue, int size)
     struct dependency * d = GRAPH_get_dependency(from_dep, to_dep, STRG_DEP|GLOP_DEP,
             GRAPH_ALL_ACTIONS, TAG_ALL, COMMUNIC_ID_ALL);
     assert(d);
-
     switch (d->action)
     {
     case SEND:
@@ -734,7 +730,7 @@ void DEADLOCK_reset()
 char * get_name_of_action(int action)
 {
   char * res = malloc(sizeof(char)*5);
-
+    res = "";
   switch(action)
   {
     case NOOP:
@@ -781,98 +777,6 @@ char * get_name_of_action(int action)
   return res;
 }
 
-/*struct t_action * action_to_inject(struct t_thread * partner)
-{
-  struct t_action * new_action = (struct t_action *)malloc(sizeof(struct t_action));
-  new_action->next = A_NIL;
-  switch(partner->action->action)
-  {
-    case SEND:
-    {
-      // No puedo saber si habia recv o irecv. Ante la duda pongo una no bloqueante
-      // que es seguro que no generara mas deadlocks.
-      if (partner->task->taskid == partner->action->desc.send.dest)
-      {
-        new_action->action = IRECV;
-      }
-      else
-      {
-        new_action->action = RECV;
-      }
-
-      new_action->desc.recv.ori = partner->task->taskid;
-      new_action->desc.recv.ori_thread = partner->action->desc.send.dest_thread;
-      new_action->desc.recv.mess_tag = partner->action->desc.send.mess_tag;
-      new_action->desc.recv.mess_size = partner->action->desc.send.mess_size;
-      new_action->desc.recv.communic_id = partner->action->desc.send.communic_id;
-      new_action->desc.recv.comm_type = partner->action->desc.send.comm_type;
-
-      break;
-    }
-    case WAIT:
-    {
-      new_action->action = SEND; // ISEND
-      new_action->desc.send.dest = partner->task->taskid;
-      new_action->desc.send.dest_thread = partner->action->desc.recv.ori_thread;
-      new_action->desc.send.mess_size = partner->action->desc.recv.mess_size;
-      new_action->desc.send.mess_tag = partner->action->desc.recv.mess_tag;
-      new_action->desc.send.communic_id = partner->action->desc.recv.communic_id;
-      new_action->desc.send.comm_type = partner->action->desc.recv.comm_type;
-
-      new_action->desc.send.rendez_vous = FALSE;
-      new_action->desc.send.immediate = FALSE;
-    }
-    case RECV:
-    {
-      // También podría ser un isend
-      new_action->action = SEND;
-      new_action->desc.send.dest = partner->task->taskid;
-      new_action->desc.send.dest_thread = partner->action->desc.recv.ori_thread;
-      new_action->desc.send.mess_size = partner->action->desc.recv.mess_size;
-      new_action->desc.send.mess_tag = partner->action->desc.recv.mess_tag;
-      new_action->desc.send.communic_id = partner->action->desc.recv.communic_id;
-      new_action->desc.send.comm_type = partner->action->desc.recv.comm_type;
-
-      // It could be rendez_vous or not.
-      new_action->desc.send.rendez_vous = TRUE;
-      new_action->desc.send.immediate = FALSE;
-
-      break;
-    }
-    case GLOBAL_OP:
-    {
-      new_action->action = GLOBAL_OP;
-      new_action->desc.global_op.glop_id = partner->action->desc.global_op.glop_id;
-      new_action->desc.global_op.comm_id = partner->action->desc.global_op.comm_id;
-      new_action->desc.global_op.root_rank = partner->action->desc.global_op.root_rank;
-      new_action->desc.global_op.root_thid = partner->action->desc.global_op.root_thid;
-      new_action->desc.global_op.bytes_send = partner->action->desc.global_op.bytes_send;
-      new_action->desc.global_op.bytes_recvd = partner->action->desc.global_op.bytes_recvd;
-
-      break;
-    }
-    //case IRECV:
-    default:
-      assert(FALSE);
-  }
-
-  return new_action;
-}
-
-int still_analyzing()
-{
-  int res = FALSE;
-  int rank;
-  for (rank = 0; rank < total_ranks; ++rank)
-  {
-    res = res || !(   estats_per_rank[rank].pendent_glop == 0
-                  && estats_per_rank[rank].pendent_i_Recv == 0
-                  && estats_per_rank[rank].pendent_i_Send == 0);
-  }
-
-  return res;
-}*/
-
 
 t_boolean DEADLOCK_check_end()
 {
@@ -892,8 +796,8 @@ t_boolean DEADLOCK_check_end()
     struct dependency ** pendent = GRAPH_get_dependencies(i, GRAPH_TO_ALL, STRG_DEP|SOFT_DEP|GLOP_DEP,
                                                           GRAPH_ALL_ACTIONS, TAG_ALL, COMMUNIC_ID_ALL, &pendent_size);
 
-    if (pendent_size > 0)
-      res = TRUE;
+    //if (pendent_size > 0)
+     // res = TRUE;
     for (j=0; j < pendent_size; ++j)
     {
       struct dependency * dep = pendent[j];
@@ -905,9 +809,10 @@ t_boolean DEADLOCK_check_end()
       op_to_be_ignored->task_id = thread_to_mod->task->taskid;
       op_to_be_ignored->thread_id = thread_to_mod->threadid;
       op_to_be_ignored->file_offset = pendent[j]->file_offset;
-
+      
       double prio = (double)op_to_be_ignored->file_offset;
       insert_queue(&thread_to_mod->ops_to_be_ignored, (char *)op_to_be_ignored, prio);
+      res = TRUE;
     }
   }
   return res;

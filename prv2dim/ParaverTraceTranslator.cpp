@@ -212,9 +212,9 @@ ParaverTraceTranslator::SplitCommunications(void)
     INT32                            COMM_WORLD_Id;
     INT32                            PseudoCommId;
 
-    /* DEBUG */
+    /* DEBUG
     FILE *UnsortedFile;
-
+    */ 
     INT32 CurrentPercentage = 0;
     INT32 PercentageRead    = 0;
 
@@ -284,7 +284,6 @@ ParaverTraceTranslator::SplitCommunications(void)
         if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
         { 
             INT32  Type;
-            UINT64 Timestamp;
             INT32 PartnerTaskId, PartnerThreadId;
             INT32  Size, Tag, CommId;
 
@@ -465,7 +464,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 {
 #define OFFSETS_OFFSET_RESERVE 15
 
-    INT32 OffsetsLength;
+    UINT32 OffsetsLength;
     bool  InitialHeader = false;
 
     if (OffsetsOffset == 0)
@@ -522,7 +521,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 
     const vector<TaskDescription_t>& TasksInfo = AppDescription->GetTaskInfo();
 
-    for (INT32 i = 0; i < TasksInfo.size(); i++)
+    for ( UINT32 i = 0; i < TasksInfo.size(); i++)
     {
         if (fprintf (DimemasTraceFile, "%d", TasksInfo[i]->GetThreadCount()) < 0)
         {
@@ -554,7 +553,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 
     if (acc_tasks_count > 0) {
 
-        for (INT32 i = 0; i < acc_tasks->size() && acc_tasks_count > 0; i++) {
+        for (UINT32 i = 0; i < acc_tasks->size() && acc_tasks_count > 0; i++) {
             if (i == 0) {
                 if (fprintf (DimemasTraceFile, "(") < 0)
                 {
@@ -593,7 +592,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 
     if (!InitialHeader)
     {
-        for (INT32 i = 0; i < OFFSETS_OFFSET_RESERVE - OffsetsLength; i++)
+        for (UINT32 i = 0; i < OFFSETS_OFFSET_RESERVE - OffsetsLength; i++)
         {
             if (fprintf(DimemasTraceFile," ") < 0)
             {
@@ -860,8 +859,8 @@ ParaverTraceTranslator::Translate(
 
     CurrentRecord = SelectNextRecord();
 
-    int max_nthreads = 0;
-    for (int task=0; task<TranslationInfo.size(); ++task)
+   unsigned int max_nthreads = 0;
+    for (UINT32 task=0; task<TranslationInfo.size(); ++task)
         if (TranslationInfo[task].size() > max_nthreads)
             max_nthreads = TranslationInfo[task].size();
 
@@ -872,8 +871,8 @@ ParaverTraceTranslator::Translate(
     {
         Event_t  CurrentEvent;
         State_t CurrentState;
-        INT32    CurrentTaskId   = CurrentRecord->GetTaskId()-1;
-        INT32    CurrentThreadId = CurrentRecord->GetThreadId()-1;
+        UINT32    CurrentTaskId   = CurrentRecord->GetTaskId()-1;
+        UINT32    CurrentThreadId = CurrentRecord->GetThreadId()-1;
 
         if (CurrentTaskId < 0 || CurrentTaskId >= TranslationInfo.size())
         {
@@ -1017,18 +1016,18 @@ ParaverTraceTranslator::Translate(
         fprintf(extra_statistics_file, "// #send,#isend,#recv, #irecv, #wait, #glop\n");
 
         unsigned int min_glops = UINT_MAX;
-        for (int i=0; i < TranslationInfo.size(); ++i)
+        for (unsigned int i=0; i < TranslationInfo.size(); ++i)
         {
-            for (int j=0; j < TranslationInfo[i].size(); j++)
+            for (unsigned int j=0; j < TranslationInfo[i].size(); j++)
             {
                 if (TranslationInfo[i][j]->glop_counter < min_glops)
                     min_glops = TranslationInfo[i][j]->glop_counter;
             }
         }
 
-        for (int i=0; i < TranslationInfo.size(); ++i)
+        for (unsigned int i=0; i < TranslationInfo.size(); ++i)
         {
-            for (int j=0; j < TranslationInfo[i].size(); j++)
+            for (unsigned int j=0; j < TranslationInfo[i].size(); j++)
             {
                 fprintf(extra_statistics_file, "%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
                         TranslationInfo[i][j]->send_counter,
@@ -1066,7 +1065,7 @@ ParaverTraceTranslator::Translate(
 
     cout << endl;
     cout << "MERGING PARTIAL OUTPUT TRACES" << endl;
-    int TotalMPIInitBarriersWritten = 0;
+    unsigned int TotalMPIInitBarriersWritten = 0;
     for (UINT32 i = 0; i < TranslationInfo.size(); i++)
     {
         for (UINT32 j = 0; j < TranslationInfo[i].size(); j++)
@@ -1379,8 +1378,8 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
     }
 
     int max_nthreads = 0;
-    int total_threads = 0;
-    for (int task=0; task<TaskInfo.size(); ++task)
+    unsigned int total_threads = 0;
+    for (unsigned int task=0; task<TaskInfo.size(); ++task)
     {
         total_threads += TaskInfo[task]->GetThreadCount();
         if (TaskInfo[task]->GetThreadCount() > max_nthreads)
@@ -1389,8 +1388,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 
     INT64 *first_record_times = (INT64*) calloc(
             TaskInfo.size()*max_nthreads, sizeof(INT64));
-    int i;
-    for (i=0; i<TaskInfo.size()*max_nthreads; ++i)
+    for (unsigned int i=0; i<TaskInfo.size()*max_nthreads; ++i)
         first_record_times[i] = -1;
 
     UINT64 done = 0;
@@ -1420,7 +1418,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
                 TaskInfo.size());
 #endif
 
-        INT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
+        UINT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
 
         bool is_acc_task = false;
         if (!acc_tasks.empty() &&	acc_tasks[CurrentTask])

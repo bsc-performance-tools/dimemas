@@ -1039,7 +1039,6 @@ DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 /* 003 */  GLOP_ID_MPI_Allreduce,
 /* 004 */  GLOP_ID_MPI_Alltoall,
 /* 005 */  GLOP_ID_MPI_Alltoallv,
-/* 006 */  GLOP_ID_MPI_Alltoallw,
 /* 007 */  GLOP_ID_MPI_Barrier,
 /* 008 */  GLOP_ID_MPI_Bcast,
 /* 009 */  GLOP_ID_MPI_Gather,
@@ -1049,6 +1048,7 @@ DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 /* 013 */  GLOP_ID_MPI_Scan,
 /* 014 */  GLOP_ID_MPI_Scatter,
 /* 015 */  GLOP_ID_MPI_Scatterv,
+/* 006 */  GLOP_ID_MPI_Alltoallw,
 /* 016 */  GLOP_ID_MPI_Iallgather,
 /* 017 */  GLOP_ID_MPI_Iallgatherv,
 /* 018 */  GLOP_ID_MPI_Iallreduce,
@@ -1207,19 +1207,23 @@ int EventEncoding_Is_Flushing( long64_t Type )
 }
 
 /******************************************************************************
- **      Function name : MPIEventEncoding_BlockId
+ **      Function name : MPIEventEncoding_UserBlockId
  **      
  **      Description : 
  ******************************************************************************/
 
 long64_t MPIEventEncoding_UserBlockId( long64_t Type, long64_t Value )
 {
-  if (Type == (long64_t) USER_FUNCTION) return( Value + BASE_USERFUNCTION );
-  if (Type == (long64_t) USER_CALL)     return( Value + BASE_USERCALL );
-  if (Type == (long64_t) USER_BLOCK)    return( Value + BASE_USERBLOCK );
-  if (Type == (long64_t) CLUSTER_ID_EV) return ( Value + BASE_CLUSTER_BLOCK );
+  if (Type == (long64_t) USER_FUNCTION) 
+      return( Value + BASE_USERFUNCTION );
+  if (Type == (long64_t) USER_CALL)     
+      return( Value + BASE_USERCALL );
+  if (Type == (long64_t) USER_BLOCK)    
+      return( Value + BASE_USERBLOCK );
+  if (Type == (long64_t) CLUSTER_ID_EV) 
+      return ( Value + BASE_CLUSTER_BLOCK );
 
-  assert("MPIEventEncoding_BlockId: Invalid Type");
+  assert("MPIEventEncoding_UserBlockId: Invalid Type");
   //ERROR( "MPIEventEncoding_BlockId: Invalid Type" );
 }
 

@@ -73,8 +73,6 @@ void SCHEDULER_Init()
     struct t_thread  *thread;
     struct t_action  *action;
     int               j;
-    FILE             *fi;
-    char              buf[BUFSIZE];
     struct t_machine *machine;
 
     size_t tasks_it, threads_it;
@@ -1561,10 +1559,9 @@ t_boolean more_actions (struct t_thread *thread)
     account = current_account (thread);
     Ptask   = thread->task->Ptask;
     task    = thread->task;
-
+    
     if (action == NULL)
     {
-
         if (with_deadlock_analysis)
         {
             DEADLOCK_thread_finalized(thread);

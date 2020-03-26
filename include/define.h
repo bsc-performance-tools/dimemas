@@ -578,16 +578,16 @@ enum
   MPI_Gather,
   MPI_Gatherv,
   MPI_Scatter,
-  MPI_Scatterv,
+  MPI_Scatterv, /* 5 */
   MPI_Allgather,
   MPI_Allgatherv,
   MPI_Alltoall,
   MPI_Alltoallv,
-  MPI_Alltoallw,
-  MPI_Reduce,
+  MPI_Reduce, /* 10 */
   MPI_Allreduce,
   MPI_Reduce_Scatter,
-  MPI_Scan 
+  MPI_Scan, 
+  MPI_Alltoallw 
 };
 
 static const char* Global_Ops_Labels[GLOBAL_OPS_COUNT] =
@@ -602,11 +602,11 @@ static const char* Global_Ops_Labels[GLOBAL_OPS_COUNT] =
   "MPI_Allgatherv",
   "MPI_Alltoall",
   "MPI_Alltoallv",
-  "MPI_Alltoallw",
   "MPI_Reduce",
   "MPI_Allreduce",
   "MPI_Reduce_Scatter",
-  "MPI_Scan"
+  "MPI_Scan",
+  "MPI_Alltoallw"
 };
 
 #define ACCELERATOR_NULL		0	//No accelerator tracing
