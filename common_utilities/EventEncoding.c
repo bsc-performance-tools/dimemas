@@ -1,3 +1,26 @@
+/*****************************************************************************\
+ *                        ANALYSIS PERFORMANCE TOOLS                         *
+ *                                                                           *
+ *           Paraver to Dimemas trace translator (old and new format)        *
+ *****************************************************************************
+ *     ___        This tool is free software; you can redistribute it and/or *
+ *    /  __         modify it under the terms of the GNU LGPL as published   *
+ *   /  /  _____    by the Free Software Foundation; either version 2.12.1    *
+ *  /  /  /     \   of the License, or (at your option) any later version.   *
+ * (  (  ( B S C )                                                           *
+ *  \  \  \_____/   This tool is distributed in hope that it will be         *
+ *   \  \__         useful but WITHOUT ANY WARRANTY; without even the        *
+ *    \___          implied warranty of MERCHANTABILITY or FITNESS FOR A     *
+ *                  PARTICULAR PURPOSE. See the GNU LGPL for more details.   *
+ *                                                                           *
+ * You should have received a copy of the GNU Lesser General Public License  *
+ * along with this library; if not, write to the Free Software Foundation,   *
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA          *
+ * The GNU LEsser General Public License is contained in the file COPYING.   *
+ *                                 ---------                                 *
+ *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
+\*****************************************************************************/
+
 /* ---------------------------------------------------- Include Files -------*/
 #include <Macros.h>
 #include <CommonMacros.h>
@@ -1024,46 +1047,49 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
 // In order to have the same Ids than extrae I've moved this
 // MPI from 141 to here.
 /*194*/
-{ MPITYPE_OTHER,
+  { MPITYPE_OTHER,
   MPI_INIT_THREAD_VAL, MPI_INIT_THREAD_LABEL,
   BLOCK_ID_MPI_Init_thread,
   FALSE }
 };
 
-#define BLOCKID_TOGLOBALOPID_VALUES 31
+#define BLOCKID_TOGLOBALOPID_VALUES 33
 DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 {
-/* 000 */  GLOP_ID_NULL,
-/* 001 */  GLOP_ID_MPI_Allgather,
-/* 002 */  GLOP_ID_MPI_Allgatherv,
-/* 003 */  GLOP_ID_MPI_Allreduce,
-/* 004 */  GLOP_ID_MPI_Alltoall,
-/* 005 */  GLOP_ID_MPI_Alltoallv,
-/* 007 */  GLOP_ID_MPI_Barrier,
-/* 008 */  GLOP_ID_MPI_Bcast,
-/* 009 */  GLOP_ID_MPI_Gather,
-/* 010 */  GLOP_ID_MPI_Gatherv,
-/* 011 */  GLOP_ID_MPI_Reduce_scatter,
-/* 012 */  GLOP_ID_MPI_Reduce,
-/* 013 */  GLOP_ID_MPI_Scan,
-/* 014 */  GLOP_ID_MPI_Scatter,
-/* 015 */  GLOP_ID_MPI_Scatterv,
-/* 006 */  GLOP_ID_MPI_Alltoallw,
-/* 016 */  GLOP_ID_MPI_Iallgather,
-/* 017 */  GLOP_ID_MPI_Iallgatherv,
-/* 018 */  GLOP_ID_MPI_Iallreduce,
-/* 019 */  GLOP_ID_MPI_Ialltoall,
-/* 020 */  GLOP_ID_MPI_Ialltoallv,
-/* 020 */  GLOP_ID_MPI_Ialltoallw,
-/* 021 */  GLOP_ID_MPI_Ibarrier,
-/* 022 */  GLOP_ID_MPI_Ibcast,
-/* 023 */  GLOP_ID_MPI_Igather,
-/* 024 */  GLOP_ID_MPI_Igatherv,
-/* 025 */  GLOP_ID_MPI_Ireduce_scatter,
-/* 026 */  GLOP_ID_MPI_Ireduce,
-/* 027 */  GLOP_ID_MPI_Iscan,
-/* 028 */  GLOP_ID_MPI_Iscatter,
-/* 029 */  GLOP_ID_MPI_Iscatterv
+/* -1 */  GLOP_ID_NULL,
+/* 00 */  GLOP_ID_MPI_Barrier,
+/* 01 */  GLOP_ID_MPI_Bcast,
+/* 02 */  GLOP_ID_MPI_Gather,
+/* 03 */  GLOP_ID_MPI_Gatherv,
+/* 04 */  GLOP_ID_MPI_Scatter,
+/* 05 */  GLOP_ID_MPI_Scatterv,
+/* 06 */  GLOP_ID_MPI_Allgather,
+/* 07 */  GLOP_ID_MPI_Allgatherv,
+/* 08 */  GLOP_ID_MPI_Alltoall,
+/* 09 */  GLOP_ID_MPI_Alltoallv,
+/* 10 */  GLOP_ID_MPI_Reduce,
+/* 11 */  GLOP_ID_MPI_Allreduce,
+/* 12 */  GLOP_ID_MPI_Reduce_scatter,
+/* 13 */  GLOP_ID_MPI_Reduce_scatter_block,
+/* 14 */  GLOP_ID_MPI_Scan,
+/* 15 */  GLOP_ID_MPI_Alltoallw,
+
+/* 15 */  GLOP_ID_MPI_Ibarrier,
+/* 16 */  GLOP_ID_MPI_Ibcast,
+/* 17 */  GLOP_ID_MPI_Igather,
+/* 18 */  GLOP_ID_MPI_Igatherv,
+/* 19 */  GLOP_ID_MPI_Iscatter,
+/* 20 */  GLOP_ID_MPI_Iscatterv,	
+/* 21 */  GLOP_ID_MPI_Iallgather,
+/* 22 */  GLOP_ID_MPI_Iallgatherv,
+/* 23 */  GLOP_ID_MPI_Ialltoall,
+/* 24 */  GLOP_ID_MPI_Ialltoallv,
+/* 25 */  GLOP_ID_MPI_Ialltoallw,
+/* 26 */  GLOP_ID_MPI_Ireduce,
+/* 27 */  GLOP_ID_MPI_Iallreduce,
+/* 28 */  GLOP_ID_MPI_Ireduce_scatter,
+/* 29 */  GLOP_ID_MPI_Ireduce_scatter_block,
+/* 30 */  GLOP_ID_MPI_Iscan
 };
 
 
@@ -1076,13 +1102,13 @@ DimCollectiveOp BlockId2GlobalOpId[BLOCKID_TOGLOBALOPID_VALUES] =
 
 void MPIEventEncoding_EnableOperation( MPI_Event_Values Op )
 {
+  /* 
+   * if the table typedef enum{...}MPI_Event_Values; from the EventEncoding.h is 
+   * changed then we must have to made same changes on MPI_Table.
+  */
   ASSERT( Op < NUM_MPICALLS );
-  
-  /* Si no es igual, es que en el typedef enum { ... }MPI_Event_Values; del fitxer
-     MPI_EventEncoding.h s'han mogut operacions MPI de lloc i per tant,
-     cal reordenar la MPI_Table amb els mateixos canvis. */
   ASSERT( MPI_Table[ Op ].Op == Op );
-  
+
   MPI_Table[ Op ].Enabled = TRUE;
 }
 
@@ -1094,13 +1120,13 @@ void MPIEventEncoding_EnableOperation( MPI_Event_Values Op )
 
 DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op )
 {
+  /* 
+   * if the table typedef enum{...}MPI_Event_Values; from the EventEncoding.h is 
+   * changed then we must have to made same changes on MPI_Table.
+  */
   ASSERT( Op < NUM_MPICALLS );
-  
-  /* Si no es igual, es que en el typedef enum { ... }MPI_Event_Values; del fitxer
-     MPI_EventEncoding.h s'han mogut operacions MPI de lloc i per tant,
-     cal reordenar la MPI_Table amb els mateixos canvis. */
- 
   ASSERT( MPI_Table[ Op ].Op == Op );
+  
   return( MPI_Table[ Op ].Block );
 }
 
@@ -1114,6 +1140,7 @@ DimCollectiveOp MPIEventEncoding_GlobalOpId (DimBlock BlockId)
 {
     ASSERT (BlockId < NUM_MPICALLS);
     int GlobalOpId=BlockId2GlobalOpId[BlockId]; 
+    
     return GlobalOpId;
 }
 
@@ -1150,16 +1177,6 @@ int MPIEventEncoding_Is_UserBlock( long64_t Type )
   
   return( FALSE );
 }
-/* 
-int EventEncoding_Is_Noise(long64_t Type)
-{
-    if(Type == (long64_t) Noise_in_computation || 
-            Type == (long64_t) Noise_in_Network_communic ||
-            Type == (long64_t) Noise_in_Memory_communic);
-        return(TRUE);
-
-    return (FALSE);
-}*/
 
 /******************************************************************************
  **      Function name : EventEncoding_Is_IO
@@ -1224,7 +1241,6 @@ long64_t MPIEventEncoding_UserBlockId( long64_t Type, long64_t Value )
       return ( Value + BASE_CLUSTER_BLOCK );
 
   assert("MPIEventEncoding_UserBlockId: Invalid Type");
-  //ERROR( "MPIEventEncoding_BlockId: Invalid Type" );
 }
 
 /******************************************************************************
@@ -1257,14 +1273,7 @@ static void MPIEventEncoding_WriteEnabledSoftcounters ( FILE *fd )
     fprintf ( fd, "\n\n" );
   }
 
-  /* HSG, codi que hauria d'emprar-se si es fan soft counters per MPI_Iprobe
-  if (MPI_Table[MPI_IPROBE_VAL].Enabled)
-  {
-    fprintf ( fd, "%s\n", TYPE_LABEL );
-    fprintf ( fd, "%d  %d   %s\n", 0, MPITYPE_PROBE_SOFTCOUNTER, MPITYPE_PROBE_SOFTCOUNTER_LABEL);
-    fprintf ( fd, "\n\n" );
-  }
-  */
+  /* HSG, codi que hauria d'emprar-se si es fan soft counters per MPI_Iprobe */
 }
 
 /******************************************************************************
@@ -1295,14 +1304,7 @@ static void MPIEventEncoding_WriteCollectiveInfo ( FILE *fd )
   fprintf ( fd, "\n\n" );
   }
 
-  /* HSG, codi que hauria d'emprar-se si es fan soft counters per MPI_Iprobe
-  if (MPI_Table[MPI_IPROBE_VAL].Enabled)
-  {
-  fprintf ( fd, "%s\n", TYPE_LABEL );
-  fprintf ( fd, "%d  %d   %s\n", 0, MPITYPE_PROBE_SOFTCOUNTER, MPITYPE_PROBE_SOFTCOUNTER_LABEL);
-  fprintf ( fd, "\n\n" );
-  }
-  */
+  /* HSG, codi que hauria d'emprar-se si es fan soft counters per MPI_Iprobe */
 }
 
 /******************************************************************************
@@ -1398,7 +1400,6 @@ int ClusterEventEncoding_Is_BlockBegin( long64_t Op )
 
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value)
 {
-  // return( (DimBlock) (value + BASE_USERBLOCK) );
   return ( (DimBlock) (value + BASE_CLUSTER_BLOCK) );
 }
 

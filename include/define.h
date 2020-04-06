@@ -569,7 +569,7 @@
 /* Mida dels buffers utilitzats (basicament per llegir fitxers) */
 #define BUFSIZE 100000
 
-#define GLOBAL_OPS_COUNT 15
+#define GLOBAL_OPS_COUNT 16
 
 enum
 {
@@ -586,6 +586,7 @@ enum
   MPI_Reduce, /* 10 */
   MPI_Allreduce,
   MPI_Reduce_Scatter,
+  MPI_Reduce_Scatter_block,
   MPI_Scan, 
   MPI_Alltoallw 
 };
@@ -605,6 +606,7 @@ static const char* Global_Ops_Labels[GLOBAL_OPS_COUNT] =
   "MPI_Reduce",
   "MPI_Allreduce",
   "MPI_Reduce_Scatter",
+  "MPI_Reduce_Scatter_block",
   "MPI_Scan",
   "MPI_Alltoallw"
 };

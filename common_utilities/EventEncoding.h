@@ -1,3 +1,25 @@
+/*****************************************************************************\
+ *                        ANALYSIS PERFORMANCE TOOLS                         *
+ *                                                                           *
+ *           Paraver to Dimemas trace translator (old and new format)        *
+ *****************************************************************************
+ *     ___        This tool is free software; you can redistribute it and/or *
+ *    /  __         modify it under the terms of the GNU LGPL as published   *
+ *   /  /  _____    by the Free Software Foundation; either version 2.12.1    *
+ *  /  /  /     \   of the License, or (at your option) any later version.   *
+ * (  (  ( B S C )                                                           *
+ *  \  \  \_____/   This tool is distributed in hope that it will be         *
+ *   \  \__         useful but WITHOUT ANY WARRANTY; without even the        *
+ *    \___          implied warranty of MERCHANTABILITY or FITNESS FOR A     *
+ *                  PARTICULAR PURPOSE. See the GNU LGPL for more details.   *
+ *                                                                           *
+ * You should have received a copy of the GNU Lesser General Public License  *
+ * along with this library; if not, write to the Free Software Foundation,   *
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA          *
+ * The GNU LEsser General Public License is contained in the file COPYING.   *
+ *                                 ---------                                 *
+ *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
+\*****************************************************************************/
 #ifndef _EVENT_ENCODING_H
 #define _EVENT_ENCODING_H
 
@@ -229,98 +251,12 @@ typedef enum
 #define OCL_SYNCH_STREAM_LABEL 			"OpenCL Synchronized stream (on thread)"
 #define OCL_TAG											3121
 
-/*
-EVENT_TYPE
-0		64000000    OpenCL host call
-VALUES
-0 Outside OpenCL
-1 clCreateBuffer
-2 clCreateCommandQueue
-3 clCreateContext
-4 clCreateContextFromType
-5 clCreateSubBuffer
-6 clCreateKernel
-7 clCreateKernelsInProgram
-8 clSetKernelArg
-9 clCreateProgramWithSource
-10 clCreateProgramWithBinary
-11 clCreateProgramWithBuiltInKernels
-12 clEnqueueFillBuffer
-13 clEnqueueCopyBuffer
-14 clEnqueueCopyBufferRect
-15 clEnqueueNDRangeKernel
-16 clEnqueueTask
-17 clEnqueueNativeKernel
-18 clEnqueueReadBuffer
-19 clEnqueueReadBufferRect
-20 clEnqueueWriteBuffer
-21 clEnqueueWriteBufferRect
-22 clBuildProgram
-23 clCompileProgram
-24 clLinkProgram
-25 clFinish
-26 clFlush
-27 clWaitForEvents
-28 clEnqueueMarkerWithWaitList
-29 clEnqueueBarrierWithWaitList
-30 clEnqueueMapBuffer
-31 clEnqueueUnmapMemObject
-32 clEnqueueMigrateMemObjects
-33 clEnqueueMarker
-34 clEnqueueBarrier
-35 clRetainCommandQueue
-36 clReleaseCommandQueue
-37 clRetainContext
-38 clReleaseContext
-39 clRetainDevice
-40 clReleaseDevice
-41 clRetainEvent
-42 clReleaseEvent
-43 clRetainKernel
-44 clReleaseKernel
-45 clRetainMemObject
-46 clReleaseMemObject
-47 clRetainProgram
-48 clReleaseProgram
-
-EVENT_TYPE
-0   64099999    OpenCL transfer size
-
-EVENT_TYPE
-0		64100000		Accelerator OpenCL call
-VALUES
-0 Outside OpenCL
-12 clEnqueueFillBuffer
-13 clEnqueueCopyBuffer
-14 clEnqueueCopyBufferRect
-15 clEnqueueNDRangeKernel
-16 clEnqueueTask
-17 clEnqueueNativeKernel
-18 clEnqueueReadBuffer
-19 clEnqueueReadBufferRect
-20 clEnqueueWriteBuffer
-21 clEnqueueWriteBufferRect
-25 clFinish
-28 clEnqueueMarkerWithWaitList
-29 clEnqueueBarrierWithWaitList
-30 clEnqueueMapBuffer
-31 clEnqueueUnmapMemObject
-32 clEnqueueMigrateMemObjects
-33 clEnqueueMarker
-34 clEnqueueBarrier
-
-EVENT_TYPE
-0    64200000    OpenCL kernel name
-VALUES
-1      kernel_name
-*/
-
 /* ==========================================================================
    ==== MPI Event Values
    ========================================================================== */
 typedef enum
 {
-  MPIEND_VAL,
+  MPIEND_VAL,        /*00*/
   MPI_SEND_VAL,
   MPI_RECV_VAL,
   MPI_ISEND_VAL,
@@ -541,57 +477,39 @@ typedef enum
    ========================================================================== */
 typedef enum
 {
-  BLOCK_ID_NULL,							/* 000 */
+  BLOCK_ID_NULL,
   BLOCK_ID_MPI_Send,
   BLOCK_ID_MPI_Recv,
   BLOCK_ID_MPI_Isend,
   BLOCK_ID_MPI_Irecv,
   BLOCK_ID_MPI_Wait,
   BLOCK_ID_MPI_Waitall,
+  BLOCK_ID_MPI_Bcast,
+  BLOCK_ID_MPI_Barrier,
   BLOCK_ID_MPI_Reduce,
   BLOCK_ID_MPI_Allreduce,
-  BLOCK_ID_MPI_Barrier,
-  BLOCK_ID_MPI_Bcast,    /* 10 */
   BLOCK_ID_MPI_Alltoall,
   BLOCK_ID_MPI_Alltoallv,
-  BLOCK_ID_MPI_Allgather,
-  BLOCK_ID_MPI_Allgatherv,
   BLOCK_ID_MPI_Gather,
   BLOCK_ID_MPI_Gatherv,
   BLOCK_ID_MPI_Scatter,
   BLOCK_ID_MPI_Scatterv,
-  BLOCK_ID_MPI_Reduce_scatter,
-  BLOCK_ID_MPI_Scan, /* 20 */
-  BLOCK_ID_MPI_Reduce_scatter_block,
-  BLOCK_ID_MPI_Alltoallw,
-  BLOCK_ID_MPI_Ireduce,
-  BLOCK_ID_MPI_Iallreduce,
-  BLOCK_ID_MPI_Ibarrier,
-  BLOCK_ID_MPI_Ibcast,
-  BLOCK_ID_MPI_Ialltoall,
-  BLOCK_ID_MPI_Ialltoallv,
-  BLOCK_ID_MPI_Iallgather,
-  BLOCK_ID_MPI_Iallgatherv, /* 30 */
-  BLOCK_ID_MPI_Igather,
-  BLOCK_ID_MPI_Igatherv,
-  BLOCK_ID_MPI_Iscatter,
-  BLOCK_ID_MPI_Iscatterv,
-  BLOCK_ID_MPI_Ireduce_scatter,
-  BLOCK_ID_MPI_Iscan,
-  BLOCK_ID_MPI_Ireduce_scatter_block,
-  BLOCK_ID_MPI_Ialltoallw,
-  BLOCK_ID_MPI_Neighbor_allgather,
-  BLOCK_ID_MPI_Ineighbor_allgather, /*  40 */
-  BLOCK_ID_MPI_Neighbor_allgatherv,
-  BLOCK_ID_MPI_Ineighbor_allgatherv,
-  BLOCK_ID_MPI_Neighbor_alltoall,
-  BLOCK_ID_MPI_Ineighbor_alltoall,
-  BLOCK_ID_MPI_Neighbor_alltoallv,
-  BLOCK_ID_MPI_Ineighbor_alltoallv,
-  BLOCK_ID_MPI_Neighbor_alltoallw,
-  BLOCK_ID_MPI_Ineighbor_alltoallw,
+  BLOCK_ID_MPI_Allgather,
+  BLOCK_ID_MPI_Allgatherv,
+  BLOCK_ID_MPI_Comm_rank,
+  BLOCK_ID_MPI_Comm_size,
+  BLOCK_ID_MPI_Comm_create,
+  BLOCK_ID_MPI_Comm_dup,
+  BLOCK_ID_MPI_Comm_split,
+  BLOCK_ID_MPI_Comm_group,
+  BLOCK_ID_MPI_Comm_free,
+  BLOCK_ID_MPI_Comm_remote_group,
+  BLOCK_ID_MPI_Comm_remote_size,
+  BLOCK_ID_MPI_Comm_test_inter,
+  BLOCK_ID_MPI_Comm_compare,
+  BLOCK_ID_MPI_Scan,
   BLOCK_ID_MPI_Init,
-  BLOCK_ID_MPI_Finalize, /*  50 */
+  BLOCK_ID_MPI_Finalize,
   BLOCK_ID_MPI_Bsend,
   BLOCK_ID_MPI_Ssend,
   BLOCK_ID_MPI_Rsend,
@@ -601,7 +519,7 @@ typedef enum
   BLOCK_ID_MPI_Test,
   BLOCK_ID_MPI_Cancel,
   BLOCK_ID_MPI_Sendrecv,
-  BLOCK_ID_MPI_Sendrecv_replace, /*  60 */
+  BLOCK_ID_MPI_Sendrecv_replace,
   BLOCK_ID_MPI_Cart_create,
   BLOCK_ID_MPI_Cart_shift,
   BLOCK_ID_MPI_Cart_coords,
@@ -611,67 +529,43 @@ typedef enum
   BLOCK_ID_MPI_Cart_sub,
   BLOCK_ID_MPI_Cartdim_get,
   BLOCK_ID_MPI_Dims_create,
-  BLOCK_ID_MPI_Graph_get, /*  70 */
+  BLOCK_ID_MPI_Graph_get,
   BLOCK_ID_MPI_Graph_map,
   BLOCK_ID_MPI_Graph_create,
-  BLOCK_ID_MPI_Dist_graph_create,
   BLOCK_ID_MPI_Graph_neighbors,
   BLOCK_ID_MPI_Graphdims_get,
   BLOCK_ID_MPI_Graph_neighbors_count,
-  BLOCK_ID_MPI_Waitany,
   BLOCK_ID_MPI_Topo_test,
+  BLOCK_ID_MPI_Waitany,
   BLOCK_ID_MPI_Waitsome,
-  BLOCK_ID_MPI_Probe, /* 80 */
+  BLOCK_ID_MPI_Probe,
   BLOCK_ID_MPI_Iprobe,
-  BLOCK_ID_MPI_Mprobe,
-  BLOCK_ID_MPI_Improbe,
-  BLOCK_ID_MPI_Mrecv,
-  BLOCK_ID_MPI_Imrecv,
   BLOCK_ID_MPI_Win_create,
   BLOCK_ID_MPI_Win_free,
   BLOCK_ID_MPI_Put,
   BLOCK_ID_MPI_Get,
-  BLOCK_ID_MPI_Accumulate, /*  90 */
+  BLOCK_ID_MPI_Accumulate,
   BLOCK_ID_MPI_Win_fence,
-  BLOCK_ID_MPI_Win_complete,
   BLOCK_ID_MPI_Win_start,
+  BLOCK_ID_MPI_Win_complete,
   BLOCK_ID_MPI_Win_post,
   BLOCK_ID_MPI_Win_wait,
   BLOCK_ID_MPI_Win_test,
   BLOCK_ID_MPI_Win_lock,
   BLOCK_ID_MPI_Win_unlock,
-  BLOCK_ID_MPI_Get_accumulate,
-  BLOCK_ID_MPI_Fetch_and_op, /* 100 */ 
-  BLOCK_ID_MPI_Compare_and_swap,
-  BLOCK_ID_MPI_Win_flush,
-  BLOCK_ID_MPI_Win_flush_all,
-  BLOCK_ID_MPI_Win_flush_local,
-  BLOCK_ID_MPI_Win_flush_local_all,
   BLOCK_ID_MPI_Pack,
   BLOCK_ID_MPI_Unpack,
   BLOCK_ID_MPI_Op_create,
   BLOCK_ID_MPI_Op_free,
-  BLOCK_ID_MPI_Attr_delete, /*  110 */
+  BLOCK_ID_MPI_Reduce_scatter,
+  BLOCK_ID_MPI_Attr_delete,
   BLOCK_ID_MPI_Attr_get,
   BLOCK_ID_MPI_Attr_put,
-  BLOCK_ID_MPI_Comm_rank,
-  BLOCK_ID_MPI_Comm_size,
-  BLOCK_ID_MPI_Comm_create,
-  BLOCK_ID_MPI_Comm_dup,
-  BLOCK_ID_MPI_Comm_split,
-  BLOCK_ID_MPI_Comm_spawn,
-  BLOCK_ID_MPI_Comm_spawn_multiple,
-  BLOCK_ID_MPI_Comm_group, /*  120 */
-  BLOCK_ID_MPI_Comm_free,
-  BLOCK_ID_MPI_Comm_remote_group,
-  BLOCK_ID_MPI_Comm_remote_size,
-  BLOCK_ID_MPI_Comm_test_inter,
-  BLOCK_ID_MPI_Comm_compare,
   BLOCK_ID_MPI_Group_difference,
   BLOCK_ID_MPI_Group_excl,
   BLOCK_ID_MPI_Group_free,
   BLOCK_ID_MPI_Group_incl,
-  BLOCK_ID_MPI_Group_intersection, /*  130 */
+  BLOCK_ID_MPI_Group_intersection,
   BLOCK_ID_MPI_Group_rank,
   BLOCK_ID_MPI_Group_range_excl,
   BLOCK_ID_MPI_Group_range_incl,
@@ -681,7 +575,7 @@ typedef enum
   BLOCK_ID_MPI_Group_compare,
   BLOCK_ID_MPI_Intercomm_create,
   BLOCK_ID_MPI_Intercomm_merge,
-  BLOCK_ID_MPI_Keyval_free, /*  140 */
+  BLOCK_ID_MPI_Keyval_free,
   BLOCK_ID_MPI_Keyval_create,
   BLOCK_ID_MPI_Abort,
   BLOCK_ID_MPI_Error_class,
@@ -691,7 +585,7 @@ typedef enum
   BLOCK_ID_MPI_Error_string,
   BLOCK_ID_MPI_Errhandler_set,
   BLOCK_ID_MPI_Get_processor_name,
-  BLOCK_ID_MPI_Initialized, /*  150 */
+  BLOCK_ID_MPI_Initialized,
   BLOCK_ID_MPI_Wtick,
   BLOCK_ID_MPI_Wtime,
   BLOCK_ID_MPI_Address,
@@ -701,7 +595,7 @@ typedef enum
   BLOCK_ID_MPI_Request_free,
   BLOCK_ID_MPI_Recv_init,
   BLOCK_ID_MPI_Send_init,
-  BLOCK_ID_MPI_Get_count, /*  160 */
+  BLOCK_ID_MPI_Get_count,
   BLOCK_ID_MPI_Get_elements,
   BLOCK_ID_MPI_Pack_size,
   BLOCK_ID_MPI_Rsend_init,
@@ -711,7 +605,7 @@ typedef enum
   BLOCK_ID_MPI_Testall,
   BLOCK_ID_MPI_Testany,
   BLOCK_ID_MPI_Test_cancelled,
-  BLOCK_ID_MPI_Testsome, /*  170 */
+  BLOCK_ID_MPI_Testsome,
   BLOCK_ID_MPI_Type_commit,
   BLOCK_ID_MPI_Type_contiguous,
   BLOCK_ID_MPI_Type_extent,
@@ -721,7 +615,7 @@ typedef enum
   BLOCK_ID_MPI_Type_indexed,
   BLOCK_ID_MPI_Type_lb,
   BLOCK_ID_MPI_Type_size,
-  BLOCK_ID_MPI_Type_struct, /*  180 */
+  BLOCK_ID_MPI_Type_struct,
   BLOCK_ID_MPI_Type_ub,
   BLOCK_ID_MPI_Type_vector,
   BLOCK_ID_MPI_File_open,
@@ -731,10 +625,52 @@ typedef enum
   BLOCK_ID_MPI_File_write,
   BLOCK_ID_MPI_File_write_all,
   BLOCK_ID_MPI_File_read_at,
-  BLOCK_ID_MPI_File_read_at_all,/*  190 */
+  BLOCK_ID_MPI_File_read_at_all,
   BLOCK_ID_MPI_File_write_at,
   BLOCK_ID_MPI_File_write_at_all,
+  BLOCK_ID_MPI_Comm_spawn,
+  BLOCK_ID_MPI_Comm_spawn_multiple,
   BLOCK_ID_MPI_Request_get_status,
+  BLOCK_ID_MPI_Ireduce,
+  BLOCK_ID_MPI_Iallreduce,
+  BLOCK_ID_MPI_Ibarrier,
+  BLOCK_ID_MPI_Ibcast,
+  BLOCK_ID_MPI_Ialltoall,
+  BLOCK_ID_MPI_Ialltoallv,
+  BLOCK_ID_MPI_Iallgather,
+  BLOCK_ID_MPI_Iallgatherv,
+  BLOCK_ID_MPI_Igather,
+  BLOCK_ID_MPI_Igatherv,
+  BLOCK_ID_MPI_Iscatter,
+  BLOCK_ID_MPI_Iscatterv,
+  BLOCK_ID_MPI_Ireduce_scatter,
+  BLOCK_ID_MPI_Iscan,
+  BLOCK_ID_MPI_Reduce_scatter_block,
+  BLOCK_ID_MPI_Ireduce_scatter_block,
+  BLOCK_ID_MPI_Alltoallw,
+  BLOCK_ID_MPI_Ialltoallw,
+  BLOCK_ID_MPI_Get_accumulate,
+  BLOCK_ID_MPI_Dist_graph_create,
+  BLOCK_ID_MPI_Neighbor_allgather,
+  BLOCK_ID_MPI_Ineighbor_allgather,
+  BLOCK_ID_MPI_Neighbor_allgatherv,
+  BLOCK_ID_MPI_Ineighbor_allgatherv,
+  BLOCK_ID_MPI_Neighbor_alltoall,
+  BLOCK_ID_MPI_Ineighbor_alltoall,
+  BLOCK_ID_MPI_Neighbor_alltoallv,
+  BLOCK_ID_MPI_Ineighbor_alltoallv,
+  BLOCK_ID_MPI_Neighbor_alltoallw,
+  BLOCK_ID_MPI_Ineighbor_alltoallw,
+  BLOCK_ID_MPI_Fetch_and_op,
+  BLOCK_ID_MPI_Compare_and_swap,
+  BLOCK_ID_MPI_Win_flush,
+  BLOCK_ID_MPI_Win_flush_all,
+  BLOCK_ID_MPI_Win_flush_local,
+  BLOCK_ID_MPI_Win_flush_local_all,
+  BLOCK_ID_MPI_Mprobe,
+  BLOCK_ID_MPI_Improbe,
+  BLOCK_ID_MPI_Mrecv,
+  BLOCK_ID_MPI_Imrecv,
   BLOCK_ID_MPI_Init_thread,
 
   BLOCK_ID_TRACE_ON,
@@ -774,23 +710,25 @@ typedef enum
   GLOP_ID_MPI_Reduce         = 10,
   GLOP_ID_MPI_Allreduce      = 11,
   GLOP_ID_MPI_Reduce_scatter = 12,
-  GLOP_ID_MPI_Scan           = 13,
-  GLOP_ID_MPI_Alltoallw      = 14,
-  GLOP_ID_MPI_Ibarrier       = 15,
-  GLOP_ID_MPI_Ibcast         = 16,
-  GLOP_ID_MPI_Igather        = 17,
-  GLOP_ID_MPI_Igatherv       = 18,
-  GLOP_ID_MPI_Iscatter       = 19,
-  GLOP_ID_MPI_Iscatterv      = 20,
-  GLOP_ID_MPI_Iallgather     = 21,
-  GLOP_ID_MPI_Iallgatherv    = 22, 
-  GLOP_ID_MPI_Ialltoall      = 23,
-  GLOP_ID_MPI_Ialltoallv     = 24,
-  GLOP_ID_MPI_Ialltoallw     = 25,
-  GLOP_ID_MPI_Ireduce        = 26,
-  GLOP_ID_MPI_Iallreduce     = 27,
-  GLOP_ID_MPI_Ireduce_scatter= 28,
-  GLOP_ID_MPI_Iscan          = 29
+  GLOP_ID_MPI_Reduce_scatter_block = 13,
+  GLOP_ID_MPI_Scan           = 14,
+  GLOP_ID_MPI_Alltoallw      = 15,
+  GLOP_ID_MPI_Ibarrier       = 16,
+  GLOP_ID_MPI_Ibcast         = 17,
+  GLOP_ID_MPI_Igather        = 18,
+  GLOP_ID_MPI_Igatherv       = 19,
+  GLOP_ID_MPI_Iscatter       = 12,
+  GLOP_ID_MPI_Iscatterv      = 21,
+  GLOP_ID_MPI_Iallgather     = 22,
+  GLOP_ID_MPI_Iallgatherv    = 23, 
+  GLOP_ID_MPI_Ialltoall      = 24,
+  GLOP_ID_MPI_Ialltoallv     = 25,
+  GLOP_ID_MPI_Ialltoallw     = 26,
+  GLOP_ID_MPI_Ireduce        = 27,
+  GLOP_ID_MPI_Iallreduce     = 28,
+  GLOP_ID_MPI_Ireduce_scatter= 29,
+  GLOP_ID_MPI_Ireduce_scatter_block= 30,
+  GLOP_ID_MPI_Iscan          = 31
 }DimCollectiveOp;
 
 /* ==========================================================================

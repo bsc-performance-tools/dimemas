@@ -69,10 +69,10 @@ rmclassfiles:
 MANIFEST=$(GUIDIR)/MANIFEST.MF
 manifest:
 	echo "Manifest-Version: 1.0"                           > $(MANIFEST)
-	echo "Main-Class: es.bsc.cepbatools.dimemas.gui.Main" >> $(MANIFEST)
+	echo "Main-Class: gui.Main" >> $(MANIFEST)
 	echo "Class-path: commons-io-2.4.jar"                 >> $(MANIFEST)
 	
-VERSION_DIR=$(JAVAROOT)/es/bsc/cepbatools/dimemas/data
+VERSION_DIR=$(JAVAROOT)/data
 VERSION_FILE=$(VERSION_DIR)/Version.java
 
 mkversion:
@@ -83,7 +83,7 @@ mkversion:
 	echo " * This file is generated automatically during the build process" >> $(VERSION_FILE); \
 	echo " * (./configure && make) based on the standard GNU Auto-tools." >> $(VERSION_FILE); \
 	echo " */" >> $(VERSION_FILE); \
-	echo "package es.bsc.cepbatools.dimemas.data;" >> $(VERSION_FILE); \
+	echo "package data;" >> $(VERSION_FILE); \
 	echo "" >> $(VERSION_FILE); \
 	echo "public interface Version {" >> $(VERSION_FILE); \
 	echo "" >> $(VERSION_FILE); \

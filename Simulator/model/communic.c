@@ -8123,7 +8123,7 @@ void GLOBAL_operation (struct t_thread *thread,
 
     if (glop == GOPD_NIL)
     {
-        panic ("Global operation faild on line 8696 communic %d undefined to P%02d T%02d (t%02d)\n",
+        panic ("Global operation failed due to empty global_id undefined to P%02d T%02d (t%02d)\n",
                 glop_id,
                 IDENTIFIERS (thread) );
     }
