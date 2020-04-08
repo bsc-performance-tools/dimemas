@@ -13,13 +13,15 @@ m4_define([dimemas_version], [major.minor.micro])
 AC_INIT(dimemas, [dimemas_version], tools@bsc.es)
 AC_CANONICAL_SYSTEM
 
-AM_INIT_AUTOMAKE([silent-rules])
+#AM_INIT_AUTOMAKE([silent-rules])
+AM_INIT_AUTOMAKE([tar-ustar subdir-objects no-dependencies])
 
 AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_DEFINE_UNQUOTED(DATE, ["`date`"], [Current date of compilation] )
-AM_SILENT_RULES([yes])
+#AM_SILENT_RULES([yes])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 dnl =======================================================================
 dnl Check if CFLAGS/CXXFLAGS have been defined by user

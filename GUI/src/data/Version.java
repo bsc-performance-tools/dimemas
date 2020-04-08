@@ -7,6 +7,6 @@ package data;
 
 public interface Version {
 
-    public String versionString = "Dimemas Graphical User Interface 5.4.1";
+    public String versionString = "Dimemas Graphical User Interface 5.4.2";
 
 }
