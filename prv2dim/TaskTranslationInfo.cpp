@@ -548,6 +548,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 	INT32 Type;
 	INT64 Value;
 	UINT64 Timestamp;
+    int pseudo_logic_recv_events = 0;
 	double OnTraceTime;
     if(debug)
         cout << "Processing User Event: " << *CurrentEvent;

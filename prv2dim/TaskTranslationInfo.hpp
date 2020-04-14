@@ -169,7 +169,7 @@ class TaskTranslationInfo: public Error
         unsigned int pendent_i_Send_counter;
         unsigned int pendent_i_Recv_counter;
         unsigned int pendent_Glop_counter;
-        int pseudo_logic_recv_events = 0;
+        int pseudo_logic_recv_events;
     private:
         bool ReorderAndFlush(void);
 
