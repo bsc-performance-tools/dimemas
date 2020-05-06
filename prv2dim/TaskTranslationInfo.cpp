@@ -147,7 +147,6 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 					strerror(errno));
 		}
 	}
-
 	else if (AcceleratorThread == ACCELERATOR_KERNEL) 
 	{	/*GPU thread case, needs CPU burst in first record */
 		if (Dimemas_CPU_Burst(TemporaryFile,
@@ -160,19 +159,19 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 
 	this->GenerateFirstIdle = GenerateFirstIdle;
 
-	if (!EmptyTask && GenerateFirstIdle && ThreadId == 1) {
+	if (!EmptyTask && GenerateFirstIdle && ThreadId == 1) 
+    {
+        if(debug){
+		    cout << "Printing Initial Idle Block Begin [";
+		    cout.width(3);
+		    cout.fill('0');
+		    cout << TaskId << ":";
 
-    if(debug){
-		cout << "Printing Initial Idle Block Begin [";
-		cout.width(3);
-		cout.fill('0');
-		cout << TaskId << ":";
-
-		cout.width(2);
-		cout.fill('0');
-		cout << ThreadId << "]";
-		cout << endl;
-    }
+		    cout.width(2);
+		    cout.fill('0');
+		    cout << ThreadId << "]";
+		    cout << endl;
+        }
 
 		if (Dimemas_Block_Begin(TemporaryFile,
 					TaskId - 1, ThreadId - 1,
@@ -181,17 +180,17 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 			SetErrorMessage("error writing output trace",
 					strerror(errno));
 		}
-    if(debug){
-		cout << "Printing Initial CPU burst [";
-		cout.width(3);
-		cout.fill('0');
-		cout << TaskId << ":";
+        if(debug){
+		    cout << "Printing Initial CPU burst [";
+		    cout.width(3);
+		    cout.fill('0');
+		    cout << TaskId << ":";
 
-		cout.width(2);
-		cout.fill('0');
-		cout << ThreadId << "]";
-		cout << endl;
-    }
+		    cout.width(2);
+		    cout.fill('0');
+		    cout << ThreadId << "]";
+		    cout << endl;
+        }
 
 		if (Dimemas_CPU_Burst(TemporaryFile,
 				      TaskId - 1, ThreadId - 1,
@@ -200,17 +199,17 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 			SetErrorMessage("error writing output trace",
 					strerror(errno));
 		}
-    if(debug){
-		cout << "Printing Initial CPU Block End [";
-		cout.width(3);
-		cout.fill('0');
-		cout << TaskId << ":";
+        if(debug){
+		    cout << "Printing Initial CPU Block End [";
+		    cout.width(3);
+		    cout.fill('0');
+		    cout << TaskId << ":";
 
-		cout.width(2);
-		cout.fill('0');
-		cout << ThreadId << "]";
-		cout << endl;
-    }
+		    cout.width(2);
+		    cout.fill('0');
+		    cout << ThreadId << "]";
+		    cout << endl;
+        }
 
 		if (Dimemas_Block_End(TemporaryFile,
 				      TaskId - 1, ThreadId - 1, (INT64) 0) < 0)
@@ -473,9 +472,9 @@ bool TaskTranslationInfo::ReorderAndFlush(void)
     }
 
     if(debug){
-    fprintf(stdout,"[%03d:%02d] AFTER sort stack\n",TaskId,1);
-    for (i = 0; i < RecordStack.size(); i++)
-        cout << (*RecordStack[i]);
+        fprintf(stdout,"[%03d:%02d] AFTER sort stack\n",TaskId,1);
+        for (i = 0; i < RecordStack.size(); i++)
+            cout << (*RecordStack[i]);
     }
 
 	if (!FilePointerAvailable) 
@@ -622,11 +621,11 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             && !MPIEventEncoding_Is_UserBlock((INT64) Type) 
             && !ClusterEventEncoding_Is_ClusterBlock((INT64) Type) 
             && !CUDAEventEncoding_Is_CUDABlock((INT64) Type) 
-            && !OCLEventEncoding_Is_OCLBlock((INT64) Type)) 
+            && !OCLEventEncoding_Is_OCLBlock((INT64) Type) 
+            && !OMPEventEncoding_Is_OMPBlock((INT64) Type))
 	{	
-
     if(debug)
-        cout << "Printing User Event: " << *CurrentEvent;
+        cout << "Printing Generic Event: " << *CurrentEvent;
 
 		// If event appears in the middle of a CPU burst it breaks the burst
         //
@@ -664,9 +663,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			return false;
 		}
 	}
-
-    // It is a CUDA event
-    //
+    /* It is a CUDA event*/
 	if (CUDAEventEncoding_Is_CUDABlock(Type) && AcceleratorThread != ACCELERATOR_NULL) 
 	{
 		if (CUDAEventEncoding_Is_BlockBegin(Value)) 
@@ -762,7 +759,8 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 		{
 			if (CUDABlockIdStack.size() == 0
 			    && AcceleratorThread != ACCELERATOR_NULL) {
-				if (FirstCUDARead) {
+				if (FirstCUDARead) 
+                {
 					// There is a event closing without is opening in the middle of the
 					// trace
 					cout <<
@@ -773,14 +771,15 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 					    1 << " ";
 					cout << "Time " << Timestamp << endl;
 				}
-			} else {
+			} 
+            else 
+            {
 				CurrentBlock = CUDABlockIdStack.back();
 				CUDABlockIdStack.pop_back();
 
 				/* A kernel execution in the device, characterized as a GPU burst */
 				if ((CurrentBlock.second == CUDA_LAUNCH_VAL ||
-				     CurrentBlock.second ==
-				     CUDA_CONFIGURECALL_VAL)
+				     CurrentBlock.second == CUDA_CONFIGURECALL_VAL)
 				    && AcceleratorThread == ACCELERATOR_KERNEL) {
 					if (!GenerateGPUBurst
 					    (TaskId, ThreadId, Timestamp,
@@ -870,7 +869,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 	}
 
     // It is OpenCL event
-    //
 	if (OCLEventEncoding_Is_OCLBlock(Type) && AcceleratorThread != ACCELERATOR_NULL) 
     {
 		if (OCLEventEncoding_Is_BlockBegin(Value)) 
@@ -1043,9 +1041,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			LastBlockEnd = Timestamp;
 		}
 	}
-
     // It is a cluster block
-    //
 	if (ClusterEventEncoding_Is_ClusterBlock(Type)) 
     {
         // It is a cluster block begin
@@ -1129,13 +1125,10 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			}
 		}
 	}
-
     // It is an MPI function
-    //
 	if (MPIEventEncoding_Is_MPIBlock(Type)) 
     {
         // It is a Dimemas block begin
-        //
 		if (MPIEventEncoding_Is_BlockBegin(Value)) 
         {
             
@@ -1176,7 +1169,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			TestBurstFlushed = false;
 
             if(debug)
-			    cout << "Printing Block Begin " << *CurrentEvent;
+			    cout << "Printing MPI Block Begin " << *CurrentEvent;
 
 			if (Dimemas_Block_Begin(
                         TemporaryFile,
@@ -1204,8 +1197,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 		} 
         else 
         {
-			// It's a Dimemas MPI block end
-
 			if (MPIBlockIdStack.size() == 0) {
 				return true;
 			}
@@ -1277,7 +1268,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			LastBlockEnd = Timestamp;
 
             if(debug)
-			cout << "Printing Block End " << *CurrentEvent;
+		        cout << "Printing MPI Block End " << *CurrentEvent;
 
 			if (!CommunicationPrimitivePrinted) 
             {
@@ -1320,13 +1311,10 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			}
 		}
 	}
-
     // It is a User function
-    //
 	if (MPIEventEncoding_Is_UserBlock(Type)) 
     {	
         // It is a User block begin
-        //
         if (MPIEventEncoding_Is_BlockBegin(Value)) 
         {
 			if (OngoingIprobe) {
@@ -1350,7 +1338,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			LastBlockEnd = Timestamp;
 
             if(debug)
-    			cout << "Printing Block Begin " << *CurrentEvent;
+    			cout << "Printing User Block Begin " << *CurrentEvent;
 
 			/* Print the Block Begin */
 			if (Dimemas_Block_Begin(TemporaryFile,
@@ -1390,7 +1378,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			LastBlockEnd = Timestamp;
 
             if(debug)
-			    cout << "Printing Block End " << *CurrentEvent;
+			    cout << "Printing User Block End " << *CurrentEvent;
 
 			/* Print the Block Begin */
 			if (Dimemas_Block_End
@@ -1402,6 +1390,51 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			}
 		}
 	}
+    /* treating OMP events */
+    if(OMPEventEncoding_Is_OMPBlock(Type))
+    {
+            if(OMPEventEncoding_Is_BlockBegin(Value))
+            {
+				if (Timestamp > LastBlockEnd) 
+                {
+					if (!GenerateBurst (TaskId, ThreadId, Timestamp))
+						return false;
+				}
+			    LastBlockEnd = Timestamp;
+                if (Dimemas_Block_Begin(
+                            TemporaryFile,
+					    	TaskId,
+						    ThreadId, (INT64) Type,
+						    (INT64) Value) < 0) 
+                {
+				    SetError(true);
+				    SetErrorMessage("error writing output trace",
+					    	strerror(errno));
+				    return false;
+			    }
+            }
+            else
+            {
+				if (Timestamp > LastBlockEnd) 
+                {
+					if (!GenerateBurst (TaskId, ThreadId, Timestamp))
+						return false;
+				}
+
+			    LastBlockEnd = Timestamp;
+			    
+                if (Dimemas_Block_End(TemporaryFile,
+					      TaskId, ThreadId,
+					      (INT64) Type) < 0) 
+                {
+				    SetError(true);
+				    SetErrorMessage("error writing output trace",
+						strerror(errno));
+				    return false;
+			    }
+            }
+    }
+
 
 	return true;
 }
@@ -1419,6 +1452,7 @@ bool TaskTranslationInfo::ToDimemas(PartialCommunication_t CurrentComm)
 	if (MPIBlockIdStack.size() == 0 
             && CUDABlockIdStack.size() == 0 
             && OCLBlockIdStack.size() == 0) 
+            //&& OMPBlockIdStack.size() == 0) 
     {
         if(debug){
 		    fprintf(stdout, "Comm: [%03d:%02d] T:%lld ", CurrentComm->GetTaskId(),
@@ -2364,7 +2398,7 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
     {
 	case MPI_GLOBAL_OP_SENDSIZE:
         if(debug)
-            fprintf(stdout, "SEND SIZE = %lld\n",CurrentEvent->GetFirstValue());
+            fprintf(stdout, "SEND SIZE = %ld\n",CurrentEvent->GetFirstValue());
 
 		PartialGlobalOp->SetSendSize((INT32) CurrentEvent->GetFirstValue());
 		GlobalOpFields++;
@@ -2372,7 +2406,7 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
 
 	case MPI_GLOBAL_OP_RECVSIZE:
         if(debug)
-            fprintf(stdout, "RECEIVE SIZE = %lld\n",CurrentEvent->GetFirstValue());
+            fprintf(stdout, "RECEIVE SIZE = %ld\n",CurrentEvent->GetFirstValue());
 		PartialGlobalOp->SetRecvSize((INT32) CurrentEvent->GetFirstValue());
 		GlobalOpFields++;
 		break;
@@ -2390,7 +2424,7 @@ void TaskTranslationInfo::Event2GlobalOp(Event_t CurrentEvent)
 
 	case MPI_GLOBAL_OP_COMM:
         if(debug)
-            fprintf(stdout, "COMMUNICATOR = %lld\n",CurrentEvent->GetFirstValue());
+            fprintf(stdout, "COMMUNICATOR = %ld\n",CurrentEvent->GetFirstValue());
 
 	    PartialGlobalOp->SetCommunicatorId((INT32) CurrentEvent->GetFirstValue());
 		GlobalOpFields++;

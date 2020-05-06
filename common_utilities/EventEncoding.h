@@ -75,7 +75,7 @@ typedef int MPIType;
 #define MPITYPE_GROUP                 MPITYPE_OTHER
 #define MPITYPE_TOPOLOGIES            MPITYPE_OTHER
 #define MPITYPE_TYPE                  MPITYPE_OTHER
-#define MPITYPE_IO										50000005
+#define MPITYPE_IO					  50000005
 
 #define MPITYPE_PROBE_SOFTCOUNTER     50000300
 #define MPITYPE_PROBE_TIMECOUNTER     50000301
@@ -127,21 +127,59 @@ typedef int MPIType;
 #define CLUSTER_GROUP_EV       90000002
 #define CLUSTER_GROUP_LABEL    "Cluster Group"
 
+/* 
+ * OpenMP Event Types
+*/
+#define OMP_LIB_CALL_EV                     60000001
+#define OMP_BARRIER                         60000005
+#define OMP_EXECUTED_PARALLEL_FXN           60000018
+#define OMP_PTHREAD_FXN                     60000020
+#define OMP_EXE_TASK_FXN                    60000023
+#define OMP_INIT_TASK_FXN                   60000024
+#define OMP_SET_NUM_THREADS                 60000030
+#define OMP_GET_NUM_THREADS                 60000031
+#define OMP_EXE_PARALLEL_FXN_LINE_N_FILE    60000118
+#define OMP_PTHREAD_FXN_LINE_N_FILE         60000120
+#define OMP_EXE_TASK_FXN_LINE_N_FILE        60000123
+#define OMP_INIT_TASK_FXN_LINE_N_FILE       60000124
+
+
+#define OMP_LIB_CALL_LABEL                      "Parallel (OMP)"
+#define OMP_BARRIER_LABEL                       "OpenMP barrier"
+#define OMP_EXECUTED_PARALLEL_FXN_LABEL         "Executed OpenMP parallel function"
+#define OMP_PTHREAD_FXN_LABEL                   "pthread function"
+#define OMP_EXE_TASK_FXN_LABEL                  "Executed OpenMP task function"
+#define OMP_INIT_TASK_FXN_LABEL                 "Instantiated OpenMP task function"
+#define OMP_SET_NUM_THREADS_LABEL               "OpenMP set num threads"
+#define OMP_GET_NUM_THREADS_LABEL               "OpenMP get num threads"
+#define OMP_EXE_PARALLEL_FXN_LINE_N_FILE_LABEL  "Executed OpenMP  parallel function line and file"
+#define OMP_PTHREAD_FXN_LINE_N_FILE_LABEL       "pthread function line and file"
+#define OMP_EXE_TASK_FXN_LINE_N_FILE_LABEL      "Executed OpenMP task function line and file"
+#define OMP_INIT_TASK_FXN_LINE_N_FILE_LABEL     "Instantiated OpenMP task function line and file"
+
+typedef enum
+{
+    OMP_END_VAL = 0,
+    OMP_BEGIN_VAL 
+
+}OMP_Events_Values;
+
 /* ==========================================================================
    ==== CUDA Event Types
    ========================================================================== */
 
-#define CUDA_LIB_CALL_EV        63000001
-#define CUDA_LIB_CALL_LABEL     "CUDA library call"
-#define CUDA_MEMCPY_SIZE_EV     63000002
-#define CUDA_MEMCPY_SIZE_LABEL  "cudaMemcpy size"
-#define CUDA_KERNEL_EV					63000019
-#define CUDA_KERNEL_LABEL				"CUDA Kernel"
-#define CUDA_KERNEL_SOURCE_EV		63000119
-#define CUDA_KERNEL_SOURCE_LABEL "CUDA Kernel Source Code"
-#define CUDA_SYNCH_STREAM_EV    63300000
-#define CUDA_SYNCH_STREAM_LABEL "Synchronized stream (on thread)"
-#define CUDA_TAG								49370
+#define CUDA_LIB_CALL_EV            63000001
+#define CUDA_MEMCPY_SIZE_EV         63000002
+#define CUDA_KERNEL_EV			    63000019
+#define CUDA_KERNEL_SOURCE_EV	    63000119
+#define CUDA_SYNCH_STREAM_EV        63300000
+#define CUDA_TAG					49370
+
+#define CUDA_LIB_CALL_LABEL         "CUDA library call"
+#define CUDA_MEMCPY_SIZE_LABEL      "cudaMemcpy size"
+#define CUDA_KERNEL_LABEL		    "CUDA Kernel"
+#define CUDA_KERNEL_SOURCE_LABEL    "CUDA Kernel Source Code"
+#define CUDA_SYNCH_STREAM_LABEL     "Synchronized stream (on thread)"
 
 typedef enum
 {
@@ -245,11 +283,11 @@ typedef enum
 /* 34 */	OCL_ENQUEUE_BARRIER_ACC_VAL
 } OCL_Accelerator_Event_Values;
 
-#define OCL_KERNEL_NAME_EV					64200000
-#define OCL_KERNEL_NAME_LABEL				"OpenCL kernel name"
+#define OCL_KERNEL_NAME_EV				64200000
+#define OCL_KERNEL_NAME_LABEL			"OpenCL kernel name"
 #define OCL_SYNCH_STREAM_EV    			64300000
 #define OCL_SYNCH_STREAM_LABEL 			"OpenCL Synchronized stream (on thread)"
-#define OCL_TAG											3121
+#define OCL_TAG							3121
 
 /* ==========================================================================
    ==== MPI Event Values
@@ -962,33 +1000,30 @@ typedef enum
 #define LAPI_WAITCNTR_LABEL                "LAPI_Waitcntr"
 
 /* ---------------------------------------------------- Function Prototypes -*/
+/* MPIEventEncoding functions */
 void MPIEventEncoding_EnableOperation( MPI_Event_Values Op );
-
 void MPIEventEncoding_WriteEnabledOperations( FILE *fd );
-
 DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op );
-
 DimCollectiveOp MPIEventEncoding_GlobalOpId (DimBlock BlockId);
-
 int MPIEventEncoding_Is_MPIBlock  (long64_t Type );
 int MPIEventEncoding_Is_BlockBegin(long64_t Op );
-
-
 int MPIEventEncoding_Is_UserBlock( long64_t Type );
 long64_t MPIEventEncoding_UserBlockId( long64_t Type, long64_t Value );
-
-int EventEncoding_Is_IO( long64_t Type );
-long64_t EventEncoding_DimemasIO_Block( long64_t Type );
-
-int EventEncoding_Is_Flushing( long64_t Type );
-
 char* MPIEventEncoding_GetBlockLabel(MPI_Event_Values Op);
 
+/*OtherEventEncoding functions*/
+int EventEncoding_Is_IO( long64_t Type );
+long64_t EventEncoding_DimemasIO_Block( long64_t Type );
+int EventEncoding_Is_Flushing( long64_t Type );
+
+/* Clustering Eventencoding functions */
 int ClusterEventEncoding_Is_ClusterBlock(long64_t type);
 int ClusterEventEncoding_Is_BlockBegin  (long64_t Op);
-
-
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value);
+
+/* OMP EvenEncoding calls */
+int OMPEventEncoding_Is_OMPBlock(long64_t type);
+int OMPEventEncoding_Is_BlockBegin ( long64_t Op );
 
 /* CUDA EventEncoding calls	*/
 int CUDAEventEncoding_Is_CUDABlock(long64_t type);

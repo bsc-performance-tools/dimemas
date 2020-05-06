@@ -389,13 +389,6 @@ ParaverTraceTranslator::SplitCommunications(void)
             Communications.push_back(SplittedCommunication);
         }
 
-
-        /*
-           delete CurrentCommunication;
-
-           CurrentCommunication = Parser->GetNextCommunication();
-           */
-
         delete CurrentRecord;
 
         if (PreviouslySimulatedTrace)
@@ -441,10 +434,9 @@ ParaverTraceTranslator::SplitCommunications(void)
 }
 
 bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDescription,
-        int 										 acc_tasks_count,
-        const vector<bool>			*acc_tasks,
-        off_t                    OffsetsOffset
-        )
+        int                 acc_tasks_count,
+        const vector<bool>	*acc_tasks,
+        off_t               OffsetsOffset)
 {
 #define OFFSETS_OFFSET_RESERVE 15
 
@@ -929,7 +921,11 @@ ParaverTraceTranslator::Translate(
                 UINT64 state_begin_time = CurrentState->GetBeginTime();
                 UINT64 state_end_time = CurrentState->GetEndTime(); 
 
-                if (state_value == 0) // idle
+                /*  f(state_value > 1)
+                {
+
+                }*/
+                if(state_value == 0) // idle
                 {
                     Event_t BeginIdleEvent = new Event( 
                             state_begin_time,
@@ -954,9 +950,8 @@ ParaverTraceTranslator::Translate(
                     success = TranslationInfo[CurrentTaskId][CurrentThreadId]
                         ->PushRecord(EndIdleEvent);
                 }
-                
-                free(current_state[CurrentTaskId*max_nthreads+CurrentThreadId]);
-                current_state[CurrentTaskId*max_nthreads+CurrentThreadId] = CurrentState;
+                    free(current_state[CurrentTaskId*max_nthreads+CurrentThreadId]);
+                    current_state[CurrentTaskId*max_nthreads+CurrentThreadId] = CurrentState;
             }
             else
             {
@@ -1259,7 +1254,8 @@ ParaverTraceTranslator::Translate(
         }
     }
 
-    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, OffsetsOffset))
+    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, 
+                OffsetsOffset))
     {
         return false;
     }
@@ -1794,7 +1790,6 @@ bool ParaverTraceTranslator::AcceleratorTasksInfo(INT32 tasks_count)
             }
         }
     }
-
     if (acc_tasks_count > 0) return true;
     return false;
 }

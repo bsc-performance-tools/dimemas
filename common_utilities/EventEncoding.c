@@ -1403,6 +1403,7 @@ DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value)
   return ( (DimBlock) (value + BASE_CLUSTER_BLOCK) );
 }
 
+
 /* ---------------------------------------------------- Data Types ----------*/
 typedef struct
 {
@@ -1511,8 +1512,7 @@ CUDATypeInfo OCLType_Table[ NUM_OCLTYPES ] = {
 
 Boolean OCLEventEncoding_Is_OCLBlock ( long64_t type )
 {
-	int i;
-	for (i= 0; i< NUM_OCLTYPES; i++)
+	for (int i=0; i< NUM_OCLTYPES; i++)
 	{
 		if (type == (long64_t) OCLType_Table[ i ].Type)
 			return( TRUE );
@@ -1669,4 +1669,39 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event)
 	return FALSE;
 }
 
+#define NUM_OMPTYPES  12
+CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
+
+    { OMP_LIB_CALL_EV,          		   OMP_LIB_CALL_LABEL },           
+    { OMP_BARRIER,                         OMP_BARRIER_LABEL },
+    { OMP_EXECUTED_PARALLEL_FXN,           OMP_EXECUTED_PARALLEL_FXN_LABEL },
+    { OMP_PTHREAD_FXN,                     OMP_PTHREAD_FXN_LABEL },
+    { OMP_EXE_TASK_FXN,                    OMP_EXE_TASK_FXN_LABEL },
+    { OMP_INIT_TASK_FXN,                   OMP_INIT_TASK_FXN_LABEL },
+    { OMP_SET_NUM_THREADS,                 OMP_SET_NUM_THREADS_LABEL },
+    { OMP_GET_NUM_THREADS,                 OMP_GET_NUM_THREADS_LABEL },
+    { OMP_EXE_PARALLEL_FXN_LINE_N_FILE,    OMP_EXE_PARALLEL_FXN_LINE_N_FILE_LABEL },
+    { OMP_PTHREAD_FXN_LINE_N_FILE,         OMP_PTHREAD_FXN_LINE_N_FILE_LABEL },
+    { OMP_EXE_TASK_FXN_LINE_N_FILE,        OMP_EXE_TASK_FXN_LINE_N_FILE_LABEL },
+    { OMP_INIT_TASK_FXN_LINE_N_FILE,       OMP_INIT_TASK_FXN_LINE_N_FILE_LABEL }
+};
+/** 
+ * To check either the event is of  OMP block or not
+*/
+Boolean OMPEventEncoding_Is_OMPBlock ( long64_t type )
+{
+    for(int i = 0; i < NUM_OMPTYPES; ++i)
+    {
+	    if(type == (long64_t) OMPType_Table[i].Type)    
+            return (TRUE);  
+    }
+    return (FALSE);
+}
+/**
+ * OMP blocking begining 
+*/
+Boolean OMPEventEncoding_Is_BlockBegin ( long64_t Op )
+{
+  return( (Op == (long64_t) OMP_END_VAL) ? FALSE : TRUE );
+}
 

@@ -73,6 +73,8 @@ class TaskTranslationInfo: public Error
         vector<Block_t>         CUDABlockIdStack;
         vector<Block_t>         OCLBlockIdStack;
         bool                    OCLFinishComm;
+        /* For OMP version */
+       // vector<Block_t>         OMPBlockIdStack;
 
         /* MPI_Event_Values type is defined in 'EventEncoding.h', on common-files */
         GlobalOp_t              PartialGlobalOp;
