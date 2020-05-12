@@ -709,6 +709,9 @@ struct t_Ptask
                                          * events d'usuari */
     int		*acc_tasks;			/* Extra info for accelerator mapping */
     int		acc_tasks_count;
+
+    int *omp_tasks;
+    int omp_tasks_count;
 };
 
 struct t_task
@@ -771,11 +774,13 @@ struct t_task
     struct t_queue    th_for_in;            /* Awaiting for input link */
     struct t_queue    th_for_out;           /* Awaiting for output link */
 
-    t_boolean       	io_thread;
+    t_boolean         io_thread;
+    
+    t_boolean         openmp;
 
-    t_boolean					accelerator;
-    struct t_thread  *KernelSync;	/*	Kernel thread of sync	*/
-    struct t_thread	 *HostSync;		/*	Host thread of sync	*/
+    t_boolean		  accelerator;
+    struct t_thread   *KernelSync;	/*	Kernel thread of sync	*/
+    struct t_thread	  *HostSync;		/*	Host thread of sync	*/
     int							  KernelByComm;/* Kernel_id indicated in comm_id for global_op */
 };
 
@@ -982,6 +987,8 @@ struct t_thread
     struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
     
     /* variable for omp */
+    t_boolean       master;
+    t_boolean       worker;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.

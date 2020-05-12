@@ -603,7 +603,6 @@ int Dimemas_Communicator_Definition( FILE *fd,
                                      int *TaskList )
 {
   int ii;
-
   if ( fprintf( fd, COMMUNICATOR_STRING, commid, Ntasks) < 0)
     return -1;
 

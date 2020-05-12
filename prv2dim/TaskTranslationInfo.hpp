@@ -75,6 +75,7 @@ class TaskTranslationInfo: public Error
         bool                    OCLFinishComm;
         /* For OMP version */
        // vector<Block_t>         OMPBlockIdStack;
+        INT32                   OpenMP_thread;
 
         /* MPI_Event_Values type is defined in 'EventEncoding.h', on common-files */
         GlobalOp_t              PartialGlobalOp;
@@ -133,6 +134,7 @@ class TaskTranslationInfo: public Error
                 bool    PreviouslySimulatedTrace,
                 vector<vector<TaskTranslationInfo*> > * AllTranslationInfo,
                 INT32		AcceleratorThread,
+                INT32       OpenMP_thread,
                 char*   TemporaryFileName = NULL,
                 FILE*   TemporaryFile = NULL);
 

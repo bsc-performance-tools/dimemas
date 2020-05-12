@@ -1094,6 +1094,21 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
         thread->kernel = FALSE;
         thread->host	 = FALSE;
     }
+    if(task->openmp && thread_id == 0)
+    {
+        thread->master = TRUE;
+        thread->worker = FALSE;
+    }
+    else if(task->openmp && thread_id > 0)
+    {
+        thread->master = FALSE;
+        thread->worker = TRUE;
+    }
+    else 
+    {
+        thread->master = FALSE;
+        thread->worker = FALSE;
+    }
 
     thread->accelerator_link		= L_NIL;
     thread->first_acc_event_read		= FALSE;

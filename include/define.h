@@ -611,8 +611,11 @@ static const char* Global_Ops_Labels[GLOBAL_OPS_COUNT] =
   "MPI_Alltoallw"
 };
 
-#define ACCELERATOR_NULL		0	//No accelerator tracing
-#define ACCELERATOR_HOST		1	//Accelerator host thread
+#define ACCELERATOR_NULL	0	//No accelerator tracing
+#define ACCELERATOR_HOST	1	//Accelerator host thread
 #define ACCELERATOR_KERNEL	2	//Accelerator kernel thread
+#define OpenMP_NULL         0   //No open tracing
+#define MASTER              1   //OpenMP master thread  
+#define WORKER              2   //OpenMp worker thread
 
 #endif

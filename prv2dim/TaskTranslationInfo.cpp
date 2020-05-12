@@ -75,6 +75,7 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 					 TaskTranslationInfo *
 					 > >*AllTranslationInfo,
 					 INT32 AcceleratorThread,
+					 INT32 OpenMP_thread,
 					 char *TemporaryFileName,
 					 FILE * TemporaryFile)
 {
@@ -118,6 +119,7 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 	FirstCUDARead = false;
 	FirstOCLRead = false;
 	this->AcceleratorThread = AcceleratorThread;
+    this->OpenMP_thread = OpenMP_thread;
 
 	if (!FilePointerAvailable) 
     {
@@ -149,6 +151,15 @@ TaskTranslationInfo::TaskTranslationInfo(INT32 TaskId,
 	}
 	else if (AcceleratorThread == ACCELERATOR_KERNEL) 
 	{	/*GPU thread case, needs CPU burst in first record */
+		if (Dimemas_CPU_Burst(TemporaryFile,
+				      TaskId - 1, ThreadId - 1, 0.0) < 0) {
+			SetError(true);
+			SetErrorMessage("error writing output trace",
+					strerror(errno));
+		}
+	}
+	else if (OpenMP_thread == MASTER) 
+	{	/*OMP thread case, needs CPU burst in first record */
 		if (Dimemas_CPU_Burst(TemporaryFile,
 				      TaskId - 1, ThreadId - 1, 0.0) < 0) {
 			SetError(true);
@@ -2471,7 +2482,7 @@ void TaskTranslationInfo::FinalizeGlobalOp(void)
     if(debug)
     fprintf(
         stdout,
-        "[%03d:%02d %lld] Finalizing global \n",
+        "[%03d:%02d %lu] Finalizing global \n",
         PartialGlobalOp->GetTaskId(),
         PartialGlobalOp->GetThreadId(),
         PartialGlobalOp->GetTimestamp());
@@ -2896,8 +2907,8 @@ bool TaskTranslationInfo::GenerateGPUBurst(INT32 TaskId,
 	    cout << endl;
     }
 
-	if (!Dimemas_GPU_Burst(TemporaryFile, TaskId, ThreadId, OnTraceTime) <
-	    0) {
+	if (!Dimemas_GPU_Burst(TemporaryFile, TaskId, ThreadId, OnTraceTime) < 0) 
+    {
 		SetError(true);
 		SetErrorMessage("error writing output trace", strerror(errno));
 		return false;

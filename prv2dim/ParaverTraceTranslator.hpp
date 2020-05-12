@@ -56,9 +56,10 @@ class ParaverTraceTranslator: public Error
 
     string ParaverTraceName;
     string DimemasTraceName;
-		string ExtraStatsName;
+	string ExtraStatsName;
 
     FILE* RowTraceFile;
+    FILE* PcfTraceFile;
 
     FILE* ParaverTraceFile;
     FILE* DimemasTraceFile;
@@ -80,11 +81,15 @@ class ParaverTraceTranslator: public Error
     bool PreviouslySimulatedTrace;
 
     INT32 WrongRecordsFound;
-
+    bool is_openmp_trace;
+    /* Indicates if OpenMP will be translated */
+    vector<bool>	omp_tasks;
+    INT32 omp_tasks_count;
     /* Indicates if CUDA or OpenCL will be translated */
     INT32 AcceleratorType;	
     vector<bool>	acc_tasks;
     INT32 acc_tasks_count;
+    
 
   public:
 
@@ -120,8 +125,10 @@ class ParaverTraceTranslator: public Error
     bool ShareDescriptor(void);
     bool WriteNewFormatHeader(ApplicationDescription_t AppDescription, 
             int acc_tasks_count, const vector<bool> *acc_tasks, 
+            int omp_tasks_count, const vector<bool> *omp_tasks, 
             off_t OffsetsOffset = 0);
     bool AcceleratorTasksInfo(INT32 tasks_count);
+    bool OpenMPTasksInfo(INT32 tasks_count);
 };
 
 #endif /* _PARAVERTRACETRANSLATOR_H */

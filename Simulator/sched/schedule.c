@@ -708,7 +708,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                         {
                             action = thread->action;
 
-                            if (thread->idle_block && !thread->kernel)
+                            if (thread->idle_block && !thread->kernel && !thread->master)
                             {
                                 PARAVER_Idle (cpu->unique_number,
                                         IDENTIFIERS (thread),
@@ -724,7 +724,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                             }
                             else
                             {
-                                if (!thread->task->accelerator)
+                                if (!thread->task->accelerator && !thread->task->openmp)
                                 {	/*	It's a CPU burst	*/
                                     PARAVER_Running (cpu->unique_number,
                                             IDENTIFIERS (thread),
@@ -759,6 +759,13 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                 {
                                     /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
                                 }
+                                else if ((thread->master || thread->worker)
+                                    && (OMPEventEncoding_Is_OMPBlock(thread->omp_in_block_event.type))
+                                        && OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
+                                {
+                                printf("acc-block%ld",thread->omp_in_block_event.type);
+                                    /* Do nothing for these events and values*/
+                                }
                                 else
                                 {	/*	It's a CPU burst	*/
                                     PARAVER_Running (cpu->unique_number,
@@ -771,6 +778,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                         }
                     }
                 }
+                
                 thread->last_paraver = current_time;
                 cpu->current_thread  = TH_NIL;
 
