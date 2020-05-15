@@ -1026,20 +1026,15 @@ next_op:
                                 treat_omp_events(thread, action);
 
                                 int omp_event = (OMPEventEncoding_Is_OMPBlock(action->desc.even.type));
-                                       // && action->desc.even.value == 0);
+                                      // && action->desc.even.value != 0);
                                 if(omp_event)
                                 {
                                     cpu = get_cpu_of_thread(thread);
-                                   //printf("printing events %lld \n", action->desc.even.type); 
-                                    //PARAVER_Event (cpu->unique_number,
-                                      //      IDENTIFIERS (thread),
-                                        //    current_time,
-                                          //  action->desc.even.type,
-                                            //action->desc.even.value);
+                                    if(thread->worker == TRUE){
                                     PARAVER_Not_Created(cpu->unique_number,
                                             IDENTIFIERS (thread),
                                             action->desc.compute.cpu_time,
-                                            current_time);
+                                            current_time);}
                                 }
 
                                 thread->action = action->next;
@@ -1697,8 +1692,11 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
                 current_time,
                 thread->omp_in_block_event.paraver_time);
     }
-    if((action->desc.even.type == OMP_LIB_CALL_EV && action->desc.even.value == 3)
-            || (action->desc.even.type == OMP_SET_NUM_THREADS && action->desc.even.value == 1))
+    if((action->desc.even.type == OMP_CALL_EV && action->desc.even.value == 3)
+            || (action->desc.even.type == OMP_SET_NUM_THREADS && action->desc.even.value == 1)
+            || (action->desc.even.type == OMP_WORKSHARING_EV && (action->desc.even.value == 4 ||
+                    action->desc.even.value == 6))
+            || (action->desc.even.type == OMP_WORK_EV && (action->desc.even.value == 1)))
     {
         PARAVER_Thread_Sched(cpu->unique_number,
                 IDENTIFIERS(thread),

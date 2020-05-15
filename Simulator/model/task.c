@@ -2498,9 +2498,10 @@ void user_event_value_name (struct t_Ptask *Ptask,
         free(name);
     }
 }
-/*
+
+/**
  * Gets accelerator task mapping info and stores it in Ptask
- */
+*/
 void get_acc_tasks_info(struct t_Ptask *Ptask)
 {
     int *acc_tasks_mapping;

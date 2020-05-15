@@ -130,8 +130,10 @@ typedef int MPIType;
 /* 
  * OpenMP Event Types
 */
-#define OMP_LIB_CALL_EV                     60000001
+#define OMP_CALL_EV                         60000001
+#define OMP_WORKSHARING_EV                  60000002
 #define OMP_BARRIER                         60000005
+#define OMP_WORK_EV                         60000011
 #define OMP_EXECUTED_PARALLEL_FXN           60000018
 #define OMP_PTHREAD_FXN                     60000020
 #define OMP_EXE_TASK_FXN                    60000023
@@ -144,8 +146,10 @@ typedef int MPIType;
 #define OMP_INIT_TASK_FXN_LINE_N_FILE       60000124
 
 
-#define OMP_LIB_CALL_LABEL                      "Parallel (OMP)"
+#define OMP_CALL_LABEL                          "Parallel (OMP)"
+#define OMP_WORKSHARING_LABEL                   "Worksharing (OMP)"
 #define OMP_BARRIER_LABEL                       "OpenMP barrier"
+#define OMP_WORK_LABEL                          "OpenMP Worksharing work dispacher"
 #define OMP_EXECUTED_PARALLEL_FXN_LABEL         "Executed OpenMP parallel function"
 #define OMP_PTHREAD_FXN_LABEL                   "pthread function"
 #define OMP_EXE_TASK_FXN_LABEL                  "Executed OpenMP task function"

@@ -502,7 +502,9 @@ int DATA_ACCESS_test_routine (int ptask_id)
 }
 
 
-/*	gets the task_id which exectues acc calls, defined in DIMEMAS trace_file header	*/
+/**
+ * Gets the task_id which exectues acc calls, defined in DIMEMAS trace_file header	
+*/
 t_boolean DATA_ACCES_get_acc_tasks(char *trace_file_location, int *acc_tasks_count, int **acc_tasks)
 {
     FILE   *trace_file;
@@ -687,7 +689,6 @@ t_boolean DATA_ACCESS_reload_ptask (int ptask_id)
 
     return TRUE;
 }
-
 
 /**
  * Initialization of an application
@@ -1081,16 +1082,8 @@ t_boolean DAP_read_definitions (app_struct *app)
     /* Set the records starting offset */
     app->records_offset = (IO_ftello(main_struct.current_stream)) - bytes_read;
 
-    /* DEBUG
-       printf ("Total definitions found = %zu\n", total_definitions_found);
-       printf ("Current file offset %zu\n", IO_ftello(main_struct.current_stream));
-       printf ("Bytes read = %zu\n", bytes_read);
-       printf ("Records offset = %zu\n", app->records_offset);
-       */
-
     return TRUE;
 }
-
 
 /**
  * Communicator definition parsing
@@ -1248,14 +1241,6 @@ t_boolean DAP_read_offsets (app_struct *app)
             DAP_report_error("wrong offset definition (%s)",line);
             return FALSE;
         }
-
-        /*
-           if (offset_record_id != DATA_ACCESS_OFFDEF)
-           {
-           DAP_report_error("wrong offset definition %s",line);
-           return FALSE;
-           }
-           */
 
         if (current_task_read != current_task)
         {
@@ -1447,7 +1432,6 @@ off_t DAP_locate_thread_offset(app_struct *app,
                 free(line);
                 continue;
             }
-
 
             op_fields = malloc(strlen(line)+1);
 

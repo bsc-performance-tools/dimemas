@@ -1406,12 +1406,17 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
     {
             if(OMPEventEncoding_Is_BlockBegin(Value))
             {
-				if (Timestamp > LastBlockEnd) 
+			 	if (Timestamp > LastBlockEnd) 
                 {
-					if (!GenerateBurst (TaskId, ThreadId, Timestamp))
-						return false;
+				    if (!GenerateBurst (TaskId, ThreadId, Timestamp))
+					    return false;
 				}
-			    LastBlockEnd = Timestamp;
+			
+                LastBlockEnd = Timestamp;
+                
+                if(debug)
+    			    cout << "Printing OpenMP Block Begin " << *CurrentEvent;
+                
                 if (Dimemas_Block_Begin(
                             TemporaryFile,
 					    	TaskId,
@@ -1426,7 +1431,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             }
             else
             {
-				if (Timestamp > LastBlockEnd) 
+			  	if (Timestamp > LastBlockEnd) 
                 {
 					if (!GenerateBurst (TaskId, ThreadId, Timestamp))
 						return false;
@@ -1434,6 +1439,9 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 
 			    LastBlockEnd = Timestamp;
 			    
+                if(debug)
+    			    cout << "Printing OpenMP Block End " << *CurrentEvent;
+                
                 if (Dimemas_Block_End(TemporaryFile,
 					      TaskId, ThreadId,
 					      (INT64) Type) < 0) 
@@ -1445,8 +1453,6 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 			    }
             }
     }
-
-
 	return true;
 }
 
