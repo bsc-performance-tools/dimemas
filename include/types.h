@@ -977,7 +977,7 @@ struct t_thread
     // Accelerator variables
     t_boolean			 host; /* Indicates if it's an accelerator host thread	*/
     t_boolean			 kernel; /* Indicates if it's an accelerator kernel thread	*/
-    struct t_link	*accelerator_link; /* Accelerator link for communications	*/
+    struct t_link	     *accelerator_link; /* Accelerator link for communications	*/
     t_boolean			 first_acc_event_read; /* Throws a NOT_CREATED_ST before */
     /* start if it's a kernel thread	*/
     t_boolean			 acc_recv_sync;	/* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
@@ -987,9 +987,12 @@ struct t_thread
     struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
     
     /* variable for omp */
-    t_boolean       master;
-    t_boolean       worker;
+    t_boolean       master_thread;
+    t_boolean       worker_thread;
+    t_boolean       first_omp_event_read;
+    t_boolean       omp_recv_sync;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
+    
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.
     // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.

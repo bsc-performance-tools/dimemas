@@ -601,7 +601,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
                 }
             }
             else
-            {	/*  is last element	*/
+            {	 // is last element
                 if (fprintf (DimemasTraceFile, ")") < 0)
                 {
                     SetErrorMessage("error writing header", strerror(errno));
@@ -1452,9 +1452,9 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             else if (is_acc_task && CurrentThread == 0)
                 AcceleratorThread = ACCELERATOR_HOST;
 
-            if(is_acc_task && CurrentThread == 0)
+            if(is_omp_task && CurrentThread == 0)
                 OpenMP_thread = MASTER;
-            else if(is_acc_task && CurrentThread != 0)
+            else if(is_omp_task && CurrentThread != 0)
                 OpenMP_thread = WORKER;
 
             TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 50);
@@ -1781,14 +1781,19 @@ ParaverTraceTranslator::ShareDescriptor(void)
 bool ParaverTraceTranslator::OpenMPTasksInfo(INT32 tasks_count)
 {
     string PcfTraceName;
+    string RowTraceName;
     string::size_type SubstrPosition;
-    bool is_openmp_trace;
+    bool is_openmp_trace = FALSE;
 
     char*   line  = NULL;
     string	Line;
+    char*   line1  = NULL;
+    string	Line1;
     size_t  current_line_length = 0;
     INT32 	task_id = 0;
 
+    string	pattern_thread_lvl = "LEVEL THREAD SIZE";
+    string	pattern_thread_tag = "THREAD";
     SubstrPosition = ParaverTraceName.rfind(".prv");
 
     if (SubstrPosition == string::npos)
@@ -1813,21 +1818,62 @@ bool ParaverTraceTranslator::OpenMPTasksInfo(INT32 tasks_count)
         return false;
     }
 
+    if (SubstrPosition == string::npos)
+    {
+        RowTraceName = ParaverTraceName + ".row";
+    }
+    else
+    {
+        RowTraceName = ParaverTraceName.substr(0, SubstrPosition) + ".row";
+    }
+
+    if ( (RowTraceFile = fopen(RowTraceName.c_str(), "r")) == NULL)
+    {
+        cout << "-> No input trace ROW file found" << endl;
+        RowTraceFile = NULL;
+        return false;
+    }
+
+    if (fseeko(RowTraceFile, (size_t) 0, SEEK_SET) == -1)
+    {
+        SetError(true);
+        SetErrorMessage("Error seeking position in row trace file",
+                strerror(errno));
+        return false;
+    }
+
     omp_tasks.resize(tasks_count, false);
     omp_tasks_count	= 0;
     while (getline(&line, &current_line_length, PcfTraceFile) !=-1)
     {   
-        if(atoi(&line[2]) == 60000001)
+        if(atoi(&line[2]) == OMP_CALL_EV)
         {
-            for(task_id ; task_id < tasks_count; task_id++)
+            is_openmp_trace = TRUE;
+        }
+    }
+    if(is_openmp_trace)
+    {
+        while (getline(&line1, &current_line_length, RowTraceFile) !=-1)
+        {
+            Line1 = (string) line1;
+            if ( Line1.find(pattern_thread_lvl) != std::string::npos )
             {
-                if (!omp_tasks[task_id])
+                while (getline(&line1, &current_line_length, RowTraceFile) !=-1)
                 {
-                    omp_tasks[task_id] = true;
-                    omp_tasks_count++;
+                    Line1 = (string) line1;
+                    if ( Line1.find(pattern_thread_tag) != std::string::npos)
+                    {
+                        for(task_id; task_id < tasks_count; task_id++)
+                        {
+                            if(!omp_tasks[task_id])
+                            {
+                            omp_tasks[task_id] = true;
+                            omp_tasks_count++;
+                            }
+                        }
+                    }
                 }
             }
-            is_openmp_trace = TRUE;
         }
     }
     if(is_openmp_trace) return true;
@@ -1840,7 +1886,6 @@ bool ParaverTraceTranslator::OpenMPTasksInfo(INT32 tasks_count)
 bool ParaverTraceTranslator::AcceleratorTasksInfo(INT32 tasks_count)
 {
     string RowTraceName;
-    string PcfTraceName;
     string::size_type SubstrPosition;
 
     char*   line  = NULL;

@@ -1668,7 +1668,7 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event)
 	return FALSE;
 }
 
-#define NUM_OMPTYPES  12
+#define NUM_OMPTYPES  14
 CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
 
     { OMP_CALL_EV,          		       OMP_CALL_LABEL },           
@@ -1704,5 +1704,37 @@ Boolean OMPEventEncoding_Is_OMPBlock ( long64_t type )
 Boolean OMPEventEncoding_Is_BlockBegin ( long64_t Op )
 {
   return( (Op == (long64_t) OMP_END_VAL) ? FALSE : TRUE );
+}
+/**
+ * OMP executing case
+ * */
+Boolean OMPEventEncoding_Is_OMPExec (struct t_event_block event)
+{
+	if ((event.type == OMP_EXECUTED_PARALLEL_FXN || event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE)
+        && event.value == OMP_END_VAL)
+		return TRUE;
+	return FALSE;
+}
+/**
+ * OMP synchronization 
+ * */
+Boolean OMPEventEncoding_Is_OMPSync (struct t_event_block event)
+{
+	if (event.type == OMP_BARRIER &&
+			event.value == OMP_BEGIN_VAL)
+		return TRUE;
+	return FALSE;
+}
+Boolean OMPEventEncoding_Is_OMPSched (struct t_event_block event)
+{
+	if ((event.type == OMP_WORKSHARING_EV && (event.value == DO_WORKSHARE || event.value == SINGLE_WORKSHARE)) || 
+            (event.type == OMP_CALL_EV && event.value == REGION_OPEN) ||
+            (event.type == OMP_WORK_EV && event.value == OMP_BEGIN_VAL) ||
+            (event.type == OMP_SET_NUM_THREADS && event.value == OMP_BEGIN_VAL))
+    {
+		return TRUE;
+    }
+    else 	
+        return FALSE;
 }
 

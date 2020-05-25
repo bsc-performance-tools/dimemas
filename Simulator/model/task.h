@@ -188,6 +188,7 @@ void no_more_identificator_to_window(struct t_Ptask *Ptask, int window_id);
 t_nano PREEMP_overhead(struct t_task* task);
 
 void get_acc_tasks_info(struct t_Ptask *Ptask);
+void get_omp_tasks_info(struct t_Ptask *Ptask);
 
 void get_acc_nodes_info(struct t_node *node);
 

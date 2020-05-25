@@ -511,7 +511,6 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     struct t_task *task;
     struct t_node *node;
     int nodeid;
-    int  i;
     struct t_link *link;
 
     node = get_node_by_id(nodeid);
@@ -550,6 +549,33 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     task->KernelSync = TH_NIL;	//Means no thread is waiting
     task->HostSync = TH_NIL;	//Means no root is waiting
     task->KernelByComm	= -1;	//Means no root is waiting for kernel
+
+    return;
+}
+
+void TASK_OpenMP_Task(struct t_Ptask *Ptask, int taskid, t_boolean omp_task)
+{
+    struct t_task *task;
+    struct t_node *node;
+    struct t_cpu *cpu;
+    int nodeid;
+    int *number_cpus_per_node;
+    struct t_link *link;
+    
+    //node = get_node_by_id(nodeid);
+
+    int n_nodes = SIMULATOR_get_number_of_nodes();
+    number_cpus_per_node = SIMULATOR_get_cpus_per_node();
+    
+    if(n_nodes < Ptask->omp_tasks_count)
+        printf("WARNING:  \n");
+        
+    for(int i = 0; i < n_nodes; ++i)
+    {
+
+        //printf("number of cpus = %d\n", number_cpus_per_node[i]);
+    }
+    task->openmp = omp_task;
 
     return;
 }
@@ -1094,35 +1120,37 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
         thread->kernel = FALSE;
         thread->host	 = FALSE;
     }
+
+    thread->accelerator_link		 = L_NIL;
+    thread->first_acc_event_read	 = FALSE;
+    thread->acc_recv_sync			 = FALSE;
+    thread->acc_sndr_sync 			 = FALSE;
+    thread->doing_acc_comm			 = FALSE;
+    thread->acc_in_block_event.type  = 0;
+    thread->acc_in_block_event.value = 0;
+    thread->blckd_in_global_op       = FALSE;
+    thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
+
+   /* OpenMp variables */ 
     if(task->openmp && thread_id == 0)
     {
-        thread->master = TRUE;
-        thread->worker = FALSE;
+        thread->master_thread = TRUE;
+        thread->worker_thread = FALSE;
     }
     else if(task->openmp && thread_id > 0)
     {
-        thread->master = FALSE;
-        thread->worker = TRUE;
+        thread->master_thread = FALSE;
+        thread->worker_thread = TRUE;
     }
     else 
     {
-        thread->master = FALSE;
-        thread->worker = FALSE;
+        thread->master_thread = FALSE;
+        thread->worker_thread = FALSE;
     }
-
-    thread->accelerator_link		= L_NIL;
-    thread->first_acc_event_read		= FALSE;
-    thread->acc_recv_sync			= FALSE;
-    thread->acc_sndr_sync 			= FALSE;
-    thread->doing_acc_comm			= FALSE;
-    thread->acc_in_block_event.type = 0;
-    thread->acc_in_block_event.value= 0;
-    thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
-    thread->blckd_in_global_op = FALSE;
-    /* Accelerator variables */
-    
-    thread->omp_in_block_event.type     = 0;
-    thread->omp_in_block_event.value    = 0;
+    thread->first_omp_event_read	 = FALSE;
+    thread->omp_recv_sync			 = FALSE;
+    thread->omp_in_block_event.type  = 0;
+    thread->omp_in_block_event.value = 0;
     thread->omp_in_block_event.paraver_time = (dimemas_timer) 0;
 
     /* NON-Block global operations variables */
@@ -1262,47 +1290,50 @@ struct t_thread *duplicate_thread_fs (struct t_thread *thread)
     // bcopy (thread, copy_thread, sizeof(struct t_thread));
     memcpy(copy_thread, thread, sizeof(struct t_thread));
 
-    copy_thread->original_thread = FALSE;
-    copy_thread->twin_thread = thread;
-    copy_thread->doing_context_switch = FALSE;
+    copy_thread->original_thread        = FALSE;
+    copy_thread->twin_thread            = thread;
+    copy_thread->doing_context_switch   = FALSE;
     copy_thread->min_time_to_be_preempted = thread->min_time_to_be_preempted;
-    copy_thread->doing_busy_wait = FALSE;
-    copy_thread->threadid = thread->threadid;
-    copy_thread->task = thread->task;
-    copy_thread->put_into_ready = thread->put_into_ready;
-    copy_thread->last_action = AC_NIL;
-    copy_thread->account = thread->account;
-    copy_thread->local_link = thread->local_link;
-    copy_thread->partner_link = thread->partner_link;
-    copy_thread->local_hd_link = thread->local_hd_link;
-    copy_thread->partner_hd_link = thread->partner_hd_link;
-    copy_thread->last_paraver = thread->last_paraver;
-    copy_thread->base_priority = thread->base_priority;
+    copy_thread->doing_busy_wait        = FALSE;
+    copy_thread->threadid               = thread->threadid;
+    copy_thread->task                   = thread->task;
+    copy_thread->put_into_ready         = thread->put_into_ready;
+    copy_thread->last_action            = AC_NIL;
+    copy_thread->account                = thread->account;
+    copy_thread->local_link             = thread->local_link;
+    copy_thread->partner_link           = thread->partner_link;
+    copy_thread->local_hd_link          = thread->local_hd_link;
+    copy_thread->partner_hd_link        = thread->partner_hd_link;
+    copy_thread->last_paraver           = thread->last_paraver;
+    copy_thread->base_priority          = thread->base_priority;
     (*SCH[machine->scheduler.policy].init_scheduler_parameters) (copy_thread);
     SCHEDULER_copy_parameters (thread, copy_thread);
-    copy_thread->seek_position = SEEK_NIL;
-    copy_thread->logical_send = thread->logical_send;
-    copy_thread->logical_recv = thread->logical_recv;
-    copy_thread->physical_send = thread->physical_send;
-    copy_thread->physical_recv = thread->physical_recv;
-    copy_thread->last_cp_node = thread->last_cp_node;
+    copy_thread->seek_position          = SEEK_NIL;
+    copy_thread->logical_send           = thread->logical_send;
+    copy_thread->logical_recv           = thread->logical_recv;
+    copy_thread->physical_send          = thread->physical_send;
+    copy_thread->physical_recv          = thread->physical_recv;
+    copy_thread->last_cp_node           = thread->last_cp_node;
 
-    copy_thread->sstask_id                = thread->sstask_id;
-    copy_thread->sstask_type              = thread->sstask_type;
+    copy_thread->sstask_id              = thread->sstask_id;
+    copy_thread->sstask_type            = thread->sstask_type;
 
     /* Accelerator variables */
-    copy_thread->host											= thread->host;
-    copy_thread->kernel										= thread->kernel;
-    copy_thread->accelerator_link					= thread->accelerator_link;
-    copy_thread->first_acc_event_read			= thread->first_acc_event_read;
-    copy_thread->acc_in_block_event       = thread->acc_in_block_event;
-    copy_thread->acc_recv_sync						= thread->acc_recv_sync;
-    copy_thread->acc_sndr_sync        		= thread->acc_sndr_sync;
-    copy_thread->doing_acc_comm						= thread->doing_acc_comm;
-    copy_thread->blckd_in_global_op				= thread->blckd_in_global_op;
+    copy_thread->host					= thread->host;
+    copy_thread->kernel					= thread->kernel;
+    copy_thread->accelerator_link		= thread->accelerator_link;
+    copy_thread->first_acc_event_read	= thread->first_acc_event_read;
+    copy_thread->acc_in_block_event     = thread->acc_in_block_event;
+    copy_thread->acc_recv_sync			= thread->acc_recv_sync;
+    copy_thread->acc_sndr_sync        	= thread->acc_sndr_sync;
+    copy_thread->doing_acc_comm			= thread->doing_acc_comm;
+    copy_thread->blckd_in_global_op		= thread->blckd_in_global_op;
     /* Accelerator variables */
+    
+    copy_thread->first_omp_event_read   = thread->first_omp_event_read;
+    copy_thread->omp_recv_sync          = thread->omp_recv_sync;
+    copy_thread->omp_in_block_event     = thread->omp_in_block_event;
 
-    copy_thread->omp_in_block_event       = thread->omp_in_block_event;
     return (copy_thread);
 }
 
@@ -1376,6 +1407,8 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
     copy_thread->blckd_in_global_op       = thread->blckd_in_global_op;
     copy_thread->n_nonblock_glob_in_flight= thread->n_nonblock_glob_in_flight;
 
+    copy_thread->first_omp_event_read     = thread->first_omp_event_read;
+    copy_thread->omp_recv_sync            = thread->omp_recv_sync;
     copy_thread->omp_in_block_event       = thread->omp_in_block_event;
 
     return copy_thread;
@@ -1843,6 +1876,7 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
     //Added here to initialize the task first
 
     get_acc_tasks_info(Ptask);
+    get_omp_tasks_info(Ptask);
     for (new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++)
     {
         for (i = 0; i < Ptask->acc_tasks_count; i++)
@@ -1856,6 +1890,18 @@ void TASK_Initialize_Ptask_Mapping(struct t_Ptask *Ptask)
         if (i == Ptask->acc_tasks_count)
         {       
             TASK_New_Task(Ptask, new_taskid, FALSE);       
+        }
+        for (i = 0; i < Ptask->omp_tasks_count; i++)
+        {
+            if (Ptask->omp_tasks[i] == new_taskid)
+            {
+                TASK_OpenMP_Task(Ptask, new_taskid, TRUE);      
+                break;
+            }
+        }
+        if (i == Ptask->omp_tasks_count)
+        {       
+            TASK_OpenMP_Task(Ptask, new_taskid, FALSE);       
         }
     }
     if (Ptask->map_definition == MAP_FILL_NODES)
@@ -2497,6 +2543,26 @@ void user_event_value_name (struct t_Ptask *Ptask,
                 type);
         free(name);
     }
+}
+
+/**
+ * Gets OpenMP task mapping info and stores it in Ptask
+*/
+void get_omp_tasks_info(struct t_Ptask *Ptask)
+{
+     int *omp_tasks_mapping;
+    int omp_tasks_count;
+    char *trace_file_name = Ptask->tracefile;
+    omp_tasks_mapping = (int *) 0;
+    if (DATA_ACCES_get_omp_tasks(trace_file_name, &omp_tasks_count, &omp_tasks_mapping) == FALSE)
+    {
+        die("unable to retrieve OpenMP tasks of trace '%s': %s",
+                trace_file_name,
+                DATA_ACCESS_get_error());
+    }
+    Ptask->omp_tasks_count = omp_tasks_count;
+    Ptask->omp_tasks = omp_tasks_mapping;
+    
 }
 
 /**
