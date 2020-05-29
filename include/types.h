@@ -989,6 +989,7 @@ struct t_thread
     /* variable for omp */
     t_boolean       master_thread;
     t_boolean       worker_thread;
+    t_boolean       openmp_thread;
     t_boolean       first_omp_event_read;
     t_boolean       omp_recv_sync;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */

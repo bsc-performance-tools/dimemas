@@ -1136,16 +1136,19 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     {
         thread->master_thread = TRUE;
         thread->worker_thread = FALSE;
+        thread->openmp_thread = TRUE;
     }
     else if(task->openmp && thread_id > 0)
     {
         thread->master_thread = FALSE;
         thread->worker_thread = TRUE;
+        thread->openmp_thread = TRUE;
     }
     else 
     {
         thread->master_thread = FALSE;
         thread->worker_thread = FALSE;
+        thread->openmp_thread = FALSE;
     }
     thread->first_omp_event_read	 = FALSE;
     thread->omp_recv_sync			 = FALSE;

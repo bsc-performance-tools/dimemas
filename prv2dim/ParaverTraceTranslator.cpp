@@ -1818,40 +1818,24 @@ bool ParaverTraceTranslator::OpenMPTasksInfo(INT32 tasks_count)
         return false;
     }
 
-    if (SubstrPosition == string::npos)
-    {
-        RowTraceName = ParaverTraceName + ".row";
-    }
-    else
-    {
-        RowTraceName = ParaverTraceName.substr(0, SubstrPosition) + ".row";
-    }
-
-    if ( (RowTraceFile = fopen(RowTraceName.c_str(), "r")) == NULL)
-    {
-        cout << "-> No input trace ROW file found" << endl;
-        RowTraceFile = NULL;
-        return false;
-    }
-
-    if (fseeko(RowTraceFile, (size_t) 0, SEEK_SET) == -1)
-    {
-        SetError(true);
-        SetErrorMessage("Error seeking position in row trace file",
-                strerror(errno));
-        return false;
-    }
-
     omp_tasks.resize(tasks_count, false);
     omp_tasks_count	= 0;
     while (getline(&line, &current_line_length, PcfTraceFile) !=-1)
     {   
         if(atoi(&line[2]) == OMP_CALL_EV)
         {
+            for(task_id; task_id < tasks_count ; task_id++)
+            {
+                if(!omp_tasks[task_id])
+                {
+                    omp_tasks[task_id] = true;
+                    omp_tasks_count++;
+                }
+            }
             is_openmp_trace = TRUE;
         }
     }
-    if(is_openmp_trace)
+    /*if(is_openmp_trace)
     {
         while (getline(&line1, &current_line_length, RowTraceFile) !=-1)
         {
@@ -1875,7 +1859,7 @@ bool ParaverTraceTranslator::OpenMPTasksInfo(INT32 tasks_count)
                 }
             }
         }
-    }
+    }*/
     if(is_openmp_trace) return true;
     return false;
 }

@@ -1706,12 +1706,21 @@ Boolean OMPEventEncoding_Is_BlockBegin ( long64_t Op )
   return( (Op == (long64_t) OMP_END_VAL) ? FALSE : TRUE );
 }
 /**
+ * OMP idle states
+ * */
+Boolean OMPEventEncoding_Is_OMPIdle (long64_t Op)
+{
+	if (Op == OMP_EXECUTED_PARALLEL_FXN || Op == OMP_EXE_PARALLEL_FXN_LINE_N_FILE)
+		return TRUE;
+	return FALSE;
+}
+/**
  * OMP executing case
  * */
 Boolean OMPEventEncoding_Is_OMPExec (struct t_event_block event)
 {
 	if ((event.type == OMP_EXECUTED_PARALLEL_FXN || event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE)
-        && event.value == OMP_END_VAL)
+        && event.value != OMP_END_VAL)
 		return TRUE;
 	return FALSE;
 }
