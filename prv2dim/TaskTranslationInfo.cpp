@@ -1402,7 +1402,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 		}
 	}
     /* treating OMP events */
-    if(OMPEventEncoding_Is_OMPBlock(Type))
+    if(OMPEventEncoding_Is_OMPBlock(Type) && OpenMP_thread != OpenMP_NULL)
     {
             if(OMPEventEncoding_Is_BlockBegin(Value))
             {

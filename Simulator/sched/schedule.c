@@ -768,7 +768,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                 {
                                     /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
                                 }
-                                else if(thread->openmp_thread
+                                else if(thread->master_thread || thread->worker_thread
                                         && OMPEventEncoding_Is_OMPBlock(thread->omp_in_block_event.type))
                                 {
                                     //Do not throw anything if it is inside ompblock
@@ -1715,29 +1715,29 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
                 current_time);
     }
 
-    if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
+    else if( OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
     {
         PARAVER_Thread_Sched(cpu->unique_number,
                 IDENTIFIERS(thread),
                 thread->omp_in_block_event.paraver_time,
                 current_time); 
     }
-    /*  if(thread->omp_in_block_event.type == OMP_EXECUTED_PARALLEL_FXN || OMP_EXE_PARALLEL_FXN_LINE_N_FILE &&
-            thread->omp_in_block_event.value == 0)
+    else if(!omp_block_begin && thread->master_thread 
+            && OMPEventEncoding_Is_OMPIdle(thread->omp_in_block_event.type)
+            && !OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
     {
-        //if(thread->master_thread == TRUE)
-        printf("we are here for fight\n");
-        PARAVER_Idle(cpu->unique_number,
+        PARAVER_Thread_Sched(cpu->unique_number,
                 IDENTIFIERS(thread),
                 thread->omp_in_block_event.paraver_time,
                 current_time); 
-    }*/
+
+    }
 
     thread->omp_in_block_event.type = action->desc.even.type;
     thread->omp_in_block_event.value = action->desc.even.value;
         //thread->omp_in_block_event.paraver_time = current_time;
     
-     if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event)
+    if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event)
             && thread->master_thread)
     {
         thread->omp_recv_sync = TRUE; 
