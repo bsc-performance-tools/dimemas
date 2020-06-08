@@ -247,8 +247,6 @@ INT32 ParaverTraceParser::GetFilePercentage(void)
 {
   off_t CurrentPosition = ftello(ParaverTraceFile);
 
-  // cout << "Current Position " << CurrentPosition << endl;
-
   return (INT32) (lround (100.0*CurrentPosition/TraceSize));
 }
 
@@ -363,80 +361,6 @@ INT32 ParaverTraceParser::GetLongLine(char** Line)
     *Line = LineRead;
     return (INT32) LineLength;
   }
-
-  /*
-  InitialPosition = ftello(ParaverTraceFile);
-
-  if (feof(ParaverTraceFile))
-  {
-    return 0;
-  }
-
-  /* To avoid initial position on CR
-  if (fgetc(ParaverTraceFile) == '\n')
-  {
-    InitialPosition++;
-  }
-  else
-  {
-    if ( fseeko(ParaverTraceFile, InitialPosition, SEEK_SET) < 0)
-    {
-      return -1;
-    }
-  }
-
-  if (feof(ParaverTraceFile))
-  {
-    return 0;
-  }
-
-  /*
-  if (fseeko(ParaverTraceFile, 0, SEEK_SET) < 0)
-  {
-    SetErrorMessage("Error seeking Paraver trace file while reading header",
-                    strerror(errno));
-    return -1;
-  }
-  */
-
-  /*
-  while ( (CharReaded = fgetc(ParaverTraceFile)) != '\n' )
-  {
-    if (CharReaded == EOF && LineLength < 1)
-    {
-      return -1;
-    }
-
-    LineLength++;
-  }
-
-  /* FirstCommunicatorOffset = ftello(ParaverTraceFile); */
-
-  /* cout << "Header size: " << HeaderLength << endl;; */
-
-  /*
-  *Line = (char*) calloc(sizeof(char), LineLength+2);
-
-  if ( fseeko(ParaverTraceFile, InitialPosition, SEEK_SET) < 0)
-  {
-    return -1;
-  }
-
-  if (fgets(*Line, LineLength+1, ParaverTraceFile) == NULL)
-  {
-    if (feof(ParaverTraceFile))
-    {
-      return 0;
-    }
-    else
-    {
-      return -1;
-    }
-  }
-
-  CurrentLine++;
-  return LineLength;
-  */
 }
 
 bool
@@ -531,16 +455,9 @@ ParaverRecord_t ParaverTraceParser::NextTraceRecord(UINT32 RecordTypeMask)
 
     CurrentRecordTypeMask = 1 << CurrentRecordType;
 
-    /* DEBUG!!
-    cout << "Desired Mask: " << RecordTypeMask;
-    cout << " Current Mask: " << CurrentRecordTypeMask;
-    cout << " Type: " << CurrentRecordType << endl;
-    */
 
-    // (RecordTypeMask == ANY_REC) ||
     if ((CurrentRecordTypeMask & RecordTypeMask) != 0)
     {
-      /* cout << "Record PARSED!" << endl; */
       found = true;
       switch(CurrentRecordType)
       {

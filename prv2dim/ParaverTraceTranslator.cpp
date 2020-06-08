@@ -212,9 +212,6 @@ ParaverTraceTranslator::SplitCommunications(void)
     INT32                            COMM_WORLD_Id;
     INT32                            PseudoCommId;
 
-    /* DEBUG */
-    FILE *UnsortedFile;
-
     INT32 CurrentPercentage = 0;
     INT32 PercentageRead    = 0;
 
@@ -284,7 +281,6 @@ ParaverTraceTranslator::SplitCommunications(void)
         if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
         { 
             INT32  Type;
-            UINT64 Timestamp;
             INT32 PartnerTaskId, PartnerThreadId;
             INT32  Size, Tag, CommId;
 
@@ -393,13 +389,6 @@ ParaverTraceTranslator::SplitCommunications(void)
             Communications.push_back(SplittedCommunication);
         }
 
-
-        /*
-           delete CurrentCommunication;
-
-           CurrentCommunication = Parser->GetNextCommunication();
-           */
-
         delete CurrentRecord;
 
         if (PreviouslySimulatedTrace)
@@ -418,9 +407,8 @@ ParaverTraceTranslator::SplitCommunications(void)
         if (PercentageRead > CurrentPercentage)
         {
             CurrentPercentage = PercentageRead;
-#ifndef DEBUG
-            SHOW_PERCENTAGE_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
-#endif
+            if (debug) 
+                SHOW_PERCENTAGE_PROGRESS(stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage);
         }
     }
 
@@ -438,34 +426,23 @@ ParaverTraceTranslator::SplitCommunications(void)
         return false;
     }
 
-    /* DEBUG
-       UnsortedFile = fopen("TEST", "w");
-       for (i = 0; i < Communications.size(); i++)
-       Communications[i]->ToFile(UnsortedFile);
-       */
-
     cout << "SORTING PARTIAL COMMUNICATIONS" << endl;
     sort(Communications.begin(), Communications.end(), InBlockComparison());
     cout << "COMMUNICATIONS SORTED" << endl;
 
-    /*
-       for (i = 0; i < Communications.size(); i++)
-       Communications[i]->ToFile(CommunicationsFile);
-       */
-
     return true;
-
 }
 
 bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDescription,
-        int 										 acc_tasks_count,
-        const vector<bool>			*acc_tasks,
-        off_t                    OffsetsOffset
-        )
+        int                 acc_tasks_count,
+        const vector<bool>	*acc_tasks,
+        int                 omp_tasks_count,
+        const vector<bool>	*omp_tasks,
+        off_t               OffsetsOffset)
 {
 #define OFFSETS_OFFSET_RESERVE 15
 
-    INT32 OffsetsLength;
+    UINT32 OffsetsLength;
     bool  InitialHeader = false;
 
     if (OffsetsOffset == 0)
@@ -522,7 +499,7 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 
     const vector<TaskDescription_t>& TasksInfo = AppDescription->GetTaskInfo();
 
-    for (INT32 i = 0; i < TasksInfo.size(); i++)
+    for ( UINT32 i = 0; i < TasksInfo.size(); i++)
     {
         if (fprintf (DimemasTraceFile, "%d", TasksInfo[i]->GetThreadCount()) < 0)
         {
@@ -552,9 +529,9 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
         return false;
     }
 
-    if (acc_tasks_count > 0) {
-
-        for (INT32 i = 0; i < acc_tasks->size() && acc_tasks_count > 0; i++) {
+    if (acc_tasks_count > 0) 
+    {
+        for (UINT32 i = 0; i < acc_tasks->size() && acc_tasks_count > 0; i++) {
             if (i == 0) {
                 if (fprintf (DimemasTraceFile, "(") < 0)
                 {
@@ -590,10 +567,54 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
             }
         }
     }
+    if (fprintf(DimemasTraceFile, ",%d", omp_tasks_count) < 0)
+    {	/*	if no omp tasks, just 0 is printed	*/
+        SetErrorMessage("error writing header", strerror(errno));
+        return false;
+    }
+    if (omp_tasks_count > 0) 
+    {
+        for (UINT32 i = 0; i < omp_tasks->size() && omp_tasks_count > 0; i++) {
+            if (i == 0) 
+            {
+                if (fprintf (DimemasTraceFile, "(") < 0)
+                {
+                    SetErrorMessage("error writing header", strerror(errno));
+                    return false;
+                }
+            }
+            if (omp_tasks->at(i))
+            {
+                if (fprintf (DimemasTraceFile, "%d", i) < 0)
+                { //prints task_id
+                    SetErrorMessage("error writing header", strerror(errno));
+                    return false;
+                }
+                omp_tasks_count--;
+            }
+            if (omp_tasks_count > 0)
+            { //not last element
+                if (fprintf (DimemasTraceFile, ",") < 0)
+                {
+                    SetErrorMessage("error writing header", strerror(errno));
+                    return false;
+                }
+            }
+            else
+            {	/*  is last element	*/
+                if (fprintf (DimemasTraceFile, ")") < 0)
+                {
+                    SetErrorMessage("error writing header", strerror(errno));
+                    return false;
+                }
+                break;
+            }
+        }
+    }
 
     if (!InitialHeader)
     {
-        for (INT32 i = 0; i < OFFSETS_OFFSET_RESERVE - OffsetsLength; i++)
+        for (UINT32 i = 0; i < OFFSETS_OFFSET_RESERVE - OffsetsLength; i++)
         {
             if (fprintf(DimemasTraceFile," ") < 0)
             {
@@ -773,22 +794,32 @@ ParaverTraceTranslator::Translate(
     }
     cout << " OK" << endl;
 
-    cout << "LOOKING FOR ACCELERATOR THREADS... ";
+    cout << "LOOKING FOR OpenMP TASK...  ";
+    if (OpenMPTasksInfo( (AppsDescription[0])->GetTaskCount() ))
+    {
+        cout << "FOUND" << endl;
+    }
+    else
+    {
+        cout << "NOT FOUND" << endl;
+    }
+    
+    cout << "LOOKING FOR ACCELERATOR THREADS...  ";
     if (AcceleratorTasksInfo( (AppsDescription[0])->GetTaskCount() ))
     {
         cout << "FOUND" << endl;
-#ifdef DEBUG
+       if(debug)
+       {
         cout << "\t Accelerator tasks: ";
         for(INT32 i = 0; i < acc_tasks_count; i++)
-        {
-            if (acc_tasks[i])
-                cout << i+1;
-
-            if (i+1 < acc_tasks_count)
-                cout << ", ";
-        }
+            {
+                if (acc_tasks[i])
+                    cout << i+1;
+                if (i+1 < acc_tasks_count)
+                    cout << ", ";
+            }
         cout << endl;
-#endif
+        }
     }
     else
     {
@@ -829,7 +860,7 @@ ParaverTraceTranslator::Translate(
     cout << "WRITING HEADER...";
 
     /* Temporary header! */
-    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks))
+    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, omp_tasks_count, &omp_tasks))
         return false;
 
     cout << " OK" << endl;
@@ -852,16 +883,15 @@ ParaverTraceTranslator::Translate(
 
     printf("RECORD TRANSLATION\n");
 
-#ifndef DEBUG
-    SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
-#endif
+    if(debug)
+        SHOW_PERCENTAGE_PROGRESS(stdout, "TRANSLATING RECORDS", CurrentPercentage);
 
     Parser->Reload();
 
     CurrentRecord = SelectNextRecord();
 
-    int max_nthreads = 0;
-    for (int task=0; task<TranslationInfo.size(); ++task)
+   unsigned int max_nthreads = 0;
+    for (UINT32 task=0; task<TranslationInfo.size(); ++task)
         if (TranslationInfo[task].size() > max_nthreads)
             max_nthreads = TranslationInfo[task].size();
 
@@ -872,8 +902,8 @@ ParaverTraceTranslator::Translate(
     {
         Event_t  CurrentEvent;
         State_t CurrentState;
-        INT32    CurrentTaskId   = CurrentRecord->GetTaskId()-1;
-        INT32    CurrentThreadId = CurrentRecord->GetThreadId()-1;
+        UINT32    CurrentTaskId   = CurrentRecord->GetTaskId()-1;
+        UINT32    CurrentThreadId = CurrentRecord->GetThreadId()-1;
 
         if (CurrentTaskId < 0 || CurrentTaskId >= TranslationInfo.size())
         {
@@ -887,9 +917,8 @@ ParaverTraceTranslator::Translate(
         }
         else
         {
-#ifdef DEBUG
-            cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
-#endif
+            if(debug)
+                cout << "SELECTED RECORD: "<< endl << *CurrentRecord;
 
             if ( (CurrentEvent = dynamic_cast<Event_t> (CurrentRecord)) != NULL)
             {
@@ -948,7 +977,11 @@ ParaverTraceTranslator::Translate(
                 UINT64 state_begin_time = CurrentState->GetBeginTime();
                 UINT64 state_end_time = CurrentState->GetEndTime(); 
 
-                if (state_value == 0) // idle
+                /*  f(state_value > 1)
+                {
+
+                }*/
+                if(state_value == 0) // idle
                 {
                     Event_t BeginIdleEvent = new Event( 
                             state_begin_time,
@@ -973,9 +1006,8 @@ ParaverTraceTranslator::Translate(
                     success = TranslationInfo[CurrentTaskId][CurrentThreadId]
                         ->PushRecord(EndIdleEvent);
                 }
-                
-                free(current_state[CurrentTaskId*max_nthreads+CurrentThreadId]);
-                current_state[CurrentTaskId*max_nthreads+CurrentThreadId] = CurrentState;
+                    free(current_state[CurrentTaskId*max_nthreads+CurrentThreadId]);
+                    current_state[CurrentTaskId*max_nthreads+CurrentThreadId] = CurrentState;
             }
             else
             {
@@ -1017,18 +1049,18 @@ ParaverTraceTranslator::Translate(
         fprintf(extra_statistics_file, "// #send,#isend,#recv, #irecv, #wait, #glop\n");
 
         unsigned int min_glops = UINT_MAX;
-        for (int i=0; i < TranslationInfo.size(); ++i)
+        for (unsigned int i=0; i < TranslationInfo.size(); ++i)
         {
-            for (int j=0; j < TranslationInfo[i].size(); j++)
+            for (unsigned int j=0; j < TranslationInfo[i].size(); j++)
             {
                 if (TranslationInfo[i][j]->glop_counter < min_glops)
                     min_glops = TranslationInfo[i][j]->glop_counter;
             }
         }
 
-        for (int i=0; i < TranslationInfo.size(); ++i)
+        for (unsigned int i=0; i < TranslationInfo.size(); ++i)
         {
-            for (int j=0; j < TranslationInfo[i].size(); j++)
+            for (unsigned int j=0; j < TranslationInfo[i].size(); j++)
             {
                 fprintf(extra_statistics_file, "%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
                         TranslationInfo[i][j]->send_counter,
@@ -1066,7 +1098,7 @@ ParaverTraceTranslator::Translate(
 
     cout << endl;
     cout << "MERGING PARTIAL OUTPUT TRACES" << endl;
-    int TotalMPIInitBarriersWritten = 0;
+    unsigned int TotalMPIInitBarriersWritten = 0;
     for (UINT32 i = 0; i < TranslationInfo.size(); i++)
     {
         for (UINT32 j = 0; j < TranslationInfo[i].size(); j++)
@@ -1148,13 +1180,6 @@ ParaverTraceTranslator::Translate(
         cout << "*                               WARNING                                        *" << endl;
         cout << "********************************************************************************" << endl;
         cout << TasksWithOutsideComms.size() << " ";
-        /*
-           cout << "Tasks ";
-           cout << TasksWithOutsideComms[0];
-           for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
-           cout << ", " << TasksWithOutsideComms[i];
-           cout << endl;
-           */
         cout << "tasks have communications records outside a communication block" << endl;
         cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
         cout << "NOTE: If the Paraver trace comes from a trace cut, check the cut limits" << endl;
@@ -1169,12 +1194,6 @@ ParaverTraceTranslator::Translate(
         cout << "*                               WARNING                                        *" << endl;
         cout << "********************************************************************************" << endl;
         cout << TasksWithWrongComms.size() << " ";
-        /*
-           cout << "Tasks ";
-           cout << TasksWithWrongComms[0];
-           for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
-           cout << ", " << TasksWithOutsideComms[i];
-           cout << endl; */
         cout << "tasks have communications records wrapped with not matching blocks" << endl;
         cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
         cout << "NOTE: Please check the Paraver trace time resolution" << endl;
@@ -1189,16 +1208,9 @@ ParaverTraceTranslator::Translate(
         cout << "*                               WARNING                                        *" << endl;
         cout << "********************************************************************************" << endl;
         cout << TasksWithNonDeterministicComms.size() << " ";
-        /*
-           cout << "Tasks ";
-           cout << TasksWithWrongComms[0];
-           for (size_t i = 1; i < TasksWithOutsideComms.size(); i++)
-           cout << ", " << TasksWithOutsideComms[i];
-           cout << endl; */
         cout << "tasks of this application execute 'non-deterministic' communications " << endl;
         cout << "primitives (MPI_Test[*] | MPI_Waitany | MPI_Waitall | MPI_Waitsome)" << endl;
         cout << "The simulation of this trace will not capture the possible indeterminism " << endl;
-        // cout << "NOTE: Pleasy check the Paraver trace time resolution" << endl;
         cout << "********************************************************************************" << endl;
         cout << endl;
     }
@@ -1209,12 +1221,6 @@ ParaverTraceTranslator::Translate(
         cout << "*                               WARNING                                        *" << endl;
         cout << "********************************************************************************" << endl;
         cout << TasksWithDisorderedRecords.size() << " ";
-        /*
-           cout << "Tasks ";
-           cout << TasksWithDisorderedRecords[0];
-           for (size_t i = 1; i < TasksWithDisorderedRecords.size(); i++)
-           cout << ", " << TasksWithDisorderedRecords[i];
-           cout << endl; */
         cout << "tasks have disordered records" << endl;
         cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
         cout << "NOTE: Contact tools@bsc.es to check how to solve this problem" << endl;
@@ -1304,7 +1310,8 @@ ParaverTraceTranslator::Translate(
         }
     }
 
-    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, OffsetsOffset))
+    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, omp_tasks_count, &omp_tasks, 
+                OffsetsOffset))
     {
         return false;
     }
@@ -1379,8 +1386,8 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
     }
 
     int max_nthreads = 0;
-    int total_threads = 0;
-    for (int task=0; task<TaskInfo.size(); ++task)
+    unsigned int total_threads = 0;
+    for (unsigned int task=0; task<TaskInfo.size(); ++task)
     {
         total_threads += TaskInfo[task]->GetThreadCount();
         if (TaskInfo[task]->GetThreadCount() > max_nthreads)
@@ -1389,8 +1396,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 
     INT64 *first_record_times = (INT64*) calloc(
             TaskInfo.size()*max_nthreads, sizeof(INT64));
-    int i;
-    for (i=0; i<TaskInfo.size()*max_nthreads; ++i)
+    for (unsigned int i=0; i<TaskInfo.size()*max_nthreads; ++i)
         first_record_times[i] = -1;
 
     UINT64 done = 0;
@@ -1402,7 +1408,6 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 
         UINT64 taskid = Record->GetTaskId() -1;
         UINT64 threadid = Record->GetThreadId() -1;
-
         if (first_record_times[taskid*max_nthreads + threadid] == -1)
         {
             first_record_times[taskid*max_nthreads + threadid] = 
@@ -1413,18 +1418,21 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
 
     for (CurrentTask = 0; CurrentTask < TaskInfo.size(); CurrentTask++)
     {
-#ifndef DEBUG
-        SHOW_PROGRESS(stdout,
+        if(debug)
+            SHOW_PROGRESS(stdout,
                 "CREATING TRANSLATION STRUCTURES ",
                 CurrentTask+1,
                 TaskInfo.size());
-#endif
 
-        INT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
+        UINT32	TaskThreadCount = TaskInfo[CurrentTask]->GetThreadCount();
 
         bool is_acc_task = false;
         if (!acc_tasks.empty() &&	acc_tasks[CurrentTask])
             is_acc_task = true;
+
+        bool is_omp_task = false;
+        if(!omp_tasks.empty() && omp_tasks[CurrentTask])
+            is_omp_task = true;
 
         TranslationInfo[CurrentTask].resize(TaskThreadCount);
 
@@ -1437,11 +1445,17 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             UINT64          FirstRecordTime = 0;
 
             INT32 AcceleratorThread = ACCELERATOR_NULL;	//not an acc task
+            INT32 OpenMP_thread = OpenMP_NULL;	//not an acc task
 
             if (is_acc_task && CurrentThread != 0)
                 AcceleratorThread = ACCELERATOR_KERNEL;
             else if (is_acc_task && CurrentThread == 0)
                 AcceleratorThread = ACCELERATOR_HOST;
+
+            if(is_acc_task && CurrentThread == 0)
+                OpenMP_thread = MASTER;
+            else if(is_acc_task && CurrentThread != 0)
+                OpenMP_thread = WORKER;
 
             TemporaryFileName = (char*) malloc (strlen(tmp_dir) + 1 + 50);
 
@@ -1497,6 +1511,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
                         PreviouslySimulatedTrace,
                         &TranslationInfo,
                         AcceleratorThread,
+                        OpenMP_thread,
                         TemporaryFileName);
             }
             else if (TemporaryFile == NULL)
@@ -1526,6 +1541,7 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
                         PreviouslySimulatedTrace,
                         &TranslationInfo,
                         AcceleratorThread,
+                        OpenMP_thread,
                         TemporaryFileName,
                         TemporaryFile);
             }
@@ -1533,24 +1549,26 @@ bool ParaverTraceTranslator::InitTranslationStructures (ApplicationDescription_t
             TranslationInfo[CurrentTask][CurrentThread] = NewTranslationInfo;
             //delete FirstRecord;
         }
-        if (TaskThreadCount > 1 && !is_acc_task)
-        { /* if task has an accelerator thread it's not a MultiThreadTrace error */
+        if (TaskThreadCount > 1 && !is_acc_task && !is_omp_task)
+        { /* if task has an accelerator or openmp thread it's not a MultiThreadTrace error */
             MultiThreadTrace = true;
         }
-#if DEBUG
+        else if(is_omp_task)
+        {
+            if(debug)
+                cout <<" OpenMP TASK TRANSLATION IN TASK:" << CurrentTask << endl;
+        }
         else if (is_acc_task)
         {
+            if(debug)
             cout << "ACCELERATOR TASK TRANSLATION IN TASK:" << CurrentTask << endl;
         }
-#endif
     }
     free(first_record_times);
-#ifndef DEBUG
-    SHOW_PROGRESS_END(stdout,
+    if(debug)
+        SHOW_PROGRESS_END(stdout,
             "CREATING TRANSLATION STRUCTURES ",
             TaskInfo.size());
-#endif
-
     return true;
 }
 
@@ -1587,14 +1605,6 @@ bool ParaverTraceTranslator::TranslateCommunicators(ApplicationDescription_t App
             ++it; ++i;
         }
 
-        /*
-           for (INT32 i = 0;
-           i < CommunicatorTasks.size();
-           i++)
-           {
-           TaskIdList = (int) CurrentCommunicator->GetTaskVector();
-           }
-           */
         if (Dimemas_Communicator_Definition(
                     DimemasTraceFile,
                     CurrentCommunicator->GetCommunicatorId(),
@@ -1765,14 +1775,72 @@ ParaverTraceTranslator::ShareDescriptor(void)
     }
 }
 
+/**
+ * Checks on .pcf file if it uses OpenMP or not!!!
+*/
+bool ParaverTraceTranslator::OpenMPTasksInfo(INT32 tasks_count)
+{
+    string PcfTraceName;
+    string::size_type SubstrPosition;
+    bool is_openmp_trace;
 
-/*
+    char*   line  = NULL;
+    string	Line;
+    size_t  current_line_length = 0;
+    INT32 	task_id = 0;
+
+    SubstrPosition = ParaverTraceName.rfind(".prv");
+
+    if (SubstrPosition == string::npos)
+    {
+        PcfTraceName = ParaverTraceName + ".pcf";
+    }
+    else
+    {
+        PcfTraceName = ParaverTraceName.substr(0, SubstrPosition) + ".pcf";
+    }
+    if ( (PcfTraceFile = fopen(PcfTraceName.c_str(), "r")) == NULL)
+    {
+        cout << "-> No input trace ROW file found" << endl;
+        RowTraceFile = NULL;
+        return false;
+    }
+    if (fseeko(PcfTraceFile, (size_t) 0, SEEK_SET) == -1)
+    {
+        SetError(true);
+        SetErrorMessage("Error seeking position in row trace file",
+                strerror(errno));
+        return false;
+    }
+
+    omp_tasks.resize(tasks_count, false);
+    omp_tasks_count	= 0;
+    while (getline(&line, &current_line_length, PcfTraceFile) !=-1)
+    {   
+        if(atoi(&line[2]) == 60000001)
+        {
+            for(task_id ; task_id < tasks_count; task_id++)
+            {
+                if (!omp_tasks[task_id])
+                {
+                    omp_tasks[task_id] = true;
+                    omp_tasks_count++;
+                }
+            }
+            is_openmp_trace = TRUE;
+        }
+    }
+    if(is_openmp_trace) return true;
+    return false;
+}
+/**
  * Checks in .row file if there are CUDA or OpenCL devices and
  * gets the mapping info (task and thread)
  */
 bool ParaverTraceTranslator::AcceleratorTasksInfo(INT32 tasks_count)
 {
     string RowTraceName;
+    string PcfTraceName;
     string::size_type SubstrPosition;
 
     char*   line  = NULL;
@@ -1852,7 +1920,6 @@ bool ParaverTraceTranslator::AcceleratorTasksInfo(INT32 tasks_count)
             }
         }
     }
-
     if (acc_tasks_count > 0) return true;
     return false;
 }

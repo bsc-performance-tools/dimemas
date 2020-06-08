@@ -73,6 +73,9 @@ class TaskTranslationInfo: public Error
         vector<Block_t>         CUDABlockIdStack;
         vector<Block_t>         OCLBlockIdStack;
         bool                    OCLFinishComm;
+        /* For OMP version */
+       // vector<Block_t>         OMPBlockIdStack;
+        INT32                   OpenMP_thread;
 
         /* MPI_Event_Values type is defined in 'EventEncoding.h', on common-files */
         GlobalOp_t              PartialGlobalOp;
@@ -131,6 +134,7 @@ class TaskTranslationInfo: public Error
                 bool    PreviouslySimulatedTrace,
                 vector<vector<TaskTranslationInfo*> > * AllTranslationInfo,
                 INT32		AcceleratorThread,
+                INT32       OpenMP_thread,
                 char*   TemporaryFileName = NULL,
                 FILE*   TemporaryFile = NULL);
 
@@ -169,7 +173,7 @@ class TaskTranslationInfo: public Error
         unsigned int pendent_i_Send_counter;
         unsigned int pendent_i_Recv_counter;
         unsigned int pendent_Glop_counter;
-
+        int pseudo_logic_recv_events;
     private:
         bool ReorderAndFlush(void);
 

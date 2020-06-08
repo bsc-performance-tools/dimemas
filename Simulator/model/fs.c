@@ -300,7 +300,7 @@ void FS_general (int value, struct t_thread *thread)
     struct t_mpi_io  *mpi_io;
     struct t_action  *action;
     struct t_thread  *copy, *copy2;
-    dimemas_timer tmp_timer, new_time;
+    dimemas_timer tmp_timer, new_time = 0.0;
     struct t_node   *node;
     struct t_cpu *cpu;
     struct t_fh_commid *fh_commid;

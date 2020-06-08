@@ -102,12 +102,10 @@ void MEMORY_general (int value, struct t_thread *thread)
 
 void MEMORY_Init()
 {
-    struct t_node  *node;
 
     info ("-> Loading initial memory status\n");
 
-    int node_id;
-    for (node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
+    for (int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
     {
         struct t_node *node = &nodes[node_id];
         create_queue (& (node->wait_out_copy_segment) );
@@ -344,7 +342,7 @@ os_fence (register struct t_thread *thread, register struct t_mpi_os *mpi_os,
         register struct t_window *win, t_boolean end_operation)
 {
     register struct t_thread *others;
-    register struct t_node *node;
+    struct t_node *node;
     struct t_cpu *cpu;
     register struct t_action *action;
 

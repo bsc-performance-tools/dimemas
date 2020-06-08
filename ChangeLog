@@ -8,6 +8,48 @@ Date - user - Tool(Simulator | GUI | prv2dim | trf2dim | Other)
 	BUGFIX: explanation of bug solved 
 	CHANGES: explanation of codification changes 
 
+2019 / 10 / 23 - Chetan - All
+	BUGFIX:		MPI_Alltoallw was mismatched which leads to change of message size during the 
+				simulation is now fixed.
+
+2019 / 08 / 29 - Chetan - All
+	CHANGE:		prv2dim were not able to put burst time for the threads which are started with
+				time 0.0.
+	BUGFIX:		Unknown events with type 9,10,11.. 14 are appearing in the simulated trace file
+				which are made optional unless they are present in the original trace they don't
+				need to appear on the simulated one.
+
+2019 / 06 / 27 - Chetan - All
+	CHANGE:		New MPi call MPI_Alltoallw is added.
+	BUGFIX:		Multi node mapping defined in multiple line wasn't recognized during the 
+				simulation which allow us to define distinct node configuration in same machine.
+				During --help, --v options and when we are not generating the simulated trace 
+				file the status given by the system was 1 which is also fixed.
+
+2019 / 03 / 29 - Chetan - Simulator 
+	CHANGE:     The default option to generate the simulated trace file -p is changed to
+				optional from obligatory.
+				--dim flag also made optional if there exist a trace file description in the
+				configuration file.
+
+2019 / 03 / 1 - Chetan - All
+	CHANGE:		5.4.1 version released.
+
+2019 / 02 / 21 - Chetan - All 
+	BUGFIX: 	Identifiers for the cpu and node during the generation of the row file is
+				modified in order to get same numbering like in original trace file.
+				Ideal configuration files (.cfg) is added in dimemas packet for user convenient.
+
+2019 / 01 / 25 - Chetan - All 
+	CHANGE: 	MPI_(Mrecv/Imrecv/Mprove/Improve) new mpi calls is added in the simulation 
+
+2018 / 08 / 31 - Chetan - Simulator
+	BUGFIX: 	Distinguish between cpu and gpu during the generation of the row file and 
+				also the machine name is added to Distinguish CPUs and nodes.
+
+2018 / 08 / 29 - Chetan - All
+	CHANGE:		5.4.0 version released.
+
 2018 / 08 / 08 - jmartine - Simulator
 	CHANGE: 	Now the paraver ROW file is generated taking in account the hierarchy 
 				and mapping of tasks.

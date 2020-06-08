@@ -707,8 +707,11 @@ struct t_Ptask
     struct t_queue      Filesd;
     struct t_queue      UserEventsInfo; /* Cua amb les informacions dels possibles
                                          * events d'usuari */
-    int									*acc_tasks;			/* Extra info for accelerator mapping */
-    int									 acc_tasks_count;
+    int		*acc_tasks;			/* Extra info for accelerator mapping */
+    int		acc_tasks_count;
+
+    int *omp_tasks;
+    int omp_tasks_count;
 };
 
 struct t_task
@@ -771,11 +774,13 @@ struct t_task
     struct t_queue    th_for_in;            /* Awaiting for input link */
     struct t_queue    th_for_out;           /* Awaiting for output link */
 
-    t_boolean       	io_thread;
+    t_boolean         io_thread;
+    
+    t_boolean         openmp;
 
-    t_boolean					accelerator;
-    struct t_thread  *KernelSync;	/*	Kernel thread of sync	*/
-    struct t_thread	 *HostSync;		/*	Host thread of sync	*/
+    t_boolean		  accelerator;
+    struct t_thread   *KernelSync;	/*	Kernel thread of sync	*/
+    struct t_thread	  *HostSync;		/*	Host thread of sync	*/
     int							  KernelByComm;/* Kernel_id indicated in comm_id for global_op */
 };
 
@@ -980,7 +985,11 @@ struct t_thread
     t_boolean			 doing_acc_comm; /* Do not print startup latencies	*/
     t_boolean			 blckd_in_global_op; /* To control threads inside acc sync */
     struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
-
+    
+    /* variable for omp */
+    t_boolean       master;
+    t_boolean       worker;
+    struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.
     // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.
@@ -993,10 +1002,6 @@ struct t_thread
     int n_nonblock_glob_done;
 
     struct t_queue nonblock_glop_done_threads;
-
-    //t_boolean nonblock_glop_waiting;
-    //t_boolean nonblock_glop_done;
-    //struct t_thread* nonblock_glop_thread;
     
     volatile struct t_action **action_buffer;
     volatile int *action_buffer_head;
@@ -1200,9 +1205,9 @@ struct t_disk_action
 
 struct trace_operation
 {
-    unsigned int Ptask_id;
-    unsigned int task_id;
-    unsigned int thread_id;
+    int Ptask_id;
+    int task_id;
+    int thread_id;
     unsigned int file_offset;
 };
 

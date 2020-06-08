@@ -239,8 +239,7 @@ void reload_events()
 {
     register struct t_node *node;
 
-    int node_id;
-    for (node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
+    for (int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
     {
         node = &nodes[node_id];
 

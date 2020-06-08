@@ -388,8 +388,12 @@ t_boolean DATA_ACCESS_get_ptask_structure (int                      ptask_id,
     }
 }
 
-// RETURNS COMMUNICATORS
-t_boolean DATA_ACCESS_get_communicators (int              ptask_id,
+/**
+ * Checks if app structure is empty or not, if not
+ * returns communicators 
+ * \param ptask_id communicators
+ */
+t_boolean DATA_ACCESS_get_communicators (int ptask_id,
         struct t_queue **communicators)
 {
     app_struct *app = NULL;
@@ -498,7 +502,9 @@ int DATA_ACCESS_test_routine (int ptask_id)
 }
 
 
-/*	gets the task_id which exectues acc calls, defined in DIMEMAS trace_file header	*/
+/**
+ * Gets the task_id which exectues acc calls, defined in DIMEMAS trace_file header	
+*/
 t_boolean DATA_ACCES_get_acc_tasks(char *trace_file_location, int *acc_tasks_count, int **acc_tasks)
 {
     FILE   *trace_file;
@@ -634,9 +640,8 @@ t_boolean DAP_init_data_access_layer(void)
  */
 app_struct* DAP_locate_app_struct (int ptask_id)
 {
-    int i = 0;
 
-    for (i = 0; i < main_struct.num_apps; i++)
+    for (int i = 0; i < main_struct.num_apps; i++)
     {
         if (main_struct.apps[i] != NULL)
         {
@@ -684,7 +689,6 @@ t_boolean DATA_ACCESS_reload_ptask (int ptask_id)
 
     return TRUE;
 }
-
 
 /**
  * Initialization of an application
@@ -1078,16 +1082,8 @@ t_boolean DAP_read_definitions (app_struct *app)
     /* Set the records starting offset */
     app->records_offset = (IO_ftello(main_struct.current_stream)) - bytes_read;
 
-    /* DEBUG
-       printf ("Total definitions found = %zu\n", total_definitions_found);
-       printf ("Current file offset %zu\n", IO_ftello(main_struct.current_stream));
-       printf ("Bytes read = %zu\n", bytes_read);
-       printf ("Records offset = %zu\n", app->records_offset);
-       */
-
     return TRUE;
 }
-
 
 /**
  * Communicator definition parsing
@@ -1245,14 +1241,6 @@ t_boolean DAP_read_offsets (app_struct *app)
             DAP_report_error("wrong offset definition (%s)",line);
             return FALSE;
         }
-
-        /*
-           if (offset_record_id != DATA_ACCESS_OFFDEF)
-           {
-           DAP_report_error("wrong offset definition %s",line);
-           return FALSE;
-           }
-           */
 
         if (current_task_read != current_task)
         {
@@ -1439,14 +1427,11 @@ off_t DAP_locate_thread_offset(app_struct *app,
                 return 0;
             }
 
-            // printf("Line lenght = %d bytes_read = %d \n", line_length, bytes_read);
-
-            if (bytes_read == 1 && line[0] == '\n' || bytes_read == 0)
+            if ((bytes_read == 1 && line[0] == '\n') || (bytes_read == 0))
             {
                 free(line);
                 continue;
             }
-
 
             op_fields = malloc(strlen(line)+1);
 
@@ -1595,7 +1580,6 @@ t_boolean DAP_io_init(void)
 
     total_api_threads = 0;
 
-
     for (apps_it = 0; apps_it < main_struct.num_apps; apps_it++)
     {
         app = main_struct.apps[apps_it];
@@ -1634,16 +1618,6 @@ t_boolean DAP_io_init(void)
             return FALSE;
         }
     }
-
-    /* DEBUG
-       printf("Total available streams %zu\n", total_available_streams);
-       printf("Streams per application: ");
-       for (apps_it = 0; apps_it < main_struct.num_apps; apps_it++)
-       {
-       printf(" %d:%zu ", apps_it, streams_per_app[apps_it]);
-       }
-       printf("\n");
-       */
 
     /* I/O has been correctly initialized! */
     main_struct.io_init = TRUE;
@@ -1710,8 +1684,8 @@ t_boolean DAP_allocate_streams(app_struct *app, size_t assigned_streams)
                 threads_it < app->threads_count[tasks_it];
                 threads_it++)
         {
-            /* DEBUG
-               printf("Stream (app %d, assigned %d) [%d:%d] -> %d (%d)\n",
+             /*  //DEBUG
+               printf("Stream (app %d, assigned %ld) [%d:%d] -> %ld (%ld)\n",
                app->ptask_id,
                assigned_streams,
                tasks_it,
@@ -1809,16 +1783,16 @@ FILE* DAP_get_stream (app_struct* app, int task_id, int thread_id)
  * This function resests the "fp" for a ptask's streams
  * So that the "next_action" is forced to reposition the offset.
  */
-t_boolean DAP_reset_app_stream_fps (app_struct *app) {
+t_boolean DAP_reset_app_stream_fps (app_struct *app) 
+{
     count_t task, thread;
-
-    /* PRINT_TIMER(current_time);
-       printf(": Resetting app stream fps for %s\n", app->trace_file_name); */
 
     for (task = 0; task < app->tasks_count; task++)
     {
         for (thread = 0; thread < app->threads_count[task]; thread++)
         {
+            //printf("At DAP-DAP_reset_app_stream_fps");
+            //printf("taskid is %d and threadid is %d\n", task, thread);
             fp_share *assigned_fp;
             size_t assigned_stream_idx = app->streams_idxs[task][thread];
             assigned_fp = &(app->streams[assigned_stream_idx]);
@@ -1851,7 +1825,6 @@ t_boolean DAP_read_action (
 
     int op_id, read_task_id, read_thread_id;
     char *op_fields;
-
     if ((stream = DAP_get_stream(app, task_id, thread_id)) == NULL)
     {
         printf("DAP_get_stream failed %d,%d\n", task_id, thread_id);
@@ -2331,7 +2304,6 @@ unsigned int DAP_get_offset(int Ptaskid, int taskid, int threadid)
     FILE * fp = DAP_get_stream(this_app, taskid, threadid);
 
     long int off1 = this_app->last_current_threads_offsets[taskid][threadid];
-    //long int off2 = lseek(fileno(fp), 0, SEEK_CUR);
 
     return off1;
 }
@@ -2340,18 +2312,13 @@ void DAP_restart_fps(int Ptaskid, int taskid, int threadid)
 {
     app_struct * this_app = DAP_locate_app_struct(Ptaskid);
 
-    int fpid = this_app->streams_idxs[taskid][threadid];
-
     // It will be the new offset
     long int original_offset = this_app->threads_offsets[taskid][threadid];
-
     this_app->current_threads_offsets[taskid][threadid] = original_offset;
     this_app->last_current_threads_offsets[taskid][threadid] = original_offset;
-
+   
     DAP_reset_app_stream_fps(this_app);
 
-    //FILE * assigned_fp = this_app->streams[fpid].fp;
-    //fseek(assigned_fp, original_offset, SEEK_SET);
 }
 
 float DAP_get_progression(int Ptaskid, int taskid, int threadid)
@@ -2359,10 +2326,17 @@ float DAP_get_progression(int Ptaskid, int taskid, int threadid)
     app_struct * this_app = DAP_locate_app_struct(Ptaskid);
 
     long int original_offset = this_app->threads_offsets[taskid][threadid];
-    long int progress_fp = this_app->current_threads_offsets[taskid][threadid] - original_offset;
+    long int current_offset = this_app->current_threads_offsets[taskid][threadid];
 
-    float progression = ((float)progress_fp)/this_app->thread_trace_sizes[this_app->threads_count[taskid]*taskid + threadid];
+    long int progress_fp = current_offset - original_offset;
+    long int total_size= this_app->thread_trace_sizes[this_app->threads_count[taskid]*(taskid + threadid)];
+    float progression = ((float)progress_fp)/total_size;
 
+    printf("progression ======== >>>>>>>  %f\n", progression); 
+    printf("original_offset %ld current %ld progress %ld and total_size %ld\n",
+            original_offset, current_offset, progress_fp, total_size);
+    printf("Ptaskid:: %d taskid :: %d threadid:: %d \n",Ptaskid,taskid ,threadid );
+    
     return progression;
 }
 

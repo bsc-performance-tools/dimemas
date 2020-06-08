@@ -396,15 +396,13 @@ void COMMUNIC_End()
     struct t_Ptask  *Ptask;
     struct t_task   *task;
     struct t_thread *thread;
-    struct t_node   *node;
-    struct t_cpu    *cpu;
     struct t_send   *mess_source;
     struct t_action *action;
     struct t_recv   *mess;
+    struct t_cpu *cpu;
+    struct t_node *node;
     struct t_communicator *communicator;
     struct t_global_op_definition * glop;
-
-    t_boolean pending_comm_msg_shown = FALSE;
 
     if (debug & D_COMM)
     {
@@ -414,8 +412,7 @@ void COMMUNIC_End()
 
     /* PENDING LINKS INFORMATION */
 
-    int node_id;
-    for (node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
+    for (int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
     {
         struct t_node *node = &nodes[node_id];
         if (count_queue (& (node->th_for_in) ) != 0)
@@ -498,8 +495,7 @@ void COMMUNIC_End()
             }
         }
 
-        size_t i;
-        for(i = 0; i < Ptask->tasks_count; i++)
+        for(size_t i = 0; i < Ptask->tasks_count; i++)
         {
             task = &(Ptask->tasks[i]);
 
@@ -1167,53 +1163,6 @@ void periodic_recompute_external_network_traffic()
 double external_network_general_traffic (dimemas_timer temps)
 {
     double traffic;
-
-    // fprintf (stderr, "\nFunction disabled (external_network_general_traffic) because of compilation problem - Vladimir,14-07-2009!\n\n");
-
-    // exit (EXIT_FAILURE);
-    // return 0;
-
-    /* traffic = (sin(aux * 2 * M_PI) + 1) / 2; /* Aqui traffic esta entre 0 i 1
-    /* Aquesta funcio ha de retornar un numero entre 0 i
-    l'ample de banda maxim de la xarxa externa.
-    traffic = traffic *
-    (Simulator.wan.bandwidth * (1 << 20) / (t_nano) (1e9));
-
-    // to avoid warning for unused parameter
-    // temps = temps;
-
-    //
-    //
-    //   /* Per fer alguna cosa hi poso aixo: */
-    //   double aux;
-    //   /* Per tenir un periode d'un dia */
-    //   unsigned long long temp1 = (unsigned long long) temps;
-    //   long temp2               = (long) param_external_net_periode;
-    //   double temp3 =  (double)(temp1 % (temp2 + 1));
-    //   aux = ((temp3) / param_external_net_periode);
-    //
-    // //  aux = ((double)(temp1 %
-    // //            (temp2 + 1)) / param_external_net_periode);
-    //
-    // //  aux = ((double)((unsigned long long) temps %
-    // //        ((long) param_external_net_periode + 1)) / param_external_net_periode);
-    //
-    //   traffic = (sin(aux * 2 * M_PI) + 1) / 2; /* Aqui traffic esta entre 0 i 1 */
-    //   /* Aquesta funcio ha de retornar un numero entre 0 i
-    //      l'ample de banda maxim de la xarxa externa. */
-    //   traffic = traffic *
-    //             (Simulator.wan.bandwidth * (1 << 20) / (t_nano) (1e9));
-    //
-    //   if (debug&D_COMM)
-    //   {
-    //     PRINT_TIMER (current_time);
-    //     printf (
-    //       ": COMMUNIC\tExternal Network Traffic = %.4f\n",
-    //       traffic
-    //     );
-    //   }
-    //  return(traffic);
-
     return 0;
 
 }
@@ -3208,7 +3157,7 @@ static void COM_TIMER_OUT_free_accelerator_resources (struct t_thread *thread)
                 break;
 
                 /*case MPI_OS:
-                /* FEC: S'acumula el temps que ha estat esperant busos */
+                 FEC: S'acumula el temps que ha estat esperant busos */
                 /*COMMUNIC_accumulate_bus_wait_time (wait_thread);
 
                   extract_from_queue (&node->wait_for_acc_link, (char *) wait_thread);
@@ -3795,11 +3744,6 @@ void COMMUNIC_send (struct t_thread *thread)
             PRINT_TIMER(current_time);
             printf("::Message at COMMUNIC_send function--\n");
         }
-        //TODO REMOVE THIS PRINTF!
-        //printf("------------------MESSINFLIGHT:T:%d,N_S:%d,N_R:%d\n"
-        //                                                      ,thread->messages_in_flight
-        //                                                      ,node_s->messages_in_flight
-        //                                                      ,node_r->messages_in_flight);
         if (thread->eee_done_reset_var == TRUE) {
             if(EEE_DEBUG) {
                 PRINT_TIMER(current_time);
@@ -4400,7 +4344,9 @@ void COMMUNIC_recv (struct t_thread *thread)
         Is_message_awaiting = is_message_awaiting_real_MPI_transfer (task, mess, thread);
     }
     else
+    {
         Is_message_awaiting = is_message_awaiting_dependency_synchronization (task, mess, thread);
+    }
     if (Is_message_awaiting)                      /* 'is_message_awaiting'      */
     { /* desencola a los que esperan*/
         account->n_recvs_on_processor++;
@@ -4430,7 +4376,8 @@ void COMMUNIC_recv (struct t_thread *thread)
         if (mess->ori_thread == -1) {
             /* this is for a real MPI transfer */
             Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer (thread, mess);
-        } else {
+        }
+        else {
             /* this is for a dependency synchronization */
             Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization (thread, mess);
         }
@@ -7900,25 +7847,6 @@ static void close_global_communication (struct t_thread *thread)
                 glop->name);
     }
 
-    /*
-     * TODO: Borrar
-     */
-    /*
-       printf("######### %d ##########\n", count_queue(&communicator->threads));
-
-       struct t_item *ev_it = communicator->threads.first;
-
-       while (ev_it != NULL)
-       {
-       struct t_thread *th = (struct t_thread*)ev_it->content;
-
-       if (th == NULL) break;
-
-       printf("TASK ID: %d\n", th->task->taskid);
-       ev_it = ev_it->next;
-       }
-       */
-
     /* Unblock all threads involved in communication */
     for (others  = (struct t_thread *) outFIFO_queue (&communicator->threads);
             others != TH_NIL;
@@ -8015,10 +7943,10 @@ static t_boolean thread_in_communicator (struct t_communicator *comm,
 
 int from_rank_to_taskid (struct t_communicator *comm, int root_rank)
 {
-    int *root_task;
+    /* int *root_task;
     int  i;
 
-    /* TEST: Root_Rank is the Root Task ID
+       TEST: Root_Rank is the Root Task ID
        root_task = (int *)head_queue(&comm->global_ranks);
 
        i = 0;
@@ -8044,16 +7972,13 @@ void GLOBAL_wait_operation(struct t_thread *thread)
 {
     struct t_action               *action;
     struct t_recv                 *mess;
-    struct t_task                 *task, *task_source;
     struct t_account              *account;
     dimemas_timer                  tmp_timer;
-    struct t_node                 *node_r, *node_s;
     t_nano                        startup, copy_latency;
     int                            kind;
     struct t_dedicated_connection *connection;
 
     action = thread->action;
-    task   = thread->task;
 
     if (thread->startup_done == FALSE)
     {
@@ -8158,7 +8083,6 @@ void GLOBAL_operation (struct t_thread *thread,
     struct t_queue                *nodes_per_machine;
     int                           *tasks_per_node;
 
-    int root_task;
     int i, kind;
 
     int nb_glob_index;
@@ -8199,7 +8123,7 @@ void GLOBAL_operation (struct t_thread *thread,
 
     if (glop == GOPD_NIL)
     {
-        panic ("Global operation faild on line 8696 communic %d undefined to P%02d T%02d (t%02d)\n",
+        panic ("Global operation failed due to empty global_id undefined to P%02d T%02d (t%02d)\n",
                 glop_id,
                 IDENTIFIERS (thread) );
     }
@@ -8521,10 +8445,12 @@ void GLOBAL_operation (struct t_thread *thread,
             if (synch_type == GLOBAL_OP_ASYN)
                 printf (": non-block GLOBAL_operation (%d)  P%02d T%02d (t%02d) Root-less operation. \
                         Current thread will be the root\n",
+                        synch_type,
                         IDENTIFIERS (thread));
             else
                 printf (": GLOBAL_operation (%d)  P%02d T%02d (t%02d) Root-less operation. \
                         Current thread will be the root\n",
+                        synch_type,
                         IDENTIFIERS (thread));   
         }
 
@@ -8597,8 +8523,7 @@ void GLOBAL_operation (struct t_thread *thread,
     insert_queue (comm_machine_threads,(char*) others,
             (t_priority) maquina_usada->id);
 
-    // Es treu de la llista de threads per poder detectar quan esta tot reservat
-    //
+    // Removed from the threads queue to detect when all is reserved.
     extract_from_queue (threads_queue, (char *) others);
 
     // Es fa el mateix amb el primer thread trobat de cada nova maquina
@@ -8618,8 +8543,7 @@ void GLOBAL_operation (struct t_thread *thread,
             insert_queue (comm_machine_threads, (char *) others,
                     maquina_usada->id);
 
-            // Es treu de la llista de threads per poder detectar quan esta 
-            // tot reservat
+        // Removed from the threads queue to detect when all is reserved.
             extract_from_queue (threads_queue, (char *) others);
         }
         others = (struct t_thread*) next_queue (threads_queue);

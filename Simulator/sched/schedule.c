@@ -73,8 +73,6 @@ void SCHEDULER_Init()
     struct t_thread  *thread;
     struct t_action  *action;
     int               j;
-    FILE             *fi;
-    char              buf[BUFSIZE];
     struct t_machine *machine;
 
     size_t tasks_it, threads_it;
@@ -712,7 +710,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                         {
                             action = thread->action;
 
-                            if (thread->idle_block && !thread->kernel)
+                            if (thread->idle_block && !thread->kernel && !thread->master)
                             {
                                 PARAVER_Idle (cpu->unique_number,
                                         IDENTIFIERS (thread),
@@ -728,7 +726,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                             }
                             else
                             {
-                                if (!thread->task->accelerator)
+                                if (!thread->task->accelerator && !thread->task->openmp)
                                 {	/*	It's a CPU burst	*/
                                     PARAVER_Running (cpu->unique_number,
                                             IDENTIFIERS (thread),
@@ -764,6 +762,13 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                 {
                                     /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
                                 }
+                                else if ((thread->master || thread->worker)
+                                    && (OMPEventEncoding_Is_OMPBlock(thread->omp_in_block_event.type))
+                                        && OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
+                                {
+                                printf("acc-block%ld",thread->omp_in_block_event.type);
+                                    /* Do nothing for these events and values*/
+                                }
                                 else
                                 {	/*	It's a CPU burst	*/
                                     PARAVER_Running (cpu->unique_number,
@@ -776,6 +781,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                         }
                     }
                 }
+                
                 thread->last_paraver = current_time;
                 cpu->current_thread  = TH_NIL;
 
@@ -824,8 +830,6 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                 }
 
 next_op:
-                //       printf("before more_actions(thread)\n");
-
                 if (more_actions (thread))
                 {
                     action = thread->action;
@@ -1020,6 +1024,20 @@ next_op:
                                             current_time,
                                             action->desc.even.type,
                                             action->desc.even.value);
+                                }
+                                /* treating OMP events */
+                                treat_omp_events(thread, action);
+
+                                int omp_event = (OMPEventEncoding_Is_OMPBlock(action->desc.even.type));
+                                      // && action->desc.even.value != 0);
+                                if(omp_event)
+                                {
+                                    cpu = get_cpu_of_thread(thread);
+                                    if(thread->worker == TRUE){
+                                    PARAVER_Not_Created(cpu->unique_number,
+                                            IDENTIFIERS (thread),
+                                            action->desc.compute.cpu_time,
+                                            current_time);}
                                 }
 
                                 thread->action = action->next;
@@ -1567,7 +1585,6 @@ t_boolean more_actions (struct t_thread *thread)
 
     if (action == NULL)
     {
-
         if (with_deadlock_analysis)
         {
             DEADLOCK_thread_finalized(thread);
@@ -1655,6 +1672,41 @@ t_boolean more_actions (struct t_thread *thread)
     return (TRUE);
 }
 
+/**
+ * Treating the OpenMP events
+ * If any OpenMP states exist we have to print as they were
+ * else we will print the events as they were.
+ */
+void treat_omp_events(struct t_thread *thread, struct t_action *action)
+{
+    struct t_cpu *cpu;
+    cpu = get_cpu_of_thread(thread);
+    
+    if(!OMPEventEncoding_Is_OMPBlock(action->desc.even.type)
+            || action->desc.even.value == 0)
+    {
+        return;
+    }
+
+    if(action->desc.even.type == OMP_BARRIER && action->desc.even.value == 1)
+    {
+        PARAVER_Thread_Sync(cpu->unique_number,
+                IDENTIFIERS(thread),
+                current_time,
+                thread->omp_in_block_event.paraver_time);
+    }
+    if((action->desc.even.type == OMP_CALL_EV && action->desc.even.value == 3)
+            || (action->desc.even.type == OMP_SET_NUM_THREADS && action->desc.even.value == 1)
+            || (action->desc.even.type == OMP_WORKSHARING_EV && (action->desc.even.value == 4 ||
+                    action->desc.even.value == 6))
+            || (action->desc.even.type == OMP_WORK_EV && (action->desc.even.value == 1)))
+    {
+        PARAVER_Thread_Sched(cpu->unique_number,
+                IDENTIFIERS(thread),
+                current_time,
+                thread->omp_in_block_event.paraver_time);
+    }
+}
 /***************************************************************
  ** treat_acc_event
  ************************

@@ -276,7 +276,6 @@ int main(const int argc, const char *argv[])
 
   PCFGeneration *PCFGenerator;
 
-//  if (!ReadArgsNew(argc, argv))
   if (!ReadArgs(argc, argv))
   {
     exit(EXIT_FAILURE);

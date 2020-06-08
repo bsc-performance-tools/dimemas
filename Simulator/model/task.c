@@ -121,7 +121,7 @@ int cmpfunc(const void *a, const void *b)
  * Public functions implementation
  *****************************************************************************/
 
-/*
+/**
  * This function initializes the applications (Ptasks) and also their tasks
  */
 void TASK_Init(int sintetic_io_applications)
@@ -164,7 +164,7 @@ void TASK_Init(int sintetic_io_applications)
                     Ptask->tracefile,
                     DATA_ACCESS_get_error());
         }
-        /*
+        /**
          * Initalize ptask threads
          */
 
@@ -238,8 +238,7 @@ void TASK_Init(int sintetic_io_applications)
             int nodes_id[comm->size];
 
             // Get all threads involved in the communicator
-            int i;
-            for (i=0; i<comm->size; ++i)
+            for (int i=0; i < comm->size; ++i)
             {
                 int task_id = comm->global_ranks[i];
                 if(task_id < 0 || task_id >= Ptask->tasks_count)
@@ -267,7 +266,7 @@ void TASK_Init(int sintetic_io_applications)
             int n_nodes=1;
             int n_tasks = comm->size;
 
-            for (i=1; i < comm->size; ++i)
+            for (int i=0; i < comm->size; ++i)
             {
                 if (machines_id[i] != last_machine_id)
                     n_machines++;
@@ -283,7 +282,7 @@ void TASK_Init(int sintetic_io_applications)
 
             comm->same_machine=(n_machines==1);
             comm->same_node=(n_nodes==1);
-            comm->sharing_node=(n_nodes<n_tasks);
+            comm->sharing_node=(n_nodes < n_tasks);
 
             insert_queue(&Ptask->Communicator,
                     (char*) comm,
@@ -373,7 +372,7 @@ void TASK_End()
 
     DATA_ACCESS_end();
 }
-/*
+/**
  * Create a new Ptask. Ptask is a queue whose elements are tasks
  */
 // struct t_Ptask* create_Ptask (char *tracefile, char *configfile)
@@ -555,12 +554,17 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     return;
 }
 
+/* 
+ * Delete all threads on the task and free all the threads
+ *
+ * \param task 
+ *
+ * */
 void TASK_Delete_Task(struct t_task *task)
 {
     struct t_thread *thread;
     size_t i;
 
-    /* Delete all threads on the task */
     for (i = 0; i < task->threads_count; i++)
     {
         thread = task->threads[i];
@@ -1090,6 +1094,21 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
         thread->kernel = FALSE;
         thread->host	 = FALSE;
     }
+    if(task->openmp && thread_id == 0)
+    {
+        thread->master = TRUE;
+        thread->worker = FALSE;
+    }
+    else if(task->openmp && thread_id > 0)
+    {
+        thread->master = FALSE;
+        thread->worker = TRUE;
+    }
+    else 
+    {
+        thread->master = FALSE;
+        thread->worker = FALSE;
+    }
 
     thread->accelerator_link		= L_NIL;
     thread->first_acc_event_read		= FALSE;
@@ -1101,6 +1120,10 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
     thread->blckd_in_global_op = FALSE;
     /* Accelerator variables */
+    
+    thread->omp_in_block_event.type     = 0;
+    thread->omp_in_block_event.value    = 0;
+    thread->omp_in_block_event.paraver_time = (dimemas_timer) 0;
 
     /* NON-Block global operations variables */
     thread->n_nonblock_glob_in_flight = 0;
@@ -1279,6 +1302,7 @@ struct t_thread *duplicate_thread_fs (struct t_thread *thread)
     copy_thread->blckd_in_global_op				= thread->blckd_in_global_op;
     /* Accelerator variables */
 
+    copy_thread->omp_in_block_event       = thread->omp_in_block_event;
     return (copy_thread);
 }
 
@@ -1351,6 +1375,8 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
     copy_thread->doing_acc_comm           = thread->doing_acc_comm;
     copy_thread->blckd_in_global_op       = thread->blckd_in_global_op;
     copy_thread->n_nonblock_glob_in_flight= thread->n_nonblock_glob_in_flight;
+
+    copy_thread->omp_in_block_event       = thread->omp_in_block_event;
 
     return copy_thread;
 }
@@ -2479,9 +2505,10 @@ void user_event_value_name (struct t_Ptask *Ptask,
         free(name);
     }
 }
-/*
+
+/**
  * Gets accelerator task mapping info and stores it in Ptask
- */
+*/
 void get_acc_tasks_info(struct t_Ptask *Ptask)
 {
     int *acc_tasks_mapping;

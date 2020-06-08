@@ -86,42 +86,7 @@ class SimpleParaverRecord
        _ascii_record(ascii_record)
     {
       TotalRecordsCreated++;
-      // printf("PARAMETRIZED CONSTRUCTOR -> Live Records = %d\n", TotalRecordsCreated);
     }
-
-    /*
-    ~SimpleParaverRecord(void)
-    {
-      TotalRecordsCreated--;
-      // printf("Live Records = %d\n", TotalRecordsCreated);
-    }
-    */
-
-    /*
-    SimpleParaverRecord(const SimpleParaverRecord& Other)
-    {
-      TotalRecordsCreated++;
-      // printf("COPY CONSTRUCTOR -> Live Records = %d\n", TotalRecordsCreated);
-
-      _TYPE         = Other.TYPE();
-      _CPU          = Other.CPU();
-      _Ptask        = Other.Ptask();
-      _Task         = Other.Task();
-      _Thread       = Other.Thread();
-      _Timestamp    = Other.Timestamp();
-      _ascii_record = string(Other.ascii_record());
-
-      /*
-      SimpleParaverRecord(Other.TYPE(),
-                          Other.CPU(),
-                          Other.Ptask(),
-                          Other.Task(),
-                          Other.Thread(),
-                          Other.Timestamp(),
-                          Other.ascii_record());
-
-    }
-    */
 
     void FillRecord(int        TYPE,
                     int        CPU,
@@ -163,18 +128,6 @@ class SimpleParaverRecord
     prv_time_t Timestamp(void)    const { return _Timestamp; }
     string     ascii_record(void) const { return _ascii_record; }
 
-    /*
-    void operator=(const SimpleParaverRecord& Other)
-    {
-      _TYPE         = Other.TYPE();
-      _CPU          = Other.CPU();
-      _Ptask        = Other.Ptask();
-      _Task         = Other.Task();
-      _Thread       = Other.Thread();
-      _Timestamp    = Other.Timestamp();
-      _ascii_record = string (Other.ascii_record());
-    }
-    */
 };
 
 bool operator< (const SimpleParaverRecord& R1, const SimpleParaverRecord& R2);

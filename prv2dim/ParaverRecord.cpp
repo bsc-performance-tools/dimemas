@@ -439,7 +439,7 @@ GlobalOp::GlobalOp(UINT64 Timestamp,
   this->GlobalOpId     = GlobalOpId;
   this->Root           = Root;
 
-	if (this->GlobalOpId <= 14)
+	if (this->GlobalOpId <= 16)
 		this->Synchronize = 1;
 	else
 		this->Synchronize = 0;

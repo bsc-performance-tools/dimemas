@@ -1,3 +1,26 @@
+/*****************************************************************************\
+ *                        ANALYSIS PERFORMANCE TOOLS                         *
+ *                                                                           *
+ *           Paraver to Dimemas trace translator (old and new format)        *
+ *****************************************************************************
+ *     ___        This tool is free software; you can redistribute it and/or *
+ *    /  __         modify it under the terms of the GNU LGPL as published   *
+ *   /  /  _____    by the Free Software Foundation; either version 2.12.1    *
+ *  /  /  /     \   of the License, or (at your option) any later version.   *
+ * (  (  ( B S C )                                                           *
+ *  \  \  \_____/   This tool is distributed in hope that it will be         *
+ *   \  \__         useful but WITHOUT ANY WARRANTY; without even the        *
+ *    \___          implied warranty of MERCHANTABILITY or FITNESS FOR A     *
+ *                  PARTICULAR PURPOSE. See the GNU LGPL for more details.   *
+ *                                                                           *
+ * You should have received a copy of the GNU Lesser General Public License  *
+ * along with this library; if not, write to the Free Software Foundation,   *
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA          *
+ * The GNU LEsser General Public License is contained in the file COPYING.   *
+ *                                 ---------                                 *
+ *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
+\*****************************************************************************/
+
 #include "Dimemas2Prv.h"
 
 #ifndef OLD_PRV_FORMAT
@@ -19,6 +42,7 @@ struct t_block_dimemas2prv block_dimemas2prv[NUM_MPI_ELEMENTS]={
   {MPITYPE_COLLECTIVE, MPI_SCAN_VAL},                  /*  14 */
   {MPITYPE_COLLECTIVE, MPI_SCATTER_VAL},               /*  15 */
   {MPITYPE_COLLECTIVE, MPI_SCATTERV_VAL},              /*  16 */
+  {MPITYPE_COLLECTIVE, MPI_ALLTOALLW_VAL},             /*   5 */
   {MPITYPE_OTHER,      MPI_ATTR_DELETE_VAL},           /*  17 */
   {MPITYPE_OTHER,      MPI_ATTR_GET_VAL},              /*  18 */
   {MPITYPE_OTHER,      MPI_ATTR_PUT_VAL},              /*  19 */

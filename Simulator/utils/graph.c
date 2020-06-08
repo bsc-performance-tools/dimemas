@@ -24,10 +24,10 @@ void GRAPH_init(int nodes)
     _graph_map[i].last_dep = NULL;
   }
 
-#if DEBUG > 0
+#if DEBUG 
   file_index = 0;
   log_file_name = malloc(sizeof(char)*13);
-  sprintf(log_file_name, "log.%04d.txt\0", file_index);
+  sprintf(log_file_name, "log.%04d.txt", file_index);
   log_file = fopen(log_file_name, "w");
 #endif // DEBUG
 }
@@ -40,11 +40,12 @@ void GRAPH_init(int nodes)
  */
 struct dependency * GRAPH_add_dependency(int from_taskid, int to_taskid, int type, struct t_thread * thread)
 {
+  
   struct dependency * new_dep = (struct dependency *)malloc(sizeof(struct dependency));
 
   new_dep->from = from_taskid;
   new_dep->to = to_taskid;
-
+  double  current_time = 0.0;
   new_dep->time = current_time;
 
   new_dep->communicator = NO_COMM;
@@ -52,6 +53,10 @@ struct dependency * GRAPH_add_dependency(int from_taskid, int to_taskid, int typ
   new_dep->file_offset = 
       DAP_get_offset(thread->task->Ptask->Ptaskid,
               thread->task->taskid, thread->threadid);
+#if DEBUG
+  new_dep->p2p_tag = 0;
+  new_dep->p2p_communic_id = 0;
+#endif 
   switch (type)
   {
   case GLOP_DEP:
@@ -65,33 +70,34 @@ struct dependency * GRAPH_add_dependency(int from_taskid, int to_taskid, int typ
   case STRG_DEP:
     new_dep->action = thread->action->action;
     new_dep->type = type;
-
+    
     switch(thread->action->action)
     {
-    case SEND:
-    {
-      new_dep->p2p_tag = thread->action->desc.send.mess_tag;
-      new_dep->p2p_communic_id = thread->action->desc.send.communic_id;
-      break;
+        case SEND:
+        {
+            new_dep->p2p_tag = thread->action->desc.send.mess_tag;
+            new_dep->p2p_communic_id = thread->action->desc.send.communic_id;
+            break;
+        }
+        case RECV:
+        case IRECV:
+        case WAIT:
+        {
+            new_dep->p2p_tag = thread->action->desc.recv.mess_tag;
+            new_dep->p2p_communic_id = thread->action->desc.recv.communic_id;
+            break;
+        }
     }
-    case RECV:
-    case IRECV:
-    case WAIT:
-    {
-      new_dep->p2p_tag = thread->action->desc.recv.mess_tag;
-      new_dep->p2p_communic_id = thread->action->desc.recv.communic_id;
-      break;
-    }
-    }
-    break;
+    #if DEBUG
+
+    fprintf(log_file, "%20f:+:%d:%d:%d:%s:%d:%d\n", current_time, from_taskid, to_taskid,
+      type, get_name_of_action(thread->action->action), new_dep->p2p_tag, new_dep->p2p_communic_id);
+    #endif // DEBUG
+  break;
   default:
     assert(FALSE);
   }
 
-  #if DEBUG > 0
-  fprintf(log_file, "%20f:+:%d:%d:%d:%s:%d:%d\n", current_time, from_taskid, to_taskid,
-		  type, get_name_of_action(thread->action->action), new_dep->p2p_tag, new_dep->p2p_communic_id);
-  #endif // DEBUG
 
   // Adding the new node to the graph
   //
@@ -145,7 +151,7 @@ struct dependency * GRAPH_add_dependency(int from_taskid, int to_taskid, int typ
 void GRAPH_remove_dependency_p(struct dependency * d)
 {
   int from_taskid = d->from;
-  #if DEBUG > 0
+  #if DEBUG
   fprintf(log_file, "%20f:-:%d:%d:%d:%s:%d:%d\n", current_time, from_taskid,
 		  d->to, d->type, get_name_of_action(d->action), d->p2p_tag, d->p2p_communic_id);
   #endif // DEBUG
@@ -165,7 +171,7 @@ void GRAPH_remove_dependency_p(struct dependency * d)
   assert(_graph_map[from_taskid].num_deps >= 0);
 }
 
-/*
+/**
  * This method looks for a cycle in the graph where root is
  * involved
  */
@@ -198,14 +204,13 @@ t_boolean GRAPH_look_for_cycle(int root, int * chain, int * chain_size)
 t_boolean __look_for_cycle(int from, int root, int * dep_chain_queue, int * deepness)
 {
   dep_chain_queue[(*deepness)++] = from;
-
   if (from == root)
     return TRUE;
 
   if (_graph_map[from].num_deps == 0)
     return FALSE;
 
-  int res;
+  int res = 0;
   struct dependency * d;
   for (d = _graph_map[from].first_dep; d != NULL; d = d->next)
   {
@@ -223,7 +228,7 @@ t_boolean __look_for_cycle(int from, int root, int * dep_chain_queue, int * deep
   return FALSE;
 }
 
-/*
+/**
  * Get the first dependency that fulfill with the conditions.
  * mess_tag could be TAG_ALL
  * communic_id could be COMMUNIC_ALL
@@ -235,12 +240,12 @@ struct dependency * GRAPH_get_dependency(int from_taskid, int to_taskid, int typ
   {
     if (d->to == to_taskid && (d->type & type) != 0 && (d->action & action) != 0)
     {
-      //if (action == SEND || action == RECV || action == WAIT || action == IRECV
-      //    || action == SOFT_ACTION_RESOLVED)
-      if (action | SEND | RECV | WAIT | IRECV | SOFT_ACTION_RESOLVED != 0) // No deberian ser ANDs???
+      if (action == SEND || action == RECV || action == WAIT || action == IRECV
+          || action == SOFT_ACTION_RESOLVED)
+      //if (action | SEND | RECV | WAIT | IRECV | SOFT_ACTION_RESOLVED != 0) // No deberian ser ANDs???
       {
-        if (d->p2p_communic_id == communic_id && d->p2p_tag == mess_tag
-            || mess_tag == TAG_ALL && communic_id == COMMUNIC_ID_ALL)
+        if ((d->p2p_communic_id == communic_id && d->p2p_tag == mess_tag)
+            || (mess_tag == TAG_ALL && communic_id == COMMUNIC_ID_ALL))
           return d;
         else
           continue;
@@ -286,7 +291,7 @@ void GRAPH_reset()
   free(log_file_name);
 
   log_file_name = malloc(sizeof(char)*13);
-  sprintf(log_file_name, "log.%04d.txt\0", ++file_index);
+  sprintf(log_file_name, "log.%04d.txt", ++file_index);
   log_file = fopen(log_file_name, "w");
   #endif // DEBUG
 }
@@ -314,12 +319,12 @@ struct dependency ** GRAPH_get_dependencies(int from_taskid, int to_taskid,
         && (d->type & type) != 0
         && ((d->action & action) != 0 || action == GRAPH_ALL_ACTIONS))
     {
-      //if (action == SEND || action == RECV || action == WAIT || action == IRECV
-      //    || action == SOFT_ACTION_RESOLVED)
-      if (action | SEND | RECV | WAIT | IRECV | SOFT_ACTION_RESOLVED != 0) // No deberian ser ANDs???
+      if (action == SEND || action == RECV || action == WAIT || action == IRECV
+          || action == SOFT_ACTION_RESOLVED)
+     //if (action | SEND | RECV | WAIT | IRECV | SOFT_ACTION_RESOLVED != 0) // No deberian ser ANDs???
       {
-        if (d->p2p_communic_id == communic_id && d->p2p_tag == mess_tag
-            || mess_tag == TAG_ALL && communic_id == COMMUNIC_ID_ALL)
+        if ((d->p2p_communic_id == communic_id && d->p2p_tag == mess_tag)
+            || (mess_tag == TAG_ALL && communic_id == COMMUNIC_ID_ALL))
           res[res_index++] = d;
         else
           continue;
@@ -350,7 +355,7 @@ void GRAPH_change_action(struct dependency *d, int new_action)
 {
   d->action = new_action;
 
-  #if DEBUG > 0
+  #if DEBUG 
   fprintf(log_file, "%20f:~:%d:%d:%d:%s:%d:%d\n", current_time, d->from, d->to,
           d->type, get_name_of_action(d->action), d->p2p_tag, d->p2p_communic_id);
   #endif // DEBUG
@@ -417,56 +422,3 @@ void GRAPH_debug_msg(char * msg)
   //printf("%s", msg);
   #endif
 }
-
-/*void GRAPH_remove_dependency(int from_taskid, int to_taskid, int type)
-{
-
-  #if DEBUG > 0
-  fprintf(log_file, "%20f:-:%d:%d\n", current_time, from_taskid, to_taskid);
-  #endif // DEBUG
-
-  t_boolean done = FALSE;
-  struct dependency * d;
-
-  for (d = _graph_map[from_taskid].first_dep; d != NULL; d = d->next)
-  {
-    if (d->to == to_taskid && (d->type & type) != 0)
-    {
-      if (d->previous != NULL)
-        d->previous->next = d->next;
-      else // I was the first one
-        _graph_map[from_taskid].first_dep = d->next;
-
-      if (d->next != NULL)
-        d->next->previous = d->previous;
-      else // I was the last one
-        _graph_map[from_taskid].last_dep = d->previous;
-
-      free(d);
-      _graph_map[from_taskid].num_deps--;
-      return;
-    }
-  }
-}*/
-
-/*int GRAPH_is_dependent(int from_taskid, int to_taskid, int type)
-{
-  struct dependency * d;
-  d = GRAPH_get_dependency(from_taskid, to_taskid, type, GRAPH_ALL_ACTIONS);
-
-  if (d == NULL)
-    return FALSE;
-  else
-    return TRUE;
-}*/
-
-/*int GRAPH_is_dependent_action(int from_taskid, int to_taskid, int type)
-{
-  struct dependency * d;
-  d = GRAPH_get_dependency(from_taskid, to_taskid, type, GRAPH_ALL_ACTIONS);
-
-  if (d == NULL)
-    return NO_ACTION;
-  else
-    return d->action;
-}*/

@@ -115,5 +115,5 @@ class ParaverTraceParser: public Error
 
 };
 typedef ParaverTraceParser* ParaverTraceParser_t;
-
+extern int debug;
 #endif /* _TRACEPARSER_H */

@@ -145,16 +145,6 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
 
         return FALSE;
     }
-
-    //if ( (output_row_file = IO_fopen(output_row_name, "w")) == NULL)
-    //{
-    //    warning ("Unable to open output ROW file (%s): %s\n",
-    //            output_row_name,
-    //            IO_get_error());
-
-    //    return FALSE;
-    //}
-
     /* Open the possible PCF insert */
     if (pcf_insert_name != NULL)
     {
@@ -185,20 +175,6 @@ t_boolean MakeParaverPCFandROW(const char *output_trace_name,
             PCF_generation_output = PCF_copy_existing(input_pcf_file, output_pcf_file, pcf_insert_file);
         }
 
-        //strncpy(&input_row_name[strlen(input_row_name)-3],"row", 3);
-        //if ( ( input_row_file = IO_fopen(input_row_name, "r")) == NULL)
-        //{
-        //    warning ("Unable to open input ROW. A default would be generated\n");
-        //    input_row_file = NULL;
-        //}
-        //else
-        //{
-        //    if (!ROW_copy_existing(input_row_file, output_row_file))
-        //    {
-        //        warning ("No ROW file will be generated\n");
-        //        unlink(output_row_name);
-        //    }
-        //}
     }
 
     return PCF_generation_output;
@@ -210,7 +186,7 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
 {
     t_boolean DefaultPCFHeadPrinted = FALSE;
     char*     line  = NULL;
-    size_t    current_line_length = 0, i;
+    size_t    current_line_length = 0;
     ssize_t   bytes_read;
 
     while ( (bytes_read = getline(&line, &current_line_length, input_pcf)) != -1)
@@ -302,40 +278,6 @@ static t_boolean PCF_copy_existing(FILE* input_pcf,
                 strerror(errno));
     }
 
-
-    /* Copy the PCF insert supplied if it wasn't before
-       if (pcf_insert != NULL)
-       {
-       char ch;
-
-       while(!feof(pcf_insert))
-       {
-       ch = fgetc(pcf_insert);
-
-       if(ferror(pcf_insert))
-       {
-       die("Error reading source cfg file to be included: %s\n",
-       strerror(errno));
-       }
-
-       if(!feof(pcf_insert))
-       {
-       fputc(ch, output_pcf);
-       }
-
-       if(ferror(output_pcf))
-       {
-       die ("Error writing destination file when including the cfg file: %s\n",
-       strerror(errno));
-       }
-       }
-       fprintf(output_pcf, "\n\n");
-
-       IO_fclose(pcf_insert);
-       pcf_insert = NULL;
-       }
-       */
-
     IO_fclose(output_pcf);
 
     return TRUE;
@@ -345,7 +287,7 @@ static t_boolean ROW_copy_existing(FILE* input_row,
         FILE* output_row)
 {
     char*     line  = NULL;
-    size_t    current_line_length = 0, i;
+    size_t    current_line_length = 0;
     ssize_t   bytes_read;
 
     t_boolean error = FALSE;
@@ -375,66 +317,6 @@ static t_boolean ROW_copy_existing(FILE* input_row,
 static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
 {
     int i;
-    struct t_Ptask *ptask;
-
-    /* JGG: Escritura de la cabecera del PCF, estatica
-       for (i = 0; i < PCF_HEAD_LINES; i++)
-       {
-       fprintf(output_pcf,"%s\n",pcf_head[i]);
-       }
-
-    /* JGG: Parte dinámica referente a los estados
-    fprintf(output_pcf, "STATES\n");
-    for ( i = 0; i < PRV_STATE_COUNT; i++)
-    {
-    fprintf(
-    output_pcf,
-    "%d\t%s\n",
-    i,
-    ParaverDefaultPalette[i].name
-    );
-    }
-
-    /* Dimemas private states
-    for ( i = 0; i < DIMEMAS_STATE_COUNT; i++)
-    {
-    fprintf(
-    output_pcf,
-    "%d\t%s\n",
-    i + PRV_STATE_COUNT,
-    DimemasDefaultPalette[i].name
-    );
-    }
-
-    fprintf(output_pcf, "\nSTATES_COLOR\n");
-    for ( i = 0; i < PRV_STATE_COUNT; i++)
-    {
-    fprintf(
-    output_pcf,
-    "%d\t{%d,%d,%d}\n",
-    i,
-    ParaverDefaultPalette[i].RGB[0],
-    ParaverDefaultPalette[i].RGB[1],
-    ParaverDefaultPalette[i].RGB[2]
-    );
-    }
-
-    /* Dimemas private states
-    for ( i = 0; i < DIMEMAS_STATE_COUNT; i++)
-    {
-    fprintf(
-    output_pcf,
-    "%d\t{%d,%d,%d}\n",
-    i + PRV_STATE_COUNT,
-    DimemasDefaultPalette[i].RGB[0],
-    DimemasDefaultPalette[i].RGB[1],
-    DimemasDefaultPalette[i].RGB[2]
-    );
-    }
-
-    fprintf(output_pcf, "\n");
-    */
-
     PCF_write_header_and_states(output_pcf);
 
     /* JGG: Escritura de la parte central estática */
@@ -449,107 +331,7 @@ static t_boolean PCF_generate_default(FILE* output_pcf, FILE* pcf_insert)
         MPIEventEncoding_EnableOperation( (MPI_Event_Values) i);
     }
     MPIEventEncoding_WriteEnabledOperations(output_pcf);
-    // #endif
-
-    /* S'escriuen els events que ha definit l'usuari manualment
-       for(ptask  = (struct t_Ptask *) head_queue(&Ptask_queue);
-       ptask != P_NIL;
-       ptask  = (struct t_Ptask *) next_queue(&Ptask_queue))
-       {
-
-#ifndef PUT_ALL_VALUES
-    /* Es recorren tots els possibles grups de blocs
-    for (i = 0; i < NUM_BLOCK_GROUPS; i++)
-    {
-    /* Es posa la capc,alera d'aquest tipus
-    fprintf(output_pcf,
-    "EVENT_TYPE\n%d\t%d\t%s\nVALUES\n0\tEnd\n",
-    PRV_BLOCK_COLOR(i),
-    PRV_BLOCK_TYPE(i),
-    PRV_BLOCK_LABEL(i));
-
-    /* DEBUG
-    printf ("Printing %d\t%d\t%s\n",
-    PRV_BLOCK_COLOR(i),
-    PRV_BLOCK_TYPE(i),
-    PRV_BLOCK_LABEL(i));
-    */
-
-    /* S'afegeixen com a valors tots els blocs utilitzats d'aquest grup
-       for(mod  = (struct t_module*) head_queue (&ptask->Modules);
-       mod != (struct t_module*) 0;
-       mod  = (struct t_module*) next_queue (&ptask->Modules)
-       )
-       {
-    /*if ((mod->activity_name != NULL) && (mod->block_name != NULL) &&
-    (mod->used) &&
-    (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i)) */
-
-    /* DEBUG
-       printf("Current Type = %lld  CurrentName = %s\n",
-       Block_Dimemas2Paraver_Type(mod->identificator),
-       mod->block_name);
-       */
-
-    /*
-       if ((mod->block_name != NULL) && (mod->used) &&
-       (Block_Dimemas2Paraver_Type(mod->identificator) == PRV_BLOCK_TYPE(i)))
-       {
-
-       char* local_block_name;
-    /* Es un block correctament definit i que ha estat utilitzat */
-    /* No es mostra l'activitat per tal que la trac,a .prv quedi
-     * exactament com si hagues estat creada directament amb el mpitrace.
-     fprintf(output_pcf,"%d\t%s: %s\n",
-     BLOCK_TRF2PRV_VALUE(mod->identificator),
-     mod->activity_name,
-     mod->block_name);
-     */
-
-    /* DEBUG
-       printf ("Printing Module %lld with name %s\n",
-       Block_Dimemas2Paraver_Value(mod->identificator),
-       mod->block_name);
-
-       fprintf(output_pcf,
-       "%lld\t%s \n",
-       Block_Dimemas2Paraver_Value(mod->identificator),
-       mod->block_name);
-
-       }
-       }
-       fprintf(output_pcf,"\n\n");
-
-       }
-#endif
-
-    /* DEPRECATED: no longer available on DIM trace
-    for(
-    evinfo  = (struct t_user_event_info *) head_queue(&ptask->UserEventsInfo);
-    evinfo != (struct t_user_event_info *) 0;
-    evinfo  = (struct t_user_event_info *) next_queue(&ptask->UserEventsInfo)
-    )
-    {
-    fprintf(
-    output_pcf,
-    "EVENT_TYPE\n%d\t%d\t%s\nVALUES\n",
-    evinfo->color,
-    evinfo->type,
-    evinfo->name
-    );
-
-    for(evinfo_val  = (struct t_user_event_value_info *) head_queue (&evinfo->values);
-    evinfo_val != (struct t_user_event_value_info *) 0;
-    evinfo_val  = (struct t_user_event_value_info *) next_queue (&evinfo->values))
-    {
-    fprintf(output_pcf, "%d\t%s\n", evinfo_val->value, evinfo_val->name);
-    }
-    fprintf(output_pcf,"\n\n");
-    }
-
-    }
-    */
-
+    
     /* Copy the PCF insert supplied */
     if (pcf_insert != NULL)
     {

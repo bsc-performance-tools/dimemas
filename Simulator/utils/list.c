@@ -117,8 +117,7 @@ char* outFIFO_queue(struct t_queue *q)
     register char  *res;
 
     e = q->first;
-
-    if (e == NULL) 
+    if (e == NULL ) 
     {
         return (A_NIL);
     }
@@ -136,9 +135,12 @@ char* outFIFO_queue(struct t_queue *q)
     }
 
     q->count--;
+        
     res = e->content;
     free (e);
-
+    if(res == NULL)
+        return (A_NIL);
+    e = NULL;
     return (res);
 }
 
@@ -242,7 +244,7 @@ char* tail_queue(struct t_queue *q)
     return ((char *) (e->content));
 }
 
-/*
+/**
  * Query previous element in queue
  */
 char* prev_queue(struct t_queue *q)
@@ -258,7 +260,7 @@ char* prev_queue(struct t_queue *q)
     return ((char *) (e->content)); /* one queue */
 }
 
-/*
+/**
  * Insert element in priority queue (1 preceeds 2)
  */
 void insert_queue(struct t_queue *queue, char *content, t_priority prio)
@@ -724,20 +726,26 @@ struct t_queue* new_queue_accounter()
     return (res);
 }
 
+/** 
+ * Removes all the queue elements.
+ * 
+ * \param queue which needs to get empty
+ * 
+*/
 void remove_queue_elements(struct t_queue * queue)
 {
     
     if (queue->count == 0) 
         return;
-
     char * element;
     while ((element = outFIFO_queue(queue)) != NULL)
     {
-        free(element);
+            free(element);
+            element = NULL;
     }
 
     queue->first = NULL;
-    queue->last = NULL;
+    queue->last =NULL;
     queue->curr = NULL;
     assert(queue->count == 0);
 

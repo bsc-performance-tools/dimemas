@@ -531,11 +531,11 @@ void parse_arguments(int argc, char *argv[])
     else
         wait_logical_recv = FALSE;
 
-    if (b_eee_enabled)
+    /* if (b_eee_enabled)
         eee_enabled = TRUE;
     else
         eee_enabled = FALSE;
-
+    */
     if (extra_asserts_enabled)
         extra_assert = TRUE;
     else
@@ -678,7 +678,7 @@ REBOOT:
         event_manager(current_event);
     }
 
-    if (with_deadlock_analysis)
+    if (with_deadlock_analysis){
         if (simulation_rebooted || DEADLOCK_check_end())
         {
             // this events must be freed
@@ -705,6 +705,7 @@ REBOOT:
             simulation_rebooted = FALSE;
             goto REBOOT;
         }
+    }
 
     if (reboots_counter > 0)
     {

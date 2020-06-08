@@ -1299,16 +1299,18 @@ t_boolean d_conn_check_condition(char cond, int *out_cond)
 
     return FALSE;
 }
-
+/** 
+ * All the imformation loaded will be removed and 
+ * will restart from beginning to remove the detected 
+ * deadlock condition.
+ * */
 void SIMULATOR_reset_state()
 {
     current_time = 0;
     remove_queue_elements(&Simulator.wan.threads_on_network);
     Simulator.finished_threads_count = 0;
-
     // Reset nodes info
-    int node_id;
-    for (node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); node_id++)
+    for (int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); node_id++)
     {
         struct t_node *node = &nodes[node_id];
 
@@ -1339,20 +1341,18 @@ void SIMULATOR_reset_state()
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
     {
         struct t_communicator * communicator;
-        for (communicator  = (struct t_communicator *)
-                head_queue(&Ptask->Communicator);
-            communicator != (struct t_communicator *)0;
-            communicator  = (struct t_communicator *)
-                next_queue(&Ptask->Communicator))
+        for(communicator  = (struct t_communicator *) head_queue(&Ptask->Communicator);
+                communicator != COM_NIL;
+            communicator  = (struct t_communicator *) next_queue(&Ptask->Communicator))
         {
             communicator->in_flight_op = FALSE;
             remove_queue_elements(&communicator->threads);
-        }
+            
+        }   
 
         remove_queue_elements(&Ptask->global_operation);
 
-        int tasks_it;
-        for (tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
+        for (int tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++)
         {
             struct t_task * task = &(Ptask->tasks[tasks_it]);
 
@@ -1361,22 +1361,21 @@ void SIMULATOR_reset_state()
 
             remove_queue_threads(&task->th_for_in);
             remove_queue_threads(&task->th_for_out);
-
-            remove_queue_elements(&task->mess_recv);
             remove_queue_threads(&task->recv);
             remove_queue_threads(&task->send);
             remove_queue_threads(&task->recv_without_send);
             remove_queue_threads(&task->send_without_recv);
+            
+            remove_queue_elements(&task->mess_recv);
             remove_queue_elements(&task->irecvs_executed);
             remove_queue_elements(&task->semaphores); // ??
 
             task->current_wait = TH_NIL;
 
-            int th_id;
-            for (th_id = 0; th_id < task->threads_count; ++th_id)
+            for (int th_id = 0; th_id < task->threads_count; ++th_id)
             {
                 struct t_thread * thread = task->threads[th_id];
-
+                
                 remove_queue_threads(&thread->recv_without_send);
                 remove_queue_threads(&thread->send_without_recv);
                 remove_queue_threads(&thread->irecvs_executed);
@@ -1396,11 +1395,6 @@ void SIMULATOR_reset_state()
                     free(thread->last_action);
                     thread->last_action = A_NIL;
                 }
-                /*if (thread->pending_action != A_NIL)
-                  {
-                  free(thread->pending_action);
-                  thread->pending_action = A_NIL;
-                  }*/
 
                 // TODO: Useless, original thread have no info abour children
                 // They can be removed from different parts on code...
@@ -1427,7 +1421,6 @@ void SIMULATOR_reset_state()
 
                 // Move the file pointer to the beggining of the operations of this thread
                 DAP_restart_fps(Ptask->Ptaskid, tasks_it, th_id);
-
                 // The file pointer is now at the beggining of operations. We can
                 // start again to read it.
                 READ_get_next_action(thread);
