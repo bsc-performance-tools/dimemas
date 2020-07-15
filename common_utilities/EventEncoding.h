@@ -1034,7 +1034,10 @@ int OMPEventEncoding_Is_OMPBlock(long64_t type);
 int OMPEventEncoding_Is_BlockBegin ( long64_t Op );
 int OMPEventEncoding_Is_OMPSync(struct t_event_block event);
 int OMPEventEncoding_Is_OMPSched(struct t_event_block event);
-int OMPEventEncoding_Is_OMPExec(struct t_event_block event);
+int OMPEventEncoding_Is_OMPWork_Dist(struct t_event_block event);
+int OMPEventEncoding_Is_OMPTime(struct t_event_block event);
+int OMPEventEncoding_Is_OMPMaster_Running(struct t_event_block event);
+int OMPEventEncoding_Is_OMPWorker_Running(struct t_event_block event);
 int OMPEventEncoding_Is_OMPIdle (long64_t Op);
 
 /* CUDA EventEncoding calls	*/

@@ -8105,7 +8105,7 @@ void GLOBAL_operation (struct t_thread *thread,
     communicator = locate_communicator (&Ptask->Communicator, comm_id);
     if (communicator == COM_NIL)
     {
-        panic ("Communication start trough an invalid \
+        panic ("Communication start through an invalid \
                 communicator %d to P%02d T%02d (t%02d)\n",
                 comm_id,
                 IDENTIFIERS (thread) );

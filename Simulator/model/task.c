@@ -1150,6 +1150,8 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
         thread->worker_thread = FALSE;
         thread->openmp_thread = FALSE;
     }
+    thread->task->master_time        = 0;
+    thread->task->worker_sincro_time = 0;
     thread->first_omp_event_read	 = FALSE;
     thread->omp_recv_sync			 = FALSE;
     thread->omp_in_block_event.type  = 0;

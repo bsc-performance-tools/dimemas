@@ -1707,7 +1707,7 @@ Boolean OMPEventEncoding_Is_BlockBegin ( long64_t Op )
 }
 /**
  * OMP idle states
- * */
+*/
 Boolean OMPEventEncoding_Is_OMPIdle (long64_t Op)
 {
 	if (Op == OMP_EXECUTED_PARALLEL_FXN || Op == OMP_EXE_PARALLEL_FXN_LINE_N_FILE)
@@ -1715,18 +1715,39 @@ Boolean OMPEventEncoding_Is_OMPIdle (long64_t Op)
 	return FALSE;
 }
 /**
- * OMP executing case
- * */
-Boolean OMPEventEncoding_Is_OMPExec (struct t_event_block event)
+ * OMP master running case
+*/
+Boolean OMPEventEncoding_Is_OMPMaster_Running (struct t_event_block event)
 {
-	if ((event.type == OMP_EXECUTED_PARALLEL_FXN || event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE)
-        && event.value != OMP_END_VAL)
+	if (((event.type == OMP_EXECUTED_PARALLEL_FXN || event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE) 
+                && event.value > OMP_END_VAL)
+                || event.type == OMP_WORK_EV && event.value == OMP_END_VAL
+                || event.type == OMP_BARRIER && event.value == OMP_END_VAL
+                || event.type == OMP_CALL_EV && event.value == OMP_END_VAL)
+		return TRUE;
+	return FALSE;
+}
+/**
+ * OMP worker running case
+*/
+Boolean OMPEventEncoding_Is_OMPWorker_Running (struct t_event_block event)
+{
+	if (((event.type == OMP_EXECUTED_PARALLEL_FXN || event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE) 
+                && event.value > OMP_END_VAL)
+                || event.type == OMP_BARRIER && event.value == OMP_END_VAL)
+		return TRUE;
+	return FALSE;
+}
+Boolean OMPEventEncoding_Is_OMPTime (struct t_event_block event)
+{
+	if ((event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE || event.type == OMP_EXECUTED_PARALLEL_FXN) 
+                && event.value > OMP_END_VAL)
 		return TRUE;
 	return FALSE;
 }
 /**
  * OMP synchronization 
- * */
+*/
 Boolean OMPEventEncoding_Is_OMPSync (struct t_event_block event)
 {
 	if (event.type == OMP_BARRIER &&
@@ -1734,16 +1755,24 @@ Boolean OMPEventEncoding_Is_OMPSync (struct t_event_block event)
 		return TRUE;
 	return FALSE;
 }
+/**
+ * Scheduling and fork join 
+*/
+Boolean OMPEventEncoding_Is_OMPWork_Dist (struct t_event_block event)
+{
+    if(event.type == OMP_CALL_EV && event.value == REGION_OPEN)
+		  return TRUE;
+    return FALSE;
+}
+/**
+ * Scheduling and fork join 
+*/
 Boolean OMPEventEncoding_Is_OMPSched (struct t_event_block event)
 {
 	if ((event.type == OMP_WORKSHARING_EV && (event.value == DO_WORKSHARE || event.value == SINGLE_WORKSHARE)) || 
-            (event.type == OMP_CALL_EV && event.value == REGION_OPEN) ||
             (event.type == OMP_WORK_EV && event.value == OMP_BEGIN_VAL) ||
             (event.type == OMP_SET_NUM_THREADS && event.value == OMP_BEGIN_VAL))
-    {
 		return TRUE;
-    }
-    else 	
-        return FALSE;
+    return FALSE;
 }
 

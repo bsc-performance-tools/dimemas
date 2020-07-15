@@ -112,7 +112,6 @@ struct t_queue
     struct t_item  *curr;  /* Current item in sequential search */
     t_count         count; /* Number of items */
 };
-
 struct t_list
 {
     struct t_list  *next;
@@ -777,6 +776,12 @@ struct t_task
     t_boolean         io_thread;
     
     t_boolean         openmp;
+    dimemas_timer     master_time;
+    dimemas_timer     duration;
+    dimemas_timer     worker_sincro_time;
+    dimemas_timer     worker_sincro_end;
+    dimemas_timer     worker_running_duration;
+    unsigned long int master_value;
 
     t_boolean		  accelerator;
     struct t_thread   *KernelSync;	/*	Kernel thread of sync	*/
@@ -993,7 +998,7 @@ struct t_thread
     t_boolean       first_omp_event_read;
     t_boolean       omp_recv_sync;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
-    
+
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.
     // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.

@@ -294,7 +294,6 @@ void event_manager (struct t_event *event)
         are_only_daemons--;
     }
 
-    //   printf("to check which type of event it is\n");
     switch (event->module)
     {
         case M_SCH:

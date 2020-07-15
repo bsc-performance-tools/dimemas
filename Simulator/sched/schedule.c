@@ -724,7 +724,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                             }
                             else
                             {
-                                if (!thread->task->accelerator && !thread->openmp_thread)
+                                if (!thread->task->accelerator && !thread->task->openmp)
                                 {	/*	It's a CPU burst	*/
                                     PARAVER_Running (cpu->unique_number,
                                             IDENTIFIERS (thread),
@@ -742,14 +742,72 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                             thread->last_paraver,
                                             current_time);
                                 }
-                                else if(thread->master_thread || thread->worker_thread
-                                        && OMPEventEncoding_Is_OMPExec(thread->omp_in_block_event))
+                                else if(thread->task->openmp)
+                                       // && OMPEventEncoding_Is_OMPMaster_Running(thread->omp_in_block_event))
                                 {
-
-                                    PARAVER_Running(cpu->unique_number,
+                                    if(thread->master_thread
+                                            && OMPEventEncoding_Is_OMPMaster_Running(thread->omp_in_block_event))
+                                    {
+                                        PARAVER_Running(cpu->unique_number,
                                             IDENTIFIERS (thread),
                                             thread->last_paraver,
                                             current_time);
+
+                                         /*if(OMPEventEncoding_Is_OMPTime(thread->omp_in_block_event))
+                                        {
+                                                thread->task->start_time = thread->last_paraver;
+                                                thread->task->finish_time = current_time;
+                                                thread->task->master_value = thread->omp_in_block_event.value;
+                                            //printf("master_value in master = %ld\n", thread->task->master_value);
+                                        }*/
+                                    }
+                                    else if(thread->worker_thread
+                                            && OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event))
+                                    {
+                                        /*
+                                       if(OMPEventEncoding_Is_OMPTime(thread->omp_in_block_event)
+                                                && thread->omp_in_block_event.value == thread->task->master_value)
+                                        {
+                                            //thread->last_paraver = thread->task->start_time;
+                                            dimemas_timer tiempo, extra_time; 
+                                            tiempo = thread->last_paraver - thread->task->finish_time;
+                                            extra_time = current_time - tiempo;
+                                            printf("thread->taskid: %d\n", thread->task->taskid);
+                                            printf("master_value = %ld\n", thread->task->master_value);
+                                            printf("current_time = %f extra_time = %f\n", current_time,extra_time);
+                                            PARAVER_Running(cpu->unique_number,
+                                            IDENTIFIERS (thread),
+                                            thread->task->start_time,
+                                            thread->task->finish_time);
+                                            
+                                           // thread->last_paraver = thread->task->finish_time;
+                                        }
+                                        else
+                                        {
+                                            PARAVER_Running(cpu->unique_number,
+                                            IDENTIFIERS (thread),
+                                            thread->last_paraver,
+                                            current_time);
+                                        }*/
+                                            
+                                            if(thread->task->master_time > 0) { 
+                                            /*dimemas_timer tiempo, extra_time; 
+                                            tiempo = thread->last_paraver - thread->task->master_time;
+                                            extra_time = current_time - tiempo;
+                                            printf("master_time : %f extra_time :: %f tiempo = %f\n", 
+                                                    thread->task->master_time,
+                                                    extra_time, tiempo);
+                                            thread->last_paraver = extra_time;
+                                            thread->task->master_time = 0;*/
+                                           }
+                                           else if (thread->task->master_time == 0) {
+                                                PARAVER_Running(cpu->unique_number,
+                                                IDENTIFIERS (thread),
+                                                thread->last_paraver,
+                                                current_time);
+                                          } 
+                                           thread->task->duration = current_time - thread->last_paraver; 
+                                    }
                                 }
                                 else if (thread->kernel 
                                         && (CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event) 
@@ -769,13 +827,13 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                     /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
                                 }
                                 else if(thread->master_thread || thread->worker_thread
-                                        && OMPEventEncoding_Is_OMPBlock(thread->omp_in_block_event.type))
+                                        && OMPEventEncoding_Is_OMPBlock(thread->omp_in_block_event.type)
+                                        && OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
                                 {
                                     //Do not throw anything if it is inside ompblock
                                 }
                                 else
                                 {	/*	It's a CPU burst	*/
-                                    //printf("RUNNNNNNNNNNNNNNNNNNNNNNNingGGGGGGGGG \n");
                                     PARAVER_Running (cpu->unique_number,
                                             IDENTIFIERS (thread),
                                             thread->last_paraver,
@@ -1034,16 +1092,15 @@ next_op:
                                 treat_omp_events(thread, action);
 
                                 int omp_event = (OMPEventEncoding_Is_OMPBlock(action->desc.even.type)
-                                    &&  action->desc.even.value == 0);
+                                    && thread->worker_thread && action->desc.even.value == 0);
                                 if(omp_event)
                                 {
-                                    cpu = get_cpu_of_thread(thread);
-                                     /* PARAVER_Event (cpu->unique_number,
+                                  /*cpu = get_cpu_of_thread(thread);
+                                      PARAVER_Event (cpu->unique_number,
                                             IDENTIFIERS (thread),
                                             current_time,
                                             action->desc.even.type,
-                                            action->desc.even.value);
-                                      */
+                                            action->desc.even.value);*/
                                     /*  if(thread->worker_thread == TRUE)
                                     {
                                       PARAVER_Not_Created(cpu->unique_number,
@@ -1696,7 +1753,6 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
     cpu = get_cpu_of_thread(thread);
     
     if(!OMPEventEncoding_Is_OMPBlock(action->desc.even.type))
- //           || action->desc.even.value == 0)
     {
         return;
     }
@@ -1707,46 +1763,98 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
     {
         thread->first_omp_event_read = TRUE;
     }*/
-    if(!omp_block_begin && OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
+    if(thread->master_thread && 
+            OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
     {
         PARAVER_Thread_Sync(cpu->unique_number,
                 IDENTIFIERS(thread),
                 thread->omp_in_block_event.paraver_time,
                 current_time);
+        thread->task->worker_sincro_end = current_time;
     }
-
-    else if( OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
+    else if(thread->master_thread   && 
+            OMPEventEncoding_Is_OMPWork_Dist(thread->omp_in_block_event))
     {
         PARAVER_Thread_Sched(cpu->unique_number,
                 IDENTIFIERS(thread),
                 thread->omp_in_block_event.paraver_time,
                 current_time); 
+        thread->task->master_time = current_time;
     }
-    else if(!omp_block_begin && thread->master_thread 
+    else if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
+    {
+
+        PARAVER_Thread_Sched(cpu->unique_number,
+                IDENTIFIERS(thread),
+                thread->omp_in_block_event.paraver_time,
+                current_time); 
+    }
+    else if(thread->master_thread 
             && OMPEventEncoding_Is_OMPIdle(thread->omp_in_block_event.type)
             && !OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
-    {
+    {       
+       for(int i = 1; i < thread->task->threads_count; i++) // thread_id 0 == master
+        {               
+            if(thread->task->master_time > 0) { 
+                dimemas_timer duracion, extra_time; 
+                duracion = current_time - thread->task->master_time;
+                extra_time = current_time - duracion;
+                /*printf("master_time : %f duracion :: %f\n", 
+                        thread->task->master_time,
+                        thread->task->duration);*/
+                PARAVER_Running(cpu->unique_number,
+                IDENTIFIERS (thread->task->threads[i]),
+                thread->task->master_time,
+                //thread->task->master_time + thread->task->duration);
+                current_time);
+                thread->task->master_time = 0;
+            }                                           
+        } 
         PARAVER_Thread_Sched(cpu->unique_number,
                 IDENTIFIERS(thread),
                 thread->omp_in_block_event.paraver_time,
                 current_time); 
-
     }
-
+    else if(thread->worker_thread &&
+            OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
+    {
+        PARAVER_Thread_Sync(cpu->unique_number,
+                IDENTIFIERS(thread),
+                thread->omp_in_block_event.paraver_time,
+                current_time);
+        thread->task->worker_sincro_end = current_time;
+    }
+    else if(thread->master_thread 
+            && OMPEventEncoding_Is_OMPIdle(thread->omp_in_block_event.type)
+            && OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
+    {  
+        for(int i = 1; i < thread->task->threads_count; i++)
+        {               
+            if(thread->task->worker_sincro_end > 0) { 
+                dimemas_timer duracion, extra_time; 
+                duracion = current_time - thread->task->worker_sincro_time;
+                //extra_time = current_time - tiempo;
+                PARAVER_Running(cpu->unique_number,
+                IDENTIFIERS (thread->task->threads[i]),
+                thread->task->worker_sincro_end,
+                //thread->task->worker_sincro_time,
+                current_time);
+                //thread->last_paraver = extra_time;
+                thread->task->worker_sincro_end = 0;
+            }                                           
+        }
+    } 
     thread->omp_in_block_event.type = action->desc.even.type;
     thread->omp_in_block_event.value = action->desc.even.value;
-        //thread->omp_in_block_event.paraver_time = current_time;
-    
-    if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event)
-            && thread->master_thread)
+    thread->omp_in_block_event.paraver_time = current_time;
+   /* if (OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event)
+                && thread->master_thread)
     {
-        thread->omp_recv_sync = TRUE; 
+        thread->omp_recv_sync = TRUE;
     }
-    else
-    {
-        thread->omp_in_block_event.paraver_time = current_time;
-    }
-   thread->omp_in_block_event.paraver_time = current_time;
+    else 
+    thread->omp_in_block_event.paraver_time = current_time;
+    */
 }
 /***************************************************************
  ** treat_acc_event
