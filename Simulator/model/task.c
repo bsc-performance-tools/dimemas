@@ -51,6 +51,7 @@
 #include <node.h>
 #include <file_data_access.h>
 #include <communic.h>
+#include <dim_omp.h>
 
 #define MIN_SERVICE_TIME (t_nano)7000
 #define MAX_SERVICE_TIME (t_nano)13000
@@ -489,6 +490,9 @@ void TASK_New_Ptask_predefined_map(char* trace_name,
     Ptask->acc_tasks_count = -1;	//-1:	search for acc_tasks not done, >= 0 otherwise
     Ptask->acc_tasks = (int *) NULL;
 
+    Ptask->omp_tasks = (int*) NULL;
+    Ptask->omp_tasks_count = 0;
+
     create_queue (&(Ptask->global_operation));
     create_queue (&(Ptask->Communicator));
     create_queue (&(Ptask->Window));
@@ -530,7 +534,12 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     task->io_thread = FALSE;
     task->threads_count = 0;
     task->threads       = NULL;
-
+    
+    /* OMP variables  */
+    task->master_time        = 0;
+    task->omp_queue          = create_omp_queue();
+    task->first_omp_event_read    = FALSE;
+    
     create_queue (&(task->mess_recv));
     create_queue (&(task->recv));
     create_queue (&(task->send));
@@ -1150,13 +1159,10 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
         thread->worker_thread = FALSE;
         thread->openmp_thread = FALSE;
     }
-    thread->task->master_time        = 0;
-    thread->task->worker_sincro_time = 0;
-    thread->first_omp_event_read	 = FALSE;
-    thread->omp_recv_sync			 = FALSE;
     thread->omp_in_block_event.type  = 0;
     thread->omp_in_block_event.value = 0;
     thread->omp_in_block_event.paraver_time = (dimemas_timer) 0;
+    thread->work_count               = 0;
 
     /* NON-Block global operations variables */
     thread->n_nonblock_glob_in_flight = 0;
@@ -1335,8 +1341,6 @@ struct t_thread *duplicate_thread_fs (struct t_thread *thread)
     copy_thread->blckd_in_global_op		= thread->blckd_in_global_op;
     /* Accelerator variables */
     
-    copy_thread->first_omp_event_read   = thread->first_omp_event_read;
-    copy_thread->omp_recv_sync          = thread->omp_recv_sync;
     copy_thread->omp_in_block_event     = thread->omp_in_block_event;
 
     return (copy_thread);
@@ -1412,8 +1416,6 @@ struct t_thread *duplicate_thread (struct t_thread *thread)
     copy_thread->blckd_in_global_op       = thread->blckd_in_global_op;
     copy_thread->n_nonblock_glob_in_flight= thread->n_nonblock_glob_in_flight;
 
-    copy_thread->first_omp_event_read     = thread->first_omp_event_read;
-    copy_thread->omp_recv_sync            = thread->omp_recv_sync;
     copy_thread->omp_in_block_event       = thread->omp_in_block_event;
 
     return copy_thread;

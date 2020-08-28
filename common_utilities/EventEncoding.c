@@ -1719,7 +1719,7 @@ Boolean OMPEventEncoding_Is_OMPIdle (long64_t Op)
 */
 Boolean OMPEventEncoding_Is_OMPMaster_Running (struct t_event_block event)
 {
-	if (((event.type == OMP_EXECUTED_PARALLEL_FXN || event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE) 
+	if ((event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE
                 && event.value > OMP_END_VAL)
                 || event.type == OMP_WORK_EV && event.value == OMP_END_VAL
                 || event.type == OMP_BARRIER && event.value == OMP_END_VAL
@@ -1732,9 +1732,17 @@ Boolean OMPEventEncoding_Is_OMPMaster_Running (struct t_event_block event)
 */
 Boolean OMPEventEncoding_Is_OMPWorker_Running (struct t_event_block event)
 {
-	if (((event.type == OMP_EXECUTED_PARALLEL_FXN || event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE) 
+	if ((event.type == OMP_EXE_PARALLEL_FXN_LINE_N_FILE) 
                 && event.value > OMP_END_VAL)
-                || event.type == OMP_BARRIER && event.value == OMP_END_VAL)
+		return TRUE;
+	return FALSE;
+}
+/**
+ * OMP worker after barrier running case
+*/
+Boolean OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running (struct t_event_block event)
+{
+    if(event.type == OMP_BARRIER && event.value == OMP_END_VAL)
 		return TRUE;
 	return FALSE;
 }

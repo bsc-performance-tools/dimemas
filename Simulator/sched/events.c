@@ -56,9 +56,8 @@ struct t_queue  Interactive_event_queue;
 #endif
 
 
-int             are_only_daemons = 0;
-
-struct t_event* EVENT_timer (dimemas_timer    when,
+int     are_only_daemons = 0;
+struct t_event* EVENT_timer (dimemas_timer when,
         int              daemon,
         int              module,
         struct t_thread *thread,
@@ -83,17 +82,14 @@ struct t_event* EVENT_timer (dimemas_timer    when,
     }
 
     event = (struct t_event *) malloc (sizeof (struct t_event) );
-
     event->event_time = when;
     event->module     = module;
     event->thread     = thread;
     event->info       = info;
     event->daemon     = daemon;
 
-    if (
-            ( module != M_CTXT_SW) &&
-            ( (module != M_COM) || (info != COM_EXT_NET_TRAFFIC_TIMER) )
-       )
+    if (( module != M_CTXT_SW) &&
+            ((module != M_COM) || (info != COM_EXT_NET_TRAFFIC_TIMER)))
     {
         thread->loose_cpu        = TRUE;
         thread->next_event_timer = when;
@@ -117,18 +113,15 @@ struct t_event* EVENT_timer (dimemas_timer    when,
         }
         else
         {
-            printf (
-                    ". P%02d T%02d (t%02d)\n",
-                    IDENTIFIERS (event->thread)
-                   );
+            printf ( ". P%02d T%02d (t%02d)\n",
+                    IDENTIFIERS (event->thread));
         }
     }
 
     return event;
 }
 
-
-void EVENT_extract_timer (int              module,
+void EVENT_extract_timer (int  module,
         struct t_thread *thread,
         dimemas_timer   *when)
 {
@@ -162,7 +155,7 @@ void EVENT_extract_timer (int              module,
 #ifdef USE_EQUEUE
     for (event = head_Eevent (q); event != E_NIL; event = next_Eevent (q) )
 #else
-        for (event = head_event (q); event != E_NIL; event = next_event (q) )
+    for (event = head_event (q); event != E_NIL; event = next_event (q) )
 #endif
         {
             if ( (event->module == module) && (event->thread == thread) )
@@ -222,9 +215,9 @@ t_boolean events_for_thread (struct t_thread *thread)
             event != E_NIL;
             event  = next_Eevent (&Event_queue))
 #else
-        for (event  = head_event (&Event_queue);
-                event != E_NIL;
-                event  = next_event (&Event_queue))
+    for (event  = head_event (&Event_queue);
+            event != E_NIL;
+            event  = next_event (&Event_queue))
 #endif
         {
             if (event->thread == thread)
@@ -250,7 +243,7 @@ void reload_events()
     }
 }
 
-/*
+/**
  * Main event managament routine
  */
 void event_manager (struct t_event *event)
@@ -266,7 +259,6 @@ void event_manager (struct t_event *event)
     {
         PRINT_TIMER (current_time);
         printf (": EVENT Selected ");
-        /* PRINT_TIMER (event->event_time); */
         printf ("Module %d ", event->module);
         if (event->thread == TH_NIL)
         {
@@ -274,10 +266,8 @@ void event_manager (struct t_event *event)
         }
         else
         {
-            printf (
-                    ": P%02d T%02d (t%02d)\n",
-                    IDENTIFIERS (event->thread)
-                   );
+            printf (": P%02d T%02d (t%02d)\n",
+                    IDENTIFIERS (event->thread));
         }
     }
 
@@ -293,7 +283,6 @@ void event_manager (struct t_event *event)
     {
         are_only_daemons--;
     }
-
     switch (event->module)
     {
         case M_SCH:

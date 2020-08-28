@@ -1408,8 +1408,11 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             {
 			 	if (Timestamp > LastBlockEnd) 
                 {
-				    if (!GenerateBurst (TaskId, ThreadId, Timestamp))
-					    return false;
+                    if(OpenMP_thread == WORKER)
+                    {
+				        if (!GenerateBurst (TaskId, ThreadId, Timestamp))
+					        return false;
+                    }
 				}
 			
                 LastBlockEnd = Timestamp;
@@ -1431,10 +1434,12 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             }
             else
             {
-			  	if (Timestamp > LastBlockEnd) 
+			  	 if (Timestamp > LastBlockEnd) 
                 {
-					if (!GenerateBurst (TaskId, ThreadId, Timestamp))
-						return false;
+                    if(OpenMP_thread = WORKER){
+					    if (!GenerateBurst (TaskId, ThreadId, Timestamp))
+						    return false;
+                    }
 				}
 
 			    LastBlockEnd = Timestamp;

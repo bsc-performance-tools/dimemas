@@ -1038,6 +1038,7 @@ int OMPEventEncoding_Is_OMPWork_Dist(struct t_event_block event);
 int OMPEventEncoding_Is_OMPTime(struct t_event_block event);
 int OMPEventEncoding_Is_OMPMaster_Running(struct t_event_block event);
 int OMPEventEncoding_Is_OMPWorker_Running(struct t_event_block event);
+int OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(struct t_event_block event);
 int OMPEventEncoding_Is_OMPIdle (long64_t Op);
 
 /* CUDA EventEncoding calls	*/

@@ -112,6 +112,7 @@ struct t_queue
     struct t_item  *curr;  /* Current item in sequential search */
     t_count         count; /* Number of items */
 };
+
 struct t_list
 {
     struct t_list  *next;
@@ -774,19 +775,17 @@ struct t_task
     struct t_queue    th_for_out;           /* Awaiting for output link */
 
     t_boolean         io_thread;
-    
+   
+    /* OMP variables */
     t_boolean         openmp;
+    t_boolean         first_omp_event_read;
     dimemas_timer     master_time;
-    dimemas_timer     duration;
-    dimemas_timer     worker_sincro_time;
-    dimemas_timer     worker_sincro_end;
-    dimemas_timer     worker_running_duration;
-    unsigned long int master_value;
+    struct t_omp_queue *omp_queue;
 
-    t_boolean		  accelerator;
+    t_boolean		   accelerator;
     struct t_thread   *KernelSync;	/*	Kernel thread of sync	*/
     struct t_thread	  *HostSync;		/*	Host thread of sync	*/
-    int							  KernelByComm;/* Kernel_id indicated in comm_id for global_op */
+    int				   KernelByComm;/* Kernel_id indicated in comm_id for global_op */
 };
 
 struct t_event
@@ -878,11 +877,6 @@ struct t_thread
                     *partner_hd_link;   /* Pointers to non used links (HF-DPEX)*/
     struct t_node   *partner_node;   /* Cal guardar el node desti del missatge */
 
-    /*
-       struct t_link   *in_mem_link;
-       struct t_link   *out_mem_link;
-       */
-
     dimemas_timer    last_paraver;
     t_boolean        loose_cpu;
     int              to_module;
@@ -943,10 +937,6 @@ struct t_thread
     char            *mmapped_file;
     unsigned long   mmap_position;
 
-    //   FILE             *file;
-    //   t_boolean         file_shared;               /* TRUE if sharing file pointer*/
-
-
     struct t_queue    modules;
     struct t_queue    Activity;
     struct t_cp_node *last_cp_node;
@@ -995,9 +985,8 @@ struct t_thread
     t_boolean       master_thread;
     t_boolean       worker_thread;
     t_boolean       openmp_thread;
-    t_boolean       first_omp_event_read;
-    t_boolean       omp_recv_sync;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
+    int               work_count;
 
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.
