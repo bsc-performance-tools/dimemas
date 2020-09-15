@@ -42,18 +42,16 @@ struct t_omp_worker_info
         identifier = -1;
         init_master_time = -1.0;
     }
-    int                         identifier;
-    dimemas_timer               init_master_time;
-    map< int, dimemas_timer >     worker_duration;
-    map< int, bool>               worker_printed;
-    map< int, vector< t_event > > init_worker_events;
-    map< int,  vector< t_event > > end_worker_events;
+    int                             identifier;
+    dimemas_timer                   init_master_time;
+    map< int, dimemas_timer >       worker_duration;
+    map< int, bool>                 worker_printed;
+    map< int, vector< t_event > >   init_worker_events;
+    map< int,  vector< t_event > >  end_worker_events;
 };
-
 struct t_omp_queue
 {
-    map< int, struct t_omp_worker_info > winfo;
-    
+    map< int, struct t_omp_worker_info > winfo;  
 };
 
 //(omp_worker.init_worker_events[threadid]).push_back(event)
@@ -79,7 +77,6 @@ void set_omp_master_time( struct t_omp_queue *q, int omp_it, dimemas_timer maste
     omp_worker.init_master_time = master_time;
 
 }
-
 /* saving working information */
 void set_omp_worker_info_duration(struct t_omp_queue *q, int omp_it, int thread_id, dimemas_timer duration)
 {
@@ -91,6 +88,16 @@ void set_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id)
 {
     struct t_omp_worker_info &omp_worker = q->winfo[omp_it];
     omp_worker.worker_printed[thread_id] = true;
+}
+
+dimemas_timer get_omp_master_time( struct t_omp_queue *q, int omp_it )
+{
+    return q->winfo[omp_it].init_master_time;
+}
+
+dimemas_timer get_omp_worker_duration( struct t_omp_queue *q, int omp_it, int thread_id )
+{
+    return q->winfo[omp_it].worker_duration[thread_id];
 }
 
 bool is_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id)
@@ -121,12 +128,95 @@ bool is_omp_worker_info_ready( struct t_omp_queue *q, int omp_it, int thread_id 
     return true;
 }
 
-dimemas_timer get_omp_master_time( struct t_omp_queue *q, int omp_it )
+/**************************
+ * For OMP syncronization*
+ **************************/
+struct t_omp_worker_syncro_info
 {
-    return q->winfo[omp_it].init_master_time;
+    t_omp_worker_syncro_info()
+    {
+        identifier = -1;
+        syncro_end_time  = -1.0;
+    }
+    int                         identifier;
+    dimemas_timer               syncro_end_time;
+    map<int, bool>              worker_printed;
+    map<int, bool>              run_after_barrier_printed;
+};
+
+struct t_omp_queue_syncro
+{
+    map< int, struct t_omp_worker_syncro_info > winfo; 
+};
+
+
+struct t_omp_queue_syncro *create_omp_queue_syncro()
+{
+    return new t_omp_queue_syncro();
 }
 
-dimemas_timer get_omp_worker_duration( struct t_omp_queue *q, int omp_it, int thread_id )
+void set_omp_worker_syncro_identifier(struct t_omp_queue_syncro *q, int omp_it, int identifier) 
 {
-    return q->winfo[omp_it].worker_duration[thread_id];
+    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
+    omp_worker.identifier = identifier;
+}
+
+void set_omp_syncro_end_time( struct t_omp_queue_syncro *q, int omp_it, dimemas_timer syncro_end_time )
+{
+    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
+    omp_worker.syncro_end_time = syncro_end_time;
+}
+
+void set_omp_worker_syncro_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
+{
+    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
+    omp_worker.worker_printed[thread_id] = true;
+}
+
+dimemas_timer get_omp_syncro_end_time( struct t_omp_queue_syncro *q, int omp_it )
+{
+    return q->winfo[omp_it].syncro_end_time;
+}
+
+bool is_omp_worker_syncro_info_ready( struct t_omp_queue_syncro *q, int omp_it, int thread_id )
+{
+    map< int, struct t_omp_worker_syncro_info >::iterator itr = q->winfo.find( omp_it );
+
+    if( itr == q->winfo.end() )
+        return false;
+ 
+    struct t_omp_worker_syncro_info &omp_worker = itr->second;
+
+    if( omp_worker.syncro_end_time == -1.0 )
+        return false;
+
+    return true;
+}
+
+bool is_omp_worker_syncro_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
+{
+    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
+    
+    if( omp_worker.worker_printed.find( thread_id ) == omp_worker.worker_printed.end() )
+        return false;
+
+    return true;
+}
+
+/* After Barrier Info*/
+
+void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
+{
+    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
+    omp_worker.run_after_barrier_printed[thread_id] = true;
+}
+
+bool is_omp_worker_after_barrier_run_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
+{
+    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
+    
+    if( omp_worker.run_after_barrier_printed.find( thread_id ) == omp_worker.run_after_barrier_printed.end() )
+        return false;
+
+    return true;
 }

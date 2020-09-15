@@ -2,6 +2,9 @@ noinst_LTLIBRARIES = libDimemasScheduling.la
 
 simulator_dir = $(top_srcdir)/Simulator
 
+libDimemasScheduling_la_LIBADD = \
+        $(top_srcdir)/common_utilities/libCommonUtilities.la
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/common_utilities \
 	-I$(top_srcdir)/include \

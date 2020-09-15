@@ -1710,7 +1710,7 @@ Boolean OMPEventEncoding_Is_BlockBegin ( long64_t Op )
 */
 Boolean OMPEventEncoding_Is_OMPIdle (long64_t Op)
 {
-	if (Op == OMP_EXECUTED_PARALLEL_FXN || Op == OMP_EXE_PARALLEL_FXN_LINE_N_FILE)
+	if (Op == OMP_EXE_PARALLEL_FXN_LINE_N_FILE)
 		return TRUE;
 	return FALSE;
 }

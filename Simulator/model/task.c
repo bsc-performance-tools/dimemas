@@ -52,6 +52,7 @@
 #include <file_data_access.h>
 #include <communic.h>
 #include <dim_omp.h>
+#include <memory.h>
 
 #define MIN_SERVICE_TIME (t_nano)7000
 #define MAX_SERVICE_TIME (t_nano)13000
@@ -538,7 +539,10 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     /* OMP variables  */
     task->master_time        = 0;
     task->omp_queue          = create_omp_queue();
+    task->omp_queue_syncro   = create_omp_queue_syncro();
     task->first_omp_event_read    = FALSE;
+    task->synch_end          = 0;
+    task->afterbarrier_run_end = 0;
     
     create_queue (&(task->mess_recv));
     create_queue (&(task->recv));
@@ -1163,7 +1167,10 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     thread->omp_in_block_event.value = 0;
     thread->omp_in_block_event.paraver_time = (dimemas_timer) 0;
     thread->work_count               = 0;
-
+    thread->syncro_count             = 0;
+    thread->ompwork_end              = 0;
+    thread->run_count                = 0;
+    
     /* NON-Block global operations variables */
     thread->n_nonblock_glob_in_flight = 0;
     thread->n_nonblock_glob_waiting = 0;
