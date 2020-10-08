@@ -1064,57 +1064,96 @@ next_op:
                                             action->desc.even.value);
                                 }
 
-                                int omp_event = (thread->task->openmp && thread->worker_thread && action->desc.even.value != 0);                                 
+                                int omp_event = (thread->task->openmp && thread->worker_thread);                                 
                                 if(omp_event)
-                                {
-                                   cpu = get_cpu_of_thread(thread);
-                                   if(!OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event) &&
-                                        !OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(thread->omp_in_block_event)){
-                                        //for(int i = 0; i <= thread->work_count; ++i){ 
-                                            if(is_omp_worker_info_ready(thread->task->omp_queue,thread->work_count, thread->threadid) &&
-                                                is_omp_worker_printed(thread->task->omp_queue,thread->work_count,thread->threadid))
-                                            {
-                                                dimemas_timer start_time = get_omp_master_time(thread->task->omp_queue, thread->work_count);
-                                                PARAVER_Event(cpu->unique_number,
-                                                    IDENTIFIERS (thread),
-                                                    start_time,
-                                                    action->desc.even.type,
-                                                    action->desc.even.value);
-                                            }
-                                        //}
-                                    }
-                                    else if(!OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event) &&
-                                        !OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(thread->omp_in_block_event)){
-                                            if(is_omp_worker_syncro_info_ready(thread->task->omp_queue_syncro, thread->syncro_count, thread->threadid) &&
-                                                is_omp_worker_syncro_printed(thread->task->omp_queue_syncro,thread->syncro_count,thread->threadid)){                                                
-                                                PARAVER_Event(cpu->unique_number,
-                                                    IDENTIFIERS (thread),
-                                                    thread->ompwork_end,
-                                                    action->desc.even.type,
-                                                    action->desc.even.value);
-                                        }
-                                    }
-                                    else if(!OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event) &&
-                                        !OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event)){
-                                            if(is_omp_worker_syncro_info_ready(thread->task->omp_queue_syncro, thread->run_count, thread->threadid) &&
-                                            is_omp_worker_after_barrier_run_printed(thread->task->omp_queue_syncro,thread->run_count,thread->threadid)){
-                                                dimemas_timer start_time = get_omp_syncro_end_time(thread->task->omp_queue_syncro, thread->run_count);
-                                                PARAVER_Event(cpu->unique_number,
-                                                    IDENTIFIERS (thread),
-                                                    start_time,
-                                                    action->desc.even.type,
-                                                    action->desc.even.value);
-                                        }      
-                                    }
-                                    else
+                                {                                
+                                    cpu = get_cpu_of_thread(thread);
+                                    if (!thread->task->first_omp_event_read)
                                     {
                                         PARAVER_Event(cpu->unique_number,
-                                            IDENTIFIERS (thread),
+                                            IDENTIFIERS(thread),
                                             current_time,
                                             action->desc.even.type,
-                                            action->desc.even.value); 
+                                            action->desc.even.value);
                                     }
-                                    
+                                    else if (!OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event) &&
+                                           !OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(thread->omp_in_block_event))
+                                    {
+                                        dimemas_timer start_time = get_omp_master_time(thread->task->omp_queue, thread->work_count);
+                                        dimemas_timer duration = get_omp_worker_duration(thread->task->omp_queue, thread->work_count, thread->threadid);
+                                        if (OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event))
+                                        {
+                                            thread->flag_at_start = TRUE;
+                                            thread->flag_at_end = FALSE;
+                                        }
+                                        else
+                                        {
+                                            thread->flag_at_end = TRUE;
+                                            thread->flag_at_start = FALSE;
+                                        }
+                                        if (thread->flag_at_end == TRUE)
+                                        {
+                                            PARAVER_Event(cpu->unique_number,// print event flag at the end of the running
+                                                IDENTIFIERS(thread),
+                                                start_time + duration,
+                                                action->desc.even.type,
+                                                action->desc.even.value);
+                                        }
+                                        if (thread->flag_at_start == TRUE)
+                                        {
+                                            PARAVER_Event(cpu->unique_number, // print event flag at start of the running
+                                                IDENTIFIERS(thread),
+                                                start_time,
+                                                action->desc.even.type,
+                                                action->desc.even.value);
+                                        }
+                                    }
+                                    else if (!OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event) &&
+                                                !OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(thread->omp_in_block_event))
+                                    {      
+                                        dimemas_timer start_time = get_omp_syncro_end_time(thread->task->omp_queue_syncro, thread->run_count);
+                                        t_boolean start, end;
+                                        if(action->desc.even.value == 0)
+                                        {
+                                            start = FALSE;
+                                            end   = TRUE;
+                                        }
+                                        else
+                                        {
+                                            start = TRUE;
+                                            end   = FALSE;
+                                        }
+                                        if(start == FALSE && end == TRUE)
+                                        {
+                                            PARAVER_Event(cpu->unique_number,
+                                                IDENTIFIERS(thread),
+                                                start_time,
+                                                action->desc.even.type,
+                                                action->desc.even.value);
+                                        }
+                                        if(start == TRUE && end == FALSE)
+                                        {
+                                            PARAVER_Event(cpu->unique_number,
+                                                IDENTIFIERS(thread),
+                                                thread->ompwork_end,
+                                                action->desc.even.type,
+                                                action->desc.even.value);
+                                        }                                                 
+                                    }
+                                    else if (!OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event) &&
+                                        !OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event))
+                                    {
+                                        if (is_omp_worker_syncro_info_ready(thread->task->omp_queue_syncro, thread->run_count, thread->threadid) &&
+                                            is_omp_worker_after_barrier_run_printed(thread->task->omp_queue_syncro, thread->run_count, thread->threadid))
+                                        {
+                                            dimemas_timer start_time = get_omp_syncro_end_time(thread->task->omp_queue_syncro, thread->run_count);
+                                            PARAVER_Event(cpu->unique_number,
+                                                IDENTIFIERS(thread),
+                                                start_time,
+                                                action->desc.even.type,
+                                                action->desc.even.value);
+                                        }
+                                    } 
                                 }
                                 thread->action = action->next;
                                 READ_free_action(action);

@@ -46,6 +46,7 @@ struct t_omp_worker_info
     dimemas_timer                   init_master_time;
     map< int, dimemas_timer >       worker_duration;
     map< int, bool>                 worker_printed;
+    map< int, bool>                 worker_event_printed;
     map< int, vector< t_event > >   init_worker_events;
     map< int,  vector< t_event > >  end_worker_events;
 };

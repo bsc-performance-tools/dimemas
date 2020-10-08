@@ -45,12 +45,11 @@ void set_omp_worker_info_init_master_time(struct t_omp_worker_info * info, dimem
 void set_omp_worker_info_duration(struct t_omp_queue *q, int omp_it, int thread_id, dimemas_timer duration);
 void set_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id);
 
-dimemas_timer get_omp_master_time( struct t_omp_queue *q, int omp_it );
+dimemas_timer get_omp_master_time(struct t_omp_queue *q, int omp_it);
 dimemas_timer get_omp_worker_duration( struct t_omp_queue *q, int omp_it, int thread_id );
 
 bool is_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id);
 bool is_omp_worker_info_ready( struct t_omp_queue *q, int omp_it, int thread_id );
-
 
 /**************************
  * For OMP syncronization*

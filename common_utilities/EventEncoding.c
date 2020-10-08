@@ -1671,7 +1671,7 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event)
 #define NUM_OMPTYPES  14
 CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
 
-    { OMP_CALL_EV,          		       OMP_CALL_LABEL },           
+    { OMP_CALL_EV,          		           OMP_CALL_LABEL },           
     { OMP_WORKSHARING_EV,                  OMP_WORKSHARING_LABEL },
     { OMP_BARRIER,                         OMP_BARRIER_LABEL },
     { OMP_WORK_EV,                         OMP_WORK_LABEL },

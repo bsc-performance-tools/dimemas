@@ -1170,6 +1170,8 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     thread->syncro_count             = 0;
     thread->ompwork_end              = 0;
     thread->run_count                = 0;
+    thread->flag_at_end              = FALSE;
+    thread->flag_at_start            = FALSE;
     
     /* NON-Block global operations variables */
     thread->n_nonblock_glob_in_flight = 0;
