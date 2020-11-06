@@ -43,9 +43,9 @@ $(jarfile): $(dist_noinst_JAVA) $(dist_noinst_DATA)
 $(dist_noinst_JAVA): updateAndCheckJavaFilesList mkversion manifest runscript
 
 updateAndCheckJavaFilesList:
-	rm $(JAVAROOT)/new_DIST_NOINST_JAVA.include; \
+	rm -f $(JAVAROOT)/new_DIST_NOINST_JAVA.include; \
 	line="dist_noinst_JAVA = "; \
-	for next in `find $(JAVAROOT) -name "*.java" && echo "THE_END"` ; do \
+	for next in `find $(JAVAROOT) -name "*.java" | sort && echo "THE_END"` ; do \
 	  if test "$$next" != "THE_END"; then \
 	    echo $$line" \\" >> $(JAVAROOT)/new_DIST_NOINST_JAVA.include; \
 	    # line=`echo "$$next" | sed "s/^.*src\/classes\/\(.*\)/\1 /"` ; \
