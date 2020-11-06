@@ -781,7 +781,7 @@ struct t_task
     t_boolean         first_omp_event_read;
     dimemas_timer     master_time;
     struct t_omp_queue *omp_queue;
-    struct t_omp_queue_syncro *omp_queue_syncro;
+    struct t_omp_queue_synchro *omp_queue_syncro;
     dimemas_timer      synch_end;
     dimemas_timer      afterbarrier_run_end;
 
@@ -985,16 +985,15 @@ struct t_thread
     struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
     
     /* variable for omp */
-    t_boolean       master_thread;
-    t_boolean       worker_thread;
-    t_boolean       openmp_thread;
-    t_boolean       flag_at_start;
-    t_boolean       flag_at_end;
+    t_boolean            omp_master_thread;
+    t_boolean            omp_worker_thread;
+    t_boolean            omp_flag_at_start;
+    t_boolean            omp_flag_at_end;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
-    int             work_count;
-    int             syncro_count;
-    int             run_count;
-    dimemas_timer   ompwork_end;
+    int                  omp_iteration_count;
+    int                  omp_synchro_count;
+    int                  omp_run_count;
+    dimemas_timer        omp_work_end;
 
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.

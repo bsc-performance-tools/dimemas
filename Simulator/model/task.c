@@ -539,7 +539,7 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     /* OMP variables  */
     task->master_time        = 0;
     task->omp_queue          = create_omp_queue();
-    task->omp_queue_syncro   = create_omp_queue_syncro();
+    task->omp_queue_syncro   = create_omp_queue_synchro();
     task->first_omp_event_read    = FALSE;
     task->synch_end          = 0;
     task->afterbarrier_run_end = 0;
@@ -1147,31 +1147,28 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
    /* OpenMp variables */ 
     if(task->openmp && thread_id == 0)
     {
-        thread->master_thread = TRUE;
-        thread->worker_thread = FALSE;
-        thread->openmp_thread = TRUE;
+        thread->omp_master_thread = TRUE;
+        thread->omp_worker_thread = FALSE;
     }
     else if(task->openmp && thread_id > 0)
     {
-        thread->master_thread = FALSE;
-        thread->worker_thread = TRUE;
-        thread->openmp_thread = TRUE;
+        thread->omp_master_thread = FALSE;
+        thread->omp_worker_thread = TRUE;
     }
     else 
     {
-        thread->master_thread = FALSE;
-        thread->worker_thread = FALSE;
-        thread->openmp_thread = FALSE;
+        thread->omp_master_thread = FALSE;
+        thread->omp_worker_thread = FALSE;
     }
     thread->omp_in_block_event.type  = 0;
     thread->omp_in_block_event.value = 0;
     thread->omp_in_block_event.paraver_time = (dimemas_timer) 0;
-    thread->work_count               = 0;
-    thread->syncro_count             = 0;
-    thread->ompwork_end              = 0;
-    thread->run_count                = 0;
-    thread->flag_at_end              = FALSE;
-    thread->flag_at_start            = FALSE;
+    thread->omp_iteration_count               = 0;
+    thread->omp_synchro_count             = 0;
+    thread->omp_work_end              = 0;
+    thread->omp_run_count                = 0;
+    thread->omp_flag_at_end              = FALSE;
+    thread->omp_flag_at_start            = FALSE;
     
     /* NON-Block global operations variables */
     thread->n_nonblock_glob_in_flight = 0;

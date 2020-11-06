@@ -40,7 +40,7 @@ struct t_omp_queue;
 struct t_omp_queue *create_omp_queue();
 
 void set_omp_master_time( struct t_omp_queue *q, int omp_it, dimemas_timer master_time );
-void set_omp_worker_info_identifier(struct t_omp_queue *queue, int omp_it, int identifier); 
+void set_omp_worker_info_iteration(struct t_omp_queue *queue, int omp_it, int iteration); 
 void set_omp_worker_info_init_master_time(struct t_omp_worker_info * info, dimemas_timer master_time); 
 void set_omp_worker_info_duration(struct t_omp_queue *q, int omp_it, int thread_id, dimemas_timer duration);
 void set_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id);
@@ -54,25 +54,25 @@ bool is_omp_worker_info_ready( struct t_omp_queue *q, int omp_it, int thread_id 
 /**************************
  * For OMP syncronization*
  **************************/
-struct t_omp_worker_syncro_info;
-struct t_omp_queue_syncro;
+struct t_omp_worker_synchro_info;
+struct t_omp_queue_synchro;
 
-struct t_omp_queue_syncro *create_omp_queue_syncro();
+struct t_omp_queue_synchro *create_omp_queue_synchro();
 
-void set_omp_syncro_end_time( struct t_omp_queue_syncro *q, int omp_it, dimemas_timer syncro_end_time );
-void set_omp_worker_syncro_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id);
-void set_omp_worker_syncro_identifier(struct t_omp_queue_syncro *queue, int omp_it, int identifier); 
+void set_omp_synchro_end_time( struct t_omp_queue_synchro *q, int omp_it, dimemas_timer syncro_end_time );
+void set_omp_worker_synchro_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
+void set_omp_worker_synchro_iteration(struct t_omp_queue_synchro *queue, int omp_it, int iteration); 
 
-dimemas_timer get_omp_syncro_end_time( struct t_omp_queue_syncro *q, int omp_it );
+dimemas_timer get_omp_synchro_end_time( struct t_omp_queue_synchro *q, int omp_it );
 
-bool is_omp_worker_syncro_info_ready( struct t_omp_queue_syncro *q, int omp_it, int thread_id );
-bool is_omp_worker_syncro_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id);
+bool is_omp_worker_synchro_info_ready( struct t_omp_queue_synchro *q, int omp_it, int thread_id );
+bool is_omp_worker_synchro_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
 
 /* After Barrier Info*/
 
-void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id);
+void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
 
-bool is_omp_worker_after_barrier_run_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id);
+bool is_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
 
 
 #ifdef __cplusplus
