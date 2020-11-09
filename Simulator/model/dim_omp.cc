@@ -26,10 +26,11 @@
 
 #include <vector>
 #include <map>
+#include <iostream>
+
 #include "types.h"
 #include "dim_omp.h"
 #include "define.h"
-#include <iostream>
 
 using std::vector;
 using std::map;
@@ -42,18 +43,19 @@ struct t_omp_worker_info
         iteration = -1;
         init_master_time = -1.0;
     }
+
     int                             iteration;
     dimemas_timer                   init_master_time;
     map< int, dimemas_timer >       worker_duration;
     map< int, bool>                 worker_printed;
     map< int, bool>                 worker_event_printed;
     map< int, vector< t_event > >   init_worker_events;
-    map< int,  vector< t_event > >  end_worker_events;
+    map< int, vector< t_event > >   end_worker_events;
 };
 
 struct t_omp_queue
 {
-    map< int, struct t_omp_worker_info > winfo;  
+    map< int, struct t_omp_worker_info > winfo;
 };
 
 void set_omp_worker_info_iteration(struct t_omp_queue *q, int omp_it, int iteration) 
@@ -133,7 +135,7 @@ bool is_omp_worker_info_ready( struct t_omp_queue *q, int omp_it, int thread_id 
 /**************************
  * For OMP synchronization*
  **************************/
-struct t_omp_worker_synchro_info
+/*struct t_omp_worker_synchro_info
 {
     t_omp_worker_synchro_info()
     {
@@ -204,10 +206,10 @@ bool is_omp_worker_synchro_printed(struct t_omp_queue_synchro *q, int omp_it, in
 
     return true;
 }
-
+*/
 /* After Barrier Info*/
 
-void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id)
+/*void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id)
 {
     struct t_omp_worker_synchro_info &omp_worker = q->winfo[omp_it];
     omp_worker.run_after_barrier_printed[thread_id] = true;
@@ -222,3 +224,4 @@ bool is_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int 
 
     return true;
 }
+*/

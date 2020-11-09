@@ -54,7 +54,7 @@ bool is_omp_worker_info_ready( struct t_omp_queue *q, int omp_it, int thread_id 
 /**************************
  * For OMP syncronization*
  **************************/
-struct t_omp_worker_synchro_info;
+/*struct t_omp_worker_synchro_info;
 struct t_omp_queue_synchro;
 
 struct t_omp_queue_synchro *create_omp_queue_synchro();
@@ -67,13 +67,13 @@ dimemas_timer get_omp_synchro_end_time( struct t_omp_queue_synchro *q, int omp_i
 
 bool is_omp_worker_synchro_info_ready( struct t_omp_queue_synchro *q, int omp_it, int thread_id );
 bool is_omp_worker_synchro_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
-
+*/
 /* After Barrier Info*/
-
+/*
 void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
 
 bool is_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
-
+*/
 
 #ifdef __cplusplus
 }

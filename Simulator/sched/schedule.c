@@ -742,7 +742,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                             thread->last_paraver,
                                             current_time);
                                 }
-                                else if(thread->task->openmp)
+/*                                else if(thread->task->openmp)
                                 {
                                     if(thread->omp_master_thread
                                         && OMPEventEncoding_Is_OMPMaster_Running(thread->omp_in_block_event))
@@ -762,30 +762,33 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                                 thread->last_paraver,
                                                 current_time);
                                         }
-                                        else{
-                                            thread->omp_iteration_count ++;
+                                        else
+                                        {
+                                            thread->omp_iteration_count++;
                                             set_omp_worker_info_iteration(thread->task->omp_queue, thread->omp_iteration_count, thread->omp_iteration_count);
                                             set_omp_worker_info_duration(thread->task->omp_queue, 
                                                                             thread->omp_iteration_count,
                                                                             thread->threadid,
                                                                             current_time - thread->last_paraver);
 
-                                            for(int i = 0; i <= thread->omp_iteration_count; ++i){                                                
+                                            for(int i = 0; i <= thread->omp_iteration_count; ++i)
+                                            {
                                                 if(is_omp_worker_info_ready(thread->task->omp_queue, i, thread->threadid) &&
-                                                    !is_omp_worker_printed(thread->task->omp_queue,i,thread->threadid)){
+                                                    !is_omp_worker_printed(thread->task->omp_queue,i,thread->threadid))
+                                                {
                                                     dimemas_timer duration = get_omp_worker_duration(thread->task->omp_queue,i,thread->threadid);
-                                                    dimemas_timer start_time = get_omp_master_time(thread->task->omp_queue, i);                                                    
+                                                    dimemas_timer start_time = get_omp_master_time(thread->task->omp_queue, i);
                                                     PARAVER_Running(cpu->unique_number,
                                                         IDENTIFIERS (thread),
                                                         start_time,
                                                         start_time + duration);
-                                                    thread->omp_work_end = start_time + duration;                                                    
-                                                    set_omp_worker_printed(thread->task->omp_queue,i,thread->threadid);                                                    
+                                                    thread->omp_work_end = start_time + duration;
+                                                    set_omp_worker_printed(thread->task->omp_queue,i,thread->threadid);
                                                 }
                                             }
                                         } 
                                     }
-                                }                              
+                                }*/
                                 else if (thread->kernel 
                                         && (CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event) 
                                             || OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)))
@@ -1111,7 +1114,7 @@ next_op:
                                     else if (!OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event) &&
                                                 !OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(thread->omp_in_block_event))
                                     {      
-                                        dimemas_timer start_time = get_omp_synchro_end_time(thread->task->omp_queue_syncro, thread->omp_run_count);
+/*                                        dimemas_timer start_time = get_omp_synchro_end_time(thread->task->omp_queue_syncro, thread->omp_run_count);
                                         t_boolean start, end;
                                         if(action->desc.even.value == 0)
                                         {
@@ -1138,12 +1141,12 @@ next_op:
                                                 thread->omp_work_end,
                                                 action->desc.even.type,
                                                 action->desc.even.value);
-                                        }                                                 
+                                        }*/
                                     }
                                     else if (!OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event) &&
                                         !OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event))
                                     {
-                                        if (is_omp_worker_synchro_info_ready(thread->task->omp_queue_syncro, thread->omp_run_count, thread->threadid) &&
+/*                                        if (is_omp_worker_synchro_info_ready(thread->task->omp_queue_syncro, thread->omp_run_count, thread->threadid) &&
                                             is_omp_worker_after_barrier_run_printed(thread->task->omp_queue_syncro, thread->omp_run_count, thread->threadid))
                                         {
                                             dimemas_timer start_time = get_omp_synchro_end_time(thread->task->omp_queue_syncro, thread->omp_run_count);
@@ -1152,8 +1155,8 @@ next_op:
                                                 start_time,
                                                 action->desc.even.type,
                                                 action->desc.even.value);
-                                        }
-                                    } 
+                                        }*/
+                                    }
                                 }
                                 thread->action = action->next;
                                 READ_free_action(action);
@@ -1797,19 +1800,62 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
     {
         return;
     }
-    int omp_block_begin = OMPEventEncoding_Is_BlockBegin(action->desc.even.value);
 
-    if(thread->omp_master_thread  && 
+    if(thread->omp_master_thread
+        && OMPEventEncoding_Is_OMPMaster_Running(thread->omp_in_block_event))
+    {           
+        PARAVER_Running(cpu->unique_number,
+            IDENTIFIERS (thread),
+            thread->last_paraver,
+            current_time);
+    }
+    else if(thread->omp_worker_thread
+            && OMPEventEncoding_Is_OMPWorker_Running(thread->omp_in_block_event))
+    { 
+        if(!thread->task->first_omp_event_read)
+        {
+            PARAVER_Running(cpu->unique_number,
+                IDENTIFIERS (thread),
+                thread->last_paraver,
+                current_time);
+        }
+        else
+        {
+            thread->omp_iteration_count++;
+            set_omp_worker_info_iteration(thread->task->omp_queue, thread->omp_iteration_count, thread->omp_iteration_count);
+            set_omp_worker_info_duration(thread->task->omp_queue, 
+                                            thread->omp_iteration_count,
+                                            thread->threadid,
+                                            current_time - thread->last_paraver);
+
+            for(int i = 0; i <= thread->omp_iteration_count; ++i)
+            {
+                if(is_omp_worker_info_ready(thread->task->omp_queue, i, thread->threadid) &&
+                    !is_omp_worker_printed(thread->task->omp_queue,i,thread->threadid))
+                {
+                    dimemas_timer duration = get_omp_worker_duration(thread->task->omp_queue,i,thread->threadid);
+                    dimemas_timer start_time = get_omp_master_time(thread->task->omp_queue, i);
+                    PARAVER_Running(cpu->unique_number,
+                        IDENTIFIERS (thread),
+                        start_time,
+                        start_time + duration);
+                    thread->omp_work_end = start_time + duration;
+                    set_omp_worker_printed(thread->task->omp_queue,i,thread->threadid);
+                }
+            }
+        } 
+    }
+    else if(thread->omp_master_thread  && 
             OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
     {
-        thread->omp_synchro_count++;
-        thread->omp_run_count++;
+//        thread->omp_synchro_count++;
+//        thread->omp_run_count++;
         PARAVER_Thread_Sync(cpu->unique_number,
                 IDENTIFIERS(thread),
                 thread->omp_in_block_event.paraver_time,
                 current_time);
-        set_omp_worker_synchro_iteration(thread->task->omp_queue_syncro, thread->omp_synchro_count,thread->omp_synchro_count);    
-        set_omp_synchro_end_time( thread->task->omp_queue_syncro, thread->omp_synchro_count, current_time);
+//        set_omp_worker_synchro_iteration(thread->task->omp_queue_syncro, thread->omp_synchro_count,thread->omp_synchro_count);    
+//        set_omp_synchro_end_time( thread->task->omp_queue_syncro, thread->omp_synchro_count, current_time);
     }
     else if(thread->omp_master_thread   && 
             OMPEventEncoding_Is_OMPWork_Dist(thread->omp_in_block_event))
@@ -1819,7 +1865,7 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
                 thread->omp_in_block_event.paraver_time,
                 current_time);
         if(!thread->task->first_omp_event_read)
-            thread->task->first_omp_event_read = TRUE;      
+            thread->task->first_omp_event_read = TRUE;
         
         thread->omp_iteration_count++;
         set_omp_worker_info_iteration(thread->task->omp_queue, thread->omp_iteration_count, thread->omp_iteration_count);
@@ -1835,27 +1881,28 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
     else if(thread->omp_master_thread 
             && OMPEventEncoding_Is_OMPIdle(thread->omp_in_block_event.type)
             && !OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
-    {   
+    {
         PARAVER_Thread_Sched(cpu->unique_number,
                 IDENTIFIERS(thread),
                 thread->omp_in_block_event.paraver_time,
                 current_time);
-        thread->task->afterbarrier_run_end = thread->omp_in_block_event.paraver_time; 
+//        thread->task->afterbarrier_run_end = thread->omp_in_block_event.paraver_time; 
     }
-    else if(thread->omp_worker_thread &&
+/*    else if(thread->omp_worker_thread &&
             OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
     {
         thread->omp_synchro_count++;
-        for(int i = 0; i <= thread->omp_synchro_count; ++i){                                                
+        for(int i = 0; i <= thread->omp_synchro_count; ++i)
+        {
             if(is_omp_worker_synchro_info_ready(thread->task->omp_queue_syncro, i, thread->threadid) &&
                 !is_omp_worker_synchro_printed(thread->task->omp_queue_syncro,i,thread->threadid))
             {
-                dimemas_timer syncro_end = get_omp_synchro_end_time(thread->task->omp_queue_syncro, i);                                                    
+                dimemas_timer syncro_end = get_omp_synchro_end_time(thread->task->omp_queue_syncro, i);
                 PARAVER_Thread_Sync(cpu->unique_number,
                     IDENTIFIERS(thread),
                     thread->omp_work_end,
-                    syncro_end);                                                  
-                set_omp_worker_synchro_printed(thread->task->omp_queue_syncro,i,thread->threadid);                                                    
+                    syncro_end);
+                set_omp_worker_synchro_printed(thread->task->omp_queue_syncro,i,thread->threadid);
             }
         }
     }
@@ -1863,19 +1910,20 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
         OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(thread->omp_in_block_event))
     {
         thread->omp_run_count++;
-        for(int i = 0; i <= thread->omp_run_count; ++i){                                                
-        if(is_omp_worker_synchro_info_ready(thread->task->omp_queue_syncro, i, thread->threadid) &&
-            !is_omp_worker_after_barrier_run_printed(thread->task->omp_queue_syncro,i,thread->threadid))
+        for(int i = 0; i <= thread->omp_run_count; ++i)
+        {
+            if(is_omp_worker_synchro_info_ready(thread->task->omp_queue_syncro, i, thread->threadid) &&
+                !is_omp_worker_after_barrier_run_printed(thread->task->omp_queue_syncro,i,thread->threadid))
             {
-                dimemas_timer run_start = get_omp_synchro_end_time(thread->task->omp_queue_syncro, i);                                                    
+                dimemas_timer run_start = get_omp_synchro_end_time(thread->task->omp_queue_syncro, i);
                 PARAVER_Running(cpu->unique_number,
                     IDENTIFIERS (thread),
                     run_start,
-                    thread->task->afterbarrier_run_end);                                
-                set_omp_worker_synchro_printed(thread->task->omp_queue_syncro,i,thread->threadid);                                                    
+                    thread->task->afterbarrier_run_end);
+                set_omp_worker_after_barrier_run_printed(thread->task->omp_queue_syncro,i,thread->threadid);
             }
         }
-    }
+    }*/
     thread->omp_in_block_event.type = action->desc.even.type;
     thread->omp_in_block_event.value = action->desc.even.value;
     thread->omp_in_block_event.paraver_time = current_time;
