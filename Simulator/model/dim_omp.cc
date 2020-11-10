@@ -62,7 +62,6 @@ void set_omp_worker_info_iteration(struct t_omp_queue *q, int omp_it, int iterat
 {
     struct t_omp_worker_info &omp_worker = q->winfo[omp_it];
     omp_worker.iteration = iteration;
-
 }
 
 struct t_omp_queue *create_omp_queue()
