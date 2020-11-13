@@ -1030,7 +1030,8 @@ int ClusterEventEncoding_Is_BlockBegin  (long64_t Op);
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value);
 
 /* OMP EvenEncoding calls */
-int OMPEventEncoding_Is_OMPBlock(long64_t type);
+int OMPEventEncoding_Is_OMPType(long64_t type);
+int OMPEventEncoding_Is_OMPBlock ( long64_t type );
 int OMPEventEncoding_Is_BlockBegin ( long64_t Op );
 int OMPEventEncoding_Is_OMPSync(struct t_event_block event);
 int OMPEventEncoding_Is_OMPSched(struct t_event_block event);

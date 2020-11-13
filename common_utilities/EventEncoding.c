@@ -1668,7 +1668,8 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event)
 	return FALSE;
 }
 
-#define NUM_OMPTYPES  14
+#define NUM_OMPTYPES   14
+#define NUM_OMP_BLOCKS 10
 CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
 
     { OMP_CALL_EV,          		           OMP_CALL_LABEL },           
@@ -1686,10 +1687,11 @@ CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
     { OMP_EXE_TASK_FXN_LINE_N_FILE,        OMP_EXE_TASK_FXN_LINE_N_FILE_LABEL },
     { OMP_INIT_TASK_FXN_LINE_N_FILE,       OMP_INIT_TASK_FXN_LINE_N_FILE_LABEL }
 };
+
 /** 
- * To check either the event is of  OMP block or not
+ * To check either the event is of OMP Type
 */
-Boolean OMPEventEncoding_Is_OMPBlock ( long64_t type )
+Boolean OMPEventEncoding_Is_OMPType ( long64_t type )
 {
     for(int i = 0; i < NUM_OMPTYPES; ++i)
     {
@@ -1699,6 +1701,18 @@ Boolean OMPEventEncoding_Is_OMPBlock ( long64_t type )
     return (FALSE);
 }
 
+/** 
+ * To check either the event is of OMP Block
+*/
+Boolean OMPEventEncoding_Is_OMPBlock ( long64_t type )
+{
+    for(int i = 0; i < NUM_OMP_BLOCKS; ++i)
+    {
+	    if(type == (long64_t) OMPType_Table[i].Type)    
+            return (TRUE);  
+    }
+    return (FALSE);
+}
 
 Boolean OMPEventEncoding_Is_BlockBegin ( long64_t Op )
 {
@@ -1782,7 +1796,7 @@ Boolean OMPEventEncoding_Is_OMPWork_Dist ( struct t_event_block event )
 
 
 /**
- * Scheduling and fork join 
+ * Worksharing or other OpenMP calls translated to Scheduling State
 */
 Boolean OMPEventEncoding_Is_OMPSched (struct t_event_block event)
 {
