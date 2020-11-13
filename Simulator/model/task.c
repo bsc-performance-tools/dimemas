@@ -1121,17 +1121,17 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     if (task->accelerator && task->threads_count == thread_id + 1)
     {	/*	Kernel thread in accelerator task it's always last	*/
         thread->kernel = TRUE;
-        thread->host	 = FALSE;
+        thread->host   = FALSE;
     }
     else if (task->accelerator && thread_id == 0)
     {	/*	It's not an accelerator task	*/
         thread->kernel = FALSE;
-        thread->host	 = TRUE;
+        thread->host   = TRUE;
     }
     else
     {
         thread->kernel = FALSE;
-        thread->host	 = FALSE;
+        thread->host   = FALSE;
     }
 
     thread->accelerator_link		 = L_NIL;
@@ -1144,7 +1144,7 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     thread->blckd_in_global_op       = FALSE;
     thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
 
-   /* OpenMp variables */ 
+    /* OpenMP variables */ 
     if(task->openmp && thread_id == 0)
     {
         thread->omp_master_thread = TRUE;
@@ -1163,23 +1163,21 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     thread->omp_in_block_event.type  = 0;
     thread->omp_in_block_event.value = 0;
     thread->omp_in_block_event.paraver_time = (dimemas_timer) 0;
-    thread->omp_iteration_count               = 0;
-    thread->omp_synchro_count             = 0;
-    thread->omp_work_end              = 0;
-    thread->omp_run_count                = 0;
-    thread->omp_flag_at_end              = FALSE;
-    thread->omp_flag_at_start            = FALSE;
+    thread->omp_iteration_count      = 0;
+    thread->omp_last_running_end     = 0;
+    thread->omp_last_synchro_end     = 0;
+    thread->omp_flag_at_end          = FALSE;
+    thread->omp_flag_at_start        = FALSE;
     
     /* NON-Block global operations variables */
     thread->n_nonblock_glob_in_flight = 0;
-    thread->n_nonblock_glob_waiting = 0;
-    thread->n_nonblock_glob_done = 0;
-    thread->nb_glob_index = 0;
-    thread->nb_glob_index_master = 0;
+    thread->n_nonblock_glob_waiting   = 0;
+    thread->n_nonblock_glob_done      = 0;
+    thread->nb_glob_index             = 0;
+    thread->nb_glob_index_master      = 0;
 
     create_queue(&thread->nonblock_glop_done_threads);
     thread->eof_reached = FALSE;
-
 }
 
 struct t_thread *locate_thread_of_task (struct t_task *task, int thid)

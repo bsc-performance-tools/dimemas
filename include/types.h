@@ -991,9 +991,8 @@ struct t_thread
     t_boolean            omp_flag_at_end;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
     int                  omp_iteration_count;
-    int                  omp_synchro_count;
-    int                  omp_run_count;
-    dimemas_timer        omp_work_end;
+    dimemas_timer        omp_last_running_end;
+    dimemas_timer        omp_last_synchro_end;
 
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.
