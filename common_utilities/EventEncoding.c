@@ -1727,6 +1727,12 @@ Boolean OMPEventEncoding_Is_OMPIdle( long64_t Op )
   return FALSE;
 }
 
+Boolean OMPEventEncoding_Is_Parallel_Begin( struct t_even *event )
+{
+  if( event->type == OMP_EXECUTED_PARALLEL_FXN  && event->value > OMP_END_VAL )
+    return TRUE;
+  return FALSE;
+}
 
 Boolean OMPEventEncoding_Is_Outside_OMP( struct t_event_block event )
 {

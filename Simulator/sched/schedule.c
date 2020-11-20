@@ -742,16 +742,13 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                             thread->last_paraver,
                                             current_time);
                                 }
-                                else if( thread->task->openmp )
+                                else if ( thread->omp_worker_thread && 
+                                          ( !thread->task->first_omp_event_read || thread->omp_in_block_event.type == 0 ) )
                                 {
-                                    if( thread->omp_master_thread
-                                        && OMPEventEncoding_Is_Outside_OMP( thread->omp_in_block_event ) )
-                                    {
-                                        PARAVER_Running( cpu->unique_number,
-                                                         IDENTIFIERS (thread),
-                                                         thread->last_paraver,
-                                                         current_time );
-                                    }
+                                    PARAVER_Not_Created(cpu->unique_number,
+                                            IDENTIFIERS (thread),
+                                            thread->last_paraver,
+                                            current_time);
                                 }
                                 else if (thread->kernel 
                                         && (CUDAEventEconding_Is_CUDALaunch(thread->acc_in_block_event) 
@@ -770,9 +767,9 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                 {
                                     /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
                                 }
-                                else if(thread->omp_master_thread || thread->omp_worker_thread
-                                        && OMPEventEncoding_Is_OMPType(thread->omp_in_block_event.type)
-                                        && OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
+                                else if( ( thread->omp_master_thread || thread->omp_worker_thread )
+                                         && OMPEventEncoding_Is_OMPType( thread->omp_in_block_event.type )
+                                         && OMPEventEncoding_Is_BlockBegin( thread->omp_in_block_event.value ) )
                                 {
                                     //Do not throw anything if it is inside ompblock
                                 }
@@ -1706,6 +1703,9 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
         return;
     }
 
+    if( OMPEventEncoding_Is_Parallel_Begin( &action->desc.even ) )
+        ++thread->omp_iteration_count;
+
     if( thread->omp_master_thread )
     {
         if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
@@ -1731,7 +1731,6 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
             if(!thread->task->first_omp_event_read)
                 thread->task->first_omp_event_read = TRUE;
             
-            thread->omp_iteration_count++;
             set_omp_worker_info_iteration(thread->task->omp_queue, thread->omp_iteration_count, thread->omp_iteration_count);
             set_omp_master_time(thread->task->omp_queue, thread->omp_iteration_count, current_time);
         }
@@ -1765,7 +1764,6 @@ void treat_omp_events(struct t_thread *thread, struct t_action *action)
             }
             else
             {
-                thread->omp_iteration_count++;
                 set_omp_worker_info_iteration(thread->task->omp_queue, thread->omp_iteration_count, thread->omp_iteration_count);
                 set_omp_worker_info_duration(thread->task->omp_queue, 
                                                 thread->omp_iteration_count,

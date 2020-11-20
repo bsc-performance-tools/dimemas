@@ -1030,18 +1030,19 @@ int ClusterEventEncoding_Is_BlockBegin  (long64_t Op);
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value);
 
 /* OMP EvenEncoding calls */
-int OMPEventEncoding_Is_OMPType(long64_t type);
+int OMPEventEncoding_Is_OMPType( long64_t type );
 int OMPEventEncoding_Is_OMPBlock ( long64_t type );
 int OMPEventEncoding_Is_BlockBegin ( long64_t Op );
-int OMPEventEncoding_Is_OMPSync(struct t_event_block event);
-int OMPEventEncoding_Is_OMPSched(struct t_event_block event);
-int OMPEventEncoding_Is_OMPWork_Dist(struct t_event_block event);
-int OMPEventEncoding_Is_Outside_OMP(struct t_event_block event);
+int OMPEventEncoding_Is_OMPSync( struct t_event_block event );
+int OMPEventEncoding_Is_OMPSched( struct t_event_block event );
+int OMPEventEncoding_Is_OMPWork_Dist( struct t_event_block event );
+int OMPEventEncoding_Is_Outside_OMP( struct t_event_block event );
 int OMPEventEncoding_Is_OMP_Running( struct t_event_block event );
-int OMPEventEncoding_Is_OMPWorker_Running(struct t_event_block event);
+int OMPEventEncoding_Is_OMPWorker_Running( struct t_event_block event );
 int OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event );
-int OMPEventEncoding_Is_OMPWorker_After_Synchro(struct t_event_block event);
-int OMPEventEncoding_Is_OMPIdle (long64_t Op);
+int OMPEventEncoding_Is_OMPWorker_After_Synchro( struct t_event_block event );
+int OMPEventEncoding_Is_OMPIdle ( long64_t Op );
+int OMPEventEncoding_Is_Parallel_Begin( struct t_even *event );
 
 /* CUDA EventEncoding calls	*/
 int CUDAEventEncoding_Is_CUDABlock(long64_t type);
