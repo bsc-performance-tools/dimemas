@@ -539,10 +539,6 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     /* OMP variables  */
     task->master_time        = 0;
     task->omp_queue          = create_omp_queue();
-//    task->omp_queue_syncro   = create_omp_queue_synchro();
-    task->first_omp_event_read    = FALSE;
-//    task->synch_end          = 0;
-//    task->afterbarrier_run_end = 0;
     
     create_queue (&(task->mess_recv));
     create_queue (&(task->recv));

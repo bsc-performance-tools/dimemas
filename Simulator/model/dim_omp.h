@@ -34,6 +34,13 @@
 extern "C" {
 #endif
 
+struct t_omp_event
+{
+    dimemas_timer time;
+    unsigned long long type;
+    unsigned long long value;
+};
+
 struct t_omp_worker_info;
 struct t_omp_queue;
 
@@ -50,30 +57,14 @@ dimemas_timer get_omp_worker_duration( struct t_omp_queue *q, int omp_it, int th
 
 bool is_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id);
 bool is_omp_worker_info_ready( struct t_omp_queue *q, int omp_it, int thread_id );
+bool is_omp_master_info_ready( struct t_omp_queue *q, int omp_it );
 
-/**************************
- * For OMP syncronization*
- **************************/
-/*struct t_omp_worker_synchro_info;
-struct t_omp_queue_synchro;
+void add_omp_worker_event( struct t_omp_queue *q, int omp_it, int thread_id, struct t_omp_event *event );
 
-struct t_omp_queue_synchro *create_omp_queue_synchro();
+void omp_print_event( struct t_thread *thread, struct t_even *event, int iteration );
 
-void set_omp_synchro_end_time( struct t_omp_queue_synchro *q, int omp_it, dimemas_timer syncro_end_time );
-void set_omp_worker_synchro_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
-void set_omp_worker_synchro_iteration(struct t_omp_queue_synchro *queue, int omp_it, int iteration); 
-
-dimemas_timer get_omp_synchro_end_time( struct t_omp_queue_synchro *q, int omp_it );
-
-bool is_omp_worker_synchro_info_ready( struct t_omp_queue_synchro *q, int omp_it, int thread_id );
-bool is_omp_worker_synchro_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
-*/
-/* After Barrier Info*/
-/*
-void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
-
-bool is_omp_worker_after_barrier_run_printed(struct t_omp_queue_synchro *q, int omp_it, int thread_id);
-*/
+void treat_omp_iterations(  struct t_thread *thread, struct t_even *event, dimemas_timer current_time );
+void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time , int iteration);
 
 #ifdef __cplusplus
 }

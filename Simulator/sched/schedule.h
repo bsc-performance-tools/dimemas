@@ -82,6 +82,5 @@ t_boolean more_actions (struct t_thread *thread);
 void SCHEDULER_reschedule (struct t_thread *thread);
 
 void treat_acc_event (struct t_thread *thread, struct t_action *action);
-void treat_omp_events (struct t_thread *thread, struct t_action *action);
 
 #endif
