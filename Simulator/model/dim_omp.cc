@@ -245,7 +245,6 @@ void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_ti
     struct t_cpu *cpu;
     cpu = get_cpu_of_thread( thread );
     
-
     if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
     {
         return;

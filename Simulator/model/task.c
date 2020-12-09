@@ -564,29 +564,16 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
 
 void TASK_OpenMP_Task(struct t_Ptask *Ptask, int taskid, t_boolean omp_task)
 {
-    struct t_task *task;
-    struct t_node *node;
-    struct t_cpu *cpu;
-    int nodeid;
+    struct t_task *task = &Ptask->tasks[ taskid ];
     int *number_cpus_per_node;
-    struct t_link *link;
     
-    //node = get_node_by_id(nodeid);
-
     int n_nodes = SIMULATOR_get_number_of_nodes();
     number_cpus_per_node = SIMULATOR_get_cpus_per_node();
     
     if(n_nodes < Ptask->omp_tasks_count)
-        printf("WARNING:  \n");
+        printf("WARNING: OpenMP tasks greater than number of nodes defined\n");
         
-    for(int i = 0; i < n_nodes; ++i)
-    {
-
-        //printf("number of cpus = %d\n", number_cpus_per_node[i]);
-    }
     task->openmp = omp_task;
-
-    return;
 }
 
 /* 
@@ -2026,19 +2013,21 @@ int* TASK_Map_Filling_Nodes(int task_count)
                         node->has_accelerated_task = TRUE; // One GPU is now occupied
                         break;
                     }
-                } } } } 
+                }
+            }
+        }
+    } 
 
     // STEP 2: Map no-accelerated tasks 
     int last_task_assigned = 0;
-    for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
+    for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; ++i_node)
     {
         int n_cpus_node = n_cpus_per_node[i_node];
         node = get_node_by_id(i_node);
         if (node->accelerator)
         {
-            n_cpus_node--;
+            --n_cpus_node;
         }
-        //for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
         
         for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i_node].Cpus); 
             cpu != C_NIL; 
@@ -2047,16 +2036,14 @@ int* TASK_Map_Filling_Nodes(int task_count)
             while (last_task_assigned < task_count &&
                     task_mapping[last_task_assigned] != -1) 
             {
-                last_task_assigned++;
+                ++last_task_assigned;
             }     
-            if (task_mapping[last_task_assigned] == -1)
+            if (last_task_assigned < task_count && task_mapping[last_task_assigned] == -1)
             {
                 task_mapping[last_task_assigned] = i_node; 
-                last_task_assigned++;   
-                    node->used_node = TRUE;
-                    cpu->cpu_is_used = TRUE;
-               // printf("the cpu is used %d and cpuid = %d in node id %d\n",
-                 //       cpu->cpu_is_used, cpu->cpuid, node->nodeid);
+                ++last_task_assigned;
+                node->used_node = TRUE;
+                cpu->cpu_is_used = TRUE;
             }
         }    
     }
