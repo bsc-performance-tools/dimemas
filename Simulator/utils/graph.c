@@ -4,6 +4,9 @@
 #include <communic.h>
 #include <file_data_access.h>
 
+struct dependency_queue * _graph_map;
+int _nodes;
+
 FILE *log_file;
 int file_index;
 char * log_file_name;

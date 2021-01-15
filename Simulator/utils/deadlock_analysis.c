@@ -7,6 +7,20 @@
 #include <list.h>
 #include <communic.h>
 
+struct t_estats * estats_per_rank;
+
+int are_estats_parsed;
+int total_ranks;
+char * extra_stats_filename;
+
+// Keeps the maximum number of sends and recieves in all ranks. This info is
+// gathered through estats file.
+unsigned int _MAX_SENDS;
+unsigned int _MAX_RECVS;
+unsigned int _MAX_GLOPS;
+
+float _end_analysis_tpercent;
+
 
 int _get_earlier_task_index(int * dep_chain_queue, int deepness, t_boolean ignore_glops);
 

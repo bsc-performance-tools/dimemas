@@ -3,13 +3,6 @@
 
 #include <pthread.h>
 
-pthread_t reader_thread;
-
-volatile struct t_action ***action_buffer;
-volatile int *buffer_heads;
-volatile int *buffer_tails;
-int bsize_per_thread;
-
 /*
  * MACROS PARA LA FUNCION 'show_individual_statistics_pallas'
  */
