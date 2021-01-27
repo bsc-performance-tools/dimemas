@@ -539,10 +539,6 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
     /* OMP variables  */
     task->master_time        = 0;
     task->omp_queue          = create_omp_queue();
-    task->omp_queue_syncro   = create_omp_queue_syncro();
-    task->first_omp_event_read    = FALSE;
-    task->synch_end          = 0;
-    task->afterbarrier_run_end = 0;
     
     create_queue (&(task->mess_recv));
     create_queue (&(task->recv));
@@ -568,29 +564,16 @@ void TASK_New_Task(struct t_Ptask *Ptask, int taskid, t_boolean acc_task)
 
 void TASK_OpenMP_Task(struct t_Ptask *Ptask, int taskid, t_boolean omp_task)
 {
-    struct t_task *task;
-    struct t_node *node;
-    struct t_cpu *cpu;
-    int nodeid;
+    struct t_task *task = &Ptask->tasks[ taskid ];
     int *number_cpus_per_node;
-    struct t_link *link;
     
-    //node = get_node_by_id(nodeid);
-
     int n_nodes = SIMULATOR_get_number_of_nodes();
     number_cpus_per_node = SIMULATOR_get_cpus_per_node();
     
     if(n_nodes < Ptask->omp_tasks_count)
-        printf("WARNING:  \n");
+        printf("WARNING: OpenMP tasks greater than number of nodes defined\n");
         
-    for(int i = 0; i < n_nodes; ++i)
-    {
-
-        //printf("number of cpus = %d\n", number_cpus_per_node[i]);
-    }
     task->openmp = omp_task;
-
-    return;
 }
 
 /* 
@@ -1121,17 +1104,17 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     if (task->accelerator && task->threads_count == thread_id + 1)
     {	/*	Kernel thread in accelerator task it's always last	*/
         thread->kernel = TRUE;
-        thread->host	 = FALSE;
+        thread->host   = FALSE;
     }
     else if (task->accelerator && thread_id == 0)
     {	/*	It's not an accelerator task	*/
         thread->kernel = FALSE;
-        thread->host	 = TRUE;
+        thread->host   = TRUE;
     }
     else
     {
         thread->kernel = FALSE;
-        thread->host	 = FALSE;
+        thread->host   = FALSE;
     }
 
     thread->accelerator_link		 = L_NIL;
@@ -1144,45 +1127,40 @@ void TASK_add_thread_to_task (struct t_task *task, int thread_id)
     thread->blckd_in_global_op       = FALSE;
     thread->acc_in_block_event.paraver_time = (dimemas_timer) 0;
 
-   /* OpenMp variables */ 
+    /* OpenMP variables */ 
     if(task->openmp && thread_id == 0)
     {
-        thread->master_thread = TRUE;
-        thread->worker_thread = FALSE;
-        thread->openmp_thread = TRUE;
+        thread->omp_master_thread = TRUE;
+        thread->omp_worker_thread = FALSE;
     }
     else if(task->openmp && thread_id > 0)
     {
-        thread->master_thread = FALSE;
-        thread->worker_thread = TRUE;
-        thread->openmp_thread = TRUE;
+        thread->omp_master_thread = FALSE;
+        thread->omp_worker_thread = TRUE;
     }
     else 
     {
-        thread->master_thread = FALSE;
-        thread->worker_thread = FALSE;
-        thread->openmp_thread = FALSE;
+        thread->omp_master_thread = FALSE;
+        thread->omp_worker_thread = FALSE;
     }
     thread->omp_in_block_event.type  = 0;
     thread->omp_in_block_event.value = 0;
     thread->omp_in_block_event.paraver_time = (dimemas_timer) 0;
-    thread->work_count               = 0;
-    thread->syncro_count             = 0;
-    thread->ompwork_end              = 0;
-    thread->run_count                = 0;
-    thread->flag_at_end              = FALSE;
-    thread->flag_at_start            = FALSE;
+    thread->omp_iteration_count      = 0;
+    thread->omp_last_running_end     = 0;
+    thread->omp_last_synchro_end     = 0;
+    thread->omp_flag_at_end          = FALSE;
+    thread->omp_flag_at_start        = FALSE;
     
     /* NON-Block global operations variables */
     thread->n_nonblock_glob_in_flight = 0;
-    thread->n_nonblock_glob_waiting = 0;
-    thread->n_nonblock_glob_done = 0;
-    thread->nb_glob_index = 0;
-    thread->nb_glob_index_master = 0;
+    thread->n_nonblock_glob_waiting   = 0;
+    thread->n_nonblock_glob_done      = 0;
+    thread->nb_glob_index             = 0;
+    thread->nb_glob_index_master      = 0;
 
     create_queue(&thread->nonblock_glop_done_threads);
     thread->eof_reached = FALSE;
-
 }
 
 struct t_thread *locate_thread_of_task (struct t_task *task, int thid)
@@ -2035,19 +2013,21 @@ int* TASK_Map_Filling_Nodes(int task_count)
                         node->has_accelerated_task = TRUE; // One GPU is now occupied
                         break;
                     }
-                } } } } 
+                }
+            }
+        }
+    } 
 
     // STEP 2: Map no-accelerated tasks 
     int last_task_assigned = 0;
-    for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; i_node++)
+    for(i_node = 0; i_node < n_nodes && last_task_assigned < task_count; ++i_node)
     {
         int n_cpus_node = n_cpus_per_node[i_node];
         node = get_node_by_id(i_node);
         if (node->accelerator)
         {
-            n_cpus_node--;
+            --n_cpus_node;
         }
-        //for(j_cpu = 0; j_cpu < n_cpus_node && last_task_assigned < task_count; j_cpu++)
         
         for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i_node].Cpus); 
             cpu != C_NIL; 
@@ -2056,16 +2036,14 @@ int* TASK_Map_Filling_Nodes(int task_count)
             while (last_task_assigned < task_count &&
                     task_mapping[last_task_assigned] != -1) 
             {
-                last_task_assigned++;
+                ++last_task_assigned;
             }     
-            if (task_mapping[last_task_assigned] == -1)
+            if (last_task_assigned < task_count && task_mapping[last_task_assigned] == -1)
             {
                 task_mapping[last_task_assigned] = i_node; 
-                last_task_assigned++;   
-                    node->used_node = TRUE;
-                    cpu->cpu_is_used = TRUE;
-               // printf("the cpu is used %d and cpuid = %d in node id %d\n",
-                 //       cpu->cpu_is_used, cpu->cpuid, node->nodeid);
+                ++last_task_assigned;
+                node->used_node = TRUE;
+                cpu->cpu_is_used = TRUE;
             }
         }    
     }

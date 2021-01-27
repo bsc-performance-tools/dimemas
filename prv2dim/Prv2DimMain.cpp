@@ -235,7 +235,7 @@ void CopyRowFile(string InputTraceName, string OutputTraceName)
 
   if ( OutputROWName.compare(InputROWName) == 0)
   {
-    cout << "-> Input and ouput ROW files have the same name. Please use it in your simulations" << endl;
+    cout << "-> Input and output ROW files have the same name. Please use it in your simulations" << endl;
     return;
   }
 

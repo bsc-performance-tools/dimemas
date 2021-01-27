@@ -170,24 +170,24 @@ typedef enum
     DO_WORKSHARE,
     SECTION_WORKSHARE,
     SINGLE_WORKSHARE
-}OMP_Events_Values;
+} OMP_Events_Values;
 
 /* ==========================================================================
    ==== CUDA Event Types
    ========================================================================== */
 
-#define CUDA_LIB_CALL_EV            63000001
-#define CUDA_MEMCPY_SIZE_EV         63000002
-#define CUDA_KERNEL_EV			    63000019
-#define CUDA_KERNEL_SOURCE_EV	    63000119
-#define CUDA_SYNCH_STREAM_EV        63300000
-#define CUDA_TAG					49370
+#define CUDA_LIB_CALL_EV      63000001
+#define CUDA_MEMCPY_SIZE_EV   63000002
+#define CUDA_KERNEL_EV        63000019
+#define CUDA_KERNEL_SOURCE_EV 63000119
+#define CUDA_SYNCH_STREAM_EV  63300000
+#define CUDA_TAG              49370
 
-#define CUDA_LIB_CALL_LABEL         "CUDA library call"
-#define CUDA_MEMCPY_SIZE_LABEL      "cudaMemcpy size"
-#define CUDA_KERNEL_LABEL		    "CUDA Kernel"
-#define CUDA_KERNEL_SOURCE_LABEL    "CUDA Kernel Source Code"
-#define CUDA_SYNCH_STREAM_LABEL     "Synchronized stream (on thread)"
+#define CUDA_LIB_CALL_LABEL      "CUDA library call"
+#define CUDA_MEMCPY_SIZE_LABEL   "cudaMemcpy size"
+#define CUDA_KERNEL_LABEL        "CUDA Kernel"
+#define CUDA_KERNEL_SOURCE_LABEL "CUDA Kernel Source Code"
+#define CUDA_SYNCH_STREAM_LABEL  "Synchronized stream (on thread)"
 
 typedef enum
 {
@@ -1030,16 +1030,19 @@ int ClusterEventEncoding_Is_BlockBegin  (long64_t Op);
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value);
 
 /* OMP EvenEncoding calls */
-int OMPEventEncoding_Is_OMPBlock(long64_t type);
+int OMPEventEncoding_Is_OMPType( long64_t type );
+int OMPEventEncoding_Is_OMPBlock ( long64_t type );
 int OMPEventEncoding_Is_BlockBegin ( long64_t Op );
-int OMPEventEncoding_Is_OMPSync(struct t_event_block event);
-int OMPEventEncoding_Is_OMPSched(struct t_event_block event);
-int OMPEventEncoding_Is_OMPWork_Dist(struct t_event_block event);
-int OMPEventEncoding_Is_OMPTime(struct t_event_block event);
-int OMPEventEncoding_Is_OMPMaster_Running(struct t_event_block event);
-int OMPEventEncoding_Is_OMPWorker_Running(struct t_event_block event);
-int OMPEventEncoding_Is_OMPWorker_Afterbarrier_Running(struct t_event_block event);
-int OMPEventEncoding_Is_OMPIdle (long64_t Op);
+int OMPEventEncoding_Is_OMPSync( struct t_event_block event );
+int OMPEventEncoding_Is_OMPSched( struct t_event_block event );
+int OMPEventEncoding_Is_OMPWork_Dist( struct t_event_block event );
+int OMPEventEncoding_Is_Outside_OMP( struct t_event_block event );
+int OMPEventEncoding_Is_OMP_Running( struct t_event_block event );
+int OMPEventEncoding_Is_OMPWorker_Running( struct t_event_block event );
+int OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event );
+int OMPEventEncoding_Is_OMPWorker_After_Synchro( struct t_event_block event );
+int OMPEventEncoding_Is_OMPIdle ( long64_t Op );
+int OMPEventEncoding_Is_Parallel_Begin( struct t_even *event );
 
 /* CUDA EventEncoding calls	*/
 int CUDAEventEncoding_Is_CUDABlock(long64_t type);

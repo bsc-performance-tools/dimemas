@@ -633,7 +633,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
             && !ClusterEventEncoding_Is_ClusterBlock((INT64) Type) 
             && !CUDAEventEncoding_Is_CUDABlock((INT64) Type) 
             && !OCLEventEncoding_Is_OCLBlock((INT64) Type) 
-            && !OMPEventEncoding_Is_OMPBlock((INT64) Type))
+            && !OMPEventEncoding_Is_OMPType((INT64) Type))
 	{	
     if(debug)
         cout << "Printing Generic Event: " << *CurrentEvent;
@@ -1402,7 +1402,7 @@ bool TaskTranslationInfo::ToDimemas(Event_t CurrentEvent)
 		}
 	}
     /* treating OMP events */
-    if(OMPEventEncoding_Is_OMPBlock(Type) && OpenMP_thread != OpenMP_NULL)
+    if(OMPEventEncoding_Is_OMPType(Type) && OpenMP_thread != OpenMP_NULL)
     {
             if(OMPEventEncoding_Is_BlockBegin(Value))
             {
