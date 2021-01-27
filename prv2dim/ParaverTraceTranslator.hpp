@@ -124,8 +124,8 @@ class ParaverTraceTranslator: public Error
     bool IsDimemasBlockEnd(Event_t EventRecord);
     bool ShareDescriptor(void);
     bool WriteNewFormatHeader(ApplicationDescription_t AppDescription, 
-            int acc_tasks_count, const vector<bool> *acc_tasks, 
-            int omp_tasks_count, const vector<bool> *omp_tasks, 
+            int acc_tasks_count, const vector<bool>& acc_tasks, 
+            int omp_tasks_count, const vector<bool>& omp_tasks, 
             off_t OffsetsOffset = 0);
     bool AcceleratorTasksInfo(INT32 tasks_count);
     bool OpenMPTasksInfo(INT32 tasks_count);

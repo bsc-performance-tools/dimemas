@@ -311,12 +311,12 @@ int main(const int argc, const char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (!Translator->Translate(GenerateFirstIdle,
-                             IprobeMissesThreshold,
-			                 TestMissesThreshold,
-                             BurstCounterType,
-                             BurstCounterFactor,
-                             GenerateMPIInitBarrier))
+  if ( !Translator->Translate( GenerateFirstIdle,
+                               IprobeMissesThreshold,
+			                         TestMissesThreshold,
+                               BurstCounterType,
+                               BurstCounterFactor,
+                               GenerateMPIInitBarrier ) )
   {
     cerr << endl;
     cerr << "Error: " << Translator->GetLastError() << endl;

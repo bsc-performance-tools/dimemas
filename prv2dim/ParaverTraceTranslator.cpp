@@ -433,12 +433,12 @@ ParaverTraceTranslator::SplitCommunications(void)
     return true;
 }
 
-bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDescription,
-        int                 acc_tasks_count,
-        const vector<bool>	*acc_tasks,
-        int                 omp_tasks_count,
-        const vector<bool>	*omp_tasks,
-        off_t               OffsetsOffset)
+bool ParaverTraceTranslator::WriteNewFormatHeader( ApplicationDescription_t AppDescription,
+                                                   int                      acc_tasks_count,
+                                                   const vector<bool>&      acc_tasks,
+                                                   int                      omp_tasks_count,
+                                                   const vector<bool>&      omp_tasks,
+                                                   off_t                    OffsetsOffset )
 {
 #define OFFSETS_OFFSET_RESERVE 15
 
@@ -531,42 +531,41 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
 
     if (acc_tasks_count > 0) 
     {
-        for (UINT32 i = 0; i < acc_tasks->size() && acc_tasks_count > 0; i++) {
-            if (i == 0) {
-                if (fprintf (DimemasTraceFile, "(") < 0)
-                {
-                    SetErrorMessage("error writing header", strerror(errno));
-                    return false;
-                }
-            }
-            if (acc_tasks->at(i))
+        if (fprintf (DimemasTraceFile, "(") < 0)
+        {
+            SetErrorMessage("error writing header", strerror(errno));
+            return false;
+        }
+        for (UINT32 i = 0; i < acc_tasks.size() && acc_tasks_count > 0; ++i) 
+        {
+            if ( acc_tasks[ i ] )
             {
-                if (fprintf (DimemasTraceFile, "%d", i) < 0)
+                if ( fprintf(DimemasTraceFile, "%d", i) < 0 )
                 { //prints task_id
                     SetErrorMessage("error writing header", strerror(errno));
                     return false;
                 }
-                acc_tasks_count--;
-            }
-            if (acc_tasks_count > 0)
-            { //not last element
-                if (fprintf (DimemasTraceFile, ",") < 0)
-                {
-                    SetErrorMessage("error writing header", strerror(errno));
-                    return false;
+
+                --acc_tasks_count;
+
+                if (acc_tasks_count > 0)
+                { //not last element
+                    if (fprintf (DimemasTraceFile, ",") < 0)
+                    {
+                        SetErrorMessage("error writing header", strerror(errno));
+                        return false;
+                    }
                 }
-            }
-            else
-            {	/*  is last element	*/
-                if (fprintf (DimemasTraceFile, ")") < 0)
-                {
-                    SetErrorMessage("error writing header", strerror(errno));
-                    return false;
-                }
-                break;
             }
         }
+
+        if (fprintf (DimemasTraceFile, ")") < 0)
+        {
+            SetErrorMessage("error writing header", strerror(errno));
+            return false;
+        }
     }
+    
     if (fprintf(DimemasTraceFile, ",%d", omp_tasks_count) < 0)
     {	/*	if no omp tasks, just 0 is printed	*/
         SetErrorMessage("error writing header", strerror(errno));
@@ -574,41 +573,39 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
     }
     if (omp_tasks_count > 0) 
     {
-        for (UINT32 i = 0; i < omp_tasks->size() && omp_tasks_count > 0; i++) {
-            if (i == 0) 
+        if (fprintf (DimemasTraceFile, "(") < 0)
+        {
+            SetErrorMessage("error writing header", strerror(errno));
+            return false;
+        }
+
+        for ( UINT32 i = 0; i < omp_tasks.size() && omp_tasks_count > 0; ++i ) 
+        {
+            if ( omp_tasks[ i ] )
             {
-                if (fprintf (DimemasTraceFile, "(") < 0)
-                {
-                    SetErrorMessage("error writing header", strerror(errno));
-                    return false;
-                }
-            }
-            if (omp_tasks->at(i))
-            {
-                if (fprintf (DimemasTraceFile, "%d", i) < 0)
+                if ( fprintf( DimemasTraceFile, "%d", i) < 0 )
                 { //prints task_id
                     SetErrorMessage("error writing header", strerror(errno));
                     return false;
                 }
-                omp_tasks_count--;
-            }
-            if (omp_tasks_count > 0)
-            { //not last element
-                if (fprintf (DimemasTraceFile, ",") < 0)
-                {
-                    SetErrorMessage("error writing header", strerror(errno));
-                    return false;
+                
+                --omp_tasks_count;
+
+                if (omp_tasks_count > 0)
+                { //not last element
+                    if (fprintf (DimemasTraceFile, ",") < 0)
+                    {
+                        SetErrorMessage("error writing header", strerror(errno));
+                        return false;
+                    }
                 }
             }
-            else
-            {	 // is last element
-                if (fprintf (DimemasTraceFile, ")") < 0)
-                {
-                    SetErrorMessage("error writing header", strerror(errno));
-                    return false;
-                }
-                break;
-            }
+        }
+
+        if (fprintf (DimemasTraceFile, ")") < 0)
+        {
+            SetErrorMessage("error writing header", strerror(errno));
+            return false;
         }
     }
 
@@ -623,7 +620,6 @@ bool ParaverTraceTranslator::WriteNewFormatHeader(ApplicationDescription_t AppDe
             }
         }
     }
-
 
     if (fprintf(DimemasTraceFile,"\n") < 0)
     {
@@ -686,13 +682,12 @@ void CheckIdleState(UINT64 CurrentTaskId, UINT64 CurrentThreadId,
 }
 
     bool
-ParaverTraceTranslator::Translate(
-        bool   GenerateFirstIdle,
-        double IprobeMissesThreshold,
-        double TestMissesThreshold,
-        INT32  BurstCounterType,
-        double BurstCounterFactor,
-        bool   GenerateMPIInitBarrier )
+ParaverTraceTranslator::Translate( bool   GenerateFirstIdle,
+                                   double IprobeMissesThreshold,
+                                   double TestMissesThreshold,
+                                   INT32  BurstCounterType,
+                                   double BurstCounterFactor,
+                                   bool   GenerateMPIInitBarrier )
 {
     /* unsigned int CurrentCommunication; */
     vector<ApplicationDescription_t> AppsDescription;
@@ -860,7 +855,7 @@ ParaverTraceTranslator::Translate(
     cout << "WRITING HEADER...";
 
     /* Temporary header! */
-    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, omp_tasks_count, &omp_tasks))
+    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, acc_tasks, omp_tasks_count, omp_tasks))
         return false;
 
     cout << " OK" << endl;
@@ -1310,7 +1305,7 @@ ParaverTraceTranslator::Translate(
         }
     }
 
-    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, &acc_tasks, omp_tasks_count, &omp_tasks, 
+    if(!WriteNewFormatHeader(AppsDescription[0], acc_tasks_count, acc_tasks, omp_tasks_count, omp_tasks, 
                 OffsetsOffset))
     {
         return false;
