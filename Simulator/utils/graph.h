@@ -52,10 +52,6 @@ struct dependency
   dimemas_timer time;   // Instant when the dependency has been added
 };
 
-struct dependency_queue * _graph_map;
-int _nodes;
-
-
 void GRAPH_init(int _nodes);
 void GRAPH_reset();
 void GRAPH_fini();

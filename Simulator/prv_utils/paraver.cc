@@ -37,24 +37,11 @@ extern "C" {
 #endif
 
 #include <math.h>
-
 #include <EventEncoding.h>
-
 #include <define.h>
 #include <types.h>
-
-/*
-#include "cpu.h"
-#include "extern.h"
-#include "fs.h"
-#include "list.h"
-
-#include "subr.h"
-
-*/
 #include "paraver.h"
 #include "paraver_pcf.h"
-
 #include "dimemas_io.h"
 #include "list.h"
 #include "subr.h"
@@ -69,8 +56,8 @@ extern "C" {
 #include <cfloat>
 #include <cstring>
 #include <cerrno>
-
 #include <vector>
+
 using std::vector;
 
 #include <sstream>
@@ -141,11 +128,9 @@ void GenerateParaverHeader(FILE* ParaverTraceFile);
 
 bool CopyParaverRow(const char* output_trace_name);
 
-
 /*
  * Class to collapse the Paraver events generated at the same timestamp
  */
-
 class _EventCollapser
 {
   private:
@@ -180,25 +165,14 @@ class _EventCollapser
                      int        Thread,
                      prv_time_t Timestamp)
     {
-      /* DEBUG
-      cout << "CPU stored = " << this->CPU << " CPU query = " << CPU << endl;
-      cout << "Ptask stored = " << this->Ptask << " Ptask query = " << Ptask << endl;
-      cout << "Task stored = " << this->Task << " Task query = " << Task << endl;
-      cout << "Thread stored = " << this->Thread << " Thread query = " << Thread << endl;
-      cout << "Timestap stored = " << this->Timestamp << " Timestamp query = " << Timestamp << endl;
-      */
-
       if (this->CPU       == CPU    &&
           this->Ptask     == Ptask  &&
           this->Task      == Task   &&
           this->Thread    == Thread &&
           this->Timestamp == Timestamp)
       {
-        // cout << "Comparison TRUE!" << endl;
         return true;
       }
-
-      // cout << "Comparison FALSE!" << endl;
       return false;
     }
 
@@ -247,8 +221,7 @@ static ostringstream to_ascii;
 
 /**
  * Initialization of Paraver trace generation structures
- *
- */
+*/
 void PARAVER_Init(const char   *output_trace,
                   const char   *pcf_insert,
                   dimemas_timer start_time,
@@ -291,8 +264,6 @@ void PARAVER_Init(const char   *output_trace,
     if LE_TIMER (stop_paraver, start_paraver)
     {
       die("Final paraver time must be greater than initial\n");
-      // fprintf (stderr, USAGE, argv[0]);
-      // exit (EXIT_FAILURE);
     }
   }
   paraver_priorities = priorities;
@@ -863,10 +834,6 @@ void PARAVER_Event (int cpu, int ptask, int task, int thread,
   }
 
   TIMER_TO_PRV_TIME_T (time, time_prv);
-
-  /* fprintf (paraver, PA_EVENT_STRING, cpu, ptask, task, thread,
-           temps_final, tipus_final, valor_final); */
-
   if (debug&D_PRV)
   {
     PRINT_TIMER (current_time);
@@ -909,8 +876,8 @@ void PARAVER_Not_Created (int cpu, int ptask, int task, int thread,
 }
 
 void PARAVER_Mem_Transf (int cpu, int ptask, int task, int thread,
-																 dimemas_timer init_time,
-																 dimemas_timer end_time)
+                        dimemas_timer init_time,
+                        dimemas_timer end_time)
 {
 	 VERIFICA_GENERACIO_PARAVER;
 
@@ -938,7 +905,7 @@ void PARAVER_Others (int cpu, int ptask, int task, int thread,
 	VERIFICA_GENERACIO_PARAVER;
 
 	if EQ_TIMER (init_time, end_time)
-		return;
+	  return;
 
 	if (debug&D_PRV)
 	{
@@ -1052,8 +1019,6 @@ void NewState(int cpu, int ptask, int task, int thread,
   }
 
   to_ascii.str("");;
-  // to_ascii << PRV_STATE << ":"; // STATE!
-  // to_ascii << cpu << ":" << ptask+1 << ":" << task+1 << ":" << thread+1 << ":"; // Object
   to_ascii << end_prv << ":";                // Interval
   to_ascii << state;
 
@@ -1072,7 +1037,7 @@ void NewState(int cpu, int ptask, int task, int thread,
                         to_ascii.str());
 }
 
-void NewEvent(int        cpu, int ptask, int task, int thread,
+void NewEvent(int cpu, int ptask, int task, int thread,
               prv_time_t time,
               unsigned long long type, unsigned long long value)
 {
@@ -1092,11 +1057,9 @@ void NewEvent(int        cpu, int ptask, int task, int thread,
                             EventCollapser.timestamp(),
                             to_ascii.str());
     }
-
     /* Reset the event collapser */
     EventCollapser.reset(cpu, ptask, task, thread, time);
   }
-
   EventCollapser.addEvent(type, value);
 }
 
@@ -1158,7 +1121,6 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
     final_paraver_timer = execution_end_time;
   }
 
-  //TIMER_TO_DOUBLE (final_paraver_timer, final_time);
   TIMER_TO_PRV_TIME_T(final_paraver_timer, final_time);
 
   time( &h );
@@ -1166,44 +1128,6 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
   strftime( Date, 80, "(%d/%m/%y at %H:%M)", tm_str );
 
   Header << "#Paraver " << Date << ":" << (prv_time_t) final_time << "_ns" << ":";
-/*
-  unsigned int used_node_count = 0;
-  unsigned int used_cpu_count = 0;
-  int node_id = 0;
-  node = &nodes[node_id];
-
-    while(node_id < nodes_size)
-    {
-        if(nodes[node_id].used_node == TRUE)
-        {
-            used_node_count++;
-        }  
-        node = &nodes[++node_id];
-    }
-    Header <<  used_node_count << "(";
-   node_id = 0;
-   // while(node_id < nodes_size)
-   for(int i = 0; i < nodes_size; i++) 
-   {
-        if(nodes[node_id].used_node == TRUE)
-        {
-            //for(int i = 0; i < count_queue(&(nodes[node_id].Cpus)); i++)
-            
-        for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i].Cpus); 
-            cpu != C_NIL; 
-            cpu = (struct t_cpu *)next_queue(&nodes[i].Cpus))
-            {
-                printf("cpu_is_used %d and cpuid %d\n", cpu->cpu_is_used, cpu->cpuid);
-                if(cpu->cpu_is_used == TRUE)
-                    used_cpu_count++;
-            }
-            if(used_cpu_count !=0)
-            Header << used_cpu_count <<",";
-            used_cpu_count = 0;
-        }  
-        node = &nodes[++node_id];
-    }
-    Header << ")";*/
   /*  
    * Iterate through nodes to print the number of CPUs
    */
@@ -1274,17 +1198,6 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
       {
         Header << ":" << communicator->global_ranks[i]+1; // Tasks ID (Note the ":" before each ID)
       }
-
-      /*
-      Header << (unsigned int) count_queue(&communicator->global_ranks); // Total tasks
-
-      for(global_ranks  = (int*) head_queue(&communicator->global_ranks);
-          global_ranks != NULL;
-          global_ranks  = (int*) next_queue(&communicator->global_ranks))
-      {
-        Header << ":" << (*global_ranks)+1; // Tasks ID (Note the ":" before each ID)
-      }
-      */
       Header << std::endl;
     }
   }
@@ -1315,11 +1228,6 @@ bool CopyParaverRow(const char* output_trace_name)
   else
   {
     strncpy(&input_row_name[strlen(input_row_name)-3],"row", 3);
-
-    /*
-    printf("PCF to be copied = %s\n",
-           input_pcf_name);
-    */
 
     if ( ( input_row_file = IO_fopen(input_row_name, "r")) == NULL)
     {

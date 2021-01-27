@@ -116,7 +116,7 @@ void PCFGeneration::GeneratePCF(string UserSuppliedInputPCF)
 
   if ( InputPCF != NULL && (OutputPCFName.compare(InputPCFName) == 0))
   {
-    cout << "-> Input PCF and ouput PCF have the same name. Please use it in your simulations" << endl;
+    cout << "-> Input PCF and output PCF have the same name. Please use it in your simulations" << endl;
     return;
   }
 

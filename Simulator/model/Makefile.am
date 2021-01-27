@@ -18,6 +18,8 @@ libDimemasModel_la_SOURCES = \
 	communic.h \
 	cpu.c \
 	cpu.h \
+	dim_omp.cc \
+	dim_omp.h \
 	fs.c \
 	fs.h \
 	links.c \

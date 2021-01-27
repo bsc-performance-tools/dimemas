@@ -4,8 +4,7 @@ user interface and the Paraver to Dimemas trace translator, 'prv2dim'.
 You can find the old Dimemas trace format (.trf) to new format (.dim) translator 
 'trf2dim' until Dimemas package version 5.3.0
 
-Dependencies
-============
+## Dependencies
 
 You will need Lex and Yacc compatible packages installed on your system.
 Free source versions of this tools can be obtained at:
@@ -36,8 +35,7 @@ Java 6 (SDK 1.6) or newer is required to properly generate the Dimemas user
 interface.
 
 
-Specific Compilation Options
-============================
+## Specific Compilation Options
 
 There is a wide range of compilation options, to fine tune the simulation.
 Check 'configure --help' for specific compilation options.
@@ -50,8 +48,7 @@ Rest of the options usually regard to very specific simulation facts.Do not
 hesitate to contact us to solve any doubts regarding the specific Dimemas 
 tune.
 
-Dimemas external communications model support
-=============================================
+## Dimemas external communications model support
    
    To extend the Dimemas simulator by using an external communication library,
 please refer to the README file include in the Simulator/lib_extern_model in

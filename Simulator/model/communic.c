@@ -3261,7 +3261,6 @@ void COMMUNIC_general (int value, struct t_thread *thread)
             COMMUNIC_external_resources_COM_TIMER_OUT(thread);
             break;
         case COM_TIMER_OUT_RESOURCES_DED:
-            //COMMUNIC_dedicated_connection_COM_TIMER_OUT(thread);
             COMMUNIC_dedicated_resources_COM_TIMER_OUT(thread);
             break;
         case COM_TIMER_OUT_RESOURCES_ACC:
@@ -5873,20 +5872,13 @@ void really_send_dedicated_connection (struct t_thread               *thread,
            mateix instant de temps. */
         FLOAT_TO_TIMER (t_recursos, tmp_timer);
         ADD_TIMER (current_time, tmp_timer, tmp_timer);
-        EVENT_timer (tmp_timer,
-                NOT_DAEMON,
-                M_COM, thread,
-                COM_TIMER_OUT_RESOURCES_DED);
+        EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_DED);
 
         /* Es programa el final de la comunicació punt a punt. */
         FLOAT_TO_TIMER (ti, tmp_timer);
         ADD_TIMER (current_time, tmp_timer, tmp_timer);
-        thread->event = EVENT_timer (
-                            tmp_timer,
-                            NOT_DAEMON,
-                            M_COM,
-                            thread,
-                            COM_TIMER_OUT);
+        thread->event = 
+            EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT);
 
         if (debug & D_COMM)
         {
@@ -7334,13 +7326,7 @@ static void start_global_op (struct t_thread *thread, int kind)
 
             /* Es programa l'event de final de la reserva dels recursos */
             ADD_TIMER (current_time, temps_recursos, tmp_timer);
-            EVENT_timer (
-                    tmp_timer,
-                    NOT_DAEMON,
-                    M_COM,
-                    thread,
-                    COM_TIMER_GROUP_RESOURCES
-                    );
+            EVENT_timer ( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP_RESOURCES );
             break;
 
         case EXTERNAL_GLOBAL_OP_MODEL:
@@ -7379,13 +7365,7 @@ static void start_global_op (struct t_thread *thread, int kind)
     /* Es programa l'event de final de l'operacio col.lectiva */
     ADD_TIMER (current_time, temps_final, tmp_timer);
 
-    EVENT_timer (
-            tmp_timer,
-            NOT_DAEMON,
-            M_COM,
-            thread,
-            COM_TIMER_GROUP
-            );
+    EVENT_timer (tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
 
     // In this case we do not want to generate any state in the trace
     //
@@ -7756,15 +7736,6 @@ static void close_global_nonblock_communication(struct t_thread *thread)
         }
 
         parent_thread->n_nonblock_glob_in_flight -= 1;
-
-        //printf("%f ENDING (%d:%d) : done=%d waiting=%d flight=%d\n", 
-        //              current_time,
-        //              parent_thread->task->taskid,
-        //              nb_index,
-        //              parent_thread->n_nonblock_glob_done,
-        //              parent_thread->n_nonblock_glob_waiting,
-        //              parent_thread->n_nonblock_glob_in_flight);
-
     }
     extract_from_queue(
             &communicator->nonblock_global_op_threads, (char *)nb_glob_threads);
@@ -7896,15 +7867,6 @@ static void close_global_communication (struct t_thread *thread)
         others->last_paraver = current_time;
         cpu                  = get_cpu_of_thread (others);
 
-        /* JGG (2014/12/18): What is this event????
-           PARAVER_Event (cpu->unique_number,
-           IDENTIFIERS (others),
-           current_time,
-           PARAVER_GROUP_FREE,
-           glop_id);
-           */
-
-
         action         = others->action;
         others->action = action->next;
         READ_free_action(action);
@@ -7923,16 +7885,8 @@ static t_boolean thread_in_communicator (struct t_communicator *comm,
 {
     int  i;
 
-    /*
-       for (
-       taskid  = (int *) head_queue (&comm->global_ranks);
-       taskid != (int *) 0;
-       taskid  = (int *) next_queue (&comm->global_ranks)
-       )
-       */
     for (i = 0; i < comm->size; i++)
     {
-        // if (*taskid == (thread->task->taskid) )
         if ( thread->task->taskid == comm->global_ranks[i] )
         {
             return (TRUE);
@@ -8105,7 +8059,7 @@ void GLOBAL_operation (struct t_thread *thread,
     communicator = locate_communicator (&Ptask->Communicator, comm_id);
     if (communicator == COM_NIL)
     {
-        panic ("Communication start trough an invalid \
+        panic ("Communication start through an invalid \
                 communicator %d to P%02d T%02d (t%02d)\n",
                 comm_id,
                 IDENTIFIERS (thread) );
@@ -8393,7 +8347,6 @@ void GLOBAL_operation (struct t_thread *thread,
     thread->last_paraver = current_time;
 
     ASS_ALL_TIMER (thread->collective_timers.sync_time, current_time);
-
     for (others  = (struct t_thread*) head_queue (threads_queue);
             others != TH_NIL;
             others  = (struct t_thread*) next_queue (threads_queue) )
@@ -8406,9 +8359,7 @@ void GLOBAL_operation (struct t_thread *thread,
                     others->last_paraver,
                     current_time,
                     PRV_BLOCKED_ST
-                    //PRV_BLOCKING_SEND_ST
                     );
-
             others->last_paraver = current_time;
         }
     }

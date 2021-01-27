@@ -176,5 +176,10 @@ t_boolean DATA_ACCES_get_acc_tasks(
         int *acc_tasks_count,
         int **acc_tasks);
 
+t_boolean DATA_ACCES_get_omp_tasks(
+        char *trace_file_location,
+        int *acc_tasks_count,
+        int **omp_tasks);
+
 t_boolean DATA_ACCESS_reload_ptask (
         int ptask_id);

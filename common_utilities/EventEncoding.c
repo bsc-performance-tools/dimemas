@@ -1668,10 +1668,11 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning (struct t_event_block event)
 	return FALSE;
 }
 
-#define NUM_OMPTYPES  12
+#define NUM_OMPTYPES   14
+#define NUM_OMP_BLOCKS 10
 CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
 
-    { OMP_CALL_EV,          		       OMP_CALL_LABEL },           
+    { OMP_CALL_EV,          		           OMP_CALL_LABEL },           
     { OMP_WORKSHARING_EV,                  OMP_WORKSHARING_LABEL },
     { OMP_BARRIER,                         OMP_BARRIER_LABEL },
     { OMP_WORK_EV,                         OMP_WORK_LABEL },
@@ -1686,23 +1687,126 @@ CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
     { OMP_EXE_TASK_FXN_LINE_N_FILE,        OMP_EXE_TASK_FXN_LINE_N_FILE_LABEL },
     { OMP_INIT_TASK_FXN_LINE_N_FILE,       OMP_INIT_TASK_FXN_LINE_N_FILE_LABEL }
 };
+
 /** 
- * To check either the event is of  OMP block or not
+ * To check either the event is of OMP Type
 */
-Boolean OMPEventEncoding_Is_OMPBlock ( long64_t type )
+Boolean OMPEventEncoding_Is_OMPType ( long64_t type )
 {
     for(int i = 0; i < NUM_OMPTYPES; ++i)
     {
-	    if(type == (long64_t) OMPType_Table[i].Type)    
+      if(type == (long64_t) OMPType_Table[i].Type)    
             return (TRUE);  
     }
     return (FALSE);
 }
-/**
- * OMP blocking begining 
+
+/** 
+ * To check either the event is of OMP Block
 */
+Boolean OMPEventEncoding_Is_OMPBlock ( long64_t type )
+{
+    for(int i = 0; i < NUM_OMP_BLOCKS; ++i)
+    {
+      if(type == (long64_t) OMPType_Table[i].Type)    
+            return (TRUE);  
+    }
+    return (FALSE);
+}
+
 Boolean OMPEventEncoding_Is_BlockBegin ( long64_t Op )
 {
-  return( (Op == (long64_t) OMP_END_VAL) ? FALSE : TRUE );
+  return( ( Op == (long64_t) OMP_END_VAL) ? FALSE : TRUE );
+}
+
+
+Boolean OMPEventEncoding_Is_OMPIdle( long64_t Op )
+{
+  if ( Op == OMP_EXECUTED_PARALLEL_FXN )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean OMPEventEncoding_Is_Parallel_Begin( struct t_even *event )
+{
+  if( event->type == OMP_EXECUTED_PARALLEL_FXN  && event->value > OMP_END_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean OMPEventEncoding_Is_Outside_OMP( struct t_event_block event )
+{
+  if ( ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) ||
+       ( event.type == OMP_CALL_EV && event.value == OMP_END_VAL ) )
+    return TRUE;
+  return FALSE;
+}
+
+
+Boolean OMPEventEncoding_Is_OMP_Running( struct t_event_block event )
+{
+  if ( ( event.type == OMP_EXECUTED_PARALLEL_FXN && event.value > OMP_END_VAL ) ||
+       ( event.type == OMP_BARRIER               && event.value == OMP_END_VAL ) )
+    return TRUE;
+  return FALSE;
+}
+
+
+Boolean OMPEventEncoding_Is_OMPWorker_Running( struct t_event_block event )
+{
+  if ((event.type == OMP_EXECUTED_PARALLEL_FXN) && event.value > OMP_END_VAL)
+    return TRUE;
+  return FALSE;
+}
+
+
+Boolean OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event )
+{
+  if ((event.type == OMP_EXECUTED_PARALLEL_FXN) && event.value == OMP_END_VAL)
+    return TRUE;
+  return FALSE;
+}
+
+
+Boolean OMPEventEncoding_Is_OMPWorker_After_Synchro( struct t_event_block event )
+{
+  if(event.type == OMP_BARRIER && event.value == OMP_END_VAL)
+    return TRUE;
+  return FALSE;
+}
+
+
+/**
+ * OMP synchronization 
+*/
+Boolean OMPEventEncoding_Is_OMPSync( struct t_event_block event )
+{
+  if ( event.type == OMP_BARRIER && event.value == OMP_BEGIN_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+
+/**
+ * Scheduling and fork join 
+*/
+Boolean OMPEventEncoding_Is_OMPWork_Dist( struct t_event_block event )
+{
+  if ( event.type == OMP_CALL_EV && event.value == REGION_OPEN )
+    return TRUE;
+  return FALSE;
+}
+
+
+/**
+ * Worksharing or other OpenMP calls translated to Scheduling State
+*/
+Boolean OMPEventEncoding_Is_OMPSched( struct t_event_block event )
+{
+  if ( ( event.type == OMP_WORKSHARING_EV && ( event.value == DO_WORKSHARE || event.value == SINGLE_WORKSHARE ) ) || 
+       ( event.type == OMP_WORK_EV && event.value == OMP_BEGIN_VAL ) ||
+       ( event.type == OMP_SET_NUM_THREADS && event.value == OMP_BEGIN_VAL ) )
+    return TRUE;
+  return FALSE;
 }
 

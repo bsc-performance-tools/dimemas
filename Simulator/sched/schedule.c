@@ -52,6 +52,7 @@
 #include "simulator.h"
 #include "machine.h"
 #include "node.h"
+#include "dim_omp.h"
 
 #include <assert.h>
 
@@ -632,7 +633,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
     register t_nano          ti;
     dimemas_timer             tmp_timer;
     struct t_machine         *machine;
-
+    
     cpu = get_cpu_of_thread (thread);
     node = get_node_of_thread (thread);
     machine = node->machine;
@@ -710,16 +711,16 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                         {
                             action = thread->action;
 
-                            if (thread->idle_block && !thread->kernel && !thread->master)
+                            if (thread->idle_block && !thread->kernel)
                             {
                                 PARAVER_Idle (cpu->unique_number,
                                         IDENTIFIERS (thread),
                                         thread->last_paraver,
                                         current_time);
                             }
-                            else if (thread->idle_block == TRUE)
+                            else if (thread->idle_block == TRUE && thread->task->accelerator)
                             {
-                                PARAVER_Not_Created(cpu->unique_number,
+                                    PARAVER_Not_Created(cpu->unique_number,
                                         IDENTIFIERS (thread),
                                         thread->acc_in_block_event.paraver_time,
                                         current_time);
@@ -733,9 +734,8 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                             thread->last_paraver,
                                             current_time);
                                 }
-
-                                if (thread->kernel && (!thread->first_acc_event_read 
-                                            || thread->acc_in_block_event.value == 0))
+                                else if ((thread->kernel && (!thread->first_acc_event_read 
+                                            || thread->acc_in_block_event.value == 0)))
                                 {	
                                     /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
                                     /* Not created states between blocks in kernel thread	*/
@@ -762,15 +762,16 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                                 {
                                     /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
                                 }
-                                else if ((thread->master || thread->worker)
-                                    && (OMPEventEncoding_Is_OMPBlock(thread->omp_in_block_event.type))
-                                        && OMPEventEncoding_Is_BlockBegin(thread->omp_in_block_event.value))
+                                else if( thread->omp_worker_thread || 
+                                         ( thread->omp_master_thread 
+                                           && OMPEventEncoding_Is_OMPType( thread->omp_in_block_event.type )
+                                           && OMPEventEncoding_Is_BlockBegin( thread->omp_in_block_event.value ) ) )
                                 {
-                                printf("acc-block%ld",thread->omp_in_block_event.type);
-                                    /* Do nothing for these events and values*/
+                                    //Do not throw anything if it is inside ompblock
                                 }
                                 else
-                                {	/*	It's a CPU burst	*/
+                                {
+                                    /*It's a CPU burst*/
                                     PARAVER_Running (cpu->unique_number,
                                             IDENTIFIERS (thread),
                                             thread->last_paraver,
@@ -780,8 +781,7 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                             new_cp_node (thread, CP_WORK);
                         }
                     }
-                }
-                
+                }                
                 thread->last_paraver = current_time;
                 cpu->current_thread  = TH_NIL;
 
@@ -819,7 +819,6 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                     }
                     break;
                 }
-
                 if (thread->doing_busy_wait)
                 {
                     thread->doing_busy_wait = FALSE;
@@ -828,7 +827,6 @@ void SCHEDULER_general (int value, struct t_thread *thread)
                         SCHEDULER_next_thread_to_run (node);
                     break;
                 }
-
 next_op:
                 if (more_actions (thread))
                 {
@@ -1007,15 +1005,17 @@ next_op:
 
                                 /* treat acc events */
                                 treat_acc_event(thread, action);
+                                /* treating OMP events */
+                                treat_omp_iterations( thread, &action->desc.even, current_time );
+                                treat_omp_events( thread, &action->desc.even, current_time, thread->omp_iteration_count );
 
                                 /* Not printing block end if it is a clEnqueueNDRangeKernel because
                                  * it has been printed yet in COMMUNIC_SEND
                                  * Not printing event if kernel needs a previous sync (in barrier)
                                  */
-                                int printing_event = !thread->acc_recv_sync &&
+                                int printing_event = !thread->acc_recv_sync && (thread->task->openmp && !thread->omp_worker_thread) &&
                                     !(OCLEventEncoding_Is_OCLKernelRunning(thread->acc_in_block_event)
                                             && thread->kernel && action->desc.even.value == 0);
-
                                 if (printing_event)
                                 {	/* If it is not an accelerator event that has to wait to be written */
                                     cpu = get_cpu_of_thread(thread);
@@ -1025,19 +1025,21 @@ next_op:
                                             action->desc.even.type,
                                             action->desc.even.value);
                                 }
-                                /* treating OMP events */
-                                treat_omp_events(thread, action);
 
-                                int omp_event = (OMPEventEncoding_Is_OMPBlock(action->desc.even.type));
-                                      // && action->desc.even.value != 0);
-                                if(omp_event)
+                                if( thread->task->openmp && thread->omp_worker_thread )
                                 {
-                                    cpu = get_cpu_of_thread(thread);
-                                    if(thread->worker == TRUE){
-                                    PARAVER_Not_Created(cpu->unique_number,
-                                            IDENTIFIERS (thread),
-                                            action->desc.compute.cpu_time,
-                                            current_time);}
+                                    if( is_omp_master_info_ready( thread->task->omp_queue, thread->omp_iteration_count ) )
+                                    {
+                                        omp_print_event( thread, &action->desc.even, thread->omp_iteration_count);
+                                    }
+                                    else
+                                    {
+                                        struct t_omp_event tmpEvent;
+                                        tmpEvent.time  = current_time;
+                                        tmpEvent.type  = action->desc.even.type;
+                                        tmpEvent.value = action->desc.even.value;
+                                        add_omp_worker_event( thread->task->omp_queue, thread->omp_iteration_count, thread->threadid, &tmpEvent );
+                                    }
                                 }
 
                                 thread->action = action->next;
@@ -1451,7 +1453,6 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu *cpu)
     {
         EVENT_extract_timer (M_SCH, thread_current, &when);
 
-        // action         = (struct t_action *) malloc (sizeof (struct t_action));
         READ_create_action(&action);
 
         action->next   = thread_current->action;
@@ -1464,7 +1465,6 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu *cpu)
         thread_current->put_into_ready = current_time;
 
         SUB_TIMER (account_current->cpu_time, when, account_current->cpu_time);
-
 
         if (thread->idle_block == TRUE)
         {
@@ -1523,8 +1523,6 @@ SCHEDULER_preemption (struct t_thread *thread, struct t_cpu *cpu)
         if ((thread_current->sstask_id > 0) ||
                 (thread_current->sstask_type > 0)) 
         {
-            // action         = (struct t_action *) malloc (sizeof (struct t_action));
-
             READ_create_action(&action);
 
             action->next   = thread_current->action;
@@ -1672,41 +1670,7 @@ t_boolean more_actions (struct t_thread *thread)
     return (TRUE);
 }
 
-/**
- * Treating the OpenMP events
- * If any OpenMP states exist we have to print as they were
- * else we will print the events as they were.
- */
-void treat_omp_events(struct t_thread *thread, struct t_action *action)
-{
-    struct t_cpu *cpu;
-    cpu = get_cpu_of_thread(thread);
-    
-    if(!OMPEventEncoding_Is_OMPBlock(action->desc.even.type)
-            || action->desc.even.value == 0)
-    {
-        return;
-    }
 
-    if(action->desc.even.type == OMP_BARRIER && action->desc.even.value == 1)
-    {
-        PARAVER_Thread_Sync(cpu->unique_number,
-                IDENTIFIERS(thread),
-                current_time,
-                thread->omp_in_block_event.paraver_time);
-    }
-    if((action->desc.even.type == OMP_CALL_EV && action->desc.even.value == 3)
-            || (action->desc.even.type == OMP_SET_NUM_THREADS && action->desc.even.value == 1)
-            || (action->desc.even.type == OMP_WORKSHARING_EV && (action->desc.even.value == 4 ||
-                    action->desc.even.value == 6))
-            || (action->desc.even.type == OMP_WORK_EV && (action->desc.even.value == 1)))
-    {
-        PARAVER_Thread_Sched(cpu->unique_number,
-                IDENTIFIERS(thread),
-                current_time,
-                thread->omp_in_block_event.paraver_time);
-    }
-}
 /***************************************************************
  ** treat_acc_event
  ************************

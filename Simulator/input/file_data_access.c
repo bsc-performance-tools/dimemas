@@ -503,6 +503,95 @@ int DATA_ACCESS_test_routine (int ptask_id)
 
 
 /**
+ * Gets the task_id which exectues OpenMP calls, defined in DIMEMAS trace_file header	
+*/
+ 
+t_boolean DATA_ACCES_get_omp_tasks(char *trace_file_location, int *omp_tasks_count, int **omp_tasks)
+{
+    FILE   *trace_file;
+    char   *header        = NULL;
+    size_t  header_length = 0;
+    ssize_t bytes_read;
+
+    char *omp_tasks_str;
+    *omp_tasks_count = 0;
+
+    if (main_struct.init_flag != 1)
+    {
+        if (!DAP_init_data_access_layer())
+        {
+            return FALSE;
+        }
+    }
+
+    if ( (trace_file = IO_fopen(trace_file_location, "r")) == NULL)
+    {
+        DAP_report_error("unable to open trace file '%s' (%s)",
+                trace_file_location,
+                IO_get_error());
+        return FALSE;
+    }
+    //Obtain the header line 
+    if ( (bytes_read = getline(&header,
+                    &header_length,
+                    trace_file)) == -1)
+    {
+        DAP_report_error("unable to retrieve header line");
+        return FALSE;
+    }
+
+    omp_tasks_str = malloc(bytes_read+1);
+    //* Header format: #DIMEMAS:trace_name:offsets[,offsets_offset]:ptask_info
+    // * Scan the ptask information substring to get OpenMP info
+    // *  format: task_num(task_1_thread_num,...,task_n_thread_num),comms_num, acc_task_num(task_id),omp_task_num(task_id)
+     
+    if (sscanf(header,
+                "#DIMEMAS:\"%*[^\"]\":%*[^:]:%*d(%*[^)]),%*d,%*d,%d(%[^)])",
+                omp_tasks_count,
+                omp_tasks_str) != 2)
+    {
+        if (*omp_tasks_count == 0)
+        {
+            return TRUE;
+        }
+        else
+        {
+            DAP_report_error("wrong header format (openmp)");
+            return FALSE;
+        }
+    }
+
+    if (omp_tasks_str == NULL || *omp_tasks_count <= 0)
+    {
+        return FALSE;
+    }
+
+    char **tasks_list_array;
+    int    tasks_list_array_length, i;
+    char *translate_ptr;
+
+    tasks_list_array = (char **)str_split(omp_tasks_str, ',', &tasks_list_array_length);
+    if (tasks_list_array_length != *omp_tasks_count)
+    {
+        DAP_report_error("wrong OpenMP tasks definition on trace header (openmp)");
+        return FALSE;
+    }
+
+    *omp_tasks = (int *) malloc(tasks_list_array_length*sizeof(int));
+    for (i = 0; i < tasks_list_array_length; i++)
+    {
+        *((*omp_tasks)+i) = (int) strtod(tasks_list_array[i], &translate_ptr);
+
+        if (translate_ptr == tasks_list_array[i])
+        {	//	no element added
+            DAP_report_error("wrong OpenMP tasks definition on trace header (openmp)");
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+/**
  * Gets the task_id which exectues acc calls, defined in DIMEMAS trace_file header	
 */
 t_boolean DATA_ACCES_get_acc_tasks(char *trace_file_location, int *acc_tasks_count, int **acc_tasks)

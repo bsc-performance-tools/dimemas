@@ -775,13 +775,16 @@ struct t_task
     struct t_queue    th_for_out;           /* Awaiting for output link */
 
     t_boolean         io_thread;
-    
+   
+    /* OMP variables */
     t_boolean         openmp;
+    dimemas_timer     master_time;
+    struct t_omp_queue *omp_queue;
 
-    t_boolean		  accelerator;
+    t_boolean		   accelerator;
     struct t_thread   *KernelSync;	/*	Kernel thread of sync	*/
     struct t_thread	  *HostSync;		/*	Host thread of sync	*/
-    int							  KernelByComm;/* Kernel_id indicated in comm_id for global_op */
+    int				   KernelByComm;/* Kernel_id indicated in comm_id for global_op */
 };
 
 struct t_event
@@ -873,11 +876,6 @@ struct t_thread
                     *partner_hd_link;   /* Pointers to non used links (HF-DPEX)*/
     struct t_node   *partner_node;   /* Cal guardar el node desti del missatge */
 
-    /*
-       struct t_link   *in_mem_link;
-       struct t_link   *out_mem_link;
-       */
-
     dimemas_timer    last_paraver;
     t_boolean        loose_cpu;
     int              to_module;
@@ -938,10 +936,6 @@ struct t_thread
     char            *mmapped_file;
     unsigned long   mmap_position;
 
-    //   FILE             *file;
-    //   t_boolean         file_shared;               /* TRUE if sharing file pointer*/
-
-
     struct t_queue    modules;
     struct t_queue    Activity;
     struct t_cp_node *last_cp_node;
@@ -977,7 +971,7 @@ struct t_thread
     // Accelerator variables
     t_boolean			 host; /* Indicates if it's an accelerator host thread	*/
     t_boolean			 kernel; /* Indicates if it's an accelerator kernel thread	*/
-    struct t_link	*accelerator_link; /* Accelerator link for communications	*/
+    struct t_link	     *accelerator_link; /* Accelerator link for communications	*/
     t_boolean			 first_acc_event_read; /* Throws a NOT_CREATED_ST before */
     /* start if it's a kernel thread	*/
     t_boolean			 acc_recv_sync;	/* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
@@ -987,9 +981,15 @@ struct t_thread
     struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
     
     /* variable for omp */
-    t_boolean       master;
-    t_boolean       worker;
+    t_boolean            omp_master_thread;
+    t_boolean            omp_worker_thread;
+    t_boolean            omp_flag_at_start;
+    t_boolean            omp_flag_at_end;
     struct t_event_block omp_in_block_event; /* To control omp states inside omp blocks */
+    int                  omp_iteration_count;
+    dimemas_timer        omp_last_running_end;
+    dimemas_timer        omp_last_synchro_end;
+
     // Non-blocking GLOP variables
     // in_flight: Indicates how many non-block glops are already executing.
     // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.
