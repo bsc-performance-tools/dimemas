@@ -50,13 +50,10 @@ struct t_randomness
 
 extern struct t_randomness randomness;
 
-extern void      RANDOM_Init(void);
+extern void RANDOM_Init( void );
 
-extern t_boolean RANDOM_Init_Distribution(char               *dist_name,
-                                          float               param1,
-                                          float               param2,
-                                          struct t_rand_type *rt);
+extern t_boolean RANDOM_Init_Distribution( char *dist_name, float param1, float param2, struct t_rand_type *rt );
 
-extern double    RANDOM_GenerateRandom(struct t_rand_type *);
+extern double RANDOM_GenerateRandom( struct t_rand_type * );
 
 #endif

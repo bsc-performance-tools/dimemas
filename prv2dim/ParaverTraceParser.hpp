@@ -40,11 +40,11 @@ using std::string;
 using std::vector;
 
 #include <stdio.h>
-// Required for 'off_t' in modern GNU compilers 
-#include <sys/types.h>
-
-#include "ParaverRecord.hpp"
+// Required for 'off_t' in modern GNU compilers
 #include "ParaverHeader.hpp"
+#include "ParaverRecord.hpp"
+
+#include <sys/types.h>
 
 /* Record type codification for GetNextRecord function */
 #define STATE_REC  2
@@ -53,66 +53,68 @@ using std::vector;
 #define GLOBOP_REC 16
 #define ANY_REC    STATE_REC | EVENT_REC | COMM_REC | GLOBOP_REC
 
-class ParaverTraceParser: public Error
+class ParaverTraceParser : public Error
 {
-  private:
+ private:
+  string ParaverTraceName;
+  FILE* ParaverTraceFile;
+  off_t TraceSize;
+  off_t FirstCommunicatorOffset; /* Offset of first communicator */
+  off_t FirstRecordOffset;       /* Offset of first record (without header
+                                  * and communicators) */
 
-    string ParaverTraceName;
-    FILE*  ParaverTraceFile;
-    off_t  TraceSize;
-    off_t  FirstCommunicatorOffset; /* Offset of first communicator */
-    off_t  FirstRecordOffset;       /* Offset of first record (without header
-                                     * and communicators) */
+  bool ParsingInitialized;
 
-    bool   ParsingInitialized;
+  UINT32 CurrentLine;
+  UINT32 FirstRecordLine;
 
-    UINT32 CurrentLine;
-    UINT32 FirstRecordLine;
+  ParaverHeader_t Header;
 
-    ParaverHeader_t Header;
+ public:
+  ParaverTraceParser()
+  {
+    ParsingInitialized = false;
+  };
 
-  public:
-    ParaverTraceParser(){ ParsingInitialized = false; };
+  ParaverTraceParser( string ParaverTraceName, FILE* ParaverTraceFile = NULL );
 
-    ParaverTraceParser(string ParaverTraceName,
-                       FILE*  ParaverTraceFile = NULL);
+  UINT32 GetCurrentLine( void )
+  {
+    return CurrentLine;
+  };
 
-    UINT32 GetCurrentLine(void) { return CurrentLine; };
+  bool InitTraceParsing( void );
 
-    bool InitTraceParsing(void);
+  vector<ApplicationDescription_t> GetApplicationsDescription( void );
+  INT32 GetTimeUnits( void );
 
-    vector<ApplicationDescription_t> GetApplicationsDescription(void);
-    INT32 GetTimeUnits(void);
+  ParaverRecord_t GetNextRecord( void );
+  ParaverRecord_t GetNextRecord( UINT32 RecordTypeMask );
+  ParaverRecord_t GetNextTaskRecord( INT32 TaskId );
+  ParaverRecord_t GetNextThreadRecord( INT32 TaskId, INT32 ThreadId );
 
-    ParaverRecord_t GetNextRecord(void);
-    ParaverRecord_t GetNextRecord(UINT32 RecordTypeMask);
-    ParaverRecord_t GetNextTaskRecord(INT32 TaskId);
-    ParaverRecord_t GetNextThreadRecord(INT32 TaskId, INT32 ThreadId);
+  State_t GetNextState( void );
+  Event_t GetNextEvent( void );
+  Communication_t GetNextCommunication( void );
+  GlobalOp_t GetNextGlobalOp( void );
 
-    State_t         GetNextState(void);
-    Event_t         GetNextEvent(void);
-    Communication_t GetNextCommunication(void);
-    GlobalOp_t      GetNextGlobalOp(void);
+  INT32 GetFilePercentage( void );
 
-    INT32           GetFilePercentage(void);
+  bool Reload( void );
 
-    bool Reload(void);
+ private:
+  ParaverRecord_t NextTraceRecord( UINT32 RecordType );
 
-  private:
+  bool GetAppCommunicators( ApplicationDescription_t AppDescription );
 
-    ParaverRecord_t NextTraceRecord(UINT32 RecordType);
+  INT32 GetLongLine( char** Line );
 
-    bool   GetAppCommunicators(ApplicationDescription_t AppDescription);
+  bool GetTraceLine( char* Line, int LineSize );
 
-    INT32  GetLongLine(char** Line);
-  
-    bool   GetTraceLine(char* Line, int LineSize);
-
-    State_t         ParseState(char* ASCIIState);
-    Event_t         ParseEvent(char* ASCIIEvent);
-    Communication_t ParseCommunication(char* ASCIICommunication);
-    GlobalOp_t      ParseGlobalOp(char* ASCIIGlobalOp);
-
+  State_t ParseState( char* ASCIIState );
+  Event_t ParseEvent( char* ASCIIEvent );
+  Communication_t ParseCommunication( char* ASCIICommunication );
+  GlobalOp_t ParseGlobalOp( char* ASCIIGlobalOp );
 };
 typedef ParaverTraceParser* ParaverTraceParser_t;
 extern int debug;

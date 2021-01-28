@@ -40,6 +40,6 @@
 #define COMMUNIC_BOOST 2
 
 extern struct t_scheduler_actions SCH[];
-extern struct t_communic_actions  COMMUNIC[];
+extern struct t_communic_actions COMMUNIC[];
 
 #endif

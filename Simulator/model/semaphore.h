@@ -37,13 +37,13 @@
 /**
  * Routines defined in file semaphore.c
  **/
-void SEMAPHORE_general(int value, struct t_thread *thread);
+void SEMAPHORE_general( int value, struct t_thread *thread );
 
-void SEMAPHORE_Init(void);
-void SEMAPHORE_End(void);
+void SEMAPHORE_Init( void );
+void SEMAPHORE_End( void );
 
-void SEMAPHORE_signal(int sem_id, struct t_thread *thread);
-void SEMAPHORE_wait(int sem_id, struct t_thread *thread);
-void SEMAPHORE_signal_n(int sem_id, int n, struct t_thread *thread);
+void SEMAPHORE_signal( int sem_id, struct t_thread *thread );
+void SEMAPHORE_wait( int sem_id, struct t_thread *thread );
+void SEMAPHORE_signal_n( int sem_id, int n, struct t_thread *thread );
 
 #endif

@@ -34,7 +34,6 @@
 #define _PARAVERHEADER_H
 
 #include <basic_types.h>
-
 #include <string>
 using std::string;
 #include <vector>
@@ -45,38 +44,43 @@ using std::vector;
 #define MICROSECONDS 0
 #define NANOSECONDS  1
 
-class ParaverHeader: public Error
+class ParaverHeader : public Error
 {
-  private:
-    char*  ASCIIHeader;
-  
-    UINT64 FinalTime;
-    INT32  TimeUnits;
-    
-    INT32         ResourceNumber;
-    bool          ResourceDescriptionPresent;
-    vector<INT32> ResourceDescription;
-  
-    INT32  AppNumber;
-    vector<ApplicationDescription_t> AppsDescription;
-  
-  public:
-    ParaverHeader(char* ASCIIHeader, INT32 HeaderLength);
-  
-    vector<ApplicationDescription_t> GetAppsDescription(void)
-    {
-      return AppsDescription;
-    };
-    
-    UINT64 GetFinalTime(void) { return FinalTime; };
-    INT32  GetTimeUnits(void) { return TimeUnits; };
-    
-  
-  private:
-    
-    bool ProcessFinalTime       (char* ASCIIFinalTime);
-    bool ProcessResourceList    (char* ASCIIRsrcList);
-    bool ProcessApplicationList (char* ASCIIAppList);
+ private:
+  char* ASCIIHeader;
+
+  UINT64 FinalTime;
+  INT32 TimeUnits;
+
+  INT32 ResourceNumber;
+  bool ResourceDescriptionPresent;
+  vector<INT32> ResourceDescription;
+
+  INT32 AppNumber;
+  vector<ApplicationDescription_t> AppsDescription;
+
+ public:
+  ParaverHeader( char* ASCIIHeader, INT32 HeaderLength );
+
+  vector<ApplicationDescription_t> GetAppsDescription( void )
+  {
+    return AppsDescription;
+  };
+
+  UINT64 GetFinalTime( void )
+  {
+    return FinalTime;
+  };
+  INT32 GetTimeUnits( void )
+  {
+    return TimeUnits;
+  };
+
+
+ private:
+  bool ProcessFinalTime( char* ASCIIFinalTime );
+  bool ProcessResourceList( char* ASCIIRsrcList );
+  bool ProcessApplicationList( char* ASCIIAppList );
 };
 typedef ParaverHeader* ParaverHeader_t;
 

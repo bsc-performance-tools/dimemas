@@ -33,14 +33,13 @@
 #ifndef _PARAVERAPPLICATIONDESCRIPTION_H
 #define _PARAVERAPPLICATIONDESCRIPTION_H
 
-#include <basic_types.h>
-#include <Error.hpp>
-
 #include "ParaverCommunicator.hpp"
 
+#include <Error.hpp>
+#include <basic_types.h>
 #include <ostream>
-using std::ostream;
 using std::endl;
+using std::ostream;
 #include <vector>
 using std::vector;
 
@@ -50,91 +49,109 @@ using std::vector;
 
 class TaskDescription
 {
-  private:
-    INT32 TaskId;
-    INT32 ThreadCount;
-    INT32 Node;
-  public:
-    TaskDescription(INT32 TaskId, INT32 ThreadCount, INT32 Node = 0)
-    {
-      this->TaskId      = TaskId;
-      this->ThreadCount = ThreadCount;
-      this->Node        = Node;
-    };
-    
-    void Write ( ostream & os ) const;
-    
-    INT32 GetTaskId(void)      							{ return TaskId; };
-    INT32 GetThreadCount(void) 							{ return ThreadCount; };
-    INT32 GetNode(void)        							{ return Node; };
-    void	SetThreadCount(INT32 ThreadCount) { this->ThreadCount =ThreadCount; };
-    
+ private:
+  INT32 TaskId;
+  INT32 ThreadCount;
+  INT32 Node;
+
+ public:
+  TaskDescription( INT32 TaskId, INT32 ThreadCount, INT32 Node = 0 )
+  {
+    this->TaskId      = TaskId;
+    this->ThreadCount = ThreadCount;
+    this->Node        = Node;
+  };
+
+  void Write( ostream& os ) const;
+
+  INT32 GetTaskId( void )
+  {
+    return TaskId;
+  };
+  INT32 GetThreadCount( void )
+  {
+    return ThreadCount;
+  };
+  INT32 GetNode( void )
+  {
+    return Node;
+  };
+  void SetThreadCount( INT32 ThreadCount )
+  {
+    this->ThreadCount = ThreadCount;
+  };
 };
 typedef TaskDescription* TaskDescription_t;
 
-ostream& operator<< (ostream& os, const TaskDescription& Task);
+ostream& operator<<( ostream& os, const TaskDescription& Task );
 
 /*****************************************************************************
  * class ApplicationDescription
  ****************************************************************************/
 
-class ApplicationDescription: public Error
+class ApplicationDescription : public Error
 {
-  private:
-    INT32 ApplicationId;
-    
-    INT32                     TaskCount;
-    vector<TaskDescription_t> TaskInfo;
-    
-    INT32                     CommunicatorCount;
-    vector<Communicator_t>    Communicators;
+ private:
+  INT32 ApplicationId;
 
-  public:
-    ApplicationDescription(INT32 ApplicationId,
-                           INT32 TaskCount,
-                           INT32 CommunicatorCount);
-  
-    ApplicationDescription(INT32 ApplicationId,
-                           INT32 TaskCount,
-                           INT32 CommunicatorCount,
-                           char* ASCIITaskInfo);
-    
-    INT32 GetApplicationId(void)                { return ApplicationId; };
-    INT32 GetTaskCount(void)                    { return TaskCount; };
-    vector<TaskDescription_t> GetTaskInfo(void) { return TaskInfo; };
+  INT32 TaskCount;
+  vector<TaskDescription_t> TaskInfo;
 
-    INT32 GetCommunicatorCount(void)            { return CommunicatorCount; };
-    vector<Communicator_t> GetCommunicators(void) {return Communicators;}
-    INT32 GetCOMM_WORLD_Id(void);
+  INT32 CommunicatorCount;
+  vector<Communicator_t> Communicators;
 
-    void Write ( ostream & os ) const;
-    
-    bool AddTaskDescription(TaskDescription_t NewTaskDescription)
-    {
-      TaskInfo.push_back(NewTaskDescription);
-      return true;
-    };
-    
-    bool AddCommunicator(Communicator_t NewCommunicator)
-    {
-      Communicators.push_back(NewCommunicator);
-      return true;
-    };
-    
-    bool AddTaskDescription(INT32 TaskId, INT32 ThreadCount, INT32 Node = 0)
-    {
-      TaskDescription_t NewTaskDescription = new TaskDescription(TaskId,
-                                                                 ThreadCount,
-                                                                 Node);
-      
-      AddTaskDescription(NewTaskDescription);
-      return true;
-    };
-    
-    
+ public:
+  ApplicationDescription( INT32 ApplicationId, INT32 TaskCount, INT32 CommunicatorCount );
+
+  ApplicationDescription( INT32 ApplicationId, INT32 TaskCount, INT32 CommunicatorCount, char* ASCIITaskInfo );
+
+  INT32 GetApplicationId( void )
+  {
+    return ApplicationId;
+  };
+  INT32 GetTaskCount( void )
+  {
+    return TaskCount;
+  };
+  vector<TaskDescription_t> GetTaskInfo( void )
+  {
+    return TaskInfo;
+  };
+
+  INT32 GetCommunicatorCount( void )
+  {
+    return CommunicatorCount;
+  };
+  vector<Communicator_t> GetCommunicators( void )
+  {
+    return Communicators;
+  }
+  INT32 GetCOMM_WORLD_Id( void );
+
+  void Write( ostream& os ) const;
+
+  bool AddTaskDescription( TaskDescription_t NewTaskDescription )
+  {
+    TaskInfo.push_back( NewTaskDescription );
+    return true;
+  };
+
+  bool AddCommunicator( Communicator_t NewCommunicator )
+  {
+    Communicators.push_back( NewCommunicator );
+    return true;
+  };
+
+  bool AddTaskDescription( INT32 TaskId, INT32 ThreadCount, INT32 Node = 0 )
+  {
+    TaskDescription_t NewTaskDescription = new TaskDescription( TaskId, ThreadCount, Node );
+
+    AddTaskDescription( NewTaskDescription );
+    return true;
+  };
 };
 typedef ApplicationDescription* ApplicationDescription_t;
 
-ostream& operator<< (ostream& os, const ApplicationDescription& App);
+ostream& operator<<( ostream& os, const ApplicationDescription& App );
 
 #endif /* _PARAVERAPPLICATIONDESCRIPTION_H */

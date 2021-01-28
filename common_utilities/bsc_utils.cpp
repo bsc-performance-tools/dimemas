@@ -36,61 +36,62 @@
 
 #include <cstdlib>
 
-bool bsc_tools::isDouble(const char* str)
+bool bsc_tools::isDouble( const char* str )
 {
   char* endptr = 0;
-  strtod(str, &endptr);
+  strtod( str, &endptr );
 
-  if(*endptr != '\0' || endptr == str)
+  if ( *endptr != '\0' || endptr == str )
   {
     return false;
   }
   return true;
 };
 
-bool bsc_tools::isDouble(const std::string& str)
+bool bsc_tools::isDouble( const std::string& str )
 {
-  return bsc_tools::isDouble(str.c_str());
+  return bsc_tools::isDouble( str.c_str() );
 }
 
-double bsc_tools::getDouble(const char* str)
+double bsc_tools::getDouble( const char* str )
 {
-  char* endptr = 0;
-  double result = strtod(str, &endptr);
+  char* endptr  = 0;
+  double result = strtod( str, &endptr );
 
-  if(*endptr != '\0' || endptr == str)
+  if ( *endptr != '\0' || endptr == str )
   {
     return 0;
   }
   return result;
 };
 
-double bsc_tools::getDouble(const std::string& str)
+double bsc_tools::getDouble( const std::string& str )
 {
-  return bsc_tools::getDouble(str.c_str());
+  return bsc_tools::getDouble( str.c_str() );
 }
 
-bool bsc_tools::isLongInt(const char* str)
+bool bsc_tools::isLongInt( const char* str )
 {
-  char *p ;
+  char* p;
 
-  if(str == NULL || ((!isdigit(str[0])) && (str[0] != '-') && (str[0] != '+'))) return false ;
+  if ( str == NULL || ( ( !isdigit( str[ 0 ] ) ) && ( str[ 0 ] != '-' ) && ( str[ 0 ] != '+' ) ) )
+    return false;
 
-  strtol(str, &p, 10);
+  strtol( str, &p, 10 );
 
-  return (*p == 0);
+  return ( *p == 0 );
 }
 
-bool bsc_tools::isLongInt(const std::string& str)
+bool bsc_tools::isLongInt( const std::string& str )
 {
-  return bsc_tools::isLongInt(str.c_str());
+  return bsc_tools::isLongInt( str.c_str() );
 }
 
-long int bsc_tools::getLongInt(const char* str)
+long int bsc_tools::getLongInt( const char* str )
 {
-  if (isLongInt(str))
+  if ( isLongInt( str ) )
   {
-    return strtol(str, NULL, 10);
+    return strtol( str, NULL, 10 );
   }
   else
   {
@@ -98,8 +99,7 @@ long int bsc_tools::getLongInt(const char* str)
   }
 }
 
-long int bsc_tools::getLongInt(const std::string& str)
+long int bsc_tools::getLongInt( const std::string& str )
 {
-  return bsc_tools::getLongInt(str.c_str());
+  return bsc_tools::getLongInt( str.c_str() );
 }
-

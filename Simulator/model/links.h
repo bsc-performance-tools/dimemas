@@ -45,12 +45,9 @@ extern void mem_link_busy(struct t_thread *thread,
                           int              in_out);
 */
 
-extern t_boolean LINKS_get_mem_links(struct t_thread *thread_snd,
-                                     struct t_task   *task_snd,
-                                     struct t_task   *task_rcv);
+extern t_boolean LINKS_get_mem_links( struct t_thread *thread_snd, struct t_task *task_snd, struct t_task *task_rcv );
 
-extern void LINKS_free_mem_link(struct t_link   *link,
-                                struct t_thread *thread);
+extern void LINKS_free_mem_link( struct t_link *link, struct t_thread *thread );
 
 /**
  * Inter-nodes communications: network contention
@@ -62,22 +59,13 @@ extern void link_busy(struct t_thread *thread,
                       int              in_out);
 */
 
-extern t_boolean LINKS_get_network_links(struct t_thread *thread,
-                                         struct t_node   *node,
-                                         struct t_node   *node_partner);
+extern t_boolean LINKS_get_network_links( struct t_thread *thread, struct t_node *node, struct t_node *node_partner );
 
-extern t_boolean LINKS_get_port_links(struct t_thread *thread_s,
-                                struct t_node   *node_s,
-                                struct t_thread *thread_r,
-                                struct t_node   *node_r);
+extern t_boolean LINKS_get_port_links( struct t_thread *thread_s, struct t_node *node_s, struct t_thread *thread_r, struct t_node *node_r );
 
-extern t_boolean LINKS_get_memory_copy_links(struct t_thread *thread,
-                                       struct t_node *node_s,
-                                       struct t_node *node_d);
+extern t_boolean LINKS_get_memory_copy_links( struct t_thread *thread, struct t_node *node_s, struct t_node *node_d );
 
-extern void LINKS_free_network_link(struct t_link *link, struct t_thread *thread);
-
-
+extern void LINKS_free_network_link( struct t_link *link, struct t_thread *thread );
 
 
 /*
@@ -106,15 +94,11 @@ extern void machine_link_busy(struct t_thread  *thread,
                               int               in_out);
 */
 
-extern t_boolean LINKS_get_wan_links(struct t_thread  *thread,
-                                     struct t_machine *s_machine,
-                                     struct t_machine *d_machine);
+extern t_boolean LINKS_get_wan_links( struct t_thread *thread, struct t_machine *s_machine, struct t_machine *d_machine );
 
-extern t_boolean LINKS_get_single_wan_link(struct t_thread  *thread,
-                                           struct t_machine *machine,
-                                           int               in_out);
+extern t_boolean LINKS_get_single_wan_link( struct t_thread *thread, struct t_machine *machine, int in_out );
 
-extern void LINKS_free_wan_link(struct t_link *link, struct t_thread *thread);
+extern void LINKS_free_wan_link( struct t_link *link, struct t_thread *thread );
 
 /**
  * Inter-nodes dedicaed links communications: "VPN" contention
@@ -126,19 +110,13 @@ extern void connection_link_busy(struct t_thread               *thread,
                                  int                            in_out);
 */
 
-extern t_boolean LINKS_get_dedicated_connection_links(struct t_thread               *thread,
-                                                      struct t_dedicated_connection *connection);
+extern t_boolean LINKS_get_dedicated_connection_links( struct t_thread *thread, struct t_dedicated_connection *connection );
 
-extern void LINKS_free_dedicated_connection_link(struct t_link   *link,
-                                                 struct t_thread *thread);
+extern void LINKS_free_dedicated_connection_link( struct t_link *link, struct t_thread *thread );
 
-extern t_boolean LINKS_get_acc_links(struct t_thread *thread,
-                              struct t_task   *task_snd,
-                              struct t_task   *task_rcv);
+extern t_boolean LINKS_get_acc_links( struct t_thread *thread, struct t_task *task_snd, struct t_task *task_rcv );
 
-extern void LINKS_free_acc_link(struct t_link   *link,
-    														struct t_thread *thread);
-
+extern void LINKS_free_acc_link( struct t_link *link, struct t_thread *thread );
 
 
 #endif

@@ -46,156 +46,135 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "schedule.h"
-#include "subr.h"
-
-#include "simulator.h"
 #include "machine.h"
 #include "node.h"
+#include "schedule.h"
+#include "simulator.h"
+#include "subr.h"
+
 #include <read.h>
 
-void PRIO_FIFO_thread_to_ready(struct t_thread *thread)
+void PRIO_FIFO_thread_to_ready( struct t_thread *thread )
 {
-  struct t_node          *node;
-  struct t_cpu           *cpu, *cpu_to_preemp;
+  struct t_node *node;
+  struct t_cpu *cpu, *cpu_to_preemp;
   struct t_SCH_prio_fifo *sch_prio_fifo, *sch_prio_fifo_cur;
-  t_priority              priority;
-  struct t_thread        *thread_current;
-  struct t_machine       *machine;
+  t_priority priority;
+  struct t_thread *thread_current;
+  struct t_machine *machine;
 
-  node    = get_node_of_thread (thread);
+  node    = get_node_of_thread( thread );
   machine = node->machine;
 
-  sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
+  sch_prio_fifo = (struct t_SCH_prio_fifo *)thread->sch_parameters;
   priority      = sch_prio_fifo->priority;
 
-  if (
-    (machine->scheduler.priority_preemptive) &&
-    (select_free_cpu (node, thread) == C_NIL)
-  )
+  if ( ( machine->scheduler.priority_preemptive ) && ( select_free_cpu( node, thread ) == C_NIL ) )
   {
     cpu_to_preemp = C_NIL;
     /* Select processor to preemp */
-    for (
-      cpu  = (struct t_cpu*) head_queue (&(node->Cpus));
-      cpu != C_NIL;
-      cpu  = (struct t_cpu*) next_queue (&(node->Cpus))
-    )
+    for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
     {
       thread_current    = cpu->current_thread;
-      sch_prio_fifo_cur =
-        (struct t_SCH_prio_fifo *) thread_current->sch_parameters;
+      sch_prio_fifo_cur = (struct t_SCH_prio_fifo *)thread_current->sch_parameters;
 
-      if (
-        (sch_prio_fifo_cur->priority > sch_prio_fifo->priority) &&
-        (sch_prio_fifo_cur->priority > priority)
-      )
+      if ( ( sch_prio_fifo_cur->priority > sch_prio_fifo->priority ) && ( sch_prio_fifo_cur->priority > priority ) )
       {
         priority      = sch_prio_fifo_cur->priority;
         cpu_to_preemp = cpu;
       }
     }
 
-    if (cpu_to_preemp != C_NIL)
+    if ( cpu_to_preemp != C_NIL )
     {
-      thread = SCHEDULER_preemption (thread, cpu_to_preemp);
+      thread = SCHEDULER_preemption( thread, cpu_to_preemp );
     }
 
-    if (thread == TH_NIL)
+    if ( thread == TH_NIL )
     {
       return;
     }
   }
 
   /* Puede ser que haya cambiado de thread */
-  sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
+  sch_prio_fifo = (struct t_SCH_prio_fifo *)thread->sch_parameters;
   priority      = sch_prio_fifo->priority;
 
-  if (thread->action == AC_NIL)
+  if ( thread->action == AC_NIL )
   {
-    panic (
-      "Thread P%02d T%02d (t%02d) to ready without actions\n",
-      IDENTIFIERS (thread)
-    );
+    panic( "Thread P%02d T%02d (t%02d) to ready without actions\n", IDENTIFIERS( thread ) );
   }
 
-  if ((thread->loose_cpu) || (machine->scheduler.lost_cpu_on_send))
+  if ( ( thread->loose_cpu ) || ( machine->scheduler.lost_cpu_on_send ) )
   {
-    insert_queue (&(node->ready), (char *) thread, (t_priority) priority);
+    insert_queue( &( node->ready ), (char *)thread, (t_priority)priority );
   }
   else
   {
-    insert_first_queue (&(node->ready), (char *) thread, priority);
+    insert_first_queue( &( node->ready ), (char *)thread, priority );
   }
 }
 
-t_nano PRIO_FIFO_get_execution_time(struct t_thread *thread)
+t_nano PRIO_FIFO_get_execution_time( struct t_thread *thread )
 {
-   struct t_action *action;
-   t_nano         ex_time;
+  struct t_action *action;
+  t_nano ex_time;
 
-   action = thread->action;
-   if (action->action != WORK)
-      panic ("Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS (thread));
-   ex_time = action->desc.compute.cpu_time;
-   thread->action = action->next;
-   READ_free_action(action);
-   return (ex_time);
+  action = thread->action;
+  if ( action->action != WORK )
+    panic( "Trying to work when innaproppiate P%d T%d t%d", IDENTIFIERS( thread ) );
+  ex_time        = action->desc.compute.cpu_time;
+  thread->action = action->next;
+  READ_free_action( action );
+  return ( ex_time );
 }
 
-struct t_thread *PRIO_FIFO_next_thread_to_run(struct t_node *node)
+struct t_thread *PRIO_FIFO_next_thread_to_run( struct t_node *node )
 {
-   return ((struct t_thread *) outFIFO_queue (&(node->ready)));
+  return ( (struct t_thread *)outFIFO_queue( &( node->ready ) ) );
 }
 
-void
-PRIO_FIFO_init_scheduler_parameters(struct t_thread *thread)
+void PRIO_FIFO_init_scheduler_parameters( struct t_thread *thread )
 {
-   struct t_SCH_prio_fifo *sch_prio_fifo;
+  struct t_SCH_prio_fifo *sch_prio_fifo;
 
-   sch_prio_fifo = (struct t_SCH_prio_fifo *) malloc (sizeof(struct t_SCH_prio_fifo));
-   sch_prio_fifo->priority = thread->base_priority;
-   thread->sch_parameters = (char *) sch_prio_fifo;
+  sch_prio_fifo           = (struct t_SCH_prio_fifo *)malloc( sizeof( struct t_SCH_prio_fifo ) );
+  sch_prio_fifo->priority = thread->base_priority;
+  thread->sch_parameters  = (char *)sch_prio_fifo;
 }
 
-void
-PRIO_FIFO_clear_parameters(struct t_thread *thread)
+void PRIO_FIFO_clear_parameters( struct t_thread *thread )
 {
-   struct t_SCH_prio_fifo *sch_prio_fifo;
+  struct t_SCH_prio_fifo *sch_prio_fifo;
 
-   sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
-   sch_prio_fifo->priority = BASE_PRIO;
+  sch_prio_fifo           = (struct t_SCH_prio_fifo *)thread->sch_parameters;
+  sch_prio_fifo->priority = BASE_PRIO;
 }
 
-int
-PRIO_FIFO_info(int info)
+int PRIO_FIFO_info( int info )
 {
-  return (0);
+  return ( 0 );
 }
 
-void
-PRIO_FIFO_init (char *filename, struct t_machine *machine)
+void PRIO_FIFO_init( char *filename, struct t_machine *machine )
 {
-  assert(filename != NULL);
-  assert(machine  != NULL);
+  assert( filename != NULL );
+  assert( machine != NULL );
 }
 
-void
-PRIO_FIFO_copy_parameters(struct t_thread *th_o, struct t_thread *th_d)
+void PRIO_FIFO_copy_parameters( struct t_thread *th_o, struct t_thread *th_d )
 {
-   struct t_SCH_prio_fifo *or,
-                  *de;
+  struct t_SCH_prio_fifo * or, *de;
 
-   or = (struct t_SCH_prio_fifo *) th_o->sch_parameters;
-   de = (struct t_SCH_prio_fifo *) th_d->sch_parameters;
-   de->priority = or->priority;
+  or           = (struct t_SCH_prio_fifo *)th_o->sch_parameters;
+  de           = (struct t_SCH_prio_fifo *)th_d->sch_parameters;
+  de->priority = or->priority;
 }
 
-void
-PRIO_FIFO_free_parameters(struct t_thread *thread)
+void PRIO_FIFO_free_parameters( struct t_thread *thread )
 {
-   struct t_SCH_prio_fifo *sch_prio_fifo;
+  struct t_SCH_prio_fifo *sch_prio_fifo;
 
-   sch_prio_fifo = (struct t_SCH_prio_fifo *) thread->sch_parameters;
-   free (sch_prio_fifo);
+  sch_prio_fifo = (struct t_SCH_prio_fifo *)thread->sch_parameters;
+  free( sch_prio_fifo );
 }

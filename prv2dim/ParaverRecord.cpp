@@ -33,8 +33,8 @@
 #include "ParaverRecord.hpp"
 using std::endl;
 
-#include "EventEncoding.h"
 #include "Dimemas_Generation.h"
+#include "EventEncoding.h"
 
 
 /*****************************************************************************
@@ -48,11 +48,7 @@ ParaverRecord::ParaverRecord()
   this->RecordCount = NewRecordCount();
 }
 
-ParaverRecord::ParaverRecord(UINT64 Timestamp,
-                             INT32  CPU,
-                             INT32  AppId,
-                             INT32  TaskId,
-                             INT32  ThreadId)
+ParaverRecord::ParaverRecord( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId )
 {
   this->Timestamp   = Timestamp;
   this->CPU         = CPU;
@@ -62,49 +58,47 @@ ParaverRecord::ParaverRecord(UINT64 Timestamp,
   this->RecordCount = NewRecordCount();
 }
 
-UINT64 ParaverRecord::NewRecordCount(void)
+UINT64 ParaverRecord::NewRecordCount( void )
 {
   return CurrentRecordCount++;
 }
 
-ostream& operator<< (ostream& os, const ParaverRecord& Rec)
+ostream& operator<<( ostream& os, const ParaverRecord& Rec )
 {
-  Rec.Write(os);
+  Rec.Write( os );
   return os;
 }
 
 /*****************************************************************************
  * class State
  ****************************************************************************/
-State::State(INT32  CPU, INT32  AppId, INT32  TaskId, INT32  ThreadId,
-             UINT64 BeginTime,
-             UINT64 EndTime,
-             INT32  StateValue)
-:ParaverRecord(BeginTime, CPU, AppId, TaskId, ThreadId)
+State::State( INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId, UINT64 BeginTime, UINT64 EndTime, INT32 StateValue )
+  : ParaverRecord( BeginTime, CPU, AppId, TaskId, ThreadId )
 {
   this->TimestampEnd = EndTime;
   this->StateValue   = StateValue;
 }
 
-void State::Write(ostream& os) const
+void State::Write( ostream& os ) const
 {
-  os << "State: " << " [";
+  os << "State: "
+     << " [";
 
-  os.width(3);
-  os.fill('0');
+  os.width( 3 );
+  os.fill( '0' );
   os << TaskId << ":";
 
-  os.width(2);
-  os.fill('0');
+  os.width( 2 );
+  os.fill( '0' );
   os << ThreadId << "]";
 
   os << Timestamp << " T:" << TimestampEnd << " State: " << StateValue;
   os << endl;
 }
 
-ostream& operator<< (ostream& os, const State& Comm)
+ostream& operator<<( ostream& os, const State& Comm )
 {
-  Comm.Write(os);
+  Comm.Write( os );
   return os;
 }
 
@@ -114,54 +108,43 @@ ostream& operator<< (ostream& os, const State& Comm)
 
 INT64 EventTypeValue::CurrentTraceOrder = 0;
 
-bool
-EventTypeValue::IsUserBlockBegin(void)
+bool EventTypeValue::IsUserBlockBegin( void )
 {
-
-  return MPIEventEncoding_Is_UserBlock( (INT64) Type ) &&
-         MPIEventEncoding_Is_BlockBegin( Value );
+  return MPIEventEncoding_Is_UserBlock( (INT64)Type ) && MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool
-EventTypeValue::IsMPIBlockBegin(void)
+bool EventTypeValue::IsMPIBlockBegin( void )
 {
-  return MPIEventEncoding_Is_MPIBlock( (INT64)  Type ) &&
-         MPIEventEncoding_Is_BlockBegin( Value );
+  return MPIEventEncoding_Is_MPIBlock( (INT64)Type ) && MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool
-EventTypeValue::IsUserBlockEnd(void)
+bool EventTypeValue::IsUserBlockEnd( void )
 {
-  return MPIEventEncoding_Is_UserBlock( (INT64) Type ) &&
-         !MPIEventEncoding_Is_BlockBegin( Value );
+  return MPIEventEncoding_Is_UserBlock( (INT64)Type ) && !MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool
-EventTypeValue::IsMPIBlockEnd(void)
+bool EventTypeValue::IsMPIBlockEnd( void )
 {
-  return MPIEventEncoding_Is_MPIBlock( (INT64)  Type ) &&
-         !MPIEventEncoding_Is_BlockBegin( Value );
+  return MPIEventEncoding_Is_MPIBlock( (INT64)Type ) && !MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool
-EventTypeValue::IsCaller(void)
+bool EventTypeValue::IsCaller( void )
 {
-  if (Type >= MPI_CALLER_EV && Type <= MPI_CALLER_EV_END)
+  if ( Type >= MPI_CALLER_EV && Type <= MPI_CALLER_EV_END )
     return true;
 
   return false;
 }
 
-bool
-EventTypeValue::IsCallerLine(void)
+bool EventTypeValue::IsCallerLine( void )
 {
-  if (Type >= MPI_CALLER_LINE_EV && Type <= MPI_CALLER_LINE_EV_END)
+  if ( Type >= MPI_CALLER_LINE_EV && Type <= MPI_CALLER_LINE_EV_END )
     return true;
 
   return false;
 }
 
-INT64 EventTypeValue::NewTraceOrder(void)
+INT64 EventTypeValue::NewTraceOrder( void )
 {
   return CurrentTraceOrder++;
 }
@@ -170,156 +153,152 @@ INT64 EventTypeValue::NewTraceOrder(void)
  * class Event
  ****************************************************************************/
 
-Event::Event(UINT64 Timestamp,
-             INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId)
-:ParaverRecord(Timestamp, CPU, AppId, TaskId, ThreadId)
+Event::Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId ) : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
 {
   ContentPresent = false;
 }
 
-Event::~Event(void)
+Event::~Event( void )
 {
-  if (ContentPresent)
+  if ( ContentPresent )
   {
-    for (unsigned int i = 0; i < Content.size(); i++)
-      delete Content[i];
+    for ( unsigned int i = 0; i < Content.size(); i++ )
+      delete Content[ i ];
   }
 }
 
-void Event::AddTypeValue(INT32 Type, INT64 Value)
+void Event::AddTypeValue( INT32 Type, INT64 Value )
 {
-  EventTypeValue_t newTypeValue = new EventTypeValue(Type, Value);
-  Content.push_back(newTypeValue);
+  EventTypeValue_t newTypeValue = new EventTypeValue( Type, Value );
+  Content.push_back( newTypeValue );
   ContentPresent = true;
 };
 
 UINT32
-Event::GetTypeValueCount(void)
+Event::GetTypeValueCount( void )
 {
-  return (UINT32) Content.size();
+  return (UINT32)Content.size();
 }
 
 INT32
-Event::GetFirstType(void)
+Event::GetFirstType( void )
 {
-  return GetType(0);
+  return GetType( 0 );
 }
 
 INT32
-Event::GetType(UINT32 Index)
+Event::GetType( UINT32 Index )
 {
-  if (Index < Content.size())
-    return Content[Index]->GetType();
+  if ( Index < Content.size() )
+    return Content[ Index ]->GetType();
   else
     return -1;
 }
 
 INT64
-Event::GetFirstValue(void)
+Event::GetFirstValue( void )
 {
-  return GetValue(0);
+  return GetValue( 0 );
 }
 
 INT64
-Event::GetValue(UINT32 Index)
+Event::GetValue( UINT32 Index )
 {
-  if (Index < Content.size())
-    return Content[Index]->GetValue();
+  if ( Index < Content.size() )
+    return Content[ Index ]->GetValue();
   else
     return -1;
 }
 
 INT64
-Event::GetFirstTraceOrder(void)
+Event::GetFirstTraceOrder( void )
 {
-  return GetTraceOrder(0);
+  return GetTraceOrder( 0 );
 }
 
 INT64
-Event::GetTraceOrder(UINT32 Index)
+Event::GetTraceOrder( UINT32 Index )
 {
-  if (Index < Content.size())
-    return Content[Index]->GetTraceOrder();
+  if ( Index < Content.size() )
+    return Content[ Index ]->GetTraceOrder();
   else
     return -1;
 }
 
-bool Event::IsUserBlockBegin(void)
+bool Event::IsUserBlockBegin( void )
 {
-  if (Content.size() < 1)
+  if ( Content.size() < 1 )
     return false;
   else
-    return Content[0]->IsUserBlockBegin();
+    return Content[ 0 ]->IsUserBlockBegin();
 }
 
-bool Event::IsMPIBlockBegin(void)
+bool Event::IsMPIBlockBegin( void )
 {
-  if (Content.size() < 1)
+  if ( Content.size() < 1 )
     return false;
   else
-    return Content[0]->IsMPIBlockBegin();
+    return Content[ 0 ]->IsMPIBlockBegin();
 }
 
-bool Event::IsUserBlockEnd (void)
+bool Event::IsUserBlockEnd( void )
 {
-  if (Content.size() < 1)
+  if ( Content.size() < 1 )
     return false;
   else
-    return Content[0]->IsUserBlockEnd();
+    return Content[ 0 ]->IsUserBlockEnd();
 }
 
-bool Event::IsMPIBlockEnd (void)
+bool Event::IsMPIBlockEnd( void )
 {
-  if (Content.size() < 1)
+  if ( Content.size() < 1 )
     return false;
   else
-    return Content[0]->IsMPIBlockEnd();
+    return Content[ 0 ]->IsMPIBlockEnd();
 }
 
-bool
-Event::IsCaller(void)
+bool Event::IsCaller( void )
 {
-  if (Content.size() < 1)
+  if ( Content.size() < 1 )
     return false;
   else
-    return Content[0]->IsCaller();
+    return Content[ 0 ]->IsCaller();
 }
 
-bool
-Event::IsCallerLine(void)
+bool Event::IsCallerLine( void )
 {
-  if (Content.size() < 1)
+  if ( Content.size() < 1 )
     return false;
   else
-    return Content[0]->IsCallerLine();
+    return Content[ 0 ]->IsCallerLine();
 }
 
-void Event::Write(ostream& os) const
+void Event::Write( ostream& os ) const
 {
   os << "Evt: [";
 
-  os.width(3);
-  os.fill('0');
+  os.width( 3 );
+  os.fill( '0' );
   os << TaskId << ":";
 
-  os.width(2);
-  os.fill('0');
+  os.width( 2 );
+  os.fill( '0' );
   os << ThreadId << "] ";
 
   os << "T:" << Timestamp;
 
-  for (UINT32 i = 0; i < Content.size(); i++)
+  for ( UINT32 i = 0; i < Content.size(); i++ )
   {
-    os << " [" << Content[i]->GetTraceOrder() << "]: ";
-    os << Content[i]->GetType() << ":" << Content[i]->GetValue();
+    os << " [" << Content[ i ]->GetTraceOrder() << "]: ";
+    os << Content[ i ]->GetType() << ":" << Content[ i ]->GetValue();
   }
 
   os << endl;
 }
 
-ostream& operator<< (ostream& os, const Event& Evt)
+ostream& operator<<( ostream& os, const Event& Evt )
 {
-  Evt.Write(os);
+  Evt.Write( os );
   return os;
 }
 
@@ -329,16 +308,21 @@ ostream& operator<< (ostream& os, const Event& Evt)
 
 UINT64 Communication::CurrentTraceOrder = 0;
 
-Communication::Communication(UINT64 LogSend, UINT64 PhySend,
-                             UINT64 LogRecv, UINT64 PhyRecv,
-                             INT32  SrcCPU,    INT32 SrcAppId,
-                             INT32  SrcTaskId, INT32 SrcThreadId,
-                             INT32  DstCPU,    INT32 DstAppId,
-                             INT32  DstTaskId, INT32 DstThreadId,
-                             INT32  Size,
-                             INT32  Tag)
+Communication::Communication( UINT64 LogSend,
+                              UINT64 PhySend,
+                              UINT64 LogRecv,
+                              UINT64 PhyRecv,
+                              INT32 SrcCPU,
+                              INT32 SrcAppId,
+                              INT32 SrcTaskId,
+                              INT32 SrcThreadId,
+                              INT32 DstCPU,
+                              INT32 DstAppId,
+                              INT32 DstTaskId,
+                              INT32 DstThreadId,
+                              INT32 Size,
+                              INT32 Tag )
 {
-
   CPU          = SrcCPU;
   AppId        = SrcAppId;
   TaskId       = SrcTaskId;
@@ -356,33 +340,32 @@ Communication::Communication(UINT64 LogSend, UINT64 PhySend,
   this->Size = Size;
   this->Tag  = Tag;
   TraceOrder = Communication::NewTraceOrder();
-
 }
 
-void Communication::Write(ostream& os) const
+void Communication::Write( ostream& os ) const
 {
   os << "Communication Record" << endl;
 
   os << "Sender: [";
 
-  os.width(3);
-  os.fill('0');
+  os.width( 3 );
+  os.fill( '0' );
   os << TaskId << ":";
 
-  os.width(2);
-  os.fill('0');
+  os.width( 2 );
+  os.fill( '0' );
   os << ThreadId << "]";
 
   os << " LogSend: " << Timestamp << " PhySend: " << PhysicalSend << endl;
 
   os << "Recvr: [";
 
-  os.width(3);
-  os.fill('0');
+  os.width( 3 );
+  os.fill( '0' );
   os << DestTaskId << ":";
 
-  os.width(2);
-  os.fill('0');
+  os.width( 2 );
+  os.fill( '0' );
   os << DestThreadId << "]";
 
   os << " LogRecv: " << LogicalRecv << " PhyRecv: " << PhysicalRecv << endl;
@@ -390,14 +373,14 @@ void Communication::Write(ostream& os) const
   os << "Size: " << Size << " Tag: " << Tag << endl;
 }
 
-UINT64 Communication::NewTraceOrder(void)
+UINT64 Communication::NewTraceOrder( void )
 {
   return CurrentTraceOrder++;
 }
 
-ostream& operator<< (ostream& os, const Communication& Comm)
+ostream& operator<<( ostream& os, const Communication& Comm )
 {
-  Comm.Write(os);
+  Comm.Write( os );
   return os;
 }
 
@@ -405,33 +388,41 @@ ostream& operator<< (ostream& os, const Communication& Comm)
  * class GlobalOp
  ****************************************************************************/
 
-GlobalOp::GlobalOp(UINT64 Timestamp,
-                   INT32  CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId,
-                   INT32  CommunicatorId,
-                   INT32  SendSize, INT32 RecvSize,
-                   INT32  GlobalOpId,
-                   INT32  RootTaskId)
-:ParaverRecord(Timestamp, CPU, AppId, TaskId, ThreadId)
+GlobalOp::GlobalOp( UINT64 Timestamp,
+                    INT32 CPU,
+                    INT32 AppId,
+                    INT32 TaskId,
+                    INT32 ThreadId,
+                    INT32 CommunicatorId,
+                    INT32 SendSize,
+                    INT32 RecvSize,
+                    INT32 GlobalOpId,
+                    INT32 RootTaskId )
+  : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
 {
   this->CommunicatorId = CommunicatorId;
   this->SendSize       = SendSize;
   this->RecvSize       = RecvSize;
   this->GlobalOpId     = GlobalOpId;
-  this->RootTaskId     = RootTaskId+1; /* RootTaskIds are in range 0..(n-1) */
+  this->RootTaskId     = RootTaskId + 1; /* RootTaskIds are in range 0..(n-1) */
 
-  if (this->RootTaskId == this->TaskId)
+  if ( this->RootTaskId == this->TaskId )
     this->Root = true;
   else
     this->Root = false;
 }
 
-GlobalOp::GlobalOp(UINT64 Timestamp,
-                   INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId,
-                   INT32 CommunicatorId,
-                   INT32 SendSize, INT32 RecvSize,
-                   INT32 GlobalOpId,
-                   bool  Root)
-:ParaverRecord(Timestamp, CPU, AppId, TaskId, ThreadId)
+GlobalOp::GlobalOp( UINT64 Timestamp,
+                    INT32 CPU,
+                    INT32 AppId,
+                    INT32 TaskId,
+                    INT32 ThreadId,
+                    INT32 CommunicatorId,
+                    INT32 SendSize,
+                    INT32 RecvSize,
+                    INT32 GlobalOpId,
+                    bool Root )
+  : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
 {
   this->CommunicatorId = CommunicatorId;
   this->SendSize       = SendSize;
@@ -439,37 +430,36 @@ GlobalOp::GlobalOp(UINT64 Timestamp,
   this->GlobalOpId     = GlobalOpId;
   this->Root           = Root;
 
-	if (this->GlobalOpId <= 16)
-		this->Synchronize = 1;
-	else
-		this->Synchronize = 0;
+  if ( this->GlobalOpId <= 16 )
+    this->Synchronize = 1;
+  else
+    this->Synchronize = 0;
 
-  if (this->Root)
+  if ( this->Root )
     this->RootTaskId = 1;
   else
     this->RootTaskId = UNKNOWN_ROOT;
 }
 
-void
-GlobalOp::Write( ostream& os) const
+void GlobalOp::Write( ostream& os ) const
 {
   os << "GlobalOP [";
 
-  os.width(3);
-  os.fill('0');
+  os.width( 3 );
+  os.fill( '0' );
   os << TaskId << ":";
 
-  os.width(2);
-  os.fill('0');
+  os.width( 2 );
+  os.fill( '0' );
   os << ThreadId << "] ";
 
   os << "T: " << Timestamp << " CommId " << CommunicatorId;
   os << " GlobOpId: " << GlobalOpId << " RootTask: " << RootTaskId;
-	os << " Synchronize: " <<  Synchronize << endl;
+  os << " Synchronize: " << Synchronize << endl;
 }
 
-ostream& operator<< (ostream& os, const GlobalOp& GlobOp)
+ostream& operator<<( ostream& os, const GlobalOp& GlobOp )
 {
-  GlobOp.Write(os);
+  GlobOp.Write( os );
   return os;
 }

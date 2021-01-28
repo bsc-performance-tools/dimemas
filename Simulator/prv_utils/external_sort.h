@@ -48,87 +48,65 @@ using std::vector;
 
 class ExternalSort
 {
-  private:
-    static string         TmpDir;
-    static string         TmpFilesPrefix;
-    static string         EventsFileName;
-    static string         StatesAndCommsFileName;
+ private:
+  static string TmpDir;
+  static string TmpFilesPrefix;
+  static string EventsFileName;
+  static string StatesAndCommsFileName;
 
-    //FILE                       *EventsFile;
-    //FILE                       *StatesAndCommsFile;
+  // FILE                       *EventsFile;
+  // FILE                       *StatesAndCommsFile;
 
-    size_t                      TotalRecords;
+  size_t TotalRecords;
 
-    size_t                      CurrentRecord;
-    vector<SimpleParaverRecord> Records;
+  size_t CurrentRecord;
+  vector<SimpleParaverRecord> Records;
 
-    size_t                      TotalEvents;
-    SimpleParaverRecord         CurrentEvent;
+  size_t TotalEvents;
+  SimpleParaverRecord CurrentEvent;
 
-    size_t                      NumFiles;
+  size_t NumFiles;
 
-    ostringstream               TemporalFileNames;
+  ostringstream TemporalFileNames;
 
-  public:
-    FILE                       *EventsFile;
-    FILE                       *StatesAndCommsFile;
+ public:
+  FILE* EventsFile;
+  FILE* StatesAndCommsFile;
 
-    ExternalSort() {};
+  ExternalSort(){};
 
-    void Init();
+  void Init();
 
-    void End();
+  void End();
 
-    void NewRecord(int        TYPE,
-                   int        CPU,
-                   int        Ptask,
-                   int        Task,
-                   int        Thread,
-                   prv_time_t timestamp,
-                   string     ascii_record);
+  void NewRecord( int TYPE, int CPU, int Ptask, int Task, int Thread, prv_time_t timestamp, string ascii_record );
 
-    void GenerateFinalTrace(FILE* DefinitiveTrace);
+  void GenerateFinalTrace( FILE* DefinitiveTrace );
 
-  private:
-
-    void FlushRecords(void);
+ private:
+  void FlushRecords( void );
 
 
+  /*
+  void SelectMinRecord(vector<size_t>&      RemainingRecords,
+                       size_t&              RemainingEvents,
+                       SimpleParaverRecord& SelectedRecord);
+  */
+  void SortStatesAndComms( void );
 
-    /*
-    void SelectMinRecord(vector<size_t>&      RemainingRecords,
-                         size_t&              RemainingEvents,
-                         SimpleParaverRecord& SelectedRecord);
-    */
-    void SortStatesAndComms(void);
+  void Merge( string InFileName1, string InFileName2, string OutFileName );
 
-    void Merge(string InFileName1,
-               string InFileName2,
-               string OutFileName);
+  void Merge( string InFileName1, string InFileName2, FILE* OutFile );
 
-    void Merge(string InFileName1,
-               string InFileName2,
-               FILE* OutFile);
+  void Merge( FILE* InFile1, FILE* InFile2, FILE* OutFile, bool DefinitiveTrace = false );
 
-    void Merge(FILE *InFile1,
-               FILE *InFile2,
-               FILE *OutFile,
-               bool   DefinitiveTrace = false);
-
-    size_t FillBuffer(FILE* InFile,
-                      vector<SimpleParaverRecord>& Buffer,
-                      bool& MoreData);
+  size_t FillBuffer( FILE* InFile, vector<SimpleParaverRecord>& Buffer, bool& MoreData );
 
 
-    bool   LoadRecord(FILE                *InFile,
-                      SimpleParaverRecord& Record);
+  bool LoadRecord( FILE* InFile, SimpleParaverRecord& Record );
 
 
-    void Copy(SimpleParaverRecord&         Record,
-              vector<SimpleParaverRecord>& Buffer,
-              size_t&                      Index,
-              FILE                        *OutFile,
-              bool                         DefinitiveTrace = false);
+  void Copy( SimpleParaverRecord& Record, vector<SimpleParaverRecord>& Buffer, size_t& Index, FILE* OutFile, bool DefinitiveTrace = false );
 };
 
 #endif

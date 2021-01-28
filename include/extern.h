@@ -23,30 +23,29 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <strings.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <time.h>
 #include <fcntl.h>
 #include <stdarg.h>
-
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
 #include <types.h>
+#include <unistd.h>
 
 #ifdef CHECK
-#define T(x) x,
-#define L(x) x
-#define EXTERN
-#else   /* CHECK */
-#define T(x)
-#define L(x)
-#define EXTERN extern
-#endif  /* CHECK */
+#  define T( x ) x,
+#  define L( x ) x
+#  define EXTERN
+#else /* CHECK */
+#  define T( x )
+#  define L( x )
+#  define EXTERN extern
+#endif /* CHECK */
 
 extern struct t_queue Ptask_queue;
 
@@ -61,7 +60,7 @@ extern struct t_queue Interactive_event_queue;
 extern struct t_queue Port_queue;
 
 extern int nodes_size;
-extern struct t_node * nodes;
+extern struct t_node *nodes;
 
 extern struct t_queue Network_queue;
 extern struct t_queue Global_op;
@@ -69,43 +68,43 @@ extern struct t_queue Global_op;
 /* FEC */
 extern struct t_queue Machine_queue;
 extern struct t_queue Dedicated_Connections_queue;
-extern dimemas_timer  execution_end_time; /* Temps final de l'execucio */
+extern dimemas_timer execution_end_time; /* Temps final de l'execucio */
 
 extern dimemas_timer current_time;
 extern dimemas_timer final_statistical_time;
 
-extern int      debug;
-extern int      extra_assert;
-extern int      output_level;
+extern int debug;
+extern int extra_assert;
+extern int output_level;
 
 
-extern int      Ptask_ids;
-extern int      port_ids;
+extern int Ptask_ids;
+extern int port_ids;
 
 extern t_boolean reload_Ptasks;
-extern int       reload_limit;
+extern int reload_limit;
 extern t_boolean reload_done;
 
 extern t_boolean full_out_info;
 extern t_boolean short_out_info;
 extern t_boolean wait_logical_recv; /* defined on 'main.cpp' */
 
-extern char     message_buffer[];
+extern char message_buffer[];
 
-extern const char         *paraver_file;
-extern const char         *paraver_cfg_include_file;
-extern t_boolean     paraver_binary;
-extern t_boolean     paraver_cfg_include;
+extern const char *paraver_file;
+extern const char *paraver_cfg_include_file;
+extern t_boolean paraver_binary;
+extern t_boolean paraver_cfg_include;
 extern dimemas_timer start_paraver;
 extern dimemas_timer stop_paraver;
-extern t_boolean     paraver_initial_timer;
-extern t_boolean     paraver_final_timer;
+extern t_boolean paraver_initial_timer;
+extern t_boolean paraver_final_timer;
 
-extern FILE    *salida_datos;
+extern FILE *salida_datos;
 
 extern t_boolean monitorize_event;
 extern int event_to_monitorize;
-extern FILE    *File_for_Event;
+extern FILE *File_for_Event;
 
 extern t_boolean binary_files;
 extern t_boolean gzip_files;
@@ -115,37 +114,37 @@ extern struct t_scheduler_actions SCH[];
 
 extern struct t_communic_actions COMMUNIC[];
 
-extern int      PARAVER_cpu;
+extern int PARAVER_cpu;
 
-extern const char    *fichero_sch;
-extern const char    *fichero_fs;
-extern const char    *fichero_comm;
-extern const char    *fichero_random;
+extern const char *fichero_sch;
+extern const char *fichero_fs;
+extern const char *fichero_comm;
+extern const char *fichero_random;
 
-extern int      greatest_cpuid;
+extern int greatest_cpuid;
 
-extern long long int  RD_SYNC_message_size;
-extern int            RD_SYNC_use_trace_sync;
+extern long long int RD_SYNC_message_size;
+extern int RD_SYNC_use_trace_sync;
 
 /* Data copy latency global variables. Defined in 'communic.c' */
 
 extern t_boolean DATA_COPY_enabled;
-extern int       DATA_COPY_message_size;
+extern int DATA_COPY_message_size;
 
 /* Round trip time global variables. Defined in 'communic.c' */
 extern t_boolean RTT_enabled;
-extern t_nano   RTT_time;
+extern t_nano RTT_time;
 
 /* Preemptio overheads global variables. Defined in 'task.c' */
 extern t_boolean PREEMP_enabled;
-extern int       PREEMP_cycle;
-extern t_nano   PREEMP_time;
+extern int PREEMP_cycle;
+extern t_nano PREEMP_time;
 
 /* Synthetic burst detection. Defined in 'task.c' */
 extern t_boolean synthetic_bursts;
 
 /* File pointer reserving facility */
-extern void free_reserved_pointer(void);
+extern void free_reserved_pointer( void );
 
 /* Deadlock analysis */
 extern int with_deadlock_analysis;
@@ -180,4 +179,3 @@ extern int asynch_buffer_size_mb;
 /* File SCH_prio_fifo.c */
 /* File SCH_svr4.c */
 /* File SCH_boost.c */
-
