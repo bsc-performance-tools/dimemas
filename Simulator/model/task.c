@@ -474,23 +474,9 @@ void TASK_New_Ptask_predefined_map( char *trace_name, int map_definition, int ta
 void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
 {
   struct t_task *task;
-  struct t_node *node;
-  int nodeid;
-  struct t_link *link;
-
-  node = get_node_by_id( nodeid );
-  if ( NODE_get_acc_node( node ) < Ptask->acc_tasks_count )
-  {
-    die( "Cannot map %d accelerator tasks in %d accelerator nodes \n"
-         "PLEASE CHECK THE CONFIGURATIOIN",
-         Ptask->acc_tasks_count,
-         NODE_get_acc_node( node ) );
-  }
 
   task                = &( Ptask->tasks[ taskid ] );
   task->taskid        = taskid;
-  task->nodeid        = nodeid;
-  task->node          = node;
   task->Ptask         = Ptask;
   task->accelerator   = acc_task;
   task->io_thread     = FALSE;
@@ -519,17 +505,12 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   task->KernelSync   = TH_NIL; // Means no thread is waiting
   task->HostSync     = TH_NIL; // Means no root is waiting
   task->KernelByComm = -1;     // Means no root is waiting for kernel
-
-  return;
 }
 
 void TASK_OpenMP_Task( struct t_Ptask *Ptask, int taskid, t_boolean omp_task )
 {
   struct t_task *task = &Ptask->tasks[ taskid ];
-  int *number_cpus_per_node;
-
-  int n_nodes          = SIMULATOR_get_number_of_nodes();
-  number_cpus_per_node = SIMULATOR_get_cpus_per_node();
+  int n_nodes         = SIMULATOR_get_number_of_nodes();
 
   if ( n_nodes < Ptask->omp_tasks_count )
     printf( "WARNING: OpenMP tasks greater than number of nodes defined\n" );
@@ -1008,18 +989,18 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   task->threads[ thread->threadid ] = thread;
 
   /* Accelerator variables */
-  if ( task->accelerator && task->threads_count == thread_id + 1 )
-  { /*	Kernel thread in accelerator task it's always last	*/
+  if ( task->accelerator && thread_id > 0 )
+  {
     thread->kernel = TRUE;
     thread->host   = FALSE;
   }
   else if ( task->accelerator && thread_id == 0 )
-  { /*	It's not an accelerator task	*/
+  {
     thread->kernel = FALSE;
     thread->host   = TRUE;
   }
   else
-  {
+  { /*	It's not an accelerator task	*/
     thread->kernel = FALSE;
     thread->host   = FALSE;
   }
@@ -1857,12 +1838,11 @@ int *TASK_Map_Filling_Nodes( int task_count )
             task_mapping[ tasks_it ] = i_node;
             n_cpus_per_node[ i_node ]--; // One CPU is now occupied
             node->used_node  = TRUE;
-            cpu->cpu_is_used = TRUE;
             number_of_accelerated_tasks++;
             node->acc.num_gpu_in_node--;
             number_of_gpus_in_node++;
             node->has_accelerated_task = TRUE; // One GPU is now occupied
-            printf( "#_of_accelerated_tasks %d task_id %d cpuID %d nodeID %d\n", number_of_accelerated_tasks, tasks_it, cpu->cpuid, i_node );
+            printf( "#_of_accelerated_tasks %d task_id %d nodeID %d\n", number_of_accelerated_tasks, tasks_it, i_node );
             break;
           }
         }
@@ -1878,11 +1858,9 @@ int *TASK_Map_Filling_Nodes( int task_count )
     node            = get_node_by_id( i_node );
     if ( node->accelerator )
     {
-      for ( int i = 0; i < node->acc.num_gpu_in_node; i++ )
-      {
-        n_cpus_node--;
-      }
+      n_cpus_node = n_cpus_node - node->acc.num_gpu_in_node;
     }
+
     printf( "# %d cpus are in node %d\n", n_cpus_node, node->nodeid );
     for ( struct t_cpu *cpu = (struct t_cpu *)head_queue( &nodes[ i_node ].Cpus ); cpu != C_NIL;
           cpu               = (struct t_cpu *)next_queue( &nodes[ i_node ].Cpus ) )

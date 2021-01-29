@@ -276,7 +276,6 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
       }
     }
   }
-
   else if ( !thread->task->accelerator || ( thread->task->accelerator && thread->host == TRUE ) )
   {
     cpu = select_free_cpu( node, thread );

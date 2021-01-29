@@ -310,7 +310,7 @@ t_boolean DATA_ACCESS_init_index( int ptask_id, char *trace_file_location, int i
   return TRUE;
 }
 
-// RETURNS APLLICATION INFOFRMATION
+// RETURNS APLLICATION INFORMATION
 t_boolean DATA_ACCESS_get_ptask_structure( int ptask_id, struct ptask_structure **ptask_info )
 {
   app_struct *app = NULL;
