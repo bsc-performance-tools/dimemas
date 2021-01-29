@@ -35,6 +35,8 @@
 #ifndef __random_h
 #define __random_h
 
+#include "types.h"
+
 struct t_randomness
 {
   struct t_rand_type processor_ratio;

@@ -35,6 +35,8 @@
 #ifndef __sched_vars_h
 #define __sched_vars_h
 
+#include "types.h"
+
 #define COMMUNIC_FIFO  0
 #define COMMUNIC_RR    1
 #define COMMUNIC_BOOST 2

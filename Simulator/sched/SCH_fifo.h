@@ -35,6 +35,8 @@
 #ifndef __SCH_FIFO_h
 #define __SCH_FIFO_h
 
+#include "types.h"
+
 /**
  * External routines defined in file SCH_fifo.c
  **/

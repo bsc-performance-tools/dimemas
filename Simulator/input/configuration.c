@@ -36,7 +36,7 @@
 
 #include "check.h"
 #include "dimemas_io.h"
-#include "file_data_access.h" /* risky, to read the number of tasks from the
+#include "file_data_access.h" /* risky, to read the number of tasks from the parameter trace */
 #include "sddf_records.h"
 
 #include <comm_configuration.h>
@@ -49,7 +49,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <subr.h>
-                                 parameter trace */
+                                 
 
 /* That shouldn't be used here... */
 #include "machine.h"

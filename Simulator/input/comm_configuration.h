@@ -35,6 +35,8 @@
 #ifndef _COMM_CONFIGURATION_H_
 #define _COMM_CONFIGURATION_H_
 
+#include <stdio.h>
+
 extern void COMM_CONFIGURATION_Load_General_Comms_Definition( char* comm_conf_filename, FILE* comm_conf_file );
 
 extern void COMM_CONFIGURATION_Load_External_Network_Parameters( void );

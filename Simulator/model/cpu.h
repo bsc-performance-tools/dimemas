@@ -34,6 +34,9 @@
 
 #ifndef __cpu_h
 #define __cpu_h
+
+#include "types.h"
+
 /**
  * External routines defined in file cpu.c
  **/

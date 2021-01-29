@@ -35,6 +35,8 @@
 #ifndef __check_h
 #  define __check_h
 
+#include "types.h"
+
 /**
  * External routines defined in file check.c
  **/
