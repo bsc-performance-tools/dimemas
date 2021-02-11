@@ -581,7 +581,6 @@ void SCHEDULER_general( int value, struct t_thread *thread )
   cpu     = get_cpu_of_thread( thread );
   node    = get_node_of_thread( thread );
   machine = node->machine;
-  printf( "cpu_unique_number is %d\n", cpu->unique_number );
   if ( debug & D_SCH )
   {
     PRINT_TIMER( current_time );
@@ -612,7 +611,6 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         new_cp_node( thread, CP_OVERHEAD );
         thread->copy_done  = TRUE;
         thread->doing_copy = FALSE;
-        printf( "cpu_unique_number is %d\n", cpu->unique_number );
       }
       else if ( thread->doing_roundtrip )
       { /* At this point thread has done send round trip */
@@ -655,7 +653,6 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               {
                 /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
                 /* Not created states between blocks in kernel thread	*/
-                printf( "cpu unique number is %d\n", cpu->unique_number );
                 PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
               }
               else if ( thread->kernel && ( CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) ||
