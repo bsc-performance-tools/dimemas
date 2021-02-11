@@ -891,8 +891,9 @@ void SCHEDULER_general( int value, struct t_thread *thread )
              * Not printing event if kernel needs a previous sync (in barrier)
              */
             int printing_event =
-              !thread->acc_recv_sync && ( thread->task->openmp && !thread->omp_worker_thread ) &&
-              !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->kernel && action->desc.even.value == 0 );
+              !thread->acc_recv_sync &&
+              !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->kernel && action->desc.even.value == 0 ) &&
+              ( thread->task->openmp && !thread->omp_worker_thread || !thread->task->openmp );
             if ( printing_event )
             { /* If it is not an accelerator event that has to wait to be written */
               cpu = get_cpu_of_thread( thread );
