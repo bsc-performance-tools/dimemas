@@ -48,7 +48,6 @@ void CPU_Get_Unique_CPU_IDs( void )
     for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != NULL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
     {
       cpu->unique_number = number;
-      printf( "cpu->uniquenumber is %d\n", number );
       number++;
     }
   }
