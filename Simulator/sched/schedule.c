@@ -273,6 +273,8 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
           account->n_th_in_run++;
           cpu->current_thread_context = thread;
         }
+
+        break;
       }
     }
   }
@@ -684,7 +686,9 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         }
       }
       thread->last_paraver = current_time;
-      cpu->current_thread  = TH_NIL;
+      // Accelerator kernel threads always in same gpu
+      if( !( thread->task->accelerator == TRUE && thread->kernel == TRUE ) )
+        cpu->current_thread  = TH_NIL;
 
       if ( thread->doing_context_switch )
       {
