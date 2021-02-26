@@ -90,6 +90,7 @@ struct t_queue burst_categories;
 /*
  * Private functions
  */
+void PTASK_Tasks_initialize( struct t_Ptask *Ptask );
 void new_task_in_Ptask( struct t_Ptask *Ptask, int taskid, int nodeid );
 
 void TASK_add_thread_to_task( struct t_task *task, int threadid );
@@ -113,12 +114,33 @@ int cmpfunc( const void *a, const void *b )
   return ( *(int *)a - *(int *)b );
 }
 
+void Create_threads_account()
+{
+  struct t_Ptask *Ptask;
+  struct t_task *task;
+  struct t_thread *thread;
+  size_t tasks_it, threads_it;
+
+  for ( Ptask = (struct t_Ptask *)head_queue( &Ptask_queue ); Ptask != P_NIL; Ptask = (struct t_Ptask *)next_queue( &Ptask_queue ) )
+  {
+    for ( tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++ )
+    {
+      task = &( Ptask->tasks[ tasks_it ] );
+      for ( threads_it = 0; threads_it < task->threads_count; threads_it++ )
+      {
+        thread = task->threads[ threads_it ];
+        new_account( &( thread->account ), task->nodeid );
+      }
+    }
+  }
+}
+
 /*****************************************************************************
  * Public functions implementation
  *****************************************************************************/
 
 /**
- * This function initializes the applications (Ptasks) and also their tasks
+ * This function initializes the applications (Ptasks) and also their tasks, thread, and task mapping
  */
 void TASK_Init( int sintetic_io_applications )
 {
@@ -164,9 +186,30 @@ void TASK_Init( int sintetic_io_applications )
     {
       die( "Error retrieving application %d information from trace: %s", Ptask->Ptaskid, DATA_ACCESS_get_error() );
     }
+
+    if ( Ptask->map_definition != MAP_NO_PREDEFINED )
+      Ptask->tasks_count = ptask_structure->tasks_count;
+
+    PTASK_Tasks_initialize( Ptask );
+
+    for ( tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++ )
+    {
+      task = &( Ptask->tasks[ tasks_it ] );
+      /* Allocate memory for the task threads */
+      task->threads_count = ptask_structure->threads_per_task[ tasks_it ];
+
+      Simulator.threads_count += task->threads_count;
+
+      task->threads = (struct t_thread **)malloc( task->threads_count * sizeof( struct t_thread * ) );
+
+      for ( threads_it = 0; threads_it < task->threads_count; threads_it++ )
+      {
+        TASK_add_thread_to_task( task, threads_it );
+      }
+    }
+
     if ( Ptask->map_definition != MAP_NO_PREDEFINED )
     { // We must initialize the tasks mapping here
-      Ptask->tasks_count = ptask_structure->tasks_count;
       TASK_Initialize_Ptask_Mapping( Ptask );
     }
     else
@@ -185,21 +228,8 @@ void TASK_Init( int sintetic_io_applications )
            ptask_structure->tasks_count );
     }
 
-    for ( tasks_it = 0; tasks_it < Ptask->tasks_count; tasks_it++ )
-    {
-      task = &( Ptask->tasks[ tasks_it ] );
-      /* Allocate memory for the task threads */
-      task->threads_count = ptask_structure->threads_per_task[ tasks_it ];
+    Create_threads_account();
 
-      Simulator.threads_count += task->threads_count;
-
-      task->threads = (struct t_thread **)malloc( task->threads_count * sizeof( struct t_thread * ) );
-
-      for ( threads_it = 0; threads_it < task->threads_count; threads_it++ )
-      {
-        TASK_add_thread_to_task( task, threads_it );
-      }
-    }
     /*
      * Initialize application communicators
      */
@@ -502,9 +532,10 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   create_queue( &( task->th_for_in ) );
   create_queue( &( task->th_for_out ) );
 
-  task->KernelSync   = TH_NIL; // Means no thread is waiting
-  task->HostSync     = TH_NIL; // Means no root is waiting
-  task->KernelByComm = -1;     // Means no root is waiting for kernel
+  task->KernelSync     = TH_NIL; // Means no thread is waiting
+  task->HostSync       = TH_NIL; // Means no root is waiting
+  task->KernelByComm   = -1;     // Means no root is waiting for kernel
+  task->threads_in_accelerator = 0;
 }
 
 void TASK_OpenMP_Task( struct t_Ptask *Ptask, int taskid, t_boolean omp_task )
@@ -971,9 +1002,6 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   create_queue( &thread->ops_to_be_ignored );
   create_queue( &thread->ops_to_be_injected );
 
-
-  new_account( &( thread->account ), task->nodeid );
-
   thread->last_cp_node   = (struct t_cp_node *)0;
   thread->global_op_done = FALSE;
 
@@ -982,17 +1010,13 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->marked_for_deletion = 0;
   // thread->file_shared         = FALSE;
 
-  /* JGG (2012/01/12): thread queue not needed anymore */
-  // inFIFO_queue (&(task->threads), (char *) thread);
-  /* and store it in the array of all threads in that task */
-  assert( task->threads_count >= thread->threadid );
-  task->threads[ thread->threadid ] = thread;
-
   /* Accelerator variables */
   if ( task->accelerator && thread_id > 0 )
   {
     thread->kernel = TRUE;
     thread->host   = FALSE;
+
+    ++task->threads_in_accelerator;
   }
   else if ( task->accelerator && thread_id == 0 )
   {
@@ -1049,6 +1073,12 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
 
   create_queue( &thread->nonblock_glop_done_threads );
   thread->eof_reached = FALSE;
+
+  /* JGG (2012/01/12): thread queue not needed anymore */
+  // inFIFO_queue (&(task->threads), (char *) thread);
+  /* and store it in the array of all threads in that task */
+  assert( task->threads_count >= thread->threadid );
+  task->threads[ thread->threadid ] = thread;
 }
 
 struct t_thread *locate_thread_of_task( struct t_task *task, int thid )
@@ -1691,16 +1721,15 @@ void TASK_module_new_general( unsigned long int module_type, unsigned long int m
   return;
 }
 
-void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
+void PTASK_Tasks_initialize( struct t_Ptask *Ptask )
 {
   int new_taskid, i;
-  int *task_mapping;
 
   Ptask->tasks = (struct t_task *)malloc( Ptask->tasks_count * sizeof( struct t_task ) );
-  // Added here to initialize the task first
 
   get_acc_tasks_info( Ptask );
   get_omp_tasks_info( Ptask );
+
   for ( new_taskid = 0; new_taskid < Ptask->tasks_count; new_taskid++ )
   {
     for ( i = 0; i < Ptask->acc_tasks_count; i++ )
@@ -1711,10 +1740,12 @@ void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
         break;
       }
     }
+
     if ( i == Ptask->acc_tasks_count )
     {
       TASK_New_Task( Ptask, new_taskid, FALSE );
     }
+
     for ( i = 0; i < Ptask->omp_tasks_count; i++ )
     {
       if ( Ptask->omp_tasks[ i ] == new_taskid )
@@ -1723,11 +1754,18 @@ void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
         break;
       }
     }
+
     if ( i == Ptask->omp_tasks_count )
     {
       TASK_OpenMP_Task( Ptask, new_taskid, FALSE );
     }
   }
+}
+
+void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
+{
+  int *task_mapping;
+
   if ( Ptask->map_definition == MAP_FILL_NODES )
   {
     if ( ( task_mapping = TASK_Map_Filling_Nodes( Ptask->tasks_count ) ) == NULL )
@@ -1743,6 +1781,7 @@ void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
   else if ( Ptask->map_definition == MAP_N_TASKS_PER_NODE )
   {
     task_mapping = TASK_Map_N_Tasks_Per_Node( Ptask->tasks_per_node );
+
     if ( task_mapping == NULL )
     {
       die( "'%d' tasks per node mapping not applicable (%d nodes per %d tasks is less than the application total tasks %d)",
@@ -1751,6 +1790,7 @@ void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
            Ptask->tasks_per_node,
            Ptask->tasks_count );
     }
+
     if ( debug )
     {
       printf( " (%d tasks per node mapping)\n", Ptask->tasks_per_node );
@@ -1771,6 +1811,7 @@ void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
   }
 
   get_acc_tasks_info( Ptask );
+
   if ( Ptask->acc_tasks_count == -1 )
   { // -1: search for acc_tasks not done yet
 
@@ -1812,8 +1853,6 @@ int *TASK_Map_Filling_Nodes( int task_count )
   }
   int n_nodes                     = SIMULATOR_get_number_of_nodes();
   n_cpus_per_node                 = SIMULATOR_get_cpus_per_node();
-  int number_of_accelerated_tasks = 0;
-  int number_of_gpus_in_node      = 0;
 
   if ( ( n_cpus_per_node = SIMULATOR_get_cpus_per_node() ) == NULL )
   {
@@ -1830,14 +1869,13 @@ int *TASK_Map_Filling_Nodes( int task_count )
         for ( i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++ )
         {
           node = get_node_by_id( i_node );
-          if ( node->accelerator && node->acc.num_gpu_in_node > 0 )
+
+          if ( node->accelerator && node->acc.num_gpu_in_node >= task->threads_in_accelerator )
           {
             task_mapping[ tasks_it ] = i_node;
             n_cpus_per_node[ i_node ]--; // One CPU is now occupied
             node->used_node  = TRUE;
-            number_of_accelerated_tasks++;
-            node->acc.num_gpu_in_node--;
-            number_of_gpus_in_node++;
+            node->acc.num_gpu_in_node = node->acc.num_gpu_in_node - task->threads_in_accelerator;
             node->has_accelerated_task = TRUE; // One GPU is now occupied
             break;
           }

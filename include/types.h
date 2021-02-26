@@ -783,6 +783,7 @@ struct t_task
   struct t_thread *KernelSync; /*	Kernel thread of sync	*/
   struct t_thread *HostSync;   /*	Host thread of sync	*/
   int KernelByComm;            /* Kernel_id indicated in comm_id for global_op */
+  int threads_in_accelerator;          /* Number of threads (e.g. CUDA streams) executed in gpu */
 };
 
 struct t_event

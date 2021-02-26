@@ -224,7 +224,7 @@ struct t_cpu *select_free_cpu( struct t_node *node, struct t_thread *thread )
   /* Select a free processor with cache affinity */
   for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
   {
-    if ( ( cpu->current_thread == TH_NIL ) && ( cpu->current_thread_context == thread ) && ( cpu->is_gpu == FALSE ) ) // need to add is_gpu==FALSE
+    if ( ( cpu->current_thread == TH_NIL ) && ( cpu->current_thread_context == thread ) && ( cpu->is_gpu == FALSE ) )
       return ( cpu );
   }
   /* Select a free processor */
@@ -277,6 +277,11 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
         break;
       }
     }
+
+/*    if( cpu == C_NIL )
+      printf("task %d thread %d without cpu in node %d\n",thread->task->taskid,thread->threadid,node->nodeid);
+    if( thread->task->taskid == 7)
+      printf("task 7 thread %d with cpu %d in node %d\n",thread->threadid,thread->cpu->cpuid,node->nodeid);*/
   }
   else if ( !thread->task->accelerator || ( thread->task->accelerator && thread->host == TRUE ) )
   {
