@@ -232,7 +232,7 @@ int                     ACCELERATOR_SYNC_required_threads;
 int                     ACCELERATOR_SYNC_required_threads_count;
 #endif
 
-static void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host );
+static void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int comm_id );
 
 static void calcula_temps_maxim_intra_nodes( struct t_machine *machine,
                                              struct t_communicator *communicator,
@@ -7741,6 +7741,31 @@ void COMMUNIC_reset_deadlock()
 }
 
 
+void resetThreadsInKernelSync( struct t_task *task )
+{
+  for( int i = 0; i < task->KernelSync_n_elems; ++i )
+  {
+    task->KernelSync[ i ] = TH_NIL;
+  }
+  task->KernelSync_n_elems = 0;
+}
+
+t_boolean foundThreadInKernelSync( struct t_thread **KernelSync , struct t_thread * thread )
+{
+  t_boolean found = FALSE;
+
+  for( int i = 0; i < thread->task->KernelSync_n_elems; ++i )
+  {
+    if( KernelSync[i] == thread )
+    {
+      found = TRUE;
+      break;
+    }
+  }
+
+  return found;
+}
+
 /*
  * It supposes that any root task will synchronize with threads
  * of other tasks.
@@ -7774,32 +7799,32 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
       thread->blckd_in_global_op = TRUE;
     }
 
-    ACCELERATOR_check_sync_status( thread, TRUE );
+    ACCELERATOR_check_sync_status( thread, TRUE, comm_id );
   }
-
   else if ( thread->kernel )
   { /* It is an accelerator thread */
-    if ( task->KernelSync != TH_NIL && !thread->blckd_in_global_op )
-    {
-      die( "More than one accelerator thread during synchronization:"
+    // if ( task->KernelSync != TH_NIL && !thread->blckd_in_global_op )
+    // {
+    //   die( "More than one accelerator thread during synchronization:"
+    //        "P%02d T%02d (t%02d)",
+    //        IDENTIFIERS( thread ) );
+    // }
+    if ( task->HostSync != TH_NIL && task->KernelByComm != -1 && task->KernelByComm != thread_id ) 
+    { 
+      die( "In accelerator synchronization, host was waiting another thread:"
            "P%02d T%02d (t%02d)",
            IDENTIFIERS( thread ) );
     }
-    else if ( task->HostSync != TH_NIL )
-    { /* Host has arrived yet, blocked	*/
-      if ( task->KernelByComm != -1 && task->KernelByComm != thread_id )
-      {
-        die( "In accelerator synchronization host was waiting another thread:"
-             "P%02d T%02d (t%02d)",
-             IDENTIFIERS( thread ) );
-      }
+    
+    /* Add current thread to its synchronization list */
+    if ( !foundThreadInKernelSync( task->KernelSync , thread ) )
+    {
+      task->KernelSync[ task->KernelSync_n_elems ] = thread;
+      ++task->KernelSync_n_elems;
+      thread->blckd_in_global_op = TRUE;
     }
 
-    /* Just in case thread_id is not last thread in task */
-    task->KernelSync           = thread;
-    thread->blckd_in_global_op = TRUE;
-
-    ACCELERATOR_check_sync_status( thread, FALSE );
+    ACCELERATOR_check_sync_status( thread, FALSE, comm_id );
   }
   else
   {
@@ -7809,9 +7834,24 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
   }
 }
 
-void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host )
+t_boolean haveAllKernelsArrived( struct t_task *task, int comm_id )
 {
-  struct t_thread *host_th = NULL, *kernel_th = NULL;
+  t_boolean return_val = FALSE;
+  if (comm_id == -1)
+  {
+    return_val = task->KernelSync_n_elems == task->threads_in_accelerator;
+  }
+  else
+  {
+    return_val = task->KernelSync_n_elems == 1;
+  }
+  
+  return return_val;
+}
+
+void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int comm_id )
+{
+  struct t_thread *host_th = NULL;
   struct t_action *action;
   struct t_task *task = thread->task;
   dimemas_timer tmp_timer, tmp_timer2;
@@ -7822,8 +7862,8 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host )
   struct t_account *account;
   struct t_cpu *cpu;
 
-  if ( task->HostSync == TH_NIL || task->KernelSync == TH_NIL )
-  { /*	Or kernel or host has not arrived yet, blocked	*/
+  if ( task->HostSync == TH_NIL || !haveAllKernelsArrived( task, comm_id ) )
+  { /*	Or kernels or host has not arrived yet, blocked	*/
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
@@ -7840,22 +7880,14 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host )
     }
   }
   else
-  { // Both threads ready for sync
+  { // All threads ready for sync
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
       printf( ": ACCELERATOR_synchronization P%02d T%02d (t%02d) Unlocks\n", IDENTIFIERS( thread ) );
     }
-    if ( host )
-    { /* get Kernel thread blocked */
-      kernel_th = task->KernelSync;
-      host_th   = thread;
-    }
-    else
-    { /* get host thread blocked */
-      host_th   = task->HostSync;
-      kernel_th = thread;
-    }
+    
+    host_th = task->HostSync;
 
     node = get_node_of_task( task );
 
@@ -7865,11 +7897,11 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host )
              "(check configuration file)" );
     }
 
-    if ( host_th->startup_done == FALSE )
+    if ( host && host_th->startup_done == FALSE )
     {
       startup = compute_startup( host_th,
-                                 host_th->task->taskid,   /* Sender */
-                                 kernel_th->task->taskid, /* Receiver */
+                                 task->taskid, /* Sender */
+                                 task->taskid, /* Receiver */
                                  node,
                                  node,
                                  0,
@@ -7899,27 +7931,27 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host )
       }
     }
 
-    if ( kernel_th->startup_done == FALSE )
+    if ( !host && thread->startup_done == FALSE )
     {
-      if ( kernel_th->acc_recv_sync )
+      if ( thread->acc_recv_sync )
       {
-        cpu = get_cpu_of_thread( kernel_th );
+        cpu = get_cpu_of_thread( thread );
 
-        PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( kernel_th ), kernel_th->acc_in_block_event.paraver_time, current_time );
-        kernel_th->last_paraver = current_time;
+        PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
+        thread->last_paraver = current_time;
 
         PARAVER_Event( cpu->unique_number,
-                       IDENTIFIERS( kernel_th ),
+                       IDENTIFIERS( thread ),
                        current_time,
-                       kernel_th->acc_in_block_event.type,
-                       kernel_th->acc_in_block_event.value );
-        kernel_th->acc_in_block_event.paraver_time = current_time;
-        kernel_th->acc_recv_sync                   = FALSE;
+                       thread->acc_in_block_event.type,
+                       thread->acc_in_block_event.value );
+        thread->acc_in_block_event.paraver_time = current_time;
+        thread->acc_recv_sync                   = FALSE;
       }
 
-      startup = compute_startup( kernel_th,
-                                 kernel_th->task->taskid, /* Sender */
-                                 host_th->task->taskid,   /* Receiver */
+      startup = compute_startup( thread,
+                                 task->taskid, /* Sender */
+                                 task->taskid,   /* Receiver */
                                  node,
                                  node,
                                  0,
@@ -7932,45 +7964,45 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host )
 
       if ( startup != (dimemas_timer)0 )
       {
-        kernel_th->loose_cpu      = FALSE;
-        kernel_th->doing_startup  = TRUE;
-        kernel_th->doing_acc_comm = TRUE;
+        thread->loose_cpu      = FALSE;
+        thread->doing_startup  = TRUE;
+        thread->doing_acc_comm = TRUE;
 
-        account = current_account( kernel_th );
+        account = current_account( thread );
         FLOAT_TO_TIMER( startup, tmp_timer );
         ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
         SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-        SCHEDULER_thread_to_ready_return( M_COM, kernel_th, startup, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread, startup, 0 );
 
         if ( debug & D_COMM )
         {
           PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( kernel_th ), (double)startup / 1e9 );
+          printf( ": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
         }
         return;
       }
     }
 
     // Startup reset
-    host_th->startup_done   = FALSE;
-    kernel_th->startup_done = FALSE;
+    host_th->startup_done = FALSE;
+    thread->startup_done  = FALSE;
 
-    action            = kernel_th->action;
-    kernel_th->action = action->next;
+    action         = thread->action;
+    thread->action = action->next;
     READ_free_action( action );
 
-    if ( more_actions( kernel_th ) )
+    if ( more_actions( thread ) )
     {
-      kernel_th->loose_cpu = TRUE;
-      SCHEDULER_thread_to_ready( kernel_th );
+      thread->loose_cpu = TRUE;
+      SCHEDULER_thread_to_ready( thread );
       reload_done = TRUE;
     }
 
     // end latency on host
     startup = compute_startup( host_th,
-                               host_th->task->taskid,   /* Sender */
-                               kernel_th->task->taskid, /* Receiver */
+                               task->taskid,   /* Sender */
+                               task->taskid, /* Receiver */
                                node,
                                node,
                                0,
@@ -8001,10 +8033,11 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host )
       printf( ": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate final startup (%f)\n", IDENTIFIERS( host_th ), (double)startup / 1e9 );
     }
 
-    task->HostSync                = TH_NIL;
-    task->KernelSync              = TH_NIL;
-    task->KernelByComm            = -1;
-    host_th->blckd_in_global_op   = FALSE;
-    kernel_th->blckd_in_global_op = FALSE;
+    task->HostSync              = TH_NIL;
+    resetThreadsInKernelSync( task );
+
+    task->KernelByComm          = -1;
+    host_th->blckd_in_global_op = FALSE;
+    thread->blckd_in_global_op  = FALSE;
   }
 }

@@ -532,9 +532,10 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   create_queue( &( task->th_for_in ) );
   create_queue( &( task->th_for_out ) );
 
-  task->KernelSync     = TH_NIL; // Means no thread is waiting
-  task->HostSync       = TH_NIL; // Means no root is waiting
-  task->KernelByComm   = -1;     // Means no root is waiting for kernel
+  task->KernelSync             = NULL; // Means no thread is waiting
+  task->KernelSync_n_elems     = 0;
+  task->HostSync               = TH_NIL; // Means no root is waiting
+  task->KernelByComm           = -1;     // Means no root is waiting for kernel
   task->threads_in_accelerator = 0;
 }
 
@@ -1017,6 +1018,8 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
     thread->host   = FALSE;
 
     ++task->threads_in_accelerator;
+    task->KernelSync = realloc( task->KernelSync, sizeof(struct t_thread *) * task->threads_in_accelerator );
+    task->KernelSync[ task->threads_in_accelerator - 1 ] = TH_NIL;
   }
   else if ( task->accelerator && thread_id == 0 )
   {
@@ -1426,7 +1429,7 @@ void delete_duplicate_thread( struct t_thread *thread )
   free( thread );
 }
 
-static t_boolean more_actions_on_task( struct t_task *task )
+static   more_actions_on_task( struct t_task *task )
 {
   struct t_thread *thread;
   size_t thread_it;

@@ -779,8 +779,12 @@ struct t_task
   dimemas_timer master_time;
   struct t_omp_queue *omp_queue;
 
+  // CUDA variables
   t_boolean accelerator;
-  struct t_thread *KernelSync; /*	Kernel thread of sync	*/
+
+  struct t_thread **KernelSync; /*	Kernel thread of sync	*/
+  int KernelSync_n_elems;
+  
   struct t_thread *HostSync;   /*	Host thread of sync	*/
   int KernelByComm;            /* Kernel_id indicated in comm_id for global_op */
   int threads_in_accelerator;          /* Number of threads (e.g. CUDA streams) executed in gpu */
