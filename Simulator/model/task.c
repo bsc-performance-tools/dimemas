@@ -2104,7 +2104,7 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
 
     // STEP 1: Map accelerated tasks
     struct t_node *node;
-    struct t_cpu *cpu;
+    //struct t_cpu *cpu;
     for ( Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
             Ptask != P_NIL;
             Ptask  = (struct t_Ptask *) next_queue (&Ptask_queue))
@@ -2125,8 +2125,8 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
                         {                
                             task_mapping[tasks_it] = i_node;
                             ++tasks_in_node[i_node];
-                                node->used_node = TRUE;
-                                cpu->cpu_is_used = TRUE;
+                            node->used_node = TRUE;
+                            //cpu->cpu_is_used = TRUE;
                             //--n_cpus_per_node[i_node];
                             node->has_accelerated_task = TRUE;
                             break;
@@ -2161,8 +2161,8 @@ int* TASK_Map_N_Tasks_Per_Node(int n_tasks_per_node)
             {
                 task_mapping[i_task] = i_node;
                 ++tasks_in_node[i_node];
-                    node->used_node = TRUE;
-                    cpu->cpu_is_used = TRUE;
+                node->used_node = TRUE;
+                //cpu->cpu_is_used = TRUE;
                 if (tasks_in_node[i_node] == n_tasks_per_node)
                     break;
             }
@@ -2195,7 +2195,7 @@ int* TASK_Map_Interleaved(int task_count)
 
     //MAP ACCELERATED TASKS
     struct t_node *node;
-    struct t_cpu *cpu;
+    //struct t_cpu *cpu;
     int i_node;
     for (Ptask  = (struct t_Ptask *) head_queue (&Ptask_queue);
             Ptask != P_NIL;
@@ -2214,8 +2214,8 @@ int* TASK_Map_Interleaved(int task_count)
                         n_cpus_per_node [i_node]--; // One CPU is now occupied           
                         task_mapping[tasks_it] = i_node % n_nodes;            
                         last_task_assigned++;
-                            node->used_node = TRUE;
-                            cpu->cpu_is_used = TRUE;
+                        node->used_node = TRUE;
+                        //cpu->cpu_is_used = TRUE;
                         node->has_accelerated_task = TRUE; // One GPU is now occupied
                         break;
                     }
@@ -2241,13 +2241,14 @@ int* TASK_Map_Interleaved(int task_count)
             {
                 task_mapping[last_task_assigned] = i_node%n_nodes; 
                 last_task_assigned++;
-                    node->used_node = TRUE;
-                    cpu->cpu_is_used = TRUE;
+                node->used_node = TRUE;
+                //cpu->cpu_is_used = TRUE;
             }
         }  
     }
     return task_mapping;
 }
+
 //Added to update the acc node info after the fill/n-task-per-node/task-interleaved nodes
 void Update_Node_Info(
         struct t_task *tasks, /* vector of tasks */
