@@ -467,6 +467,7 @@ void SCHEDULER_next_thread_to_run( struct t_node *node )
     }
   }
 
+  /* TODO id 2: por qué no están los threads/kernel en la cola de node->ready cuando el host llega a la sincronización? */
   thread = ( *SCH[ machine->scheduler.policy ].next_thread_to_run )( node );
 
   /* FEC: Per evitar haver de tenir CPU_BURSTS a zero afegeixo aquest if
@@ -1039,6 +1040,8 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             else
             { /* Pseudo global operation to implement accelerator
                * synchronizations */
+              /* TODO id 2: quien pone en la cola node->ready al host una vez ha pasado con el sync
+               y se tiene que esperar al resto de threads/kernel */
               ACCELERATOR_synchronization( thread, action->desc.global_op.comm_id );
             }
             break;

@@ -590,14 +590,19 @@ t_nano compute_startup( struct t_thread *thread,
        */
 
       if ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) && mess_size == 0 )
+      {
         startup = send_node->acc.startup;
-
+      }
       else if ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
                 OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) )
+      {
         startup = send_node->acc.memory_startup;
-
+      }
       else
+      {
         startup = send_node->acc.startup;
+      }
+
       startup += (dimemas_timer)RANDOM_GenerateRandom( &randomness.acc_memory_latency );
 
       break;
@@ -1363,6 +1368,7 @@ static void message_received( struct t_thread *thread )
     /* low level transfer - we look for it at the level of threads  */
     thread_partner = locate_thread_of_task( task_partner, mess->dest_thread );
 
+    // TODO id 1: este es el punto de verificacion
     assert( thread_partner != TH_NIL );
     partner = locate_receiver_dependencies_synchronization( &( thread_partner->recv ),
                                                             task->taskid,
@@ -1572,6 +1578,7 @@ static void message_received( struct t_thread *thread )
 
     /* Partner communication loads next action */
     int partner_next_action = !( partner->host && transf_comm && cuda_comm ) || ocl_comm;
+    //int partner_next_action = !partner->host || !transf_comm || !cuda_comm || ocl_comm;
 
     /* Host will compute a startup after the communication */
     int host_startup = !ocl_comm && ( cuda_comm && transf_comm && !sync_comm );
@@ -2022,6 +2029,9 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
     panic( "Unable to locate task %d in Ptask %d\n", mess->ori, thread->task->Ptask->Ptaskid );
   }
 
+  /* TODO id 4: los sends sincronos previos al memcopy_async se añaden a la cola de sends como original thread pero no se esperan y el host 
+                sigue trabajando, y eso puede dar a que otro send sincrono se añada a la cola de sends machacando el estado anterior.
+                Valdria la pena probar a quitar del .dim esas comunicaciones de sync previas al memcopy_async a ver que pasa */
   for ( sender = (struct t_thread *)head_queue( &( thread_sender->send ) ); sender != TH_NIL;
         sender = (struct t_thread *)next_queue( &( thread_sender->send ) ) )
   {
@@ -2054,7 +2064,7 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
   if ( sender->original_thread && ( CUDAEventEncoding_Is_CUDATransferBlock( sender->acc_in_block_event ) ||
                                     OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) )
   {
-    sender->acc_sndr_sync = TRUE;
+    sender->acc_sender_sync = TRUE;
   }
 
   /*  Si el thread és una copia és que s'està fent el rendez vous en
@@ -2065,7 +2075,7 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
     sender->last_paraver = current_time;
   }
 
-  if ( sender->original_thread && !sender->acc_sndr_sync )
+  if ( sender->original_thread && !sender->acc_sender_sync )
   {
     copy_thread = duplicate_thread( sender );
   }
@@ -2090,7 +2100,7 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
   /* En cas que sigui un sender en OCL o CUDA s'ha d'esperar a realitzar
    * més accions a que arribi la comm al receiver per sincronisme.
    */
-  if ( !sender->acc_sndr_sync && sender->original_thread )
+  if ( !sender->acc_sender_sync && sender->original_thread )
   {
     action         = sender->action;
     sender->action = action->next;
@@ -2434,11 +2444,13 @@ void COMMUNIC_COM_TIMER_OUT( struct t_thread *thread )
       break;
   }
 
-  if ( ( thread->acc_sndr_sync && !thread->doing_acc_comm ) || ( thread->original_thread && !thread->doing_acc_comm ) )
+  /* TODO id 3: revisar si es necesario comprobar si está bloqueado en una global op (blocked_in_global_op) */
+  if ( thread->blocked_in_global_op == FALSE && 
+       ( ( thread->acc_sender_sync && !thread->doing_acc_comm ) || ( thread->original_thread && !thread->doing_acc_comm ) ) )
   {
-    thread->acc_sndr_sync = FALSE;
-    action                = thread->action;
-    thread->action        = action->next;
+    thread->acc_sender_sync = FALSE;
+    action                  = thread->action;
+    thread->action          = action->next;
     READ_free_action( action );
 
     if ( more_actions( thread ) )
@@ -3756,8 +3768,8 @@ void COMMUNIC_send( struct t_thread *thread )
         if ( thread->original_thread && ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
                                           OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) )
         {
-          thread->acc_sndr_sync = TRUE;
-          copy_thread           = thread;
+          thread->acc_sender_sync = TRUE;
+          copy_thread             = thread;
         }
         else
         {
@@ -3769,7 +3781,7 @@ void COMMUNIC_send( struct t_thread *thread )
         /* !!! */
         really_send( copy_thread );
 
-        if ( !thread->acc_sndr_sync )
+        if ( !thread->acc_sender_sync )
         {
           action         = thread->action;
           thread->action = action->next;
@@ -4058,6 +4070,7 @@ void COMMUNIC_recv( struct t_thread *thread )
     }
   }
 }
+
 /******************************************************************************
  * PROCEDURE 'COMMUNIC_Irecv'                                                 *
  * ÚLTIMA MODIFICACIÓN: 02/11/2004 (Juan González García)                     *
@@ -4294,12 +4307,22 @@ void COMMUNIC_Irecv( struct t_thread *thread )
     }
   }
 
-  thread->action = action->next;
-  READ_free_action( action );
-  if ( more_actions( thread ) )
+  // TODO id 1: verificar que el sender esta viendo el thread recv que estamos insertando a continuacion
+  if ( thread->acc_in_block_event.type == CUDA_LIB_CALL_EV && thread->acc_in_block_event.value == CUDA_MEMCPY_ASYNC_VAL )
   {
-    thread->loose_cpu = FALSE;
-    SCHEDULER_thread_to_ready( thread );
+    /* this is a dependency synchronization
+        put it on the recv list of the thread  */
+    inFIFO_queue( &( thread->recv ), (char *)thread );
+  }
+  else
+  {
+    thread->action = action->next;
+    READ_free_action( action );
+    if ( more_actions( thread ) )
+    {
+      thread->loose_cpu = FALSE;
+      SCHEDULER_thread_to_ready( thread );
+    }
   }
 }
 
@@ -7743,20 +7766,37 @@ void COMMUNIC_reset_deadlock()
 
 void resetThreadsInKernelSync( struct t_task *task )
 {
-  for( int i = 0; i < task->KernelSync_n_elems; ++i )
+  struct t_action *currentAction;
+
+  for ( int i = 0; i < task->KernelSync_n_elems; ++i )
   {
-    task->KernelSync[ i ] = TH_NIL;
+    currentAction                 = task->KernelSync[ i ]->action;
+    task->KernelSync[ i ]->action = currentAction->next;
+    READ_free_action( currentAction );
+
+    if ( more_actions( task->KernelSync[ i ] ) )
+    {
+      task->KernelSync[ i ]->loose_cpu = TRUE;
+      SCHEDULER_thread_to_ready( task->KernelSync[ i ] );
+      reload_done = TRUE;
+    }
+
+    task->KernelSync[ i ]->startup_done         = FALSE;
+    task->KernelSync[ i ]->blocked_in_global_op = FALSE;
+    task->KernelSync[ i ]                       = TH_NIL;
   }
+
   task->KernelSync_n_elems = 0;
 }
 
-t_boolean foundThreadInKernelSync( struct t_thread **KernelSync , struct t_thread * thread )
+
+t_boolean foundThreadInKernelSync( struct t_thread **KernelSync, struct t_thread *thread )
 {
   t_boolean found = FALSE;
 
-  for( int i = 0; i < thread->task->KernelSync_n_elems; ++i )
+  for ( int i = 0; i < thread->task->KernelSync_n_elems; ++i )
   {
-    if( KernelSync[i] == thread )
+    if ( KernelSync[ i ] == thread )
     {
       found = TRUE;
       break;
@@ -7781,11 +7821,11 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
 
   if ( thread->host )
   { /* It is the host thread */
-    if ( task->HostSync != TH_NIL && !thread->blckd_in_global_op )
+    if ( task->HostSync != TH_NIL && !thread->blocked_in_global_op )
     {
       die( "Simultaneous accelerator synchronizations on a single host" );
     }
-    else if ( !thread->blckd_in_global_op )
+    else if ( !thread->blocked_in_global_op )
     {
       task->HostSync = thread;
       if ( comm_id != -1 )
@@ -7796,32 +7836,32 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
       { /* In global op no single stream synchronization indicated	*/
         task->KernelByComm = -1;
       }
-      thread->blckd_in_global_op = TRUE;
+      thread->blocked_in_global_op = TRUE;
     }
 
     ACCELERATOR_check_sync_status( thread, TRUE, comm_id );
   }
   else if ( thread->kernel )
   { /* It is an accelerator thread */
-    // if ( task->KernelSync != TH_NIL && !thread->blckd_in_global_op )
+    // if ( task->KernelSync != TH_NIL && !thread->blocked_in_global_op )
     // {
     //   die( "More than one accelerator thread during synchronization:"
     //        "P%02d T%02d (t%02d)",
     //        IDENTIFIERS( thread ) );
     // }
-    if ( task->HostSync != TH_NIL && task->KernelByComm != -1 && task->KernelByComm != thread_id ) 
-    { 
+    if ( task->HostSync != TH_NIL && task->KernelByComm != -1 && task->KernelByComm != thread_id )
+    {
       die( "In accelerator synchronization, host was waiting another thread:"
            "P%02d T%02d (t%02d)",
            IDENTIFIERS( thread ) );
     }
-    
+
     /* Add current thread to its synchronization list */
-    if ( !foundThreadInKernelSync( task->KernelSync , thread ) )
+    if ( !foundThreadInKernelSync( task->KernelSync, thread ) )
     {
       task->KernelSync[ task->KernelSync_n_elems ] = thread;
       ++task->KernelSync_n_elems;
-      thread->blckd_in_global_op = TRUE;
+      thread->blocked_in_global_op = TRUE;
     }
 
     ACCELERATOR_check_sync_status( thread, FALSE, comm_id );
@@ -7837,7 +7877,7 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
 t_boolean haveAllKernelsArrived( struct t_task *task, int comm_id )
 {
   t_boolean return_val = FALSE;
-  if (comm_id == -1)
+  if ( comm_id == -1 )
   {
     return_val = task->KernelSync_n_elems == task->threads_in_accelerator;
   }
@@ -7845,15 +7885,14 @@ t_boolean haveAllKernelsArrived( struct t_task *task, int comm_id )
   {
     return_val = task->KernelSync_n_elems == 1;
   }
-  
+
   return return_val;
 }
 
 void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int comm_id )
 {
   struct t_thread *host_th = NULL;
-  struct t_action *action;
-  struct t_task *task = thread->task;
+  struct t_task *task      = thread->task;
   dimemas_timer tmp_timer, tmp_timer2;
 
   dimemas_timer startup;
@@ -7886,7 +7925,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
       PRINT_TIMER( current_time );
       printf( ": ACCELERATOR_synchronization P%02d T%02d (t%02d) Unlocks\n", IDENTIFIERS( thread ) );
     }
-    
+
     host_th = task->HostSync;
 
     node = get_node_of_task( task );
@@ -7933,25 +7972,30 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
 
     if ( !host && thread->startup_done == FALSE )
     {
-      if ( thread->acc_recv_sync )
+      for ( int i = 0; i < task->KernelSync_n_elems; ++i )
       {
-        cpu = get_cpu_of_thread( thread );
+        if ( task->KernelSync[ i ]->acc_recv_sync )
+        {
+          cpu = get_cpu_of_thread( task->KernelSync[ i ] );
 
-        PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-        thread->last_paraver = current_time;
+          PARAVER_Not_Created( cpu->unique_number,
+                               IDENTIFIERS( task->KernelSync[ i ] ),
+                               task->KernelSync[ i ]->acc_in_block_event.paraver_time,
+                               current_time );
+          task->KernelSync[ i ]->last_paraver = current_time;
 
-        PARAVER_Event( cpu->unique_number,
-                       IDENTIFIERS( thread ),
-                       current_time,
-                       thread->acc_in_block_event.type,
-                       thread->acc_in_block_event.value );
-        thread->acc_in_block_event.paraver_time = current_time;
-        thread->acc_recv_sync                   = FALSE;
+          PARAVER_Event( cpu->unique_number,
+                         IDENTIFIERS( task->KernelSync[ i ] ),
+                         current_time, task->KernelSync[ i ]->acc_in_block_event.type,
+                         task->KernelSync[ i ]->acc_in_block_event.value );
+          task->KernelSync[ i ]->acc_in_block_event.paraver_time = current_time;
+          task->KernelSync[ i ]->acc_recv_sync                   = FALSE;
+        }
       }
-
+    
       startup = compute_startup( thread,
                                  task->taskid, /* Sender */
-                                 task->taskid,   /* Receiver */
+                                 task->taskid, /* Receiver */
                                  node,
                                  node,
                                  0,
@@ -7986,22 +8030,10 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
 
     // Startup reset
     host_th->startup_done = FALSE;
-    thread->startup_done  = FALSE;
-
-    action         = thread->action;
-    thread->action = action->next;
-    READ_free_action( action );
-
-    if ( more_actions( thread ) )
-    {
-      thread->loose_cpu = TRUE;
-      SCHEDULER_thread_to_ready( thread );
-      reload_done = TRUE;
-    }
 
     // end latency on host
     startup = compute_startup( host_th,
-                               task->taskid,   /* Sender */
+                               task->taskid, /* Sender */
                                task->taskid, /* Receiver */
                                node,
                                node,
@@ -8033,11 +8065,10 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
       printf( ": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate final startup (%f)\n", IDENTIFIERS( host_th ), (double)startup / 1e9 );
     }
 
-    task->HostSync              = TH_NIL;
+    host_th->blocked_in_global_op = FALSE;
     resetThreadsInKernelSync( task );
 
-    task->KernelByComm          = -1;
-    host_th->blckd_in_global_op = FALSE;
-    thread->blckd_in_global_op  = FALSE;
+    task->HostSync     = TH_NIL;
+    task->KernelByComm = -1;
   }
 }

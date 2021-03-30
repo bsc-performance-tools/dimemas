@@ -858,7 +858,7 @@ Boolean CUDAEventEncoding_Is_CUDAComm( long64_t tag )
  ******************************************************************************/
 Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && event.value == CUDA_MEMCPY_VAL )
+  if ( event.type == CUDA_LIB_CALL_EV && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
     return TRUE;
   return FALSE;
 }
