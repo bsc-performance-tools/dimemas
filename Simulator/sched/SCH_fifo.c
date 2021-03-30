@@ -52,7 +52,7 @@ void FIFO_thread_to_ready( struct t_thread *thread )
   node    = get_node_of_thread( thread );
   machine = node->machine;
 
-  if ( ( thread->loose_cpu ) || ( machine->scheduler.lost_cpu_on_send ) )
+  if ( thread->kernel || thread->loose_cpu || machine->scheduler.lost_cpu_on_send )
     inFIFO_queue( &( node->ready ), (char *)thread );
   else
     inLIFO_queue( &( node->ready ), (char *)thread );
