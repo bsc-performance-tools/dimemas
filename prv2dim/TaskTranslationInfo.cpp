@@ -674,7 +674,10 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
       if ( debug )
         cout << "Printing CUDA Opening Event: " << *CurrentEvent;
 
-      if ( AcceleratorThread == ACCELERATOR_KERNEL && Value != CUDA_THREADSYNCHRONIZE_VAL && Value != CUDA_STREAMSYNCHRONIZE_VAL )
+      if ( AcceleratorThread == ACCELERATOR_KERNEL && 
+           Value != CUDA_THREADSYNCHRONIZE_VAL && 
+           Value != CUDA_STREAMSYNCHRONIZE_VAL &&
+           Value != CUDA_MEMCPY_ASYNC_VAL )
       {
         // Device threads must include a synchronization before they start
         // Idle block start
@@ -1967,6 +1970,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
           if ( debug )
             cout << "Printing CUDA Memory Transfer (Async): " << *CurrentComm;
 
+#if 0
           if ( AcceleratorThread == ACCELERATOR_HOST )
           {
             /* In the Host thread, first a synchronization */
@@ -1985,7 +1989,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
           }
-
+#endif
           /* The actual transfer */
           if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
           {
@@ -2001,6 +2005,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
 
           CommunicationPrimitivePrinted = true;
 
+#if 0
           if ( AcceleratorThread == ACCELERATOR_HOST )
           { /* In the Host thread, first a synchronization */
             if ( Dimemas_NX_BlockingSend( TemporaryFile,
@@ -2017,7 +2022,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
           }
-
+#endif
           if ( Dimemas_NX_Irecv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
           {
             SetError( true );
