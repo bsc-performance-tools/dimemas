@@ -90,15 +90,18 @@ t_boolean RANDOM_Init_Distribution( char *dist_name, float param1, float param2,
 
 double RANDOM_GenerateRandom( struct t_rand_type *rt )
 {
-  double result;
+  double result = 0.0;
   switch ( rt->distribution )
   {
     case NORMAL_DISTRIBUTION:
       result = ( (double)rnorm( (float)rt->parameters.normal.mean, (float)-INT_MAX, (float)INT_MAX, (float)rt->parameters.normal.stdev ) );
-      return result;
+      break;
     case UNIFORM_DISTRIBUTION:
-      return ( (double)unform( (float)rt->parameters.uniform.left, (float)rt->parameters.uniform.right ) );
+      result = ( (double)unform( (float)rt->parameters.uniform.left, (float)rt->parameters.uniform.right ) );
+      break;
     default:
-      return (double)0;
+      break;
   }
+
+  return result;
 }
