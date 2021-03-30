@@ -1035,11 +1035,11 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->accelerator_link                = L_NIL;
   thread->first_acc_event_read            = FALSE;
   thread->acc_recv_sync                   = FALSE;
-  thread->acc_sndr_sync                   = FALSE;
+  thread->acc_sender_sync                 = FALSE;
   thread->doing_acc_comm                  = FALSE;
   thread->acc_in_block_event.type         = 0;
   thread->acc_in_block_event.value        = 0;
-  thread->blckd_in_global_op              = FALSE;
+  thread->blocked_in_global_op            = FALSE;
   thread->acc_in_block_event.paraver_time = (dimemas_timer)0;
 
   /* OpenMP variables */
@@ -1227,9 +1227,9 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
   copy_thread->first_acc_event_read = thread->first_acc_event_read;
   copy_thread->acc_in_block_event   = thread->acc_in_block_event;
   copy_thread->acc_recv_sync        = thread->acc_recv_sync;
-  copy_thread->acc_sndr_sync        = thread->acc_sndr_sync;
+  copy_thread->acc_sender_sync      = thread->acc_sender_sync;
   copy_thread->doing_acc_comm       = thread->doing_acc_comm;
-  copy_thread->blckd_in_global_op   = thread->blckd_in_global_op;
+  copy_thread->blocked_in_global_op = thread->blocked_in_global_op;
   /* Accelerator variables */
 
   copy_thread->omp_in_block_event = thread->omp_in_block_event;
@@ -1302,9 +1302,9 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   copy_thread->first_acc_event_read      = thread->first_acc_event_read;
   copy_thread->acc_in_block_event        = thread->acc_in_block_event;
   copy_thread->acc_recv_sync             = thread->acc_recv_sync;
-  copy_thread->acc_sndr_sync             = thread->acc_sndr_sync;
+  copy_thread->acc_sender_sync           = thread->acc_sender_sync;
   copy_thread->doing_acc_comm            = thread->doing_acc_comm;
-  copy_thread->blckd_in_global_op        = thread->blckd_in_global_op;
+  copy_thread->blocked_in_global_op      = thread->blocked_in_global_op;
   copy_thread->n_nonblock_glob_in_flight = thread->n_nonblock_glob_in_flight;
 
   copy_thread->omp_in_block_event = thread->omp_in_block_event;

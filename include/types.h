@@ -974,9 +974,9 @@ struct t_thread
   t_boolean first_acc_event_read;  /* Throws a NOT_CREATED_ST before */
   /* start if it's a kernel thread	*/
   t_boolean acc_recv_sync;                 /* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
-  t_boolean acc_sndr_sync;                 /* Indicates if sender has to wait to receiver receives	*/
+  t_boolean acc_sender_sync;                 /* Indicates if sender has to wait to receiver receives	*/
   t_boolean doing_acc_comm;                /* Do not print startup latencies	*/
-  t_boolean blckd_in_global_op;            /* To control threads inside acc sync */
+  t_boolean blocked_in_global_op;            /* To control threads inside acc sync */
   struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
 
   /* variable for omp */
