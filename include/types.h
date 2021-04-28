@@ -977,6 +977,7 @@ struct t_thread
   t_boolean acc_sender_sync;                 /* Indicates if sender has to wait to receiver receives	*/
   t_boolean doing_acc_comm;                /* Do not print startup latencies	*/
   t_boolean blocked_in_global_op;            /* To control threads inside acc sync */
+  t_boolean blocked_in_host_sync;            /* To control host is stopped in dependency sync */
   struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
 
   /* variable for omp */

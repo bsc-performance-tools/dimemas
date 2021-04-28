@@ -1040,6 +1040,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->acc_in_block_event.type         = 0;
   thread->acc_in_block_event.value        = 0;
   thread->blocked_in_global_op            = FALSE;
+  thread->blocked_in_host_sync            = FALSE;
   thread->acc_in_block_event.paraver_time = (dimemas_timer)0;
 
   /* OpenMP variables */
@@ -1230,6 +1231,7 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
   copy_thread->acc_sender_sync      = thread->acc_sender_sync;
   copy_thread->doing_acc_comm       = thread->doing_acc_comm;
   copy_thread->blocked_in_global_op = thread->blocked_in_global_op;
+  copy_thread->blocked_in_host_sync = thread->blocked_in_host_sync;
   /* Accelerator variables */
 
   copy_thread->omp_in_block_event = thread->omp_in_block_event;
@@ -1305,6 +1307,7 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   copy_thread->acc_sender_sync           = thread->acc_sender_sync;
   copy_thread->doing_acc_comm            = thread->doing_acc_comm;
   copy_thread->blocked_in_global_op      = thread->blocked_in_global_op;
+  copy_thread->blocked_in_host_sync      = thread->blocked_in_host_sync;
   copy_thread->n_nonblock_glob_in_flight = thread->n_nonblock_glob_in_flight;
 
   copy_thread->omp_in_block_event = thread->omp_in_block_event;
@@ -1429,7 +1432,7 @@ void delete_duplicate_thread( struct t_thread *thread )
   free( thread );
 }
 
-static   more_actions_on_task( struct t_task *task )
+static t_boolean more_actions_on_task( struct t_task *task )
 {
   struct t_thread *thread;
   size_t thread_it;

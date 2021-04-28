@@ -674,10 +674,11 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
       if ( debug )
         cout << "Printing CUDA Opening Event: " << *CurrentEvent;
 
+#if 0
       if ( AcceleratorThread == ACCELERATOR_KERNEL && 
            Value != CUDA_THREADSYNCHRONIZE_VAL && 
-           Value != CUDA_STREAMSYNCHRONIZE_VAL &&
-           Value != CUDA_MEMCPY_ASYNC_VAL )
+           Value != CUDA_STREAMSYNCHRONIZE_VAL/* &&
+           Value != CUDA_MEMCPY_ASYNC_VAL*/ )
       {
         // Device threads must include a synchronization before they start
         // Idle block start
@@ -703,7 +704,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
           SetErrorMessage( "error writing output trace", strerror( errno ) );
         }
       }
-
+#endif
       /* CUDA block begin */
       if ( Dimemas_Block_Begin( TemporaryFile, TaskId, ThreadId, (INT64)Type, (INT64)Value ) < 0 )
       {
@@ -1927,6 +1928,16 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
           }
+          else if ( AcceleratorThread == ACCELERATOR_KERNEL )
+          {
+            /* Synchronization before the actual call */
+            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+          }
 
           if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
           {
@@ -1952,6 +1963,16 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
           }
+          else if ( AcceleratorThread == ACCELERATOR_KERNEL )
+          {
+            /* Synchronization before the actual call */
+            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+          }
 
           if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
           {
@@ -1970,7 +1991,6 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
           if ( debug )
             cout << "Printing CUDA Memory Transfer (Async): " << *CurrentComm;
 
-#if 0
           if ( AcceleratorThread == ACCELERATOR_HOST )
           {
             /* In the Host thread, first a synchronization */
@@ -1989,7 +2009,17 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
           }
-#endif
+          else if ( AcceleratorThread == ACCELERATOR_KERNEL )
+          {
+            /* Synchronization before the actual call */
+            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+          }
+
           /* The actual transfer */
           if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
           {
@@ -2005,7 +2035,6 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
 
           CommunicationPrimitivePrinted = true;
 
-#if 0
           if ( AcceleratorThread == ACCELERATOR_HOST )
           { /* In the Host thread, first a synchronization */
             if ( Dimemas_NX_BlockingSend( TemporaryFile,
@@ -2022,7 +2051,17 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
           }
-#endif
+          else if ( AcceleratorThread == ACCELERATOR_KERNEL )
+          {
+            /* Synchronization before the actual call */
+            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+          }
+
           if ( Dimemas_NX_Irecv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
           {
             SetError( true );
@@ -2038,7 +2077,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
       {
         if ( CurrentComm->GetType() == LOGICAL_SEND )
         {
-          /* Host side cudeConfigureCall synchronization (SEND) */
+          /* Host side cudaConfigureCall synchronization (SEND) */
           if ( debug )
             cout << "Printing CUDA Host configureCall sync: " << *CurrentComm;
 
@@ -2050,6 +2089,20 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             return false;
           }
         }
+        else if( CurrentComm->GetType() == LOGICAL_RECV )
+        {
+          /* Kernel side cudaConfigureCall synchronization (RECV) */
+          if ( debug )
+            cout << "Printing CUDA Kernel configureCall sync: " << *CurrentComm;
+
+          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+          {
+            SetError( true );
+            SetErrorMessage( "error writing output trace", strerror( errno ) );
+            return false;
+          }
+        }
+
         break;
       }
       case CUDA_LAUNCH_VAL:
@@ -2068,6 +2121,20 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             return false;
           }
         }
+        else if( CurrentComm->GetType() == LOGICAL_RECV )
+        {
+          /* Kernel side cudaLaunch synchronization (RECV) */
+          if ( debug )
+            cout << "Printing CUDA Kernel Launch sync: " << *CurrentComm;
+
+          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+          {
+            SetError( true );
+            SetErrorMessage( "error writing output trace", strerror( errno ) );
+            return false;
+          }
+        }
+
         break;
       }
       default:

@@ -1665,6 +1665,9 @@ static void message_received( struct t_thread *thread )
         }
       }
     }
+
+    //if( host_th->action->desc.send.communic_id == 0 )
+      host_th->blocked_in_host_sync = FALSE;
   }
 }
 
@@ -2031,7 +2034,9 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
 
   /* TODO id 4: los sends sincronos previos al memcopy_async se añaden a la cola de sends como original thread pero no se esperan y el host 
                 sigue trabajando, y eso puede dar a que otro send sincrono se añada a la cola de sends machacando el estado anterior.
-                Valdria la pena probar a quitar del .dim esas comunicaciones de sync previas al memcopy_async a ver que pasa */
+                
+                En vez de usar acc_sender_sync (que puede que tenga otro proposito), se puede crear otro bool para indicar que el
+                host esta esperando a sincronizarse con un kernel y hasta que no se complete no se pone a ready y esa variable a false */
   for ( sender = (struct t_thread *)head_queue( &( thread_sender->send ) ); sender != TH_NIL;
         sender = (struct t_thread *)next_queue( &( thread_sender->send ) ) )
   {
@@ -2084,6 +2089,7 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
     copy_thread = sender;
   }
 
+  /* TODO id 5: el thread 3 no llega al rendezvous para el cuda launch */
   if ( debug & D_COMM )
   {
     PRINT_TIMER( current_time );
@@ -2100,6 +2106,7 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
   /* En cas que sigui un sender en OCL o CUDA s'ha d'esperar a realitzar
    * més accions a que arribi la comm al receiver per sincronisme.
    */
+  /* TODO id 4: comprobar si el host sigue corriendo aun estando en una comunicacion de sincro */
   if ( !sender->acc_sender_sync && sender->original_thread )
   {
     action         = sender->action;
@@ -2445,7 +2452,7 @@ void COMMUNIC_COM_TIMER_OUT( struct t_thread *thread )
   }
 
   /* TODO id 3: revisar si es necesario comprobar si está bloqueado en una global op (blocked_in_global_op) */
-  if ( thread->blocked_in_global_op == FALSE && 
+  if ( thread->blocked_in_global_op == FALSE && thread->blocked_in_host_sync == FALSE &&
        ( ( thread->acc_sender_sync && !thread->doing_acc_comm ) || ( thread->original_thread && !thread->doing_acc_comm ) ) )
   {
     thread->acc_sender_sync = FALSE;
@@ -3758,6 +3765,12 @@ void COMMUNIC_send( struct t_thread *thread )
           }
           else
           {
+            if ( thread->original_thread &&
+                 ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
+                   OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) &&
+                 thread->action->desc.send.communic_id == 0 )
+// TODO id 6: crear una variable nueva que actue de bloqueo para las comunicaciones sync unicamente y dejar el acc_sender_sync como estaba antes
+              thread->blocked_in_host_sync = TRUE;
             /* this is for a dependency synchronization */
             inFIFO_queue( &( thread->send ), (char *)thread );
           }
