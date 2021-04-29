@@ -1666,7 +1666,9 @@ static void message_received( struct t_thread *thread )
       }
     }
 
-    //if( host_th->action->desc.send.communic_id == 0 )
+//TODO 7 añadir a la condición la comprobación del thread destinatario 
+//TODO que se ha de guardar cuando se pone a TRUE el blocked_in_host_sync
+    if( mess->communic_id == 0 )
       host_th->blocked_in_host_sync = FALSE;
   }
 }
