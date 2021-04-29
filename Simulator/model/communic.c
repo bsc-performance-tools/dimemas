@@ -1666,10 +1666,13 @@ static void message_received( struct t_thread *thread )
       }
     }
 
-//TODO 7 añadir a la condición la comprobación del thread destinatario 
+//TODO id 7: añadir a la condición la comprobación del thread destinatario 
 //TODO que se ha de guardar cuando se pone a TRUE el blocked_in_host_sync
-    if( mess->communic_id == 0 )
-      host_th->blocked_in_host_sync = FALSE;
+    if( host_th->blocked_in_host_sync == TRUE && mess->communic_id == 0 && host_th->blocked_sync_threadid == mess->dest_thread )
+    {
+      host_th->blocked_in_host_sync  = FALSE;
+      host_th->blocked_sync_threadid = -1;
+    }
   }
 }
 
@@ -3771,8 +3774,11 @@ void COMMUNIC_send( struct t_thread *thread )
                  ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
                    OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) &&
                  thread->action->desc.send.communic_id == 0 )
+            {
 // TODO id 6: crear una variable nueva que actue de bloqueo para las comunicaciones sync unicamente y dejar el acc_sender_sync como estaba antes
               thread->blocked_in_host_sync = TRUE;
+              thread->blocked_sync_threadid = thread->action->desc.send.dest_thread;
+            }
             /* this is for a dependency synchronization */
             inFIFO_queue( &( thread->send ), (char *)thread );
           }
