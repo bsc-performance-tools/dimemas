@@ -2445,7 +2445,7 @@ void COMMUNIC_COM_TIMER_OUT( struct t_thread *thread )
       os_completed( copy_thread );
       break;
     case GLOBAL_OP:
-
+    case IRECV:
     case RECV:
       if ( thread->doing_acc_comm )
       {
@@ -3776,7 +3776,7 @@ void COMMUNIC_send( struct t_thread *thread )
                  thread->action->desc.send.communic_id == 0 )
             {
 // TODO id 6: crear una variable nueva que actue de bloqueo para las comunicaciones sync unicamente y dejar el acc_sender_sync como estaba antes
-              thread->blocked_in_host_sync = TRUE;
+              thread->blocked_in_host_sync  = TRUE;
               thread->blocked_sync_threadid = thread->action->desc.send.dest_thread;
             }
             /* this is for a dependency synchronization */
@@ -3791,6 +3791,11 @@ void COMMUNIC_send( struct t_thread *thread )
         {
           thread->acc_sender_sync = TRUE;
           copy_thread             = thread;
+          if( thread->action->desc.send.communic_id == 0 )
+          {
+            thread->blocked_in_host_sync  = TRUE;
+            thread->blocked_sync_threadid = thread->action->desc.send.dest_thread;
+          }
         }
         else
         {
