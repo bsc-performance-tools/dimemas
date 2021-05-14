@@ -114,6 +114,8 @@ class TaskTranslationInfo : public Error
   bool FilePointerAvailable;
   bool FirstPrint;
 
+  bool InCUDAHostToHost;
+
   /* Needed to access counters from others TaskTranslators */
   vector<vector<TaskTranslationInfo*> >* AllTranslationInfo;
 
