@@ -1368,7 +1368,6 @@ static void message_received( struct t_thread *thread )
     /* low level transfer - we look for it at the level of threads  */
     thread_partner = locate_thread_of_task( task_partner, mess->dest_thread );
 
-    // TODO id 1: este es el punto de verificacion
     assert( thread_partner != TH_NIL );
     partner = locate_receiver_dependencies_synchronization( &( thread_partner->recv ),
                                                             task->taskid,
@@ -1666,8 +1665,6 @@ static void message_received( struct t_thread *thread )
       }
     }
 
-//TODO id 7: añadir a la condición la comprobación del thread destinatario 
-//TODO que se ha de guardar cuando se pone a TRUE el blocked_in_host_sync
     if( host_th->blocked_in_host_sync == TRUE && mess->communic_id == 0 && host_th->blocked_sync_threadid == mess->dest_thread )
     {
       host_th->blocked_in_host_sync  = FALSE;
@@ -2037,11 +2034,6 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
     panic( "Unable to locate task %d in Ptask %d\n", mess->ori, thread->task->Ptask->Ptaskid );
   }
 
-  /* TODO id 4: los sends sincronos previos al memcopy_async se añaden a la cola de sends como original thread pero no se esperan y el host 
-                sigue trabajando, y eso puede dar a que otro send sincrono se añada a la cola de sends machacando el estado anterior.
-                
-                En vez de usar acc_sender_sync (que puede que tenga otro proposito), se puede crear otro bool para indicar que el
-                host esta esperando a sincronizarse con un kernel y hasta que no se complete no se pone a ready y esa variable a false */
   for ( sender = (struct t_thread *)head_queue( &( thread_sender->send ) ); sender != TH_NIL;
         sender = (struct t_thread *)next_queue( &( thread_sender->send ) ) )
   {
@@ -2094,7 +2086,6 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
     copy_thread = sender;
   }
 
-  /* TODO id 5: el thread 3 no llega al rendezvous para el cuda launch */
   if ( debug & D_COMM )
   {
     PRINT_TIMER( current_time );
@@ -2111,7 +2102,6 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
   /* En cas que sigui un sender en OCL o CUDA s'ha d'esperar a realitzar
    * més accions a que arribi la comm al receiver per sincronisme.
    */
-  /* TODO id 4: comprobar si el host sigue corriendo aun estando en una comunicacion de sincro */
   if ( !sender->acc_sender_sync && sender->original_thread )
   {
     action         = sender->action;
@@ -2456,7 +2446,6 @@ void COMMUNIC_COM_TIMER_OUT( struct t_thread *thread )
       break;
   }
 
-  /* TODO id 3: revisar si es necesario comprobar si está bloqueado en una global op (blocked_in_global_op) */
   if ( thread->blocked_in_global_op == FALSE && thread->blocked_in_host_sync == FALSE &&
        ( ( thread->acc_sender_sync && !thread->doing_acc_comm ) || ( thread->original_thread && !thread->doing_acc_comm ) ) )
   {
@@ -3775,7 +3764,6 @@ void COMMUNIC_send( struct t_thread *thread )
                    OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) &&
                  thread->action->desc.send.communic_id == 0 )
             {
-// TODO id 6: crear una variable nueva que actue de bloqueo para las comunicaciones sync unicamente y dejar el acc_sender_sync como estaba antes
               thread->blocked_in_host_sync  = TRUE;
               thread->blocked_sync_threadid = thread->action->desc.send.dest_thread;
             }
@@ -4333,7 +4321,6 @@ void COMMUNIC_Irecv( struct t_thread *thread )
     }
   }
 
-  // TODO id 1: verificar que el sender esta viendo el thread recv que estamos insertando a continuacion
   if ( thread->acc_in_block_event.type == CUDA_LIB_CALL_EV && thread->acc_in_block_event.value == CUDA_MEMCPY_ASYNC_VAL )
   {
     /* this is a dependency synchronization
