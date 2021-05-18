@@ -334,7 +334,6 @@ struct t_send
   int comm_type; /* Communication type (JGG) */
   struct t_dedicated_connection *connection;
 
-  struct t_thread *receiver;
   dimemas_timer logical_send;
   dimemas_timer physical_send;
   dimemas_timer physical_recv;
@@ -350,7 +349,6 @@ struct t_recv
   int comm_type;           /* Communication type */
   int wait_type;
 
-  struct t_thread *sender;
   dimemas_timer logical_recv;
 };
 

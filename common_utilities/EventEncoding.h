@@ -1049,7 +1049,7 @@ extern "C"
   /* CUDA EventEncoding calls	*/
   int CUDAEventEncoding_Is_CUDABlock( long64_t type );
   int CUDAEventEncoding_Is_BlockBegin( long64_t Op );
-  int CUDAEventEncoding_Is_CUDAComm( long64_t tag );
+  int CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver );
   int CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event );
   int CUDAEventEconding_Is_CUDALaunch( struct t_event_block event );

@@ -181,6 +181,8 @@ static void close_global_nonblock_communication( struct t_thread *thread );
 
 static int get_communication_type( struct t_task *task,
                                    struct t_task *task_partner,
+                                   struct t_thread *thread,
+                                   struct t_thread *thread_partner,
                                    int mess_tag,
                                    int mess_size,
                                    struct t_dedicated_connection **connection );
@@ -1330,7 +1332,7 @@ static struct t_thread *locate_receiver_dependencies_synchronization( struct t_q
 /******************************************************************************
  * PROCEDURE 'message_received'                                               *
  *****************************************************************************/
-static void message_received( struct t_thread *thread )
+static void message_received( struct t_thread *thread_sender )
 {
   struct t_node *node, *node_partner;
   struct t_task *task, *task_partner;
@@ -1343,22 +1345,22 @@ static void message_received( struct t_thread *thread )
   struct t_recv *mess_recv;
   struct t_cpu *cpu_partner, *cpu;
 
-  node   = get_node_of_thread( thread );
-  task   = thread->task;
-  action = thread->action;
+  node   = get_node_of_thread( thread_sender );
+  task   = thread_sender->task;
+  action = thread_sender->action;
   mess   = &( action->desc.send );
 
   task_partner = locate_task( task->Ptask, mess->dest );
   node_partner = get_node_of_task( task_partner );
 
-  thread->physical_recv = current_time;
+  thread_sender->physical_recv = current_time;
 
   if ( mess->dest_thread == -1 )
   {
     /* real MPI transfer - we look for it at the level of tasks  */
     partner = locate_receiver_real_MPI_transfer( &( task_partner->recv ),
                                                  task->taskid,
-                                                 thread->threadid,
+                                                 thread_sender->threadid,
                                                  mess->dest_thread,
                                                  mess->mess_tag,
                                                  mess->communic_id );
@@ -1371,7 +1373,7 @@ static void message_received( struct t_thread *thread )
     assert( thread_partner != TH_NIL );
     partner = locate_receiver_dependencies_synchronization( &( thread_partner->recv ),
                                                             task->taskid,
-                                                            thread->threadid,
+                                                            thread_sender->threadid,
                                                             mess->dest_thread,
                                                             mess->mess_tag,
                                                             mess->communic_id );
@@ -1397,7 +1399,7 @@ static void message_received( struct t_thread *thread )
           assert( mess->dest > 0 );
           if ( ( ( partner->threadid == mess->dest_thread ) || ( mess->dest_thread == -1 ) ) && ( mess_recv->mess_tag == mess->mess_tag ) &&
                ( mess_recv->communic_id == mess->communic_id ) && ( ( mess_recv->ori == task->taskid ) || ( mess_recv->ori == -1 ) ) &&
-               ( ( mess_recv->ori_thread == thread->threadid ) || ( mess_recv->ori_thread == -1 ) ) )
+               ( ( mess_recv->ori_thread == thread_sender->threadid ) || ( mess_recv->ori_thread == -1 ) ) )
           {
             partner->doing_busy_wait    = FALSE;
             cpu_partner                 = get_cpu_of_thread( partner );
@@ -1413,19 +1415,19 @@ static void message_received( struct t_thread *thread )
               PRINT_TIMER( current_time );
               printf( ": COMMUNIC_send\t M%02d P%02d T%02d (t%02d)"
                       "-> T%02d Busy Wait\n",
-                      thread->task->node->machine->id,
-                      IDENTIFIERS( thread ),
+                      thread_sender->task->node->machine->id,
+                      IDENTIFIERS( thread_sender ),
                       mess->dest );
             }
 
             account = current_account( partner );
             account->n_bytes_recv += mess->mess_size;
-            cpu = get_cpu_of_thread( thread );
+            cpu = get_cpu_of_thread( thread_sender );
 
             /**
              * Look for a possible IRecv notification!
              */
-            actual_logical_recv = get_logical_receive( thread,
+            actual_logical_recv = get_logical_receive( thread_sender,
                                                        &( task_partner->irecvs_executed ),
                                                        mess_recv->ori,
                                                        mess_recv->ori_thread,
@@ -1437,17 +1439,17 @@ static void message_received( struct t_thread *thread )
             if ( debug & D_PRV )
             {
               PRINT_TIMER( current_time );
-              printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n", IDENTIFIERS( thread ), mess->communic_id );
+              printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n", IDENTIFIERS( thread_sender ), mess->communic_id );
             }
 
             PARAVER_P2P_Comm( cpu->unique_number,
-                              IDENTIFIERS( thread ),
-                              thread->logical_send,
-                              thread->physical_send,
+                              IDENTIFIERS( thread_sender ),
+                              thread_sender->logical_send,
+                              thread_sender->physical_send,
                               cpu_partner->unique_number,
                               IDENTIFIERS( partner ),
                               actual_logical_recv,
-                              thread->physical_recv,
+                              thread_sender->physical_recv,
                               mess->mess_size,
                               mess->mess_tag );
 
@@ -1465,7 +1467,7 @@ static void message_received( struct t_thread *thread )
             /* FEC: No es pot borrar el thread aqui perque encara es necessitara
              * quan es retorni a la crida d'on venim. Nomes es marca com a pendent
              * d'eliminar i ja s'esborrara mes tard. */
-            thread->marked_for_deletion = 1;
+            thread_sender->marked_for_deletion = 1;
             return;
           }
         }
@@ -1477,18 +1479,18 @@ static void message_received( struct t_thread *thread )
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) Receiver Not Ready\n", IDENTIFIERS( thread ), mess->dest, mess->mess_tag );
+      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) Receiver Not Ready\n", IDENTIFIERS( thread_sender ), mess->dest, mess->mess_tag );
     }
     if ( mess->dest_thread == -1 )
     {
       /* this is a real MPI transfer */
-      inFIFO_queue( &( task_partner->mess_recv ), (char *)thread );
+      inFIFO_queue( &( task_partner->mess_recv ), (char *)thread_sender );
     }
     else
     {
       /* this is a dependency synchronization  */
       assert( thread_partner != TH_NIL );
-      inFIFO_queue( &( thread_partner->mess_recv ), (char *)thread );
+      inFIFO_queue( &( thread_partner->mess_recv ), (char *)thread_sender );
     }
   }
   else
@@ -1513,24 +1515,24 @@ static void message_received( struct t_thread *thread )
       extract_from_queue( &( thread_partner->recv ), (char *)partner );
     }
 
-    if ( !thread->host && !thread->kernel )
+    if ( !thread_sender->host && !thread_sender->kernel )
     {
       PARAVER_Wait( 0, IDENTIFIERS( partner ), partner->last_paraver, current_time, PRV_WAITING_MESG_ST );
     }
 
     new_cp_node( partner, CP_BLOCK );
-    new_cp_relation( partner, thread );
-    cpu         = get_cpu_of_thread( thread );
+    new_cp_relation( partner, thread_sender );
+    cpu         = get_cpu_of_thread( thread_sender );
     cpu_partner = get_cpu_of_thread( partner );
 
     struct t_thread *host_th, *kernel_th;
 
-    if ( thread->host )
+    if ( thread_sender->host )
     {
-      if ( !thread->original_thread )
-        host_th = thread->twin_thread;
+      if ( !thread_sender->original_thread )
+        host_th = thread_sender->twin_thread;
       else
-        host_th = thread;
+        host_th = thread_sender;
       kernel_th = partner;
     }
     else if ( partner->host )
@@ -1539,16 +1541,16 @@ static void message_received( struct t_thread *thread )
         host_th = partner->twin_thread;
       else
         host_th = partner;
-      kernel_th = thread;
+      kernel_th = thread_sender;
     }
 
     /**
      * Look for a possible IRecv notification!
      */
-    actual_logical_recv = get_logical_receive( thread,
+    actual_logical_recv = get_logical_receive( thread_sender,
                                                &( partner->task->irecvs_executed ),
-                                               thread->task->taskid,
-                                               thread->threadid,
+                                               thread_sender->task->taskid,
+                                               thread_sender->threadid,
                                                mess->mess_tag,
                                                mess->mess_size,
                                                mess->communic_id,
@@ -1557,7 +1559,7 @@ static void message_received( struct t_thread *thread )
     if ( debug & D_PRV )
     {
       PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n", IDENTIFIERS( thread ), mess->communic_id );
+      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Printing communication with Comm.Id: %d\n", IDENTIFIERS( thread_sender ), mess->communic_id );
     }
 
     // When host continues doing other things, the original thread is in other
@@ -1566,10 +1568,10 @@ static void message_received( struct t_thread *thread )
     // To solve it, use the thread and not host_th, because can be a copy
     // And copy state (acc_in_block_event) must be correct
     int transf_comm =
-      CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) || OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event );
+      CUDAEventEncoding_Is_CUDATransferBlock( thread_sender->acc_in_block_event ) || OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event );
     /* If it's a sync_comm in a CUDAMem_Cpy block in the host, is ignored */
     int sync_comm = mess->communic_id == 0;
-    int cuda_comm = CUDAEventEncoding_Is_CUDAComm( mess->mess_tag );
+    int cuda_comm = CUDAEventEncoding_Is_CUDAComm( thread_sender, thread_partner );
     int ocl_comm  = OCLEventEncoding_Is_OCLComm( mess->mess_tag );
 
     /* Paraver P2P communication has to be thrown */
@@ -1585,13 +1587,13 @@ static void message_received( struct t_thread *thread )
     if ( paraver_comm )
     {
       PARAVER_P2P_Comm( cpu->unique_number,
-                        IDENTIFIERS( thread ),
-                        thread->logical_send,
-                        thread->physical_send,
+                        IDENTIFIERS( thread_sender ),
+                        thread_sender->logical_send,
+                        thread_sender->physical_send,
                         cpu_partner->unique_number,
                         IDENTIFIERS( partner ),
                         actual_logical_recv,
-                        thread->physical_recv,
+                        thread_sender->physical_recv,
                         mess->mess_size,
                         mess->mess_tag );
       partner->last_paraver = current_time;
@@ -1613,14 +1615,14 @@ static void message_received( struct t_thread *thread )
     /* FEC: No es pot borrar el thread aqui perque encara es necessitara
        quan es retorni a la crida d'on venim. Nomes es marca com a
        pendent d'eliminar i ja s'esborrara mes tard. */
-    if ( !thread->original_thread )
-      thread->marked_for_deletion = 1;
+    if ( !thread_sender->original_thread )
+      thread_sender->marked_for_deletion = 1;
 
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
       printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d (t%02d) Tag(%d) CommID(%d) Receiver Unlocked\n",
-              IDENTIFIERS( thread ),
+              IDENTIFIERS( thread_sender ),
               mess->dest,
               mess->dest_thread,
               mess->mess_tag,
@@ -3330,7 +3332,7 @@ int COMMUNIC_send_reached_dependency_synchronization( struct t_thread *thread, s
  * recursos, llamando a 'really_send'.
  */
 
-void COMMUNIC_send( struct t_thread *thread )
+void COMMUNIC_send( struct t_thread *thread_sender )
 {
   struct t_action *action;
   struct t_send *mess; /* Message */
@@ -3351,7 +3353,7 @@ void COMMUNIC_send( struct t_thread *thread )
   int kind;              /* Communication type */
   struct t_dedicated_connection *connection;
 
-  action = thread->action;
+  action = thread_sender->action;
   if ( action->action != SEND )
   {
     panic( "Calling COMMUNIC_send and action is not Send (%d)\n", action->action );
@@ -3365,18 +3367,18 @@ void COMMUNIC_send( struct t_thread *thread )
     PRINT_TIMER( current_time );
     printf( ":----calling COMMUNIC_send \
                 P%02d T%02d (t%02d) -> T%02d Tag(%d) Size: %lld  Comm.Id: %d \n",
-            IDENTIFIERS( thread ),
+            IDENTIFIERS( thread_sender ),
             mess->dest,
             mess->mess_tag,
             mess->mess_size,
             mess->communic_id );
   }
 
-  task         = thread->task;
+  task         = thread_sender->task;
   task_partner = locate_task( task->Ptask, mess->dest );
   if ( task_partner == T_NIL )
   {
-    panic( "P%02d T%02d (t%02d) trying to send message to inexistent T%d\n", IDENTIFIERS( thread ), mess->dest );
+    panic( "P%02d T%02d (t%02d) trying to send message to inexistent T%d\n", IDENTIFIERS( thread_sender ), mess->dest );
   }
 
 
@@ -3396,7 +3398,7 @@ void COMMUNIC_send( struct t_thread *thread )
   node_r = get_node_of_task( task_partner );
 
   /* S'obte el tipus de communicació */
-  kind = get_communication_type( task, task_partner, mess->mess_tag, mess->mess_size, &connection );
+  kind = get_communication_type( task, task_partner, thread_sender, thread_partner, mess->mess_tag, mess->mess_size, &connection );
 
   if ( kind == INTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
   {
@@ -3423,22 +3425,22 @@ void COMMUNIC_send( struct t_thread *thread )
       PRINT_TIMER( current_time );
       printf( "::Message at COMMUNIC_send function--\n" );
     }
-    if ( thread->eee_done_reset_var == TRUE )
+    if ( thread_sender->eee_done_reset_var == TRUE )
     {
       if ( EEE_DEBUG )
       {
         PRINT_TIMER( current_time );
         printf( "::EEE_SEND Finished! Resetting Variables!" );
       }
-      thread->doing_startup      = FALSE;
-      thread->startup_done       = FALSE;
-      thread->loose_cpu          = FALSE;
-      thread->link_transmit_done = FALSE;
-      thread->nw_switch_done     = TRUE;
-      thread->eee_done_reset_var = FALSE;
+      thread_sender->doing_startup      = FALSE;
+      thread_sender->startup_done       = FALSE;
+      thread_sender->loose_cpu          = FALSE;
+      thread_sender->link_transmit_done = FALSE;
+      thread_sender->nw_switch_done     = TRUE;
+      thread_sender->eee_done_reset_var = FALSE;
     }
 
-    if ( thread->eee_send_done == FALSE )
+    if ( thread_sender->eee_send_done == FALSE )
     {
       if ( EEE_DEBUG )
       {
@@ -3447,7 +3449,7 @@ void COMMUNIC_send( struct t_thread *thread )
       }
 
       t_nano eee_nw_delay;
-      eee_nw_delay = eee_network( thread );
+      eee_nw_delay = eee_network( thread_sender );
 
       if ( EEE_DEBUG )
       {
@@ -3455,33 +3457,33 @@ void COMMUNIC_send( struct t_thread *thread )
         printf( "::Delay Returned:%f\n", (double)eee_nw_delay );
       }
 
-      if ( thread->eee_send_done == TRUE )
+      if ( thread_sender->eee_send_done == TRUE )
       {
         if ( EEE_DEBUG )
         {
           PRINT_TIMER( current_time );
           printf( "::Last Transmit - Activing reset variables after send!\n\n" );
         }
-        thread->eee_done_reset_var = TRUE;
+        thread_sender->eee_done_reset_var = TRUE;
         if ( EEE_DEBUG )
         {
           PRINT_TIMER( current_time );
           printf( "::Event Added to Scheduler with delay::%f\n", (double)eee_nw_delay );
         }
-        SCHEDULER_thread_to_ready_return( M_COM, thread, eee_nw_delay, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread_sender, eee_nw_delay, 0 );
         return;
       }
       else
       {
-        thread->doing_startup = TRUE;
-        thread->startup_done  = FALSE;
-        thread->loose_cpu     = FALSE;
+        thread_sender->doing_startup = TRUE;
+        thread_sender->startup_done  = FALSE;
+        thread_sender->loose_cpu     = FALSE;
         if ( EEE_DEBUG )
         {
           PRINT_TIMER( current_time );
           printf( "::Event Added to Scheduler with delay::%f\n", (double)eee_nw_delay );
         }
-        SCHEDULER_thread_to_ready_return( M_COM, thread, eee_nw_delay, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread_sender, eee_nw_delay, 0 );
         return;
       }
 
@@ -3497,11 +3499,11 @@ void COMMUNIC_send( struct t_thread *thread )
    ***************************************************************************************/
 
   /* Compute startup duration and re-schedule thread if needed */
-  if ( thread->startup_done == FALSE )
+  if ( thread_sender->startup_done == FALSE )
   {
     // startup = compute_startup (thread, kind, node_s, connection);
-    startup = compute_startup( thread,
-                               thread->task->taskid, /* Sender */
+    startup = compute_startup( thread_sender,
+                               thread_sender->task->taskid, /* Sender */
                                task_partner->taskid, /* Receiver */
                                node_s,
                                node_r,
@@ -3510,72 +3512,72 @@ void COMMUNIC_send( struct t_thread *thread )
                                kind,
                                connection );
 
-    if ( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->kernel )
+    if ( OCLEventEncoding_Is_OCLKernelRunning( thread_sender->acc_in_block_event ) && thread_sender->kernel )
     {
-      struct t_cpu *cpu = get_cpu_of_thread( thread );
-      PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, thread->acc_in_block_event.type, 0 );
+      struct t_cpu *cpu = get_cpu_of_thread( thread_sender );
+      PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread_sender ), current_time, thread_sender->acc_in_block_event.type, 0 );
     }
 
     if ( startup != (t_nano)0 )
     {
-      thread->logical_send = current_time;
+      thread_sender->logical_send = current_time;
 
-      thread->loose_cpu     = FALSE;
-      thread->doing_startup = TRUE;
+      thread_sender->loose_cpu     = FALSE;
+      thread_sender->doing_startup = TRUE;
 
-      if ( CUDAEventEncoding_Is_CUDAComm( mess->mess_tag ) || OCLEventEncoding_Is_OCLComm( mess->mess_tag ) )
-        thread->doing_acc_comm = TRUE;
+      if ( CUDAEventEncoding_Is_CUDAComm( thread_sender, thread_partner ) || OCLEventEncoding_Is_OCLComm( mess->mess_tag ) )
+        thread_sender->doing_acc_comm = TRUE;
 
-      account = current_account( thread );
+      account = current_account( thread_sender );
       FLOAT_TO_TIMER( startup, tmp_timer );
       ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
       SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-      SCHEDULER_thread_to_ready_return( M_COM, thread, startup, 0 );
+      SCHEDULER_thread_to_ready_return( M_COM, thread_sender, startup, 0 );
 
       if ( debug & D_COMM )
       {
         PRINT_TIMER( current_time );
-        printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
+        printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread_sender ), (double)startup / 1e9 );
       }
       return;
     }
     else /* (startup == (t_nano) 0) */
     {
-      thread->startup_done = TRUE;
-      thread->logical_send = current_time;
+      thread_sender->startup_done = TRUE;
+      thread_sender->logical_send = current_time;
     }
   } /* thread->startup_done == TRUE */
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
   {
-    if ( thread->copy_done == FALSE )
+    if ( thread_sender->copy_done == FALSE )
     {
-      copy_latency = compute_copy_latency( thread, node_s, mess->mess_size, mess->comm_type );
+      copy_latency = compute_copy_latency( thread_sender, node_s, mess->mess_size, mess->comm_type );
 
       if ( copy_latency != (t_nano)0 )
       {
-        thread->loose_cpu  = FALSE;
-        thread->doing_copy = TRUE;
+        thread_sender->loose_cpu  = FALSE;
+        thread_sender->doing_copy = TRUE;
 
-        account = current_account( thread );
+        account = current_account( thread_sender );
         FLOAT_TO_TIMER( copy_latency, tmp_timer );
         ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
         SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-        SCHEDULER_thread_to_ready_return( M_COM, thread, copy_latency, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread_sender, copy_latency, 0 );
 
         if ( debug & D_COMM )
         {
           PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n", IDENTIFIERS( thread ), (double)copy_latency / 1e9 );
+          printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n", IDENTIFIERS( thread_sender ), (double)copy_latency / 1e9 );
         }
         return;
       }
       else
       {
-        thread->copy_done = TRUE;
+        thread_sender->copy_done = TRUE;
       }
     }
   }
@@ -3583,50 +3585,50 @@ void COMMUNIC_send( struct t_thread *thread )
   /* Round Trip Time for sends */
   if ( RTT_enabled && mess->rendez_vous && ( kind == INTERNAL_NETWORK_COM_TYPE ) )
   {
-    if ( thread->roundtrip_done == FALSE )
+    if ( thread_sender->roundtrip_done == FALSE )
     {
       roundtriptime = RTT_time / 2.0;
 
       if ( RTT_time != (t_nano)0 )
       {
-        thread->loose_cpu       = FALSE;
-        thread->doing_roundtrip = TRUE;
+        thread_sender->loose_cpu       = FALSE;
+        thread_sender->doing_roundtrip = TRUE;
 
-        account = current_account( thread );
+        account = current_account( thread_sender );
         FLOAT_TO_TIMER( roundtriptime, tmp_timer );
         ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
         SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-        SCHEDULER_thread_to_ready_return( M_COM, thread, roundtriptime, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread_sender, roundtriptime, 0 );
 
         if ( debug & D_COMM )
         {
           PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Initiate round trip time(%f)\n", IDENTIFIERS( thread ), (double)roundtriptime / 1e9 );
+          printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Initiate round trip time(%f)\n", IDENTIFIERS( thread_sender ), (double)roundtriptime / 1e9 );
         }
         return;
       }
       else
       {
-        thread->roundtrip_done = TRUE;
+        thread_sender->roundtrip_done = TRUE;
       }
     }
   }
   /* Startup, Copy and RTT checks reset */
-  thread->startup_done   = FALSE;
-  thread->copy_done      = FALSE;
-  thread->roundtrip_done = FALSE;
+  thread_sender->startup_done   = FALSE;
+  thread_sender->copy_done      = FALSE;
+  thread_sender->roundtrip_done = FALSE;
   // Karthikeyan EEE Code - Resetting variables
-  thread->eee_send_done = FALSE;
+  thread_sender->eee_send_done = FALSE;
   // Karthikeyan EEE Code END
 
   if ( with_deadlock_analysis )
   {
-    if ( DEADLOCK_new_communic_event( thread ) )
+    if ( DEADLOCK_new_communic_event( thread_sender ) )
       return;
   }
 
-  account = current_account( thread );
+  account = current_account( thread_sender );
   account->n_sends++;
 
   account->n_bytes_send += mess->mess_size;
@@ -3635,7 +3637,7 @@ void COMMUNIC_send( struct t_thread *thread )
   {
     PRINT_TIMER( current_time );
     printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d t%d Tag: %d Comm.Id: %d Size: %lldb\n",
-            IDENTIFIERS( thread ),
+            IDENTIFIERS( thread_sender ),
             action->desc.send.dest,
             action->desc.send.dest_thread,
             mess->mess_tag,
@@ -3649,12 +3651,12 @@ void COMMUNIC_send( struct t_thread *thread )
   if ( mess->dest_thread == -1 )
   {
     /* this is a real MPI transfer */
-    hi_ha_irecv = COMMUNIC_send_reached_real_MPI_transfer( thread, mess );
+    hi_ha_irecv = COMMUNIC_send_reached_real_MPI_transfer( thread_sender, mess );
   }
   else
   {
     /* this is a dependency synchronization */
-    hi_ha_irecv = COMMUNIC_send_reached_dependency_synchronization( thread, mess );
+    hi_ha_irecv = COMMUNIC_send_reached_dependency_synchronization( thread_sender, mess );
   }
 
 #ifdef VENUS_ENABLED
@@ -3682,7 +3684,7 @@ void COMMUNIC_send( struct t_thread *thread )
        look for it at task->recv   */
     partner = locate_receiver_real_MPI_transfer( &( task_partner->recv ),
                                                  task->taskid,
-                                                 thread->threadid,
+                                                 thread_sender->threadid,
                                                  mess->dest_thread,
                                                  mess->mess_tag,
                                                  mess->communic_id );
@@ -3694,7 +3696,7 @@ void COMMUNIC_send( struct t_thread *thread )
     assert( thread_partner != TH_NIL );
     partner = locate_receiver_dependencies_synchronization( &( thread_partner->recv ),
                                                             task->taskid,
-                                                            thread->threadid,
+                                                            thread_sender->threadid,
                                                             mess->dest_thread,
                                                             mess->mess_tag,
                                                             mess->communic_id );
@@ -3708,7 +3710,7 @@ void COMMUNIC_send( struct t_thread *thread )
 
   if ( partner != TH_NIL )
   {
-    SCHEDULER_info( COMMUNICATION_INFO, SCH_INFO_SEND, thread, TH_NIL );
+    SCHEDULER_info( COMMUNICATION_INFO, SCH_INFO_SEND, thread_sender, TH_NIL );
   }
 
   comm_kind = ( mess->immediate << 1 ) + mess->rendez_vous;
@@ -3727,7 +3729,7 @@ void COMMUNIC_send( struct t_thread *thread )
         {
           /* El Rendez vous s'ha de fer en "background". Cal utilitzar
            * una copia del thread */
-          copy_thread = duplicate_thread( thread );
+          copy_thread = duplicate_thread( thread_sender );
           if ( mess->dest_thread == -1 )
           {
             /* this is for a real MPI transfer */
@@ -3736,17 +3738,17 @@ void COMMUNIC_send( struct t_thread *thread )
           else
           {
             /* this is for a dependency synchronization */
-            inFIFO_queue( &( thread->send ), (char *)copy_thread );
+            inFIFO_queue( &( thread_sender->send ), (char *)copy_thread );
           }
 
           /* El thread original pot continuar */
-          action         = thread->action;
-          thread->action = action->next;
+          action         = thread_sender->action;
+          thread_sender->action = action->next;
           READ_free_action( action );
-          if ( more_actions( thread ) )
+          if ( more_actions( thread_sender ) )
           {
-            thread->loose_cpu = FALSE;
-            SCHEDULER_thread_to_ready( thread );
+            thread_sender->loose_cpu = FALSE;
+            SCHEDULER_thread_to_ready( thread_sender );
           }
         } /* Send, con Rendezvous */
         else
@@ -3755,39 +3757,39 @@ void COMMUNIC_send( struct t_thread *thread )
           if ( mess->dest_thread == -1 )
           {
             /* this is for a real MPI transfer */
-            inFIFO_queue( &( task->send ), (char *)thread );
+            inFIFO_queue( &( task->send ), (char *)thread_sender );
           }
           else
           {
-            if ( thread->original_thread &&
-                 ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
-                   OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) &&
-                 thread->action->desc.send.communic_id == 0 )
+            if ( thread_sender->original_thread &&
+                 ( CUDAEventEncoding_Is_CUDATransferBlock( thread_sender->acc_in_block_event ) ||
+                   OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event ) ) &&
+                 thread_sender->action->desc.send.communic_id == 0 )
             {
-              thread->blocked_in_host_sync  = TRUE;
-              thread->blocked_sync_threadid = thread->action->desc.send.dest_thread;
+              thread_sender->blocked_in_host_sync  = TRUE;
+              thread_sender->blocked_sync_threadid = thread_sender->action->desc.send.dest_thread;
             }
             /* this is for a dependency synchronization */
-            inFIFO_queue( &( thread->send ), (char *)thread );
+            inFIFO_queue( &( thread_sender->send ), (char *)thread_sender );
           }
         }
       }
       else /* hi_ha_irecv || partner != TH_NIL */
       {
-        if ( thread->original_thread && ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
-                                          OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) )
+        if ( thread_sender->original_thread && ( CUDAEventEncoding_Is_CUDATransferBlock( thread_sender->acc_in_block_event ) ||
+                                          OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event ) ) )
         {
-          thread->acc_sender_sync = TRUE;
-          copy_thread             = thread;
-          if( thread->action->desc.send.communic_id == 0 )
+          thread_sender->acc_sender_sync = TRUE;
+          copy_thread             = thread_sender;
+          if( thread_sender->action->desc.send.communic_id == 0 )
           {
-            thread->blocked_in_host_sync  = TRUE;
-            thread->blocked_sync_threadid = thread->action->desc.send.dest_thread;
+            thread_sender->blocked_in_host_sync  = TRUE;
+            thread_sender->blocked_sync_threadid = thread_sender->action->desc.send.dest_thread;
           }
         }
         else
         {
-          copy_thread                             = duplicate_thread( thread );
+          copy_thread                             = duplicate_thread( thread_sender );
           copy_thread->initial_communication_time = current_time;
           copy_thread->last_paraver               = current_time;
         }
@@ -3795,15 +3797,15 @@ void COMMUNIC_send( struct t_thread *thread )
         /* !!! */
         really_send( copy_thread );
 
-        if ( !thread->acc_sender_sync )
+        if ( !thread_sender->acc_sender_sync )
         {
-          action         = thread->action;
-          thread->action = action->next;
+          action         = thread_sender->action;
+          thread_sender->action = action->next;
           READ_free_action( action );
-          if ( more_actions( thread ) )
+          if ( more_actions( thread_sender ) )
           {
-            thread->loose_cpu = FALSE;
-            SCHEDULER_thread_to_ready( thread );
+            thread_sender->loose_cpu = FALSE;
+            SCHEDULER_thread_to_ready( thread_sender );
           }
         }
       }
@@ -3813,19 +3815,19 @@ void COMMUNIC_send( struct t_thread *thread )
       /* De momento solo el tipo  de comunicacion NORD_ASYNC */
     case NORD_ASYNC:
     {
-      copy_thread = duplicate_thread( thread );
+      copy_thread = duplicate_thread( thread_sender );
       ASS_ALL_TIMER( copy_thread->initial_communication_time, current_time );
       copy_thread->last_paraver = current_time;
       /* !!!! */
       really_send( copy_thread );
 
-      action         = thread->action;
-      thread->action = action->next;
+      action         = thread_sender->action;
+      thread_sender->action = action->next;
       READ_free_action( action );
-      if ( more_actions( thread ) )
+      if ( more_actions( thread_sender ) )
       {
-        thread->loose_cpu = FALSE;
-        SCHEDULER_thread_to_ready( thread );
+        thread_sender->loose_cpu = FALSE;
+        SCHEDULER_thread_to_ready( thread_sender );
       }
       break;
     }
@@ -3840,7 +3842,7 @@ void COMMUNIC_send( struct t_thread *thread )
  * ÚLTIMA MODIFICACIÓN: 29/10/2004 (Juan González García)                     *
  *****************************************************************************/
 
-void COMMUNIC_recv( struct t_thread *thread )
+void COMMUNIC_recv( struct t_thread *thread_receiver )
 {
   struct t_action *action;
   struct t_recv *mess;
@@ -3853,7 +3855,7 @@ void COMMUNIC_recv( struct t_thread *thread )
   struct t_dedicated_connection *connection;
 
 
-  action = thread->action;
+  action = thread_receiver->action;
   if ( action->action != RECV )
   {
     panic( "Calling COMMUNIC_recv and action is not receive (%d)\n", action->action );
@@ -3867,7 +3869,7 @@ void COMMUNIC_recv( struct t_thread *thread )
   {
     PRINT_TIMER( current_time );
     printf( ":----calling COMMUNIC_recv   P%02d T%02d (t%02d) <- T%02d (t%02d) Tag: %d Comm.Id: %d size: %lld\n",
-            IDENTIFIERS( thread ),
+            IDENTIFIERS( thread_receiver ),
             action->desc.recv.ori,
             action->desc.recv.ori_thread,
             mess->mess_tag,
@@ -3875,15 +3877,17 @@ void COMMUNIC_recv( struct t_thread *thread )
             action->desc.recv.mess_size );
   }
 
-  task = thread->task;
+  task = thread_receiver->task;
 
-  node_r = get_node_of_thread( thread );                                // origin thread
-  node_s = get_node_for_task_by_name( thread->task->Ptask, mess->ori ); // 7 thread
+  node_r = get_node_of_thread( thread_receiver );                                // origin thread
+  node_s = get_node_for_task_by_name( thread_receiver->task->Ptask, mess->ori ); // 7 thread
 
   task_source = locate_task( task->Ptask, mess->ori );
 
   /* S'obte el tipus de communicació */
-  kind = get_communication_type( task_source, task, mess->mess_tag, mess->mess_size, &connection );
+  kind = get_communication_type( task_source, task, 
+                                 locate_thread_of_task( task_source, mess->ori_thread ), thread_receiver,
+                                 mess->mess_tag, mess->mess_size, &connection );
 
   if ( kind == INTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
   {
@@ -3896,12 +3900,12 @@ void COMMUNIC_recv( struct t_thread *thread )
 
   mess->comm_type = kind;
 
-  if ( thread->startup_done == FALSE )
+  if ( thread_receiver->startup_done == FALSE )
   { /* Compute startup duration and re-schedule thread if needed */
     // startup = compute_startup (thread, kind, node_s, connection);
-    startup = compute_startup( thread,
+    startup = compute_startup( thread_receiver,
                                mess->ori,            /* Sender */
-                               thread->task->taskid, /* Receiver */
+                               thread_receiver->task->taskid, /* Receiver */
                                node_s,
                                node_r,
                                mess->mess_tag,
@@ -3914,33 +3918,34 @@ void COMMUNIC_recv( struct t_thread *thread )
 
     if ( startup > (t_nano)0 )
     {
-      thread->logical_recv = current_time;
+      thread_receiver->logical_recv = current_time;
 
-      thread->loose_cpu     = FALSE;
-      thread->doing_startup = TRUE;
+      thread_receiver->loose_cpu     = FALSE;
+      thread_receiver->doing_startup = TRUE;
 
-      if ( CUDAEventEncoding_Is_CUDAComm( mess->mess_tag ) || OCLEventEncoding_Is_OCLComm( mess->mess_tag ) )
-        thread->doing_acc_comm = TRUE;
+      if ( CUDAEventEncoding_Is_CUDAComm( locate_thread_of_task( task_source, mess->ori_thread ), thread_receiver ) ||
+           OCLEventEncoding_Is_OCLComm( mess->mess_tag ) )
+        thread_receiver->doing_acc_comm = TRUE;
 
-      account = current_account( thread );
+      account = current_account( thread_receiver );
       FLOAT_TO_TIMER( startup, tmp_timer );
       ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
       SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-      SCHEDULER_thread_to_ready_return( M_COM, thread, startup, 0 );
+      SCHEDULER_thread_to_ready_return( M_COM, thread_receiver, startup, 0 );
 
       if ( debug & D_COMM )
       {
         PRINT_TIMER( current_time );
-        printf( ": COMMUNIC_recv\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
+        printf( ": COMMUNIC_recv\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread_receiver ), (double)startup / 1e9 );
       }
 
       return;
     }
     else if ( startup == (t_nano)0 )
     {
-      thread->logical_recv = current_time;
-      thread->startup_done = TRUE;
+      thread_receiver->logical_recv = current_time;
+      thread_receiver->startup_done = TRUE;
     }
   }
   /* Startup has finished */
@@ -3948,47 +3953,47 @@ void COMMUNIC_recv( struct t_thread *thread )
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
   {
-    if ( thread->copy_done == FALSE )
+    if ( thread_receiver->copy_done == FALSE )
     {
-      copy_latency = compute_copy_latency( thread, node_s, mess->mess_size, mess->comm_type );
+      copy_latency = compute_copy_latency( thread_receiver, node_s, mess->mess_size, mess->comm_type );
 
       if ( copy_latency != (t_nano)0 )
       {
-        thread->loose_cpu  = FALSE;
-        thread->doing_copy = TRUE;
+        thread_receiver->loose_cpu  = FALSE;
+        thread_receiver->doing_copy = TRUE;
 
-        account = current_account( thread );
+        account = current_account( thread_receiver );
         FLOAT_TO_TIMER( copy_latency, tmp_timer );
         ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
         SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-        SCHEDULER_thread_to_ready_return( M_COM, thread, copy_latency, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread_receiver, copy_latency, 0 );
 
         if ( debug & D_COMM )
         {
           PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_recv\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n", IDENTIFIERS( thread ), (double)copy_latency / 1e9 );
+          printf( ": COMMUNIC_recv\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n", IDENTIFIERS( thread_receiver ), (double)copy_latency / 1e9 );
         }
         return;
       }
       else
       {
-        thread->copy_done = TRUE;
+        thread_receiver->copy_done = TRUE;
       }
     }
   }
 
   /* Startup and Copy checks reset */
-  thread->startup_done = FALSE;
-  thread->copy_done    = FALSE;
+  thread_receiver->startup_done = FALSE;
+  thread_receiver->copy_done    = FALSE;
 
   if ( with_deadlock_analysis )
   {
-    if ( DEADLOCK_new_communic_event( thread ) )
+    if ( DEADLOCK_new_communic_event( thread_receiver ) )
       return;
   }
 
-  account = current_account( thread );
+  account = current_account( thread_receiver );
   account->n_recvs++;
 
   /* FEC: S'avisa que s'ha arribat a aquest recv */
@@ -3996,21 +4001,21 @@ void COMMUNIC_recv( struct t_thread *thread )
   if ( mess->ori_thread == -1 )
   {
     /* this is a real MPI transfer */
-    COMMUNIC_recv_reached_real_MPI_transfer( thread, mess );
+    COMMUNIC_recv_reached_real_MPI_transfer( thread_receiver, mess );
   }
   else
   {
     /* this is a dependency synchronization */
-    COMMUNIC_recv_reached_dependency_synchronization( thread, mess );
+    COMMUNIC_recv_reached_dependency_synchronization( thread_receiver, mess );
   }
   t_boolean Is_message_awaiting;
   if ( mess->ori_thread == -1 )
   {
-    Is_message_awaiting = is_message_awaiting_real_MPI_transfer( task, mess, thread );
+    Is_message_awaiting = is_message_awaiting_real_MPI_transfer( task, mess, thread_receiver );
   }
   else
   {
-    Is_message_awaiting = is_message_awaiting_dependency_synchronization( task, mess, thread );
+    Is_message_awaiting = is_message_awaiting_dependency_synchronization( task, mess, thread_receiver );
   }
   if ( Is_message_awaiting ) /* 'is_message_awaiting'      */
   {                          /* desencola a los que esperan*/
@@ -4019,7 +4024,7 @@ void COMMUNIC_recv( struct t_thread *thread )
     {
       PRINT_TIMER( current_time );
       printf( ": COMMUNIC_recv_reached\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d size: %lld (Local Message)\n",
-              IDENTIFIERS( thread ),
+              IDENTIFIERS( thread_receiver ),
               action->desc.recv.ori,
               action->desc.recv.ori_thread,
               mess->mess_tag,
@@ -4027,12 +4032,12 @@ void COMMUNIC_recv( struct t_thread *thread )
               action->desc.recv.mess_size );
     }
 
-    thread->action = action->next;
+    thread_receiver->action = action->next;
     READ_free_action( action );
-    if ( more_actions( thread ) )
+    if ( more_actions( thread_receiver ) )
     {
-      thread->loose_cpu = FALSE;
-      SCHEDULER_thread_to_ready( thread );
+      thread_receiver->loose_cpu = FALSE;
+      SCHEDULER_thread_to_ready( thread_receiver );
     }
   }
   else /* !is_message_awaiting(...) */
@@ -4040,27 +4045,27 @@ void COMMUNIC_recv( struct t_thread *thread )
     if ( mess->ori_thread == -1 )
     {
       /* this is for a real MPI transfer */
-      Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer( thread, mess );
+      Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer( thread_receiver, mess );
     }
     else
     {
       /* this is for a dependency synchronization */
-      Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization( thread, mess );
+      Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization( thread_receiver, mess );
     }
 
     if ( node_r->machine->scheduler.busywait_before_block )
     {
-      SCHEDULER_thread_to_busy_wait( thread );
+      SCHEDULER_thread_to_busy_wait( thread_receiver );
     }
     else
     {
       account->n_recvs_must_wait++;
-      thread->start_wait_for_message = current_time;
+      thread_receiver->start_wait_for_message = current_time;
       if ( debug & D_COMM )
       {
         PRINT_TIMER( current_time );
         printf( ": COMMUNIC_recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d  Size1: %lld  Size2: %lld (Waiting)\n",
-                IDENTIFIERS( thread ),
+                IDENTIFIERS( thread_receiver ),
                 action->desc.recv.ori,
                 action->desc.recv.ori_thread,
                 mess->mess_tag,
@@ -4073,13 +4078,13 @@ void COMMUNIC_recv( struct t_thread *thread )
       {
         /* this is a regular MPI transfer
            put it on the recv list of the task */
-        inFIFO_queue( &( task->recv ), (char *)thread );
+        inFIFO_queue( &( task->recv ), (char *)thread_receiver );
       }
       else
       {
         /* this is a dependency synchronization
            put it on the recv list of the thread  */
-        inFIFO_queue( &( thread->recv ), (char *)thread );
+        inFIFO_queue( &( thread_receiver->recv ), (char *)thread_receiver );
       }
     }
   }
@@ -4096,7 +4101,7 @@ void COMMUNIC_recv( struct t_thread *thread )
  * arribat a un Irecv.
  */
 
-void COMMUNIC_Irecv( struct t_thread *thread )
+void COMMUNIC_Irecv( struct t_thread *thread_receiver )
 {
   struct t_action *action;
   struct t_recv *mess;
@@ -4113,7 +4118,7 @@ void COMMUNIC_Irecv( struct t_thread *thread )
 #endif
   int hi_ha_send_sync; /* Indica si s'ha arribat a un Send SINCRON
                           que caldra desbloqejar. */
-  action = thread->action;
+  action = thread_receiver->action;
   if ( action->action != IRECV )
   {
     panic( "Calling COMMUNIC_Irecv and action is not Ireceive (%d)\n", action->action );
@@ -4126,7 +4131,7 @@ void COMMUNIC_Irecv( struct t_thread *thread )
   {
     PRINT_TIMER( current_time );
     printf( ":-----calling COMMUNIC_Irecv   P%02d T%02d (t%02d)  <- T%02d (t%02d)  Tag: %d  Comm.Id: %d  Size: %lld \n",
-            IDENTIFIERS( thread ),
+            IDENTIFIERS( thread_receiver ),
             action->desc.recv.ori,
             action->desc.recv.ori_thread,
             mess->mess_tag,
@@ -4136,13 +4141,15 @@ void COMMUNIC_Irecv( struct t_thread *thread )
 
 #ifdef STARTUP_ALS_IRECV /*****************************************************/
 
-  task   = thread->task;
-  node_r = get_node_of_thread( thread );
-  node_s = get_node_for_task_by_name( thread->task->Ptask, mess->ori );
+  task   = thread_receiver->task;
+  node_r = get_node_of_thread( thread_receiver );
+  node_s = get_node_for_task_by_name( thread_receiver->task->Ptask, mess->ori );
 
   task_source = locate_task( task->Ptask, mess->ori );
   /* S'obte el tipus de communicació */
-  kind = get_communication_type( task_source, task, mess->mess_tag, mess->mess_size, &connection );
+  kind = get_communication_type( task_source, task,
+                                 locate_thread_of_task( task_source, mess->ori_thread ), thread_receiver,
+                                 mess->mess_tag, mess->mess_size, &connection );
 
   if ( kind == EXTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
   {
@@ -4155,13 +4162,13 @@ void COMMUNIC_Irecv( struct t_thread *thread )
 
   mess->comm_type = kind;
 
-  if ( thread->startup_done == FALSE )
+  if ( thread_receiver->startup_done == FALSE )
   { /* Compute startup duration and re-schedule thread if needed */
     // startup = compute_startup (thread, kind, node_s, connection);
 
-    startup = compute_startup( thread,
+    startup = compute_startup( thread_receiver,
                                mess->ori,            /* Sender */
-                               thread->task->taskid, /* Receiver */
+                               thread_receiver->task->taskid, /* Receiver */
                                node_s,
                                node_r,
                                mess->mess_tag,
@@ -4173,23 +4180,23 @@ void COMMUNIC_Irecv( struct t_thread *thread )
     {                          /* Positive startup time. Thread must be re-scheduled */
       if ( !wait_logical_recv )
       {
-        thread->logical_recv = current_time;
+        thread_receiver->logical_recv = current_time;
       }
 
-      thread->loose_cpu     = FALSE;
-      thread->doing_startup = TRUE;
+      thread_receiver->loose_cpu     = FALSE;
+      thread_receiver->doing_startup = TRUE;
 
-      account = current_account( thread );
+      account = current_account( thread_receiver );
       FLOAT_TO_TIMER( startup, tmp_timer );
       ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
       SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-      SCHEDULER_thread_to_ready_return( M_COM, thread, startup, 0 );
+      SCHEDULER_thread_to_ready_return( M_COM, thread_receiver, startup, 0 );
 
       if ( debug & D_COMM )
       {
         PRINT_TIMER( current_time );
-        printf( ": COMMUNIC_Irecv\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
+        printf( ": COMMUNIC_Irecv\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread_receiver ), (double)startup / 1e9 );
       }
 
       return;
@@ -4198,9 +4205,9 @@ void COMMUNIC_Irecv( struct t_thread *thread )
     {
       if ( !wait_logical_recv )
       {
-        thread->logical_recv = current_time;
+        thread_receiver->logical_recv = current_time;
       }
-      thread->startup_done = TRUE;
+      thread_receiver->startup_done = TRUE;
     }
   }
 
@@ -4208,27 +4215,27 @@ void COMMUNIC_Irecv( struct t_thread *thread )
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
   {
-    if ( thread->copy_done == FALSE )
+    if ( thread_receiver->copy_done == FALSE )
     {
-      dimemas_timer copy_latency = compute_copy_latency( thread, node_s, mess->mess_size, mess->comm_type );
+      dimemas_timer copy_latency = compute_copy_latency( thread_receiver, node_s, mess->mess_size, mess->comm_type );
 
       if ( copy_latency != (t_nano)0 )
       {
-        thread->loose_cpu  = FALSE;
-        thread->doing_copy = TRUE;
+        thread_receiver->loose_cpu  = FALSE;
+        thread_receiver->doing_copy = TRUE;
 
-        account = current_account( thread );
+        account = current_account( thread_receiver );
         FLOAT_TO_TIMER( copy_latency, tmp_timer );
         ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
         SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-        SCHEDULER_thread_to_ready_return( M_COM, thread, copy_latency, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread_receiver, copy_latency, 0 );
 
         if ( debug & D_COMM )
         {
           PRINT_TIMER( current_time );
           printf( ": COMMUNIC_Irecv\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n",
-                  IDENTIFIERS( thread ),
+                  IDENTIFIERS( thread_receiver ),
                   (double)copy_latency / 1e9,
                   mess->mess_size );
         }
@@ -4236,16 +4243,16 @@ void COMMUNIC_Irecv( struct t_thread *thread )
       }
       else
       {
-        thread->copy_done = TRUE;
+        thread_receiver->copy_done = TRUE;
       }
     }
   }
 
 
-  thread->startup_done = FALSE;
-  thread->copy_done    = FALSE;
+  thread_receiver->startup_done = FALSE;
+  thread_receiver->copy_done    = FALSE;
 
-  account = current_account( thread );
+  account = current_account( thread_receiver );
 #endif /* ! STARTUP_ALS_IRECV */
 
   // #else
@@ -4262,7 +4269,7 @@ void COMMUNIC_Irecv( struct t_thread *thread )
 
   if ( with_deadlock_analysis )
   {
-    if ( DEADLOCK_new_communic_event( thread ) )
+    if ( DEADLOCK_new_communic_event( thread_receiver ) )
       return;
   }
 
@@ -4275,7 +4282,7 @@ void COMMUNIC_Irecv( struct t_thread *thread )
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_Irecv\tP%02d T%02d (t%02d) IRecv notification Comm.Id: %d saved\n", IDENTIFIERS( thread ), mess->communic_id );
+      printf( ": COMMUNIC_Irecv\tP%02d T%02d (t%02d) IRecv notification Comm.Id: %d saved\n", IDENTIFIERS( thread_receiver ), mess->communic_id );
     }
   }
 
@@ -4284,21 +4291,21 @@ void COMMUNIC_Irecv( struct t_thread *thread )
   if ( mess->ori_thread == -1 )
   {
     /* this is a real MPI transfer */
-    hi_ha_send_sync = COMMUNIC_recv_reached_real_MPI_transfer( thread, mess );
+    hi_ha_send_sync = COMMUNIC_recv_reached_real_MPI_transfer( thread_receiver, mess );
 
     if ( !wait_logical_recv )
     {
-      inFIFO_queue( &( thread->task->irecvs_executed ), (char *)irecv_notification );
+      inFIFO_queue( &( thread_receiver->task->irecvs_executed ), (char *)irecv_notification );
     }
   }
   else
   {
     /* this is a dependency synchronization */
-    hi_ha_send_sync = COMMUNIC_recv_reached_dependency_synchronization( thread, mess );
+    hi_ha_send_sync = COMMUNIC_recv_reached_dependency_synchronization( thread_receiver, mess );
 
     if ( !wait_logical_recv )
     {
-      inFIFO_queue( &( thread->irecvs_executed ), (char *)irecv_notification );
+      inFIFO_queue( &( thread_receiver->irecvs_executed ), (char *)irecv_notification );
     }
   }
 
@@ -4312,29 +4319,29 @@ void COMMUNIC_Irecv( struct t_thread *thread )
     if ( mess->ori_thread == -1 )
     {
       /* this is for a real MPI transfer */
-      Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer( thread, mess );
+      Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer( thread_receiver, mess );
     }
     else
     {
       /* this is for a dependency synchronization */
-      Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization( thread, mess );
+      Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization( thread_receiver, mess );
     }
   }
 
-  if ( thread->acc_in_block_event.type == CUDA_LIB_CALL_EV && thread->acc_in_block_event.value == CUDA_MEMCPY_ASYNC_VAL )
+  if ( thread_receiver->acc_in_block_event.type == CUDA_LIB_CALL_EV && thread_receiver->acc_in_block_event.value == CUDA_MEMCPY_ASYNC_VAL )
   {
     /* this is a dependency synchronization
         put it on the recv list of the thread  */
-    inFIFO_queue( &( thread->recv ), (char *)thread );
+    inFIFO_queue( &( thread_receiver->recv ), (char *)thread_receiver );
   }
   else
   {
-    thread->action = action->next;
+    thread_receiver->action = action->next;
     READ_free_action( action );
-    if ( more_actions( thread ) )
+    if ( more_actions( thread_receiver ) )
     {
-      thread->loose_cpu = FALSE;
-      SCHEDULER_thread_to_ready( thread );
+      thread_receiver->loose_cpu = FALSE;
+      SCHEDULER_thread_to_ready( thread_receiver );
     }
   }
 }
@@ -4348,7 +4355,7 @@ void COMMUNIC_Irecv( struct t_thread *thread )
  * Es el tractament que cal aplicar a un Wait. Consisteix en
  * esperar fins que s'hagi rebut el missatge.
  */
-void COMMUNIC_wait( struct t_thread *thread )
+void COMMUNIC_wait( struct t_thread *thread_receiver )
 {
   struct t_action *action;
   struct t_recv *mess;
@@ -4361,7 +4368,7 @@ void COMMUNIC_wait( struct t_thread *thread )
   struct t_dedicated_connection *connection;
 
 
-  action = thread->action;
+  action = thread_receiver->action;
   if ( action->action != WAIT )
   {
     panic( "Calling COMMUNIC_wait and action is not Wait (%d)\n", action->action );
@@ -4374,7 +4381,7 @@ void COMMUNIC_wait( struct t_thread *thread )
   {
     PRINT_TIMER( current_time );
     printf( ":----calling COMMUNIC_wait   P%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d size: %lld\n",
-            IDENTIFIERS( thread ),
+            IDENTIFIERS( thread_receiver ),
             action->desc.recv.ori,
             action->desc.recv.ori_thread,
             mess->mess_tag,
@@ -4382,13 +4389,15 @@ void COMMUNIC_wait( struct t_thread *thread )
             action->desc.recv.mess_size );
   }
 
-  task   = thread->task;
-  node_r = get_node_of_thread( thread );
-  node_s = get_node_for_task_by_name( thread->task->Ptask, mess->ori );
+  task   = thread_receiver->task;
+  node_r = get_node_of_thread( thread_receiver );
+  node_s = get_node_for_task_by_name( thread_receiver->task->Ptask, mess->ori );
 
   task_source = locate_task( task->Ptask, mess->ori );
   /* S'obte el tipus de communicació */
-  kind = get_communication_type( task_source, task, mess->mess_tag, mess->mess_size, &connection );
+  kind = get_communication_type( task_source, task,
+                                 locate_thread_of_task( task_source, mess->ori_thread ), thread_receiver,
+                                 mess->mess_tag, mess->mess_size, &connection );
 
   if ( kind == EXTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
   {
@@ -4401,12 +4410,12 @@ void COMMUNIC_wait( struct t_thread *thread )
 
   mess->comm_type = kind;
 
-  if ( thread->startup_done == FALSE )
+  if ( thread_receiver->startup_done == FALSE )
   {
     // startup = compute_startup (thread, kind, node_s, connection);
-    startup = compute_startup( thread,
+    startup = compute_startup( thread_receiver,
                                mess->ori,            /* Sender */
-                               thread->task->taskid, /* Receiver */
+                               thread_receiver->task->taskid, /* Receiver */
                                node_s,
                                node_r,
                                mess->mess_tag,
@@ -4419,22 +4428,22 @@ void COMMUNIC_wait( struct t_thread *thread )
       if ( debug & D_COMM )
       {
         PRINT_TIMER( current_time );
-        printf( ": COMMUNIC_wait\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
+        printf( ": COMMUNIC_wait\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread_receiver ), (double)startup / 1e9 );
       }
-      thread->loose_cpu     = FALSE;
-      thread->doing_startup = TRUE;
+      thread_receiver->loose_cpu     = FALSE;
+      thread_receiver->doing_startup = TRUE;
 
-      account = current_account( thread );
+      account = current_account( thread_receiver );
       FLOAT_TO_TIMER( startup, tmp_timer );
       ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
       SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-      SCHEDULER_thread_to_ready_return( M_COM, thread, startup, 0 );
+      SCHEDULER_thread_to_ready_return( M_COM, thread_receiver, startup, 0 );
       return;
     }
     else
     {
-      thread->startup_done = TRUE;
+      thread_receiver->startup_done = TRUE;
     }
   }
   else
@@ -4444,26 +4453,26 @@ void COMMUNIC_wait( struct t_thread *thread )
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
   {
-    if ( thread->copy_done == FALSE )
+    if ( thread_receiver->copy_done == FALSE )
     {
-      copy_latency = compute_copy_latency( thread, node_s, mess->mess_size, mess->comm_type );
+      copy_latency = compute_copy_latency( thread_receiver, node_s, mess->mess_size, mess->comm_type );
 
       if ( copy_latency != (t_nano)0 )
       {
-        thread->loose_cpu  = FALSE;
-        thread->doing_copy = TRUE;
+        thread_receiver->loose_cpu  = FALSE;
+        thread_receiver->doing_copy = TRUE;
 
-        account = current_account( thread );
+        account = current_account( thread_receiver );
         FLOAT_TO_TIMER( copy_latency, tmp_timer );
         ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
         SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
-        SCHEDULER_thread_to_ready_return( M_COM, thread, copy_latency, 0 );
+        SCHEDULER_thread_to_ready_return( M_COM, thread_receiver, copy_latency, 0 );
 
         if ( debug & D_COMM )
         {
           PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_wait\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n", IDENTIFIERS( thread ), (double)copy_latency / 1e9 );
+          printf( ": COMMUNIC_wait\tP%02d T%02d (t%02d) Initiate copy latency (%f)\n", IDENTIFIERS( thread_receiver ), (double)copy_latency / 1e9 );
         }
         return;
       }
@@ -4471,33 +4480,33 @@ void COMMUNIC_wait( struct t_thread *thread )
   }
 
   /* Startup and Copy checks reset */
-  thread->startup_done = FALSE;
-  thread->copy_done    = FALSE;
+  thread_receiver->startup_done = FALSE;
+  thread_receiver->copy_done    = FALSE;
 
   if ( with_deadlock_analysis )
   {
-    if ( DEADLOCK_new_communic_event( thread ) )
+    if ( DEADLOCK_new_communic_event( thread_receiver ) )
       return;
   }
 
-  account = current_account( thread );
+  account = current_account( thread_receiver );
   account->n_recvs++;
-  account = current_account( thread );
+  account = current_account( thread_receiver );
 
   if ( wait_logical_recv )
   {
-    thread->logical_recv = current_time;
+    thread_receiver->logical_recv = current_time;
   }
 
   t_boolean Is_message_awaiting;
 
   if ( mess->ori_thread == -1 )
   {
-    Is_message_awaiting = is_message_awaiting_real_MPI_transfer( task, mess, thread );
+    Is_message_awaiting = is_message_awaiting_real_MPI_transfer( task, mess, thread_receiver );
   }
   else
   {
-    Is_message_awaiting = is_message_awaiting_dependency_synchronization( task, mess, thread );
+    Is_message_awaiting = is_message_awaiting_dependency_synchronization( task, mess, thread_receiver );
   }
 
   if ( Is_message_awaiting ) /* 'is_message_awaiting'      */
@@ -4511,19 +4520,19 @@ void COMMUNIC_wait( struct t_thread *thread )
     {
       PRINT_TIMER( current_time );
       printf( ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d (Local message)\n",
-              IDENTIFIERS( thread ),
+              IDENTIFIERS( thread_receiver ),
               action->desc.recv.ori,
               action->desc.recv.ori_thread,
               mess->mess_tag,
               mess->communic_id );
     }
 
-    thread->action = action->next;
+    thread_receiver->action = action->next;
     READ_free_action( action );
-    if ( more_actions( thread ) )
+    if ( more_actions( thread_receiver ) )
     {
-      thread->loose_cpu = FALSE;
-      SCHEDULER_thread_to_ready( thread );
+      thread_receiver->loose_cpu = FALSE;
+      SCHEDULER_thread_to_ready( thread_receiver );
     }
   }
   else
@@ -4533,27 +4542,27 @@ void COMMUNIC_wait( struct t_thread *thread )
     if ( mess->ori_thread == -1 )
     {
       /* this is for a real MPI transfer */
-      Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer( thread, mess );
+      Start_communication_if_partner_ready_for_rendez_vous_real_MPI_transfer( thread_receiver, mess );
     }
     else
     {
       /* this is for a dependency synchronization */
-      Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization( thread, mess );
+      Start_communication_if_partner_ready_for_rendez_vous_dependency_synchronization( thread_receiver, mess );
     }
 
     if ( node_r->machine->scheduler.busywait_before_block )
     {
-      SCHEDULER_thread_to_busy_wait( thread );
+      SCHEDULER_thread_to_busy_wait( thread_receiver );
     }
     else
     {
       account->n_recvs_must_wait++;
-      thread->start_wait_for_message = current_time;
+      thread_receiver->start_wait_for_message = current_time;
       if ( debug & D_COMM )
       {
         PRINT_TIMER( current_time );
         printf( ": COMMUNIC_wait/recv\tP%02d T%02d (t%02d) <- T%02d t%d Tag: %d Comm.Id: %d (Waiting)\n",
-                IDENTIFIERS( thread ),
+                IDENTIFIERS( thread_receiver ),
                 action->desc.recv.ori,
                 action->desc.recv.ori_thread,
                 mess->mess_tag,
@@ -4564,13 +4573,13 @@ void COMMUNIC_wait( struct t_thread *thread )
       {
         /* this is a regular MPI transfer
            put it on the recv list of the task */
-        inFIFO_queue( &( task->recv ), (char *)thread );
+        inFIFO_queue( &( task->recv ), (char *)thread_receiver );
       }
       else
       {
         /* this is a dependency synchronization
            put it on the recv list of the thread  */
-        inFIFO_queue( &( thread->recv ), (char *)thread );
+        inFIFO_queue( &( thread_receiver->recv ), (char *)thread_receiver );
       }
     }
   }
@@ -4957,6 +4966,8 @@ int connection_can_be_used( struct t_dedicated_connection *connection, int mess_
 
 int get_communication_type( struct t_task *task,
                             struct t_task *task_partner,
+                            struct t_thread *thread,
+                            struct t_thread *thread_partner,
                             int mess_tag,
                             int mess_size,
                             struct t_dedicated_connection **connection )
@@ -4969,15 +4980,17 @@ int get_communication_type( struct t_task *task,
   node         = get_node_of_task( task );
   node_partner = get_node_of_task( task_partner );
 
-  if ( node == node_partner && ( mess_tag == CUDA_TAG || mess_tag == OCL_TAG ) )
-  { /* Es un missatge local entre CPU i GPU */
+  if ( node == node_partner && ( ( thread != NULL && thread->kernel ) || 
+                                 ( thread_partner != NULL && thread_partner->kernel ) ||
+                                 mess_tag == OCL_TAG ) )
+  {
+    /* Es un missatge local entre CPU i GPU */
     if ( !node->accelerator || !task->accelerator )
     {
       panic( "Error in accelerator communication type in a non-accelerator task (check configuration file)" );
     }
     result_type = ACCELERATOR_COM_TYPE;
   }
-
   else if ( node == node_partner )
   {
     /* Es un missatge local al node */
@@ -5021,6 +5034,7 @@ int get_communication_type( struct t_task *task,
       result_type = EXTERNAL_NETWORK_COM_TYPE;
     }
   }
+
   return result_type;
 }
 
@@ -5572,7 +5586,7 @@ void really_send_acc_message( struct t_thread *thread )
   }
 }
 
-void really_send( struct t_thread *thread )
+void really_send( struct t_thread *thread_sender )
 {
   struct t_task *task, *task_partner;
   struct t_action *action;
@@ -5580,8 +5594,8 @@ void really_send( struct t_thread *thread )
   int kind, kind2;
   struct t_dedicated_connection *connection;
 
-  task   = thread->task;
-  action = thread->action;
+  task   = thread_sender->task;
+  action = thread_sender->action;
   mess   = &( action->desc.send );
 
   task_partner = locate_task( task->Ptask, mess->dest );
@@ -5590,7 +5604,9 @@ void really_send( struct t_thread *thread )
     panic( "Task partner not found!\n" );
   }
 
-  get_communication_type( task, task_partner, mess->mess_tag, mess->mess_size, &connection );
+  get_communication_type( task, task_partner,
+                          thread_sender, locate_thread_of_task( task_partner, mess->dest_thread ),
+                          mess->mess_tag, mess->mess_size, &connection );
 
   kind = mess->comm_type;
 
@@ -5599,7 +5615,7 @@ void really_send( struct t_thread *thread )
   {
     PRINT_TIMER( current_time );
     printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag: %d Type: %d (Really Send)\n",
-            IDENTIFIERS( thread ),
+            IDENTIFIERS( thread_sender ),
             mess->dest,
             mess->mess_tag,
             mess->comm_type );
@@ -5610,23 +5626,23 @@ void really_send( struct t_thread *thread )
   switch ( kind )
   {
     case MEMORY_COMMUNICATION_TYPE:
-      really_send_memory_message( thread );
+      really_send_memory_message( thread_sender );
       break;
     case INTERNAL_NETWORK_COM_TYPE:
-      really_send_internal_network( thread );
+      really_send_internal_network( thread_sender );
       break;
     case EXTERNAL_NETWORK_COM_TYPE:
-      really_send_external_network( thread );
+      really_send_external_network( thread_sender );
       break;
     case DEDICATED_CONNECTION_COM_TYPE:
-      // really_send_external_network (thread);
-      really_send_dedicated_connection( thread, connection );
+      // really_send_external_network (thread_sender);
+      really_send_dedicated_connection( thread_sender, connection );
       break;
     case EXTERNAL_MODEL_COM_TYPE:
-      really_send_external_model_comm_type( thread );
+      really_send_external_model_comm_type( thread_sender );
       break;
     case ACCELERATOR_COM_TYPE:
-      really_send_acc_message( thread );
+      really_send_acc_message( thread_sender );
       break;
     default:
       panic( "Incorrect communication type! kind = %d, kind2 %d", kind, kind2 );
