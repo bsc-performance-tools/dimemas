@@ -1665,6 +1665,18 @@ static void message_received( struct t_thread *thread_sender )
           printf( ": COMMUNIC_SEND\tP%02d T%02d (t%02d) Initiate end startup (%f)\n", IDENTIFIERS( host_th ), (double)startup / 1e9 );
         }
       }
+      else if( !partner_next_action )
+      {
+        /* In case of startup latency == 0, host must be set to ready if it was not set previously */
+        action          = partner->action;
+        partner->action = action->next;
+        READ_free_action( action );
+        if ( more_actions( partner ) )
+        {
+          partner->loose_cpu = TRUE;
+          SCHEDULER_thread_to_ready( partner );
+        }
+      }
     }
 
     if( host_th->blocked_in_host_sync == TRUE && mess->communic_id == 0 && host_th->blocked_sync_threadid == mess->dest_thread )
