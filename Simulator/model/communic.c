@@ -195,13 +195,6 @@ static void COM_TIMER_OUT_free_accelerator_resources( struct t_thread *thread );
 
 // struct t_queue Global_op;
 
-/*
-   static t_nano compute_startup (struct t_thread               *thread,
-   int                            kind,
-   struct t_node                 *node,
-   struct t_dedicated_connection *connection);
-   */
-
 t_nano compute_startup( struct t_thread *thread,
                         int send_taskid,
                         int recv_taskid,
@@ -209,6 +202,7 @@ t_nano compute_startup( struct t_thread *thread,
                         struct t_node *recv_node,
                         int mess_tag,
                         int mess_size,
+                        int mess_commid,
                         int kind,
                         struct t_dedicated_connection *connection );
 
@@ -528,9 +522,7 @@ void COMMUNIC_End()
   }
 }
 
-/******************************************************************************
- * FUNCIÓ 'compute_startup'                                                   *
- *****************************************************************************/
+
 t_nano compute_startup( struct t_thread *thread,
                         int send_taskid,
                         int recv_taskid,
@@ -538,6 +530,7 @@ t_nano compute_startup( struct t_thread *thread,
                         struct t_node *recv_node,
                         int mess_tag,
                         int mess_size,
+                        int mess_commid,
                         int kind,
                         struct t_dedicated_connection *connection )
 {
@@ -590,8 +583,7 @@ t_nano compute_startup( struct t_thread *thread,
        * Differenciated memory transfers latency and configuration
        * /launch/sync latency
        */
-
-      if ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) && mess_size == 0 )
+      if ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) && mess_commid == 0 )
       {
         startup = send_node->acc.startup;
       }
@@ -676,9 +668,7 @@ t_nano compute_startup( struct t_thread *thread,
   return ( startup );
 }
 
-/******************************************************************************
- * FUNCIÓ 'compute_copy_time'                                                 *
- *****************************************************************************/
+
 t_nano compute_copy_latency( struct t_thread *thread, struct t_node *node, int mess_size, int mess_type )
 {
   t_nano bw;
@@ -1637,6 +1627,7 @@ static void message_received( struct t_thread *thread_sender )
                                                kernel_th->task->taskid, /* Receiver */
                                                node,
                                                node,
+                                               0,
                                                0,
                                                0,
                                                ACCELERATOR_COM_TYPE,
@@ -3521,6 +3512,7 @@ void COMMUNIC_send( struct t_thread *thread_sender )
                                node_r,
                                mess->mess_tag,
                                mess->mess_size,
+                               mess->communic_id,
                                kind,
                                connection );
 
@@ -3922,6 +3914,7 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
                                node_r,
                                mess->mess_tag,
                                mess->mess_size,
+                               mess->communic_id,
                                kind,
                                connection );
     /*if (mess->communic_id == 0 &&
@@ -4185,6 +4178,7 @@ void COMMUNIC_Irecv( struct t_thread *thread_receiver )
                                node_r,
                                mess->mess_tag,
                                mess->mess_size,
+                               mess->communic_id,
                                kind,
                                connection );
 
@@ -4432,6 +4426,7 @@ void COMMUNIC_wait( struct t_thread *thread_receiver )
                                node_r,
                                mess->mess_tag,
                                mess->mess_size,
+                               mess->communic_id,
                                kind,
                                connection );
 
@@ -7264,7 +7259,7 @@ void GLOBAL_wait_operation( struct t_thread *thread )
 
   if ( thread->startup_done == FALSE )
   {
-    startup = compute_startup( thread, thread->task->taskid, 0, NULL, NULL, 0, 0, NON_BLOCKING_GLOBAL_OP_COM_TYPE, NULL );
+    startup = compute_startup( thread, thread->task->taskid, 0, NULL, NULL, 0, 0, 0, NON_BLOCKING_GLOBAL_OP_COM_TYPE, NULL );
 
     if ( startup != (t_nano)0 )
     {
@@ -7409,7 +7404,16 @@ void GLOBAL_operation( struct t_thread *thread,
   {
     if ( thread->startup_done == FALSE )
     {
-      int startup = compute_startup( thread, thread->task->taskid, 0, NULL, NULL, 0, 0, NON_BLOCKING_GLOBAL_OP_COM_TYPE, NULL );
+      int startup = compute_startup( thread,
+                                     thread->task->taskid,
+                                     0,
+                                     NULL,
+                                     NULL,
+                                     0,
+                                     0,
+                                     0,
+                                     NON_BLOCKING_GLOBAL_OP_COM_TYPE,
+                                     NULL );
 
       if ( startup != (t_nano)0 )
       {
@@ -7930,6 +7934,7 @@ t_boolean haveAllKernelsArrived( struct t_task *task, int comm_id )
   return return_val;
 }
 
+
 void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int comm_id )
 {
   struct t_thread *host_th = NULL;
@@ -7984,6 +7989,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
                                  task->taskid, /* Receiver */
                                  node,
                                  node,
+                                 0,
                                  0,
                                  0,
                                  ACCELERATOR_COM_TYPE,
@@ -8041,6 +8047,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
                                  node,
                                  0,
                                  0,
+                                 0,
                                  ACCELERATOR_COM_TYPE,
                                  NULL );
 
@@ -8078,6 +8085,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
                                task->taskid, /* Receiver */
                                node,
                                node,
+                               0,
                                0,
                                0,
                                ACCELERATOR_COM_TYPE,
