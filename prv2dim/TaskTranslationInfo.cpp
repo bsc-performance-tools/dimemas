@@ -625,7 +625,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     if ( ( LastBlockEnd != Timestamp || ( LastBlockEnd == 0 && Timestamp == 0 ) ) && MPIBlockIdStack.size() == 0 && CUDABlockIdStack.size() == 0 &&
          OCLBlockIdStack.size() == 0 )
     {
-      if ( Type != FLUSHING_EV && Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER )
+      if ( Type != FLUSHING_EV && Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER && AcceleratorThread != ACCELERATOR_KERNEL)
       {
         if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
         {
@@ -674,6 +674,36 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 
       if ( debug )
         cout << "Printing CUDA Opening Event: " << *CurrentEvent;
+
+      if ( AcceleratorThread == ACCELERATOR_KERNEL && 
+           Value != CUDA_THREADSYNCHRONIZE_VAL && 
+           Value != CUDA_STREAMSYNCHRONIZE_VAL/* &&
+           Value != CUDA_MEMCPY_ASYNC_VAL*/ )
+      {
+        // Device threads must include a synchronization before they start
+        // Idle block start
+        //
+        if ( Dimemas_Block_Begin( TemporaryFile, TaskId, ThreadId, (INT64)0, (INT64)1 ) < 0 )
+        {
+          SetError( true );
+          SetErrorMessage( "error writing output trace", strerror( errno ) );
+        }
+
+        /* Synchronization before the actual call */
+        if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)CUDA_TAG ) < 0 )
+        {
+          SetError( true );
+          SetErrorMessage( "error writing output trace", strerror( errno ) );
+          return false;
+        }
+
+        /* Idle block end */
+        if ( Dimemas_Block_Begin( TemporaryFile, TaskId, ThreadId, (INT64)0, (INT64)0 ) < 0 )
+        {
+          SetError( true );
+          SetErrorMessage( "error writing output trace", strerror( errno ) );
+        }
+      }
 
       /* CUDA block begin */
       if ( Dimemas_Block_Begin( TemporaryFile, TaskId, ThreadId, (INT64)Type, (INT64)Value ) < 0 )
@@ -1913,16 +1943,6 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                 return false;
               }
             }
-            else if ( AcceleratorThread == ACCELERATOR_KERNEL )
-            {
-              /* Synchronization before the actual call */
-              if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
 
             if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
             {
@@ -1949,16 +1969,6 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               /* In the Host thread, first a synchronization */
               if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)Tag ) < 0 )
               // CommId and Size are set to 0
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
-            else if ( AcceleratorThread == ACCELERATOR_KERNEL )
-            {
-              /* Synchronization before the actual call */
-              if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
               {
                 SetError( true );
                 SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2002,16 +2012,6 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
           }
-          else if ( AcceleratorThread == ACCELERATOR_KERNEL )
-          {
-            /* Synchronization before the actual call */
-            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
-            {
-              SetError( true );
-              SetErrorMessage( "error writing output trace", strerror( errno ) );
-              return false;
-            }
-          }
 
           /* The actual transfer */
           if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
@@ -2038,16 +2038,6 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                           0,
                                           0, // CommId and Size are set to 0
                                           (INT64)Tag ) < 0 )
-            {
-              SetError( true );
-              SetErrorMessage( "error writing output trace", strerror( errno ) );
-              return false;
-            }
-          }
-          else if ( AcceleratorThread == ACCELERATOR_KERNEL )
-          {
-            /* Synchronization before the actual call */
-            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
