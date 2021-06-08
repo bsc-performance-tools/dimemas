@@ -1833,6 +1833,7 @@ void TASK_Initialize_Ptask_Mapping( struct t_Ptask *Ptask )
 
 #if DEBUG
   printf( "Mapping = { " );
+  int i;
   for ( i = 0; i < Ptask->tasks_count; i++ )
   {
     printf( "%d ", task_mapping[ i ] );

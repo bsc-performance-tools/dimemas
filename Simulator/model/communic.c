@@ -1560,19 +1560,22 @@ static void message_received( struct t_thread *thread_sender )
     int transf_comm =
       CUDAEventEncoding_Is_CUDATransferBlock( thread_sender->acc_in_block_event ) || OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event );
     /* If it's a sync_comm in a CUDAMem_Cpy block in the host, is ignored */
-    int sync_comm = mess->communic_id == 0;
+    int sync_comm = mess->communic_id == 0 && partner->idle_block == TRUE;
     int cuda_comm = CUDAEventEncoding_Is_CUDAComm( thread_sender, thread_partner );
     int ocl_comm  = OCLEventEncoding_Is_OCLComm( mess->mess_tag );
 
     /* Paraver P2P communication has to be thrown */
-    int paraver_comm = !( sync_comm && cuda_comm && transf_comm ) && !( ocl_comm && sync_comm && transf_comm );
+    int paraver_comm = cuda_comm && !sync_comm && !( ocl_comm && sync_comm && transf_comm );
 
     /* Partner communication loads next action */
     int partner_next_action = !( partner->host && transf_comm && cuda_comm ) || ocl_comm;
     //int partner_next_action = !partner->host || !transf_comm || !cuda_comm || ocl_comm;
 
     /* Host will compute a startup after the communication */
-    int host_startup = !ocl_comm && ( cuda_comm && transf_comm && !sync_comm );
+    int host_startup = !ocl_comm && 
+                       ( cuda_comm  && !sync_comm && 
+                         thread_sender->acc_in_block_event.type == CUDA_LIB_CALL_EV &&
+                         thread_sender->acc_in_block_event.value == CUDA_MEMCPY_VAL );
 
     if ( paraver_comm )
     {
@@ -1619,6 +1622,8 @@ static void message_received( struct t_thread *thread_sender )
               mess->communic_id );
     }
 
+    int host_next_action = FALSE;
+
     if ( host_startup )
     // If it's not a synchronization communication
     {
@@ -1658,15 +1663,24 @@ static void message_received( struct t_thread *thread_sender )
       }
       else if( !partner_next_action )
       {
-        /* In case of startup latency == 0, host must be set to ready if it was not set previously */
-        action          = partner->action;
-        partner->action = action->next;
-        READ_free_action( action );
-        if ( more_actions( partner ) )
-        {
-          partner->loose_cpu = TRUE;
-          SCHEDULER_thread_to_ready( partner );
-        }
+        host_next_action = TRUE;
+      }
+    }
+    else if( !partner_next_action )
+    {
+      host_next_action = TRUE;
+    }
+    
+    if( host_next_action )
+    {
+      /* In case of no host startup or startup latency == 0, host must be set to ready if it was not set previously */
+      action          = partner->action;
+      partner->action = action->next;
+      READ_free_action( action );
+      if ( more_actions( partner ) )
+      {
+        partner->loose_cpu = TRUE;
+        SCHEDULER_thread_to_ready( partner );
       }
     }
 
