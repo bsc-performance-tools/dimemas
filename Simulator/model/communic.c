@@ -583,16 +583,13 @@ t_nano compute_startup( struct t_thread *thread,
        * Differenciated memory transfers latency and configuration
        * /launch/sync latency
        */
-      if ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) && mess_commid == 0 )
+      if ( ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
+             OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event )  ) &&
+           mess_commid != 0 )
       {
-        startup = send_node->acc.startup;
+        startup = send_node->acc.startup + send_node->acc.memory_startup;
       }
-      else if ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
-                OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) )
-      {
-        startup = send_node->acc.memory_startup;
-      }
-      else
+      else if( mess_commid != 0 )
       {
         startup = send_node->acc.startup;
       }
@@ -1560,7 +1557,7 @@ static void message_received( struct t_thread *thread_sender )
     int transf_comm =
       CUDAEventEncoding_Is_CUDATransferBlock( thread_sender->acc_in_block_event ) || OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event );
     /* If it's a sync_comm in a CUDAMem_Cpy block in the host, is ignored */
-    int sync_comm = mess->communic_id == 0 && partner->idle_block == TRUE;
+    int sync_comm = mess->communic_id == 0;
     int cuda_comm = CUDAEventEncoding_Is_CUDAComm( thread_sender, thread_partner );
     int ocl_comm  = OCLEventEncoding_Is_OCLComm( mess->mess_tag );
 
@@ -1582,11 +1579,13 @@ static void message_received( struct t_thread *thread_sender )
       PARAVER_P2P_Comm( cpu->unique_number,
                         IDENTIFIERS( thread_sender ),
                         thread_sender->logical_send,
-                        thread_sender->physical_send,
+                        cuda_comm == TRUE && transf_comm == FALSE ? thread_sender->logical_send :
+                                                                    thread_sender->physical_send,
                         cpu_partner->unique_number,
                         IDENTIFIERS( partner ),
                         actual_logical_recv,
-                        thread_sender->physical_recv,
+                        cuda_comm == TRUE && transf_comm == FALSE ? actual_logical_recv :
+                                                                    thread_sender->physical_recv,
                         mess->mess_size,
                         mess->mess_tag );
       partner->last_paraver = current_time;
@@ -3931,9 +3930,6 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
                                mess->communic_id,
                                kind,
                                connection );
-    /*if (mess->communic_id == 0 &&
-      CUDAEventEncoding_Is_CUDATransferBlock(thread->acc_in_block_event))
-      startup = (dimemas_timer) 0;*/
 
     if ( startup > (t_nano)0 )
     {

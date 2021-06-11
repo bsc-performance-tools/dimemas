@@ -2057,6 +2057,10 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
       {
         if ( CurrentComm->GetType() == LOGICAL_SEND )
         {
+          /* Host side cudaConfigureCall synchronization (SEND) */
+          if ( debug )
+            cout << "Printing CUDA Host configureCall: " << *CurrentComm;
+
           if ( Dimemas_NX_BlockingSend( TemporaryFile,
                                         TaskId,
                                         ThreadId,
@@ -2071,12 +2075,9 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             SetErrorMessage( "error writing output trace", strerror( errno ) );
             return false;
           }
-          /* Host side cudaConfigureCall synchronization (SEND) */
-          if ( debug )
-            cout << "Printing CUDA Host configureCall sync: " << *CurrentComm;
 
-          if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, Size, (INT64)Tag, 3 ) <
-               0 ) // CommId and Size are set to 0)
+          if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, 3 ) <
+               0 ) 
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2085,11 +2086,10 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
         }
         else if( CurrentComm->GetType() == LOGICAL_RECV )
         {
-          /* Kernel side cudaConfigureCall synchronization (RECV) */
           if ( debug )
-            cout << "Printing CUDA Kernel configureCall sync: " << *CurrentComm;
+            cout << "Printing CUDA Kernel configureCall: " << *CurrentComm;
 
-          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, 0, (INT64)Tag ) < 0 )
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2103,6 +2103,10 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
       {
         if ( CurrentComm->GetType() == LOGICAL_SEND )
         {
+          /* Host side cudaLaunch synchronization */
+          if ( debug )
+            cout << "Printing CUDA Host Launch: " << *CurrentComm;
+
           if ( Dimemas_NX_BlockingSend( TemporaryFile,
                                         TaskId,
                                         ThreadId,
@@ -2117,12 +2121,9 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             SetErrorMessage( "error writing output trace", strerror( errno ) );
             return false;
           }
-          /* Host side cudaLaunch synchronization */
-          if ( debug )
-            cout << "Printing CUDA Host Launch sync: " << *CurrentComm;
 
-          if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, Size, (INT64)Tag, 3 ) <
-               0 ) // CommId and Size are set to 0)
+          if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, 3 ) <
+               0 )
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2131,11 +2132,11 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
         }
         else if( CurrentComm->GetType() == LOGICAL_RECV )
         {
-          /* Kernel side cudaLaunch synchronization (RECV) */
+          /* Kernel side cudaLaunch (RECV) */
           if ( debug )
-            cout << "Printing CUDA Kernel Launch sync: " << *CurrentComm;
+            cout << "Printing CUDA Kernel Launch: " << *CurrentComm;
 
-          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, TaskId, 0, 0, 0, (INT64)Tag ) < 0 )
+          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, 0, (INT64)Tag ) < 0 )
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
