@@ -1090,6 +1090,9 @@ struct t_thread *locate_thread_of_task( struct t_task *task, int thid )
 {
   register struct t_thread *thread;
 
+  if( thid == -1 )
+    return NULL;
+
   assert( thid >= 0 && thid < task->threads_count );
 
   thread = task->threads[ thid ];

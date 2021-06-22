@@ -1323,7 +1323,7 @@ static void message_received( struct t_thread *thread_sender )
 {
   struct t_node *node, *node_partner;
   struct t_task *task, *task_partner;
-  struct t_thread *thread_partner;
+  struct t_thread *thread_partner = NULL;
   struct t_action *action;
   struct t_send *mess;
   struct t_thread *partner;
@@ -3778,8 +3778,9 @@ void COMMUNIC_send( struct t_thread *thread_sender )
           }
           else
           {
+            // TODO revisar esta condicion si ha de ser para todas las llamadas o solo para los memcopy
             if ( thread_sender->original_thread &&
-                 ( CUDAEventEncoding_Is_CUDATransferBlock( thread_sender->acc_in_block_event ) ||
+                 ( CUDAEventEncoding_Is_CUDABlock( thread_sender->acc_in_block_event.type ) ||
                    OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event ) ) &&
                  thread_sender->action->desc.send.communic_id == 0 )
             {
@@ -3793,7 +3794,8 @@ void COMMUNIC_send( struct t_thread *thread_sender )
       }
       else /* hi_ha_irecv || partner != TH_NIL */
       {
-        if ( thread_sender->original_thread && ( CUDAEventEncoding_Is_CUDATransferBlock( thread_sender->acc_in_block_event ) ||
+        // TODO revisar esta condicion si ha de ser para todas las llamadas o solo para los memcopy
+        if ( thread_sender->original_thread && ( CUDAEventEncoding_Is_CUDABlock( thread_sender->acc_in_block_event.type ) ||
                                           OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event ) ) )
         {
           thread_sender->acc_sender_sync = TRUE;

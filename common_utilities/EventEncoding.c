@@ -846,7 +846,8 @@ Boolean CUDAEventEncoding_Is_BlockBegin( long64_t Op )
 
 Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver )
 {
-  if( sender->kernel || receiver->kernel )
+  if( ( sender != NULL && sender->kernel ) ||
+      ( receiver != NULL && receiver->kernel ) )
     return TRUE;
   return FALSE;
 }
