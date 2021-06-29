@@ -578,15 +578,13 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     Event2GlobalOp( CurrentEvent );
   }
 
-  // If it is a beggining of a glop
+  // If it is a beginning of a glop
   //
   if ( Type == MPITYPE_COLLECTIVE && Value != 0 )
   {
-    DimBlock CurrentBlock;
     DimCollectiveOp GlobalOpId;
     PendingGlobalOp = true;
-    CurrentBlock    = MPIEventEncoding_DimemasBlockId( (MPI_Event_Values)Value );
-    GlobalOpId      = MPIEventEncoding_GlobalOpId( CurrentBlock );
+    GlobalOpId      = MPIEventEncoding_GlobalOpId( (MPI_Event_Values)Value );
     PartialGlobalOp = new GlobalOp( Timestamp,
                                     CurrentEvent->GetCPU(),
                                     CurrentEvent->GetAppId(),

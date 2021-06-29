@@ -771,13 +771,16 @@ extern "C"
     GLOP_ID_MPI_Iallgatherv           = 23,
     GLOP_ID_MPI_Ialltoall             = 24,
     GLOP_ID_MPI_Ialltoallv            = 25,
-    GLOP_ID_MPI_Ialltoallw            = 26,
-    GLOP_ID_MPI_Ireduce               = 27,
-    GLOP_ID_MPI_Iallreduce            = 28,
-    GLOP_ID_MPI_Ireduce_scatter       = 29,
-    GLOP_ID_MPI_Ireduce_scatter_block = 30,
-    GLOP_ID_MPI_Iscan                 = 31
+    GLOP_ID_MPI_Ireduce               = 26,
+    GLOP_ID_MPI_Iallreduce            = 27,
+    GLOP_ID_MPI_Ireduce_scatter       = 28,
+    GLOP_ID_MPI_Ireduce_scatter_block = 29,
+    GLOP_ID_MPI_Iscan                 = 30,
+    GLOP_ID_MPI_Ialltoallw            = 31,
   } DimCollectiveOp;
+
+  /* Start position for immediate collectives */
+  #define GLOP_ID_IMMEDIATE GLOP_ID_MPI_Ibarrier
 
   /* ==========================================================================
      ==== MPI Event Labels
@@ -1014,7 +1017,7 @@ extern "C"
   void MPIEventEncoding_EnableOperation( MPI_Event_Values Op );
   void MPIEventEncoding_WriteEnabledOperations( FILE *fd );
   DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op );
-  DimCollectiveOp MPIEventEncoding_GlobalOpId( DimBlock BlockId );
+  DimCollectiveOp MPIEventEncoding_GlobalOpId( MPI_Event_Values Op );
   int MPIEventEncoding_Is_MPIBlock( long64_t Type );
   int MPIEventEncoding_Is_BlockBegin( long64_t Op );
   int MPIEventEncoding_Is_UserBlock( long64_t Type );

@@ -456,8 +456,8 @@ class GlobalOp : public virtual ParaverRecord
 
   INT32 GetGlobalOpId( void )
   {
-    if ( GlobalOpId >= 16 )
-      return GlobalOpId - 16;
+    if ( GlobalOpId >= GLOP_ID_IMMEDIATE )
+      return GlobalOpId - GLOP_ID_IMMEDIATE;
     else
       return GlobalOpId;
   };

@@ -615,6 +615,7 @@ Communication_t ParaverTraceParser::ParseCommunication( char* ASCIICommunication
   return NewCommunication;
 }
 
+/* Record type 4: DEPRECATED */
 GlobalOp_t ParaverTraceParser::ParseGlobalOp( char* ASCIIGlobalOp )
 {
   GlobalOp_t NewGlobalOp;
