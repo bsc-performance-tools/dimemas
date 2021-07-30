@@ -977,7 +977,8 @@ struct t_thread
   t_boolean blocked_in_global_op;            /* To control threads inside acc sync */
   t_boolean blocked_in_host_sync;            /* To control host is stopped in dependency sync */
   int blocked_sync_threadid;                 /* Destination threadid in dependency sync */
-  struct t_event_block acc_in_block_event; /* To control gpu states inside acc blocks */
+  struct t_event_block acc_in_block_event;   /* To control gpu states inside acc blocks */
+  t_boolean acc_put_on_run;                  /* To mark when an accelerator GPU has programmed a startup and the thread needs to be put on run */
 
   /* variable for omp */
   t_boolean omp_master_thread;

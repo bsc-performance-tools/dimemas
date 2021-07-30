@@ -78,6 +78,10 @@ int DATA_COPY_message_size;  /* Maximun message size to compute data copy
 t_boolean RTT_enabled; /* True if Round Trip Time is enabled */
 t_nano RTT_time;       /* Round Trip Time for messages greater than eager */
 
+t_boolean host_next_action = FALSE; /* controls when host thread(GPU) has to be set to ready after completing a communication*/
+struct t_thread *host_thread = NULL; /* stores the host thread from the previous situation */
+
+
 /*
  * To compute the traffic on external network
  */
@@ -587,7 +591,7 @@ t_nano compute_startup( struct t_thread *thread,
              OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event )  ) &&
            mess_commid != 0 )
       {
-        startup = send_node->acc.startup + send_node->acc.memory_startup;
+        startup = send_node->acc.memory_startup;
       }
       else if( mess_commid != 0 )
       {
@@ -1321,16 +1325,16 @@ static struct t_thread *locate_receiver_dependencies_synchronization( struct t_q
  *****************************************************************************/
 static void message_received( struct t_thread *thread_sender )
 {
-  struct t_node *node, *node_partner;
-  struct t_task *task, *task_partner;
+  struct t_node *node = NULL, *node_partner = NULL;
+  struct t_task *task = NULL, *task_partner = NULL;
   struct t_thread *thread_partner = NULL;
-  struct t_action *action;
-  struct t_send *mess;
-  struct t_thread *partner;
-  struct t_account *account;
+  struct t_action *action = NULL;
+  struct t_send *mess = NULL;
+  struct t_thread *partner = NULL;
+  struct t_account *account = NULL;
   dimemas_timer tmp_timer, actual_logical_recv;
-  struct t_recv *mess_recv;
-  struct t_cpu *cpu_partner, *cpu;
+  struct t_recv *mess_recv = NULL;
+  struct t_cpu *cpu_partner = NULL, *cpu = NULL;
 
   node   = get_node_of_thread( thread_sender );
   task   = thread_sender->task;
@@ -1621,8 +1625,6 @@ static void message_received( struct t_thread *thread_sender )
               mess->communic_id );
     }
 
-    int host_next_action = FALSE;
-
     if ( host_startup )
     // If it's not a synchronization communication
     {
@@ -1669,18 +1671,10 @@ static void message_received( struct t_thread *thread_sender )
     {
       host_next_action = TRUE;
     }
-    
+
     if( host_next_action )
     {
-      /* In case of no host startup or startup latency == 0, host must be set to ready if it was not set previously */
-      action          = partner->action;
-      partner->action = action->next;
-      READ_free_action( action );
-      if ( more_actions( partner ) )
-      {
-        partner->loose_cpu = TRUE;
-        SCHEDULER_thread_to_ready( partner );
-      }
+      host_thread = host_th;
     }
 
     if( host_th->blocked_in_host_sync == TRUE && mess->communic_id == 0 && host_th->blocked_sync_threadid == mess->dest_thread )
@@ -2478,7 +2472,6 @@ void COMMUNIC_COM_TIMER_OUT( struct t_thread *thread )
       SCHEDULER_thread_to_ready( thread );
     }
   }
-
   else if ( !thread->original_thread )
   {
     /* FEC: Com que al P2P_message_received no es pot eliminar el thread, si cal,
@@ -2486,6 +2479,21 @@ void COMMUNIC_COM_TIMER_OUT( struct t_thread *thread )
     if ( thread->marked_for_deletion )
     {
       delete_duplicate_thread( thread );
+    }
+  }
+
+  if( host_next_action )
+  {
+    /* In case of no host startup or startup latency == 0, host must be set to ready if it was not set previously */
+    host_next_action = FALSE;
+    
+    action          = host_thread->action;
+    host_thread->action = action->next;
+    READ_free_action( action );
+    if ( more_actions( host_thread ) )
+    {
+      host_thread->loose_cpu = TRUE;
+      SCHEDULER_thread_to_ready( host_thread );
     }
   }
 }
@@ -3550,6 +3558,9 @@ void COMMUNIC_send( struct t_thread *thread_sender )
       ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
       SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
 
+      if (thread_sender->kernel == TRUE)
+        thread_sender->acc_put_on_run = TRUE;
+      
       SCHEDULER_thread_to_ready_return( M_COM, thread_sender, startup, 0 );
 
       if ( debug & D_COMM )
@@ -3948,6 +3959,9 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
       FLOAT_TO_TIMER( startup, tmp_timer );
       ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
       SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
+
+      if ( thread_receiver->kernel == TRUE )
+        thread_receiver->acc_put_on_run = TRUE;
 
       SCHEDULER_thread_to_ready_return( M_COM, thread_receiver, startup, 0 );
 
@@ -8003,7 +8017,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
                                  node,
                                  0,
                                  0,
-                                 0,
+                                 comm_id,
                                  ACCELERATOR_COM_TYPE,
                                  NULL );
 
@@ -8059,7 +8073,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
                                  node,
                                  0,
                                  0,
-                                 0,
+                                 comm_id,
                                  ACCELERATOR_COM_TYPE,
                                  NULL );
 
@@ -8099,7 +8113,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
                                node,
                                0,
                                0,
-                               0,
+                               comm_id,
                                ACCELERATOR_COM_TYPE,
                                NULL );
 

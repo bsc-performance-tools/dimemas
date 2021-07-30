@@ -1043,6 +1043,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->blocked_in_host_sync            = FALSE;
   thread->blocked_sync_threadid           = -1;
   thread->acc_in_block_event.paraver_time = (dimemas_timer)0;
+  thread->acc_put_on_run                  = FALSE;
 
   /* OpenMP variables */
   if ( task->openmp && thread_id == 0 )

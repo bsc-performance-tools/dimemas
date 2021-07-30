@@ -1066,7 +1066,13 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         thread->loose_cpu = FALSE;
       /*assert (thread->loose_cpu == FALSE);*/
 
-      if ( ( count_queue( &( node->ready ) ) != 0 ) && ( num_free_cpu( node ) > 0 ) )
+      if ( thread->acc_put_on_run == TRUE )
+      {
+        thread->acc_put_on_run = FALSE;
+        // put_thread_on_run( thread, node );
+        SCHEDULER_next_thread_to_run( node );
+      }
+      else if ( ( count_queue( &( node->ready ) ) != 0 ) && ( num_free_cpu( node ) > 0 ) )
       {
         SCHEDULER_next_thread_to_run( node );
       }
