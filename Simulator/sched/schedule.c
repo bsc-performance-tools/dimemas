@@ -642,13 +642,14 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           {
             action = thread->action;
 
-            if ( thread->idle_block && !thread->kernel )
+            if ( thread->kernel && !thread->first_acc_event_read )
+            {
+              /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
+              PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
+            }
+            else if ( thread->idle_block )
             {
               PARAVER_Idle( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
-            }
-            else if ( thread->idle_block == TRUE && thread->task->accelerator )
-            {
-              PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
             }
             else
             {
@@ -656,17 +657,11 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               { /*	It's a CPU burst	*/
                 PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
               }
-              else if ( ( thread->kernel && ( !thread->first_acc_event_read || thread->acc_in_block_event.value == 0 ) ) )
-              {
-                /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
-                /* Not created states between blocks in kernel thread	*/
-                PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
-              }
               else if ( thread->kernel && ( CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) ||
                                             OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
               {
                 /*	It's a GPU burst	*/
-                PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
+                PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
               }
               else if ( ( thread->host || thread->kernel ) &&
                         ( CUDAEventEncoding_Is_CUDABlock( thread->acc_in_block_event.type ) ||

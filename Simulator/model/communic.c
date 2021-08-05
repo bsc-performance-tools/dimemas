@@ -8051,16 +8051,18 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
         {
           cpu = get_cpu_of_thread( task->KernelSync[ i ] );
 
-          PARAVER_Not_Created( cpu->unique_number,
-                               IDENTIFIERS( task->KernelSync[ i ] ),
-                               task->KernelSync[ i ]->acc_in_block_event.paraver_time,
-                               current_time );
+          PARAVER_Idle( cpu->unique_number,
+                        IDENTIFIERS( task->KernelSync[ i ] ),
+                        task->KernelSync[ i ]->acc_in_block_event.paraver_time,
+                        current_time );
+
           task->KernelSync[ i ]->last_paraver = current_time;
 
           PARAVER_Event( cpu->unique_number,
                          IDENTIFIERS( task->KernelSync[ i ] ),
                          current_time, task->KernelSync[ i ]->acc_in_block_event.type,
                          task->KernelSync[ i ]->acc_in_block_event.value );
+
           task->KernelSync[ i ]->acc_in_block_event.paraver_time = current_time;
           task->KernelSync[ i ]->acc_recv_sync                   = FALSE;
         }
