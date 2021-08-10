@@ -54,7 +54,9 @@ t_boolean UseRendezVous( t_boolean trace_rendez_vous, long long int msg_size, t_
      "is_acc_comm" which defines it is the cuda communication.
      we don't want that the cuda communication takes part in eager communications.
      */
-  if ( ( RD_SYNC_use_trace_sync && trace_rendez_vous ) || ( RD_SYNC_message_size >= 0 && msg_size >= RD_SYNC_message_size ) || is_acc_comm == TRUE )
+  if ( ( RD_SYNC_use_trace_sync && trace_rendez_vous ) ||
+       ( RD_SYNC_message_size >= 0 && msg_size >= RD_SYNC_message_size ) ||
+       is_acc_comm == TRUE )
   {
     return TRUE;
   }
