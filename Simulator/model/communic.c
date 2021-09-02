@@ -1516,7 +1516,7 @@ static void message_received( struct t_thread *thread_sender )
     cpu         = get_cpu_of_thread( thread_sender );
     cpu_partner = get_cpu_of_thread( partner );
 
-    struct t_thread *host_th, *kernel_th;
+    struct t_thread *host_th = NULL, *kernel_th = NULL;
 
     if ( thread_sender->host )
     {
@@ -1677,7 +1677,10 @@ static void message_received( struct t_thread *thread_sender )
       host_thread = host_th;
     }
 
-    if( host_th->blocked_in_host_sync == TRUE && mess->communic_id == 0 && host_th->blocked_sync_threadid == mess->dest_thread )
+    if( host_th != NULL && 
+        host_th->blocked_in_host_sync == TRUE &&
+        host_th->blocked_sync_threadid == mess->dest_thread &&
+        mess->communic_id == 0 )
     {
       host_th->blocked_in_host_sync  = FALSE;
       host_th->blocked_sync_threadid = -1;
