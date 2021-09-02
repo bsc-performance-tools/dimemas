@@ -3578,21 +3578,6 @@ void COMMUNIC_send( struct t_thread *thread_sender )
     }
   } /* thread->startup_done == TRUE */
 
-  if( thread_sender->host && mess->communic_id != 0 && 
-      thread_sender->acc_in_block_event.type == CUDA_LIB_CALL_EV && 
-      ( thread_sender->acc_in_block_event.value == CUDA_LAUNCH_VAL || 
-        thread_sender->acc_in_block_event.value == CUDA_CONFIGURECALL_VAL ) )
-  {
-    PARAVER_Event( thread_partner->cpu->unique_number, 
-                   IDENTIFIERS( thread_partner ), 
-                   current_time, 
-                   thread_sender->acc_in_block_event.type, 
-                   thread_sender->acc_in_block_event.value );
-
-    thread_partner->acc_in_block_event.paraver_time = current_time;
-    thread_partner->logical_recv = current_time;
-  }
-
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
   {
