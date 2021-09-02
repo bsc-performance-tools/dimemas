@@ -432,7 +432,11 @@ t_nano SCHEDULER_get_execution_time( struct t_thread *thread )
     panic( "Trying to work when innaproppiate P%02d T%02d (t%02d) (%d)\n", IDENTIFIERS( thread ), thread->original_thread );
   }
 
+  /* the following call " .get_execution_time " is mandatory */
   ti = ( *SCH[ machine->scheduler.policy ].get_execution_time )( thread );
+  
+  if ( thread->kernel && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 )
+    ti = 0;
 
   account = current_account( thread );
   FLOAT_TO_TIMER( ti, tmp_timer );
