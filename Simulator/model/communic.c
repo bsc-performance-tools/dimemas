@@ -8120,35 +8120,11 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
       }
     }
 
-    // Startup reset
-    host_th->startup_done = FALSE;
-
-    // end latency on host
-    startup = compute_startup( host_th,
-                               task->taskid, /* Sender */
-                               task->taskid, /* Receiver */
-                               node,
-                               node,
-                               0,
-                               0,
-                               comm_id,
-                               ACCELERATOR_COM_TYPE,
-                               NULL );
-
-    if ( OCLEventEncoding_Is_OCLSyncBlock( host_th->acc_in_block_event ) )
-      startup = 0;
-
     host_th->loose_cpu = FALSE;
     // host_th->doing_startup = TRUE;
     host_th->doing_acc_comm = TRUE;
 
-    account = current_account( host_th );
-    FLOAT_TO_TIMER( startup, tmp_timer );
-    ADD_TIMER( account->latency_time, tmp_timer, account->latency_time );
-    SUB_TIMER( account->cpu_time, tmp_timer, account->cpu_time );
-
     FLOAT_TO_TIMER( current_time, tmp_timer2 );
-    ADD_TIMER( startup, tmp_timer2, tmp_timer2 );
 
     host_th->event = (struct t_event *)EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, host_th, COM_TIMER_OUT );
 
