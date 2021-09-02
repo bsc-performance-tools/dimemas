@@ -36,46 +36,46 @@
 #define _paraver_h_
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-#include "types.h"
 #include "extern.h"
-
 #include "pcf_defines.h"
+#include "types.h"
 
 /* Record identifier */
 #define PRV_STATE     1
 #define PRV_EVENT     2
 #define PRV_COMM      3
-#define PRV_STATE_RUN 4// Special state
+#define PRV_STATE_RUN 4 // Special state
 
-/* #define PA_STATE_IDLE       0  */
-/* #define PA_STATE_BUSY       1  */
-/* #define PA_STATE_DEAD       2  */
-/* #define PA_STATE_WAIT_MESS  3  */
-/* #define PA_STATE_BLOCK_SEND 4  */
-/* #define PA_STATE_WAIT_CPU   5  */
-/* #define PA_STATE_CTXT       6  */
-/* #define PA_STATE_WAIT_SEM   8  */
-/* #define PA_STATE_WAIT_LINK  9  */
-/* #define PA_STATE_IO         11 */
-/* #define PA_BUSY_WAIT        12 */
-/* #define PA_GLOBAL_OP_SYNC   13 */ /* NO SE USA EN TO'DO EL CÓDIGO */
-/* #define PA_GLOBAL_OP_PERF   14 */ /* "                         " */
-/* #define PA_STATE_BLOCK_IO   15 */
-/* #define PA_STATE_BLOCK_OS   16 */ /* NO LISTADA EN EL PCF.         *
-                                      * Sustituida por PRV_BLOCKED_ST */
-/* #define PA_STATE_STARTUP    18 */
+  /* #define PA_STATE_IDLE       0  */
+  /* #define PA_STATE_BUSY       1  */
+  /* #define PA_STATE_DEAD       2  */
+  /* #define PA_STATE_WAIT_MESS  3  */
+  /* #define PA_STATE_BLOCK_SEND 4  */
+  /* #define PA_STATE_WAIT_CPU   5  */
+  /* #define PA_STATE_CTXT       6  */
+  /* #define PA_STATE_WAIT_SEM   8  */
+  /* #define PA_STATE_WAIT_LINK  9  */
+  /* #define PA_STATE_IO         11 */
+  /* #define PA_BUSY_WAIT        12 */
+  /* #define PA_GLOBAL_OP_SYNC   13 */ /* NO SE USA EN TO'DO EL CÓDIGO */
+  /* #define PA_GLOBAL_OP_PERF   14 */ /* "                         " */
+  /* #define PA_STATE_BLOCK_IO   15 */
+  /* #define PA_STATE_BLOCK_OS   16 */ /* NO LISTADA EN EL PCF.         *
+                                        * Sustituida por PRV_BLOCKED_ST */
+  /* #define PA_STATE_STARTUP    18 */
 
-#define PA_STATE_STRING "%d:1:%d:%d:%d:%d:%.0f:%.0f:%d\n",paraver_line_number++
-#define PA_EVENT_STRING "%d:2:%d:%d:%d:%d:%.0f:%d:%d\n",paraver_line_number++
-#define PA_COMM_STRING  "%d:3:%d:%d:%d:%d:%.0f:%.0f:%d:%d:%d:%d:%.0f:%.0f:%d:%d\n",paraver_line_number++
+#define PA_STATE_STRING "%d:1:%d:%d:%d:%d:%.0f:%.0f:%d\n", paraver_line_number++
+#define PA_EVENT_STRING "%d:2:%d:%d:%d:%d:%.0f:%d:%d\n", paraver_line_number++
+#define PA_COMM_STRING  "%d:3:%d:%d:%d:%d:%.0f:%.0f:%d:%d:%d:%d:%.0f:%.0f:%d:%d\n", paraver_line_number++
 
-#ifdef  FORMAT_VELL_RECORDS_4_PRV
-  #define PA_GLOB_STRING  "%d:4:%d:%d:%d:%d:%.0f:%.0f:%.0f:%.0f:%d:%d:%d:%d\n",paraver_line_number++
+#ifdef FORMAT_VELL_RECORDS_4_PRV
+#  define PA_GLOB_STRING "%d:4:%d:%d:%d:%d:%.0f:%.0f:%.0f:%.0f:%d:%d:%d:%d\n", paraver_line_number++
 #else
-  #define PA_GLOB_STRING  "%d:4:%d:%d:%d:%d:%.0f:%d:%d:%d:%d:%d\n",paraver_line_number++
+#  define PA_GLOB_STRING "%d:4:%d:%d:%d:%d:%.0f:%d:%d:%d:%d:%d\n", paraver_line_number++
 #endif /* FORMAT_VELL_RECORDS_4_PRV */
 
 #define PARAVER_SEM_WAIT   98
@@ -95,22 +95,22 @@ extern "C" {
 
 #define PARAVER_IO 89
 
-#define PARAVER_IO_METADATA_BEGIN                          0
-#define PARAVER_IO_METADATA_END                            1
-#define PARAVER_IO_BLOCK_NONCOLLECTIVE_READ_BEGIN          2
-#define PARAVER_IO_BLOCK_NONCOLLECTIVE_READ_END            3
-#define PARAVER_IO_BLOCK_NONCOLLECTIVE_WRITE_BEGIN         4
-#define PARAVER_IO_BLOCK_NONCOLLECTIVE_WRITE_END           5
-#define PARAVER_IO_BLOCK_COLLECTIVE_READ_BEGIN             6
-#define PARAVER_IO_BLOCK_COLLECTIVE_READ_END               7
-#define PARAVER_IO_BLOCK_COLLECTIVE_WRITE_BEGIN            8
-#define PARAVER_IO_BLOCK_COLLECTIVE_WRITE_END              9
-#define PARAVER_IO_NONBLOCK_NONCOLLECTIVE_READ_BEGIN      10
-#define PARAVER_IO_NONBLOCK_NONCOLLECTIVE_END             11
-#define PARAVER_IO_NONBLOCK_NONCOLLECTIVE_WRITE_BEGIN     12
-#define PARAVER_IO_NONBLOCK_COLLECTIVE_READ_BEGIN         14
-#define PARAVER_IO_NONBLOCK_COLLECTIVE_WRITE_BEGIN        15
-#define PARAVER_IO_NONBLOCK_COLLECTIVE_END                16
+#define PARAVER_IO_METADATA_BEGIN                     0
+#define PARAVER_IO_METADATA_END                       1
+#define PARAVER_IO_BLOCK_NONCOLLECTIVE_READ_BEGIN     2
+#define PARAVER_IO_BLOCK_NONCOLLECTIVE_READ_END       3
+#define PARAVER_IO_BLOCK_NONCOLLECTIVE_WRITE_BEGIN    4
+#define PARAVER_IO_BLOCK_NONCOLLECTIVE_WRITE_END      5
+#define PARAVER_IO_BLOCK_COLLECTIVE_READ_BEGIN        6
+#define PARAVER_IO_BLOCK_COLLECTIVE_READ_END          7
+#define PARAVER_IO_BLOCK_COLLECTIVE_WRITE_BEGIN       8
+#define PARAVER_IO_BLOCK_COLLECTIVE_WRITE_END         9
+#define PARAVER_IO_NONBLOCK_NONCOLLECTIVE_READ_BEGIN  10
+#define PARAVER_IO_NONBLOCK_NONCOLLECTIVE_END         11
+#define PARAVER_IO_NONBLOCK_NONCOLLECTIVE_WRITE_BEGIN 12
+#define PARAVER_IO_NONBLOCK_COLLECTIVE_READ_BEGIN     14
+#define PARAVER_IO_NONBLOCK_COLLECTIVE_WRITE_BEGIN    15
+#define PARAVER_IO_NONBLOCK_COLLECTIVE_END            16
 
 /* One sided operations*/
 #define PARAVER_OS 88
@@ -138,112 +138,78 @@ extern "C" {
 #define PARADIS_COMM  3
 
 
+  typedef char p_ids;
+
+  /**
+   * External routines defined in file paraver.c
+   **/
+
+  extern void PARAVER_Enable_Trace_Generation( void );
+
+  extern void PARAVER_Init( const char *output_paraver_trace,
+                            const char *pcf_name,
+                            dimemas_timer paraver_start_time,
+                            dimemas_timer paraver_end_time,
+                            t_boolean paraver_priorities );
+
+  extern void PARAVER_End( int print );
+
+  /* Hints to avoid 'over-collapsing' of events */
+  extern void PARAVER_Start_Op( int cpu, int ptask, int task, int thread, dimemas_timer time );
+
+  extern void PARAVER_Idle( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
+
+  extern void PARAVER_Running( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
+
+  extern void PARAVER_Startup( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
+
+  extern void PARAVER_Wait( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time, int type );
+
+  extern void PARAVER_Busy_Wait( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
 
+  extern void PARAVER_Waiting_Links( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-typedef char    p_ids;
+  extern void PARAVER_Ctx_Switch( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-/**
- * External routines defined in file paraver.c
- **/
+  extern void PARAVER_Data_Copy( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-extern void PARAVER_Enable_Trace_Generation (void);
+  extern void PARAVER_RTT( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-extern void PARAVER_Init(const char   *output_paraver_trace,
-                         const char   *pcf_name,
-                         dimemas_timer paraver_start_time,
-                         dimemas_timer paraver_end_time,
-                         t_boolean     paraver_priorities);
+  extern void PARAVER_IO_Op( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-extern void PARAVER_End(int print);
+  extern void PARAVER_IO_Blocked( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-/* Hints to avoid 'over-collapsing' of events */
-extern void PARAVER_Start_Op (int cpu, int ptask, int task, int thread,
-                              dimemas_timer time);
+  extern void PARAVER_OS_Blocked( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-extern void PARAVER_Idle (int cpu, int ptask, int task, int thread,
-                          dimemas_timer init_time,
-                          dimemas_timer end_time);
+  extern void PARAVER_Dead( int cpu, int ptask, int task, int thread, dimemas_timer time );
 
-extern void PARAVER_Running (int cpu, int ptask, int task, int thread,
-                             dimemas_timer init_time,
-                             dimemas_timer end_time);
+  extern void PARAVER_P2P_Comm( int cpu_s,
+                                int ptask_s,
+                                int task_s,
+                                int thread_s,
+                                dimemas_timer log_s,
+                                dimemas_timer phy_s,
+                                int cpu_r,
+                                int ptask_r,
+                                int task_r,
+                                int thread_r,
+                                dimemas_timer log_r,
+                                dimemas_timer phy_r,
+                                int size,
+                                int tag );
 
-extern void PARAVER_Startup (int cpu, int ptask, int task, int thread,
-                             dimemas_timer init_time,
-                             dimemas_timer end_time);
+  extern void PARAVER_Event( int cpu, int ptask, int task, int thread, dimemas_timer time, unsigned long long type, unsigned long long value );
 
-extern void PARAVER_Wait (int cpu, int ptask, int task, int thread,
-                          dimemas_timer init_time,
-                          dimemas_timer end_time,
-                          int type);
+  extern void PARAVER_Not_Created( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-extern void PARAVER_Busy_Wait (int cpu, int ptask, int task, int thread,
-                               dimemas_timer init_time,
-                               dimemas_timer end_time);
+  extern void PARAVER_Mem_Transf( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
+  extern void PARAVER_Others( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-extern void PARAVER_Waiting_Links (int cpu, int ptask, int task, int thread,
-                                   dimemas_timer init_time,
-                                   dimemas_timer end_time);
+  extern void PARAVER_Thread_Sched( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
-extern void PARAVER_Ctx_Switch (int cpu, int ptask, int task, int thread,
-                                dimemas_timer init_time,
-                                dimemas_timer end_time);
-
-extern void PARAVER_Data_Copy (int cpu, int ptask, int task, int thread,
-                               dimemas_timer init_time,
-                               dimemas_timer end_time);
-
-extern void PARAVER_RTT (int cpu, int ptask, int task, int thread,
-                         dimemas_timer init_time,
-                         dimemas_timer end_time);
-
-extern void PARAVER_IO_Op (int cpu, int ptask, int task, int thread,
-                           dimemas_timer init_time,
-                           dimemas_timer end_time);
-
-extern void PARAVER_IO_Blocked (int cpu, int ptask, int task, int thread,
-                                dimemas_timer init_time,
-                                dimemas_timer end_time);
-
-extern void PARAVER_OS_Blocked (int cpu, int ptask, int task, int thread,
-                                dimemas_timer init_time,
-                                dimemas_timer end_time);
-
-extern void PARAVER_Dead (int cpu, int ptask, int task, int thread,
-                          dimemas_timer time);
-
-extern void PARAVER_P2P_Comm (int cpu_s,  int ptask_s, int task_s, int thread_s,
-                              dimemas_timer log_s, dimemas_timer phy_s,
-                              int cpu_r, int ptask_r, int task_r, int thread_r,
-                              dimemas_timer log_r, dimemas_timer phy_r,
-                              int size, int tag);
-
-extern void PARAVER_Event (int cpu, int ptask, int task, int thread,
-                           dimemas_timer     time,
-                           unsigned long long type,
-                           unsigned long long value);
-
-extern void PARAVER_Not_Created (int cpu, int ptask, int task, int thread,
-																 dimemas_timer init_time,
-																 dimemas_timer end_time);
-
-extern void PARAVER_Mem_Transf (int cpu, int ptask, int task, int thread,
-																 dimemas_timer init_time,
-																 dimemas_timer end_time);
-
-extern void PARAVER_Others (int cpu, int ptask, int task, int thread,
-														dimemas_timer init_time,
-														dimemas_timer end_time);
-
-extern void PARAVER_Thread_Sched (int cpu, int ptask, int task, int thread,
-																  dimemas_timer init_time,
-																  dimemas_timer end_time);
-
-extern void PARAVER_Thread_Sync (int cpu, int ptask, int task, int thread,
-																 dimemas_timer init_time,
-																 dimemas_timer end_time);
+  extern void PARAVER_Thread_Sync( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
 #ifdef __cplusplus
 }

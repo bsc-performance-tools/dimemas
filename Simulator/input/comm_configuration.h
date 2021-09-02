@@ -35,11 +35,12 @@
 #ifndef _COMM_CONFIGURATION_H_
 #define _COMM_CONFIGURATION_H_
 
-extern void COMM_CONFIGURATION_Load_General_Comms_Definition(char* comm_conf_filename,
-                                                             FILE* comm_conf_file);
+#include <stdio.h>
 
-extern void COMM_CONFIGURATION_Load_External_Network_Parameters(void);
+extern void COMM_CONFIGURATION_Load_General_Comms_Definition( char* comm_conf_filename, FILE* comm_conf_file );
 
-extern void COMM_CONFIGURATION_Load_P2P_Fine_Tuning(void);
+extern void COMM_CONFIGURATION_Load_External_Network_Parameters( void );
+
+extern void COMM_CONFIGURATION_Load_P2P_Fine_Tuning( void );
 
 #endif

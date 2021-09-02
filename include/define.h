@@ -43,30 +43,30 @@
  *
  */
 
-#if defined(ENABLE_LARGE_TRACES) && !defined(ARCH_MACOSX)
-  #define MYOPEN     open64
-  #define MYFOPEN    fopen64
-  #define MYFREOPEN  freopen64
-  #define MYFCLOSE   fclose
-  #define MYFSEEKO   fseeko64
-  #define MYFSEEK    fseek64
-  #define MYFTELLO   ftello64
-  #define MYFSTAT    fstat64
-  #define MYLSEEK    lseek64
+#if defined( ENABLE_LARGE_TRACES ) && !defined( ARCH_MACOSX )
+#  define MYOPEN    open64
+#  define MYFOPEN   fopen64
+#  define MYFREOPEN freopen64
+#  define MYFCLOSE  fclose
+#  define MYFSEEKO  fseeko64
+#  define MYFSEEK   fseek64
+#  define MYFTELLO  ftello64
+#  define MYFSTAT   fstat64
+#  define MYLSEEK   lseek64
 #else
-  #define MYOPEN     open
-  #define MYFOPEN    fopen
-  #define MYFREOPEN  freopen
-  #define MYFCLOSE   fclose
-  #define MYFSEEKO   fseeko
-  #define MYFSEEK    fseek
-  #define MYFTELLO   ftello
-  #define MYFSTAT    fstat
-  #define MYLSEEK    lseek
+#  define MYOPEN    open
+#  define MYFOPEN   fopen
+#  define MYFREOPEN freopen
+#  define MYFCLOSE  fclose
+#  define MYFSEEKO  fseeko
+#  define MYFSEEK   fseek
+#  define MYFTELLO  ftello
+#  define MYFSTAT   fstat
+#  define MYLSEEK   lseek
 #endif /* ENABLE_LARGE_TRACES */
 
-#if defined(ARCH_DEC) && defined(__alpha)
-  #define alpha
+#if defined( ARCH_DEC ) && defined( __alpha )
+#  define alpha
 #endif
 
 /*
@@ -81,25 +81,26 @@
 #define NO_ERROR 0
 
 #ifndef MIN
-  #define MIN(a,b) (((a)<(b))?(a):(b))
+#  define MIN( a, b ) ( ( ( a ) < ( b ) ) ? ( a ) : ( b ) )
 #endif
 #ifndef MAX
-  #define MAX(a,b) (((a)>(b))?(a):(b))
+#  define MAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
 #endif
 
-#define IDENTIFIERS(x) x->task->Ptask->Ptaskid,x->task->taskid,x->threadid
-#define get_cpu_of_thread(x) x->cpu
+#define IDENTIFIERS( x )       x->task->Ptask->Ptaskid, x->task->taskid, x->threadid
+#define get_cpu_of_thread( x ) x->cpu
 
 /*
  * Maximum number of processors that must be created at initialitation time
  * of simulator
  */
 #define MAX_MACHINES 1024 /* S'utilitza als schedulings */
-#define MAX_NODES    256  /* Nomes es fa servir per inicialitzar, pero
-                           * un cop es llegeix el .cfg ja s'agafen els
-                           * valors correctes. Per tant, no hauria
-                           * de tenir cap importancia. */
-#define MAX_CPU      256  /* No es fa servir per res */
+#define MAX_NODES                                                \
+  256               /* Nomes es fa servir per inicialitzar, pero \
+                     * un cop es llegeix el .cfg ja s'agafen els \
+                     * valors correctes. Per tant, no hauria     \
+                     * de tenir cap importancia. */
+#define MAX_CPU 256 /* No es fa servir per res */
 
 /*
  * Maximun number of links per processor
@@ -131,26 +132,26 @@
 /*
  * Possible actions in trace files.
  */
-#define NOOP            -1 /* Dummy action record! */
-#define DEAD             0 /* Thread wants to die */
-#define WORK             1 /* Thread wants to work */
-#define SEND             2 /* Thread wants to send a message */
-#define RECV             3 /* Thread wants to receive a message */
-#define EVENT            4 /* User or Compiler Event */
-#define PRIO             5 /* Change thread priority */
-#define FS               6 /* Disk operation */
-#define SEM              7 /* Semaphore operation */
-#define PORT_SEND        8
-#define PORT_RECV        9
-#define MEMORY_COPY     10
-#define GLOBAL_OP       11
-#define MPI_IO          12
-#define MPI_OS          13
-#define IRECV           14  /* Immediate recieve (without blocking) */
-#define WAIT            15  /* Block until wait */
-#define WAIT_FOR_SEND   16  /* Added by Vladimir */
-#define ACC_SYNC        17
-#define GPU_BURST       18
+#define NOOP          -1 /* Dummy action record! */
+#define DEAD          0  /* Thread wants to die */
+#define WORK          1  /* Thread wants to work */
+#define SEND          2  /* Thread wants to send a message */
+#define RECV          3  /* Thread wants to receive a message */
+#define EVENT         4  /* User or Compiler Event */
+#define PRIO          5  /* Change thread priority */
+#define FS            6  /* Disk operation */
+#define SEM           7  /* Semaphore operation */
+#define PORT_SEND     8
+#define PORT_RECV     9
+#define MEMORY_COPY   10
+#define GLOBAL_OP     11
+#define MPI_IO        12
+#define MPI_OS        13
+#define IRECV         14 /* Immediate recieve (without blocking) */
+#define WAIT          15 /* Block until wait */
+#define WAIT_FOR_SEND 16 /* Added by Vladimir */
+#define ACC_SYNC      17
+#define GPU_BURST     18
 
 /*
  * FRAN
@@ -159,9 +160,9 @@
  * of the record is saying it to us
  */
 
-#define GLOBAL_OP_ASYN  0
-#define GLOBAL_OP_SYNC  1
-#define GLOBAL_OP_WAIT  2
+#define GLOBAL_OP_ASYN 0
+#define GLOBAL_OP_SYNC 1
+#define GLOBAL_OP_WAIT 2
 
 
 /*#define FS               32
@@ -177,7 +178,7 @@
 #define WAIT_FOR_SEND    32768*/
 
 #define WAIT_NORMAL 0
-#define WAIT_ALL 1
+#define WAIT_ALL    1
 
 
 /*
@@ -214,34 +215,34 @@
 /*
  * Different MPI IO operations
  */
-#define MPI_IO_Metadata                        0
-#define MPI_IO_Block_NonCollective             1
-#define MPI_IO_Block_Collective                2
-#define MPI_IO_NonBlock_NonCollective_Begin    3
-#define MPI_IO_NonBlock_NonCollective_End      4
-#define MPI_IO_NonBlock_Collective_Begin       5
-#define MPI_IO_NonBlock_Collective_End         6
+#define MPI_IO_Metadata                     0
+#define MPI_IO_Block_NonCollective          1
+#define MPI_IO_Block_Collective             2
+#define MPI_IO_NonBlock_NonCollective_Begin 3
+#define MPI_IO_NonBlock_NonCollective_End   4
+#define MPI_IO_NonBlock_Collective_Begin    5
+#define MPI_IO_NonBlock_Collective_End      6
 
-#define MPI_OS_GETPUT     0
-#define MPI_OS_FENCE      1
-#define MPI_OS_LOCK       2
-#define MPI_OS_POST       3
+#define MPI_OS_GETPUT 0
+#define MPI_OS_FENCE  1
+#define MPI_OS_LOCK   2
+#define MPI_OS_POST   3
 
-#define MPI_OS_LOCK_LOCK    0
-#define MPI_OS_LOCK_UNLOCK  1
-#define MPI_OS_LOCK_SHARED  0
-#define MPI_OS_LOCK_EXCLUS  1
+#define MPI_OS_LOCK_LOCK   0
+#define MPI_OS_LOCK_UNLOCK 1
+#define MPI_OS_LOCK_SHARED 0
+#define MPI_OS_LOCK_EXCLUS 1
 
 #define MPI_OS_POST_POST     0
 #define MPI_OS_POST_START    1
 #define MPI_OS_POST_COMPLETE 2
 #define MPI_OS_POST_WAIT     3
 
-#define IO_Metadata                 100
-#define IO_Block_NonCollective      101
-#define IO_Block_Collective         102
-#define IO_NonBlock_NonCollective   103
-#define IO_NonBlock_Collective      104
+#define IO_Metadata               100
+#define IO_Block_NonCollective    101
+#define IO_Block_Collective       102
+#define IO_NonBlock_NonCollective 103
+#define IO_NonBlock_Collective    104
 
 /*
  * Us events reserved
@@ -250,23 +251,23 @@
 #define BLOCK_END   41
 
 
-#define USER_EVENT_TYPE_TASKID_START_TASK          7001
-#define USER_EVENT_TYPE_TASKID_END_TASK            7001
-#define USER_EVENT_TYPE_TASKTYPE_START_TASK        7003
-#define USER_EVENT_TYPE_TASKTYPE_END_TASK          7003
-#define PRIORITY_SET_EVENT                         6999
-#define PREEMPTION_SET_EVENT                       6998
+#define USER_EVENT_TYPE_TASKID_START_TASK   7001
+#define USER_EVENT_TYPE_TASKID_END_TASK     7001
+#define USER_EVENT_TYPE_TASKTYPE_START_TASK 7003
+#define USER_EVENT_TYPE_TASKTYPE_END_TASK   7003
+#define PRIORITY_SET_EVENT                  6999
+#define PREEMPTION_SET_EVENT                6998
 
 /* Two types of links */
-#define OUT_LINK  1
-#define IN_LINK   2
+#define OUT_LINK 1
+#define IN_LINK  2
 
 /* Five kinds of links */
-#define MEM_LINK        	1
-#define NODE_LINK       	2
-#define MACHINE_LINK    	3
-#define CONNECTION_LINK 	4
-#define ACCELERATOR_LINK 	5
+#define MEM_LINK         1
+#define NODE_LINK        2
+#define MACHINE_LINK     3
+#define CONNECTION_LINK  4
+#define ACCELERATOR_LINK 5
 
 /* Six communication types */
 #define MEMORY_COMMUNICATION_TYPE       0
@@ -274,7 +275,7 @@
 #define EXTERNAL_NETWORK_COM_TYPE       2
 #define DEDICATED_CONNECTION_COM_TYPE   3
 #define EXTERNAL_MODEL_COM_TYPE         4 // Used by the external communications model
-#define	ACCELERATOR_COM_TYPE            5
+#define ACCELERATOR_COM_TYPE            5
 #define NON_BLOCKING_GLOBAL_OP_COM_TYPE 6
 
 /* Type of global Ops used by the external communications models */
@@ -319,7 +320,7 @@
 #define COM_TIMER_OUT_RESOURCES_WAN       8
 #define COM_TIMER_OUT_RESOURCES_DED       9
 #define COM_TIMER_OUT_RESOURCES_EXT_MODEL 10
-#define COM_TIMER_OUT_RESOURCES_ACC				11
+#define COM_TIMER_OUT_RESOURCES_ACC       11
 
 
 #define FS_OPERATION        1
@@ -348,7 +349,7 @@
 /* Output level max limit */
 #define MAX_OUTPUT_LEVEL 6
 
-#define MIN_PORT_NUMBER  1001
+#define MIN_PORT_NUMBER 1001
 
 #define SEEK_NIL -1
 
@@ -404,166 +405,133 @@
 
 #ifndef PACA
 
-#define ADD_MICRO_TIMER(x,y,z) \
-        z = x+y
+#  define ADD_MICRO_TIMER( x, y, z ) z = x + y
 
-#define GT_TIMER(x,y) \
-        (x > y)
+#  define GT_TIMER( x, y ) ( x > y )
 
-#define LE_TIMER(x,y) \
-        (x <= y)
+#  define LE_TIMER( x, y ) ( x <= y )
 
-#define EQ_TIMER(x,y) \
-        (x == y)
+#  define EQ_TIMER( x, y ) ( x == y )
 
-#define ADD_TIMER(x,y,z) \
-        z = x+y
+#  define ADD_TIMER( x, y, z ) z = x + y
 
-#define ADD_MIN_INCR_TO_TIMER(x, y) \
-        y = x + 1
+#  define ADD_MIN_INCR_TO_TIMER( x, y ) y = x + 1
 
-#define SUB_TIMER(x,y,z) \
-        z = x-y
+#  define SUB_TIMER( x, y, z ) z = x - y
 
-#define MIN_TIMER(x,y,z) \
-        z = MIN(x,y)
+#  define MIN_TIMER( x, y, z ) z = MIN( x, y )
 
-#define MAX_TIMER(x,y,z) \
-        z = MAX(x,y)
+#  define MAX_TIMER( x, y, z ) z = MAX( x, y )
 
-#define TIMER_TO_FLOAT(x,y) \
-        y = x
+#  define TIMER_TO_FLOAT( x, y ) y = x
 
-#define FLOAT_TO_TIMER(x,y) \
-        y = x
+#  define FLOAT_TO_TIMER( x, y ) y = x
 
-#define TIMER_TO_DOUBLE(x) \
-        x
+#  define TIMER_TO_DOUBLE( x ) x
 
-#define NEQ_0_TIMER(x) \
-        (x != 0)
+#  define NEQ_0_TIMER( x ) ( x != 0 )
 
-#define EQ_0_TIMER(x) \
-        (x == 0)
+#  define EQ_0_TIMER( x ) ( x == 0 )
 
-#define HOUR_MICRO_TO_TIMER(x,y,z) \
-        z = x*3.6e9+y
+#  define HOUR_MICRO_TO_TIMER( x, y, z ) z = x * 3.6e9 + y
 
-#define ASS_TIMER(x,y) \
-        x = (y)
+#  define ASS_TIMER( x, y ) x = ( y )
 
-#define ASS_ALL_TIMER(x,y) \
-        x = (y)
+#  define ASS_ALL_TIMER( x, y ) x = ( y )
 
-#define PRINT_TIMER(x) \
-        printf("%.9f", round (x) /1e9)
+#  define PRINT_TIMER( x ) printf( "%.9f", round( x ) / 1e9 )
 
-#define FPRINT_TIMER(x,y) \
-        fprintf (x,"%.9f",round (y) / 1e9)
+#  define FPRINT_TIMER( x, y ) fprintf( x, "%.9f", round( y ) / 1e9 )
 
-#define OUT_OF_LIMIT(x) \
-        (x > TIME_LIMIT)
+#  define OUT_OF_LIMIT( x ) ( x > TIME_LIMIT )
 
 /* JGG: para tratar marcas de tiempo negativo */
-#define NIL_TIME(x) \
-        x = -1;
+#  define NIL_TIME( x ) x = -1;
 
-#else   /* PACA */
+#else /* PACA */
 
-#define GT_TIMER(x,y) \
-        ((x.hours>y.hours) || ((x.hours==y.hours) && (x.micro>y.micro)))
+#  define GT_TIMER( x, y ) ( ( x.hours > y.hours ) || ( ( x.hours == y.hours ) && ( x.micro > y.micro ) ) )
 
-#define LE_TIMER(x,y) \
-        ((x.hours<y.hours) || ((x.hours==y.hours) && (x.micro<=y.micro)))
+#  define LE_TIMER( x, y ) ( ( x.hours < y.hours ) || ( ( x.hours == y.hours ) && ( x.micro <= y.micro ) ) )
 
-#define EQ_TIMER(x,y) \
-        ((x.hours==y.hours)&& (x.micro==y.micro))
+#  define EQ_TIMER( x, y ) ( ( x.hours == y.hours ) && ( x.micro == y.micro ) )
 
-#define ADD_TIMER(x,y,x_plus_y) \
-        if ((3.6e9-y.micro)>=x.micro) \
-        { \
-          x_plus_y.micro = x.micro + y.micro; \
-          x_plus_y.hours = x.hours + y.hours; \
-        } \
-        else \
-        { \
-          x_plus_y.hours = x.hours + y.hours + (unsigned int)1; \
-          x_plus_y.micro = y.micro - \
-          ((unsigned int)(3.6e9 -x.micro)); \
-        }
+#  define ADD_TIMER( x, y, x_plus_y )                                   \
+    if ( ( 3.6e9 - y.micro ) >= x.micro )                               \
+    {                                                                   \
+      x_plus_y.micro = x.micro + y.micro;                               \
+      x_plus_y.hours = x.hours + y.hours;                               \
+    }                                                                   \
+    else                                                                \
+    {                                                                   \
+      x_plus_y.hours = x.hours + y.hours + (unsigned int)1;             \
+      x_plus_y.micro = y.micro - ( (unsigned int)( 3.6e9 - x.micro ) ); \
+    }
 
-#define ADD_MIN_INCR_TO_TIMER(x, y) \
-        y.hours = x.hours; \
-        y.micro = x.micro+1;
+#  define ADD_MIN_INCR_TO_TIMER( x, y ) \
+    y.hours = x.hours;                  \
+    y.micro = x.micro + 1;
 
-#define SUB_TIMER(x,y,x_minus_y) \
-        if (x.micro>=y.micro) \
-        { \
-          x_minus_y.hours = x.hours - y.hours; \
-          x_minus_y.micro = x.micro - y.micro; \
-        } \
-        else \
-        { \
-          x_minus_y.hours = x.hours - y.hours -1; \
-          x_minus_y.micro = (unsigned int)(3.6e9 - y.micro+x.micro); \
-        }
+#  define SUB_TIMER( x, y, x_minus_y )                               \
+    if ( x.micro >= y.micro )                                        \
+    {                                                                \
+      x_minus_y.hours = x.hours - y.hours;                           \
+      x_minus_y.micro = x.micro - y.micro;                           \
+    }                                                                \
+    else                                                             \
+    {                                                                \
+      x_minus_y.hours = x.hours - y.hours - 1;                       \
+      x_minus_y.micro = (unsigned int)( 3.6e9 - y.micro + x.micro ); \
+    }
 
-#define MIN_TIMER(x,y,min_x_y) \
-        if GT_TIMER(x,y) \
-          min_x_y = y; \
-        else \
-          min_x_y = x; \
+#  define MIN_TIMER( x, y, min_x_y ) \
+    if GT_TIMER ( x, y )             \
+      min_x_y = y;                   \
+    else                             \
+      min_x_y = x;
 
-#define MAX_TIMER(x,y,max_x_y) \
-        if GT_TIMER(x,y) \
-          max_x_y = x; \
-        else \
-          max_x_y = y;
+#  define MAX_TIMER( x, y, max_x_y ) \
+    if GT_TIMER ( x, y )             \
+      max_x_y = x;                   \
+    else                             \
+      max_x_y = y;
 
-#define TIMER_TO_FLOAT(timer_a, float_a) \
-        float_a = (float)(3.6e9*timer_a.hours + timer_a.micro)
+#  define TIMER_TO_FLOAT( timer_a, float_a ) float_a = (float)( 3.6e9 * timer_a.hours + timer_a.micro )
 
-#define FLOAT_TO_TIMER(float_a, timer_a) \
-        timer_a.hours = (unsigned int) (float_a/(float)3.6e9); \
-        timer_a.micro = float_a - timer_a.hours*3.6e9;
+#  define FLOAT_TO_TIMER( float_a, timer_a )                  \
+    timer_a.hours = (unsigned int)( float_a / (float)3.6e9 ); \
+    timer_a.micro = float_a - timer_a.hours * 3.6e9;
 
-#define TIMER_TO_DOUBLE(timer_a) \
-        (double) (3.6e12*timer_a.hours + timer_a.micro)
+#  define TIMER_TO_DOUBLE( timer_a ) (double)( 3.6e12 * timer_a.hours + timer_a.micro )
 
-#define NEQ_0_TIMER(timer_a) \
-        ((timer_a.hours !=0) || (timer_a.micro!=0))
+#  define NEQ_0_TIMER( timer_a ) ( ( timer_a.hours != 0 ) || ( timer_a.micro != 0 ) )
 
-#define EQ_0_TIMER(timer_a) \
-        ((x.hours==0) && (x.micro==0))
+#  define EQ_0_TIMER( timer_a ) ( ( x.hours == 0 ) && ( x.micro == 0 ) )
 
-#define HOUR_MICRO_TO_TIMER(hours_uint, micro_uint, timer_z) \
-        timer_z.hours = (unsigned int) hours_uint; \
-        timer_z.micro = (unsigned int) micro_uint;
+#  define HOUR_MICRO_TO_TIMER( hours_uint, micro_uint, timer_z ) \
+    timer_z.hours = (unsigned int)hours_uint;                    \
+    timer_z.micro = (unsigned int)micro_uint;
 
-#define ASS_TIMER(timer_x, value_y) \
-        timer_x.hours = value_y; \
-        timer_x.micro = value_y;
+#  define ASS_TIMER( timer_x, value_y ) \
+    timer_x.hours = value_y;            \
+    timer_x.micro = value_y;
 
-#define ASS_ALL_TIMER(x,y) \
-        x.hours = y.hours; \
-        x.micro = y.micro;
+#  define ASS_ALL_TIMER( x, y ) \
+    x.hours = y.hours;          \
+    x.micro = y.micro;
 
-#define PRINT_TIMER(x) \
-        printf("%dH %010u us",x.hours,x.micro)
+#  define PRINT_TIMER( x ) printf( "%dH %010u us", x.hours, x.micro )
 
-#define FPRINT_TIMER(x,y) \
-        fprintf (x,"%dH %010u us",y.hours,y.micro)
+#  define FPRINT_TIMER( x, y ) fprintf( x, "%dH %010u us", y.hours, y.micro )
 
-#define OUT_OF_LIMIT(x)
-        (0)
+#  define OUT_OF_LIMIT( x )
+( 0 )
 
 /* JGG: para tratar marcas de tiempo negativo */
-#define NIL_TIME(x) \
-        x.hours = -1;
-        x.micro = -1;
+#  define NIL_TIME( x ) x.hours = -1;
+  x.micro = -1;
 
 #endif /* PACA */
-
 
 
 /* Mida dels buffers utilitzats (basicament per llegir fitxers) */
@@ -587,35 +555,21 @@ enum
   MPI_Allreduce,
   MPI_Reduce_Scatter,
   MPI_Reduce_Scatter_block,
-  MPI_Scan, 
-  MPI_Alltoallw 
+  MPI_Scan,
+  MPI_Alltoallw
 };
 
-static const char* Global_Ops_Labels[GLOBAL_OPS_COUNT] =
-{
-  "MPI_Barrier",
-  "MPI_Bcast",
-  "MPI_Gather",
-  "MPI_Gatherv",
-  "MPI_Scatter",
-  "MPI_Scatterv",
-  "MPI_Allgather",
-  "MPI_Allgatherv",
-  "MPI_Alltoall",
-  "MPI_Alltoallv",
-  "MPI_Reduce",
-  "MPI_Allreduce",
-  "MPI_Reduce_Scatter",
-  "MPI_Reduce_Scatter_block",
-  "MPI_Scan",
-  "MPI_Alltoallw"
+static const char* Global_Ops_Labels[ GLOBAL_OPS_COUNT ] = {
+  "MPI_Barrier",    "MPI_Bcast",    "MPI_Gather",    "MPI_Gatherv", "MPI_Scatter",   "MPI_Scatterv",       "MPI_Allgather",
+  "MPI_Allgatherv", "MPI_Alltoall", "MPI_Alltoallv", "MPI_Reduce",  "MPI_Allreduce", "MPI_Reduce_Scatter", "MPI_Reduce_Scatter_block",
+  "MPI_Scan",       "MPI_Alltoallw"
 };
 
-#define ACCELERATOR_NULL	0	//No accelerator tracing
-#define ACCELERATOR_HOST	1	//Accelerator host thread
-#define ACCELERATOR_KERNEL	2	//Accelerator kernel thread
-#define OpenMP_NULL         0   //No open tracing
-#define MASTER              1   //OpenMP master thread  
-#define WORKER              2   //OpenMp worker thread
+#define ACCELERATOR_NULL   0 // No accelerator tracing
+#define ACCELERATOR_HOST   1 // Accelerator host thread
+#define ACCELERATOR_KERNEL 2 // Accelerator kernel thread
+#define OpenMP_NULL        0 // No open tracing
+#define MASTER             1 // OpenMP master thread
+#define WORKER             2 // OpenMp worker thread
 
 #endif

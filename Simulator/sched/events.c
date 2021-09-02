@@ -23,161 +23,151 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-#include <math.h>
-#include <define.h>
-#include <types.h>
-#include <extern.h>
 #include <communic.h>
 #include <cpu.h>
+#include <define.h>
 #include <events.h>
+#include <extern.h>
 #include <fs.h>
 #include <list.h>
+#include <math.h>
 #include <memory.h>
+#include <node.h>
 #include <ports.h>
 #include <schedule.h>
-#include <subr.h>
-#include <node.h>
 #include <simulator.h>
+#include <subr.h>
+#include <types.h>
 
-#ifdef  USE_EQUEUE
-#include "listE.h"
+#ifdef USE_EQUEUE
+#  include "listE.h"
 #endif
 
 #ifdef VENUS_ENABLED
-#include "venusclient.h"
+#  include "venusclient.h"
 #endif
 
 #ifdef USE_EQUEUE
-Equeue          Event_queue;
-Equeue          Interactive_event_queue;
+Equeue Event_queue;
+Equeue Interactive_event_queue;
 #else
-struct t_queue  Event_queue;
-struct t_queue  Interactive_event_queue;
+struct t_queue Event_queue;
+struct t_queue Interactive_event_queue;
 #endif
 
 
-int     are_only_daemons = 0;
-struct t_event* EVENT_timer (dimemas_timer when,
-        int              daemon,
-        int              module,
-        struct t_thread *thread,
-        int              info)
+int are_only_daemons = 0;
+struct t_event *EVENT_timer( dimemas_timer when, int daemon, int module, struct t_thread *thread, int info )
 {
-    register struct t_event *event;
+  register struct t_event *event;
 
-    if (daemon == DAEMON)
-    {
-        if (
+  if ( daemon == DAEMON )
+  {
+    if (
 #ifdef USE_EQUEUE
-                (are_only_daemons == count_Equeue (&Event_queue) ) &&
+      ( are_only_daemons == count_Equeue( &Event_queue ) ) &&
 #else
-                (are_only_daemons == count_queue (&Event_queue) ) &&
+      ( are_only_daemons == count_queue( &Event_queue ) ) &&
 #endif
-                NEQ_0_TIMER (current_time)
-           )
-        {
-            return (E_NIL);
-        }
-        are_only_daemons++;
-    }
-
-    event = (struct t_event *) malloc (sizeof (struct t_event) );
-    event->event_time = when;
-    event->module     = module;
-    event->thread     = thread;
-    event->info       = info;
-    event->daemon     = daemon;
-
-    if (( module != M_CTXT_SW) &&
-            ((module != M_COM) || (info != COM_EXT_NET_TRAFFIC_TIMER)))
+      NEQ_0_TIMER( current_time ) )
     {
-        thread->loose_cpu        = TRUE;
-        thread->next_event_timer = when;
+      return ( E_NIL );
     }
+    are_only_daemons++;
+  }
+
+  event             = (struct t_event *)malloc( sizeof( struct t_event ) );
+  event->event_time = when;
+  event->module     = module;
+  event->thread     = thread;
+  event->info       = info;
+  event->daemon     = daemon;
+
+  if ( ( module != M_CTXT_SW ) && ( ( module != M_COM ) || ( info != COM_EXT_NET_TRAFFIC_TIMER ) ) )
+  {
+    thread->loose_cpu        = TRUE;
+    thread->next_event_timer = when;
+  }
 
 #ifdef USE_EQUEUE
-    insert_Eevent (&Event_queue, event);
+  insert_Eevent( &Event_queue, event );
 #else
-    insert_event (&Event_queue, event);
+  insert_event( &Event_queue, event );
 #endif
 
-    if (debug&D_EV)
+  if ( debug & D_EV )
+  {
+    PRINT_TIMER( current_time );
+    printf( ": EVENT Inserted At " );
+    PRINT_TIMER( when );
+    printf( " Module %d", module );
+    if ( event->thread == TH_NIL )
     {
-        PRINT_TIMER (current_time);
-        printf (": EVENT Inserted At ");
-        PRINT_TIMER (when);
-        printf (" Module %d", module);
-        if (event->thread == TH_NIL)
-        {
-            printf ("\n");
-        }
-        else
-        {
-            printf ( ". P%02d T%02d (t%02d)\n",
-                    IDENTIFIERS (event->thread));
-        }
+      printf( "\n" );
     }
+    else
+    {
+      printf( ". P%02d T%02d (t%02d)\n", IDENTIFIERS( event->thread ) );
+    }
+  }
 
-    return event;
+  return event;
 }
 
-void EVENT_extract_timer (int  module,
-        struct t_thread *thread,
-        dimemas_timer   *when)
+void EVENT_extract_timer( int module, struct t_thread *thread, dimemas_timer *when )
 {
-    register struct t_event *event;
+  register struct t_event *event;
 #ifdef USE_EQUEUE
-    Equeue *q = &Event_queue;
+  Equeue *q = &Event_queue;
 #else
-    struct t_queue *q = &Event_queue;
+  struct t_queue *q = &Event_queue;
 #endif
 
-    if (thread->event != E_NIL)
+  if ( thread->event != E_NIL )
+  {
+    event = thread->event;
+    if ( ( event->module == module ) && ( event->thread == thread ) )
     {
-        event = thread->event;
-        if ( (event->module == module) && (event->thread == thread) )
-        {
-            if (debug & D_EV)
-            {
-                PRINT_TIMER (current_time);
-                printf (": Extracted event from module %d\n", module);
-            }
+      if ( debug & D_EV )
+      {
+        PRINT_TIMER( current_time );
+        printf( ": Extracted event from module %d\n", module );
+      }
 #ifdef USE_EQUEUE
-            extract_from_Equeue (q, (char *) event);
+      extract_from_Equeue( q, (char *)event );
 #else
-            extract_from_queue (q, (char *) event);
+      extract_from_queue( q, (char *)event );
 #endif
-            *when = event->event_time;
-            free (event);
-            return;
-        }
+      *when = event->event_time;
+      free( event );
+      return;
     }
+  }
 #ifdef USE_EQUEUE
-    for (event = head_Eevent (q); event != E_NIL; event = next_Eevent (q) )
+  for ( event = head_Eevent( q ); event != E_NIL; event = next_Eevent( q ) )
 #else
-    for (event = head_event (q); event != E_NIL; event = next_event (q) )
+  for ( event = head_event( q ); event != E_NIL; event = next_event( q ) )
 #endif
-        {
-            if ( (event->module == module) && (event->thread == thread) )
-            {
-                if (debug & D_EV)
-                {
-                    PRINT_TIMER (current_time);
-                    printf (": Extracted event from module %d\n", module);
-                }
+  {
+    if ( ( event->module == module ) && ( event->thread == thread ) )
+    {
+      if ( debug & D_EV )
+      {
+        PRINT_TIMER( current_time );
+        printf( ": Extracted event from module %d\n", module );
+      }
 #ifdef USE_EQUEUE
-                extract_from_Equeue (q, (char *) event);
+      extract_from_Equeue( q, (char *)event );
 #else
-                extract_from_queue (q, (char *) event);
+      extract_from_queue( q, (char *)event );
 #endif
-                *when = event->event_time;
-                free (event);
-                return;
-            }
-        }
-    panic ("Can't extract requested event for thread P%02d T%02d t%02d\n",
-            IDENTIFIERS (thread) );
-    return;
+      *when = event->event_time;
+      free( event );
+      return;
+    }
+  }
+  panic( "Can't extract requested event for thread P%02d T%02d t%02d\n", IDENTIFIERS( thread ) );
+  return;
 }
 
 /*
@@ -185,134 +175,127 @@ void EVENT_extract_timer (int  module,
  */
 void EVENT_Init()
 {
-    if (debug & D_EV)
-    {
-        PRINT_TIMER (current_time);
-        printf (": EVENT initial routine called\n");
-    }
+  if ( debug & D_EV )
+  {
+    PRINT_TIMER( current_time );
+    printf( ": EVENT initial routine called\n" );
+  }
 #ifdef USE_EQUEUE
-    create_Equeue (&Event_queue);
+  create_Equeue( &Event_queue );
 #else
-    create_queue (&Event_queue);
+  create_queue( &Event_queue );
 #endif
 }
 
 void EVENT_End()
 {
-    if (debug & D_EV)
-    {
-        PRINT_TIMER (current_time);
-        printf (": EVENT end routine called\n");
-    }
+  if ( debug & D_EV )
+  {
+    PRINT_TIMER( current_time );
+    printf( ": EVENT end routine called\n" );
+  }
 }
 
-t_boolean events_for_thread (struct t_thread *thread)
+t_boolean events_for_thread( struct t_thread *thread )
 {
-    struct t_event *event;
+  struct t_event *event;
 
 #ifdef USE_EQUEUE
-    for (event  = head_Eevent (&Event_queue);
-            event != E_NIL;
-            event  = next_Eevent (&Event_queue))
+  for ( event = head_Eevent( &Event_queue ); event != E_NIL; event = next_Eevent( &Event_queue ) )
 #else
-    for (event  = head_event (&Event_queue);
-            event != E_NIL;
-            event  = next_event (&Event_queue))
+  for ( event = head_event( &Event_queue ); event != E_NIL; event = next_event( &Event_queue ) )
 #endif
-        {
-            if (event->thread == thread)
-            {
-                return TRUE;
-            }
-        }
-    return FALSE;
+  {
+    if ( event->thread == thread )
+    {
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 void reload_events()
 {
-    register struct t_node *node;
+  register struct t_node *node;
 
-    for (int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id)
+  for ( int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id )
+  {
+    node = &nodes[ node_id ];
+
+    while ( ( count_queue( &( node->ready ) ) != 0 ) && ( num_free_cpu( node ) > 0 ) )
     {
-        node = &nodes[node_id];
-
-        while ( (count_queue (& (node->ready) ) != 0) && (num_free_cpu (node) > 0) )
-        {
-            SCHEDULER_next_thread_to_run (node);
-        }
+      SCHEDULER_next_thread_to_run( node );
     }
+  }
 }
 
 /**
  * Main event managament routine
  */
-void event_manager (struct t_event *event)
+void event_manager( struct t_event *event )
 {
-    if GT_TIMER (current_time, event->event_time)
-    {
-        die ("Time is going backwards [Previous: %le New: %le]\n",
-                current_time,
-                event->event_time);
-    }
+  if GT_TIMER ( current_time, event->event_time )
+  {
+    die( "Time is going backwards [Previous: %le New: %le]\n", current_time, event->event_time );
+  }
 
-    if (debug & D_EV)
+  if ( debug & D_EV )
+  {
+    PRINT_TIMER( current_time );
+    printf( ": EVENT Selected " );
+    printf( "Module %d ", event->module );
+    if ( event->thread == TH_NIL )
     {
-        PRINT_TIMER (current_time);
-        printf (": EVENT Selected ");
-        printf ("Module %d ", event->module);
-        if (event->thread == TH_NIL)
-        {
-            printf ("\n");
-        }
-        else
-        {
-            printf (": P%02d T%02d (t%02d)\n",
-                    IDENTIFIERS (event->thread));
-        }
+      printf( "\n" );
     }
-
-    ASS_ALL_TIMER (current_time, event->event_time);
-
-    if (OUT_OF_LIMIT (current_time) )
+    else
     {
-        /* Avoid underflow problem */
-        panic ("Time out of simulation limit\n");
+      printf( ": P%02d T%02d (t%02d)\n", IDENTIFIERS( event->thread ) );
     }
+  }
 
-    if (event->daemon == DAEMON)
-    {
-        are_only_daemons--;
-    }
-    switch (event->module)
-    {
-        case M_SCH:
-            SCHEDULER_general (SCH_TIMER_OUT, event->thread);
-            break;
-        case M_COM:
-            COMMUNIC_general (event->info, event->thread);
-            break;
-        case M_FS:
-            FS_general (event->info, event->thread);
-            break;
-        case M_PORT:
-            PORT_general (PORT_TIMER_OUT, event->thread);
-            break;
-        case M_MEM:
-            MEMORY_general (MEMORY_TIMER_OUT, event->thread);
-            break;
-        case M_CTXT_SW:
-            SCHEDULER_info (CONTEXT_SWITCH_TIMER_OUT, event->info, TH_NIL, TH_NIL);
-            break;
-        default:
-            panic ("Invalid event type on queue (%d)\n", event->module);
-            break;
-    }
+  ASS_ALL_TIMER( current_time, event->event_time );
 
-    if (reload_done)
-    {
-        reload_events();
-        reload_done = FALSE;
-    }
+  if ( OUT_OF_LIMIT( current_time ) )
+  {
+    /* Avoid underflow problem */
+    panic( "Time out of simulation limit\n" );
+  }
 
-    free (event);
+  if ( event->daemon == DAEMON )
+  {
+    are_only_daemons--;
+  }
+  switch ( event->module )
+  {
+    case M_SCH:
+      SCHEDULER_general( SCH_TIMER_OUT, event->thread );
+      break;
+    case M_COM:
+      COMMUNIC_general( event->info, event->thread );
+      break;
+    case M_FS:
+      FS_general( event->info, event->thread );
+      break;
+    case M_PORT:
+      PORT_general( PORT_TIMER_OUT, event->thread );
+      break;
+    case M_MEM:
+      MEMORY_general( MEMORY_TIMER_OUT, event->thread );
+      break;
+    case M_CTXT_SW:
+      SCHEDULER_info( CONTEXT_SWITCH_TIMER_OUT, event->info, TH_NIL, TH_NIL );
+      break;
+    default:
+      panic( "Invalid event type on queue (%d)\n", event->module );
+      break;
+  }
+
+  if ( reload_done )
+  {
+    reload_events();
+    reload_done = FALSE;
+  }
+
+  free( event );
 }

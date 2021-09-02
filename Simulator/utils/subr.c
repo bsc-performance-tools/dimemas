@@ -23,76 +23,75 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-#include <math.h>
-#include <define.h>
-#include <types.h>
-#include <extern.h>
-#include <subr.h>
 #include <assert.h>
+#include <define.h>
+#include <extern.h>
+#include <math.h>
+#include <subr.h>
+#include <types.h>
 
-extern char      yy_error_string[];
+extern char yy_error_string[];
 extern t_boolean yy_error_filled;
 extern t_boolean dimemas_GUI;
 
-void info   (const char *fmt, ...)
+void info( const char *fmt, ... )
 {
-  if (!short_out_info)
+  if ( !short_out_info )
   {
     va_list args;
-    va_start (args, fmt);
-    vfprintf (stdout, fmt, args);
-    va_end (args);
-    fflush(stdout);
+    va_start( args, fmt );
+    vfprintf( stdout, fmt, args );
+    va_end( args );
+    fflush( stdout );
   }
 }
 
-void die (const char *fmt, ...)
+void die( const char *fmt, ... )
 {
   va_list args;
-  va_start (args, fmt);
+  va_start( args, fmt );
 
-  fprintf (stderr, "\n");
-  fprintf (stderr, "UNRECOVERABLE ERROR -> ");
-  vfprintf (stderr, fmt, args);
-  fprintf (stderr, "\n");
-  va_end (args);
+  fprintf( stderr, "\n" );
+  fprintf( stderr, "UNRECOVERABLE ERROR -> " );
+  vfprintf( stderr, fmt, args );
+  fprintf( stderr, "\n" );
+  va_end( args );
 
-  exit (EXIT_FAILURE);
+  exit( EXIT_FAILURE );
 }
-void final (const char *fmt, ...)
+void final( const char *fmt, ... )
 {
   va_list args;
-  va_start (args, fmt);
+  va_start( args, fmt );
 
-  fprintf (stderr, "\n");
-  fprintf (stderr, "END OF SIMULATION ");
-  vfprintf (stderr, fmt, args);
-  fprintf (stderr, "\n");
-  va_end (args);
-
-}
-
-void warning(const char *fmt, ...)
-{
-  va_list args;
-  va_start (args, fmt);
-  fprintf (stderr, "\n");
-  fprintf(stdout, "WARNING: ");
-  vfprintf (stdout, fmt, args);
-  fprintf (stderr, "\n");
-  va_end (args);
+  fprintf( stderr, "\n" );
+  fprintf( stderr, "END OF SIMULATION " );
+  vfprintf( stderr, fmt, args );
+  fprintf( stderr, "\n" );
+  va_end( args );
 }
 
-void panic (const char *fmt, ...)
+void warning( const char *fmt, ... )
 {
   va_list args;
-  va_start (args, fmt);
+  va_start( args, fmt );
+  fprintf( stderr, "\n" );
+  fprintf( stdout, "WARNING: " );
+  vfprintf( stdout, fmt, args );
+  fprintf( stderr, "\n" );
+  va_end( args );
+}
 
-  fprintf (stdout, "Fatal error at time ");
-  FPRINT_TIMER (stdout, current_time);
-  fprintf (stdout, "\n");
-  vfprintf (stdout, fmt, args);
-  va_end (args);
+void panic( const char *fmt, ... )
+{
+  va_list args;
+  va_start( args, fmt );
+
+  fprintf( stdout, "Fatal error at time " );
+  FPRINT_TIMER( stdout, current_time );
+  fprintf( stdout, "\n" );
+  vfprintf( stdout, fmt, args );
+  va_end( args );
 
   /* JGG: Aquí se debe controlar que las trazas parciales de Paraver, si las
    * hay, se deben destruir */
@@ -100,6 +99,5 @@ void panic (const char *fmt, ...)
 
   // PARAVER_Cleanup();
 
-  exit (EXIT_FAILURE);
+  exit( EXIT_FAILURE );
 }
-

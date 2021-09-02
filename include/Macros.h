@@ -37,24 +37,35 @@
 
 /*#   include "utils/CallStack.h" */
 
-#   include <stdio.h>
-#   include <stdlib.h>
-#   include <errno.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#   ifdef ERROR
-#     undef ERROR
-#   endif
+#ifdef ERROR
+#  undef ERROR
+#endif
 
-#   ifdef CALLSTACK
-#     include "CallStack.h"
-#     define BEGINFN( x ) { CallStackEnter( #x ); }
-#     define ENDFN( x )   { CallStackLeave( #x ); }
-#   else
-#     define BEGINFN( x )
-#     define ENDFN( x )
-#   endif
+#ifdef CALLSTACK
+#  include "CallStack.h"
+#  define BEGINFN( x )      \
+    {                       \
+      CallStackEnter( #x ); \
+    }
+#  define ENDFN( x )        \
+    {                       \
+      CallStackLeave( #x ); \
+    }
+#else
+#  define BEGINFN( x )
+#  define ENDFN( x )
+#endif
 
-#   define SWAP( a, b, tmp ) { (tmp)= (a); (a) = (b); (b) = (tmp); }
+#define SWAP( a, b, tmp ) \
+  {                       \
+    ( tmp ) = ( a );      \
+    ( a )   = ( b );      \
+    ( b )   = ( tmp );    \
+  }
 
 /* << ERROR >> Not needed now!
 #   define ERROR( x ) \
@@ -72,61 +83,59 @@
 */
 
 /* << WARNING >> */
-#   define WARNING( x ) \
-    {\
-      fprintf( stderr, "Warning message (process %d): %s, file %s (%d)\n", \
-                       getpid(), x, __FILE__, __LINE__ );\
-    }
+#define WARNING( x )                                                                                        \
+  {                                                                                                         \
+    fprintf( stderr, "Warning message (process %d): %s, file %s (%d)\n", getpid(), x, __FILE__, __LINE__ ); \
+  }
 
 /* << DEBUGMESSAGE >> */
 #if 0
 
-#   define DEBUGMESSAGE( x ) \
-    {\
-      fprintf( stderr, "Debug message : %s, file %s (%d)\n", \
-                       x, __FILE__, __LINE__ );\
-      fflush( stderr );\
+#  define DEBUGMESSAGE( x )                                                           \
+    {                                                                                 \
+      fprintf( stderr, "Debug message : %s, file %s (%d)\n", x, __FILE__, __LINE__ ); \
+      fflush( stderr );                                                               \
     }
 
 extern int StackNumber;
 
-#   define BEGINFNS( x ) \
-    {\
-      int ii;\
-      \
-      StackNumber++;\
-      for( ii=0; ii<StackNumber; ii++)\
-      {\
-        fprintf( stderr, " " );\
-      }\
-      fprintf( stderr, "-" );\
-      fprintf( stderr, ">" );\
-      fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ );\
-      fflush( stderr );\
+#  define BEGINFNS( x )                                               \
+    {                                                                 \
+      int ii;                                                         \
+                                                                      \
+      StackNumber++;                                                  \
+      for ( ii = 0; ii < StackNumber; ii++ )                          \
+      {                                                               \
+        fprintf( stderr, " " );                                       \
+      }                                                               \
+      fprintf( stderr, "-" );                                         \
+      fprintf( stderr, ">" );                                         \
+      fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ ); \
+      fflush( stderr );                                               \
     }
 
-#   define ENDFNS( x ) \
-    {\
-      int ii;\
-      \
-      for( ii=0; ii<StackNumber; ii++)\
-      {\
-        fprintf( stderr, " " );\
-      }\
-      fprintf( stderr, "<" );\
-      fprintf( stderr, "-" );\
-      StackNumber--;\
-      fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ );\
-      fflush( stderr );\
+#  define ENDFNS( x )                                                 \
+    {                                                                 \
+      int ii;                                                         \
+                                                                      \
+      for ( ii = 0; ii < StackNumber; ii++ )                          \
+      {                                                               \
+        fprintf( stderr, " " );                                       \
+      }                                                               \
+      fprintf( stderr, "<" );                                         \
+      fprintf( stderr, "-" );                                         \
+      StackNumber--;                                                  \
+      fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ ); \
+      fflush( stderr );                                               \
     }
 
 #else
 
-#   define DEBUGMESSAGE( x )
+#  define DEBUGMESSAGE( x )
 
-#   define BEGINFN1( x )
+#  define BEGINFN1( x )
 
-#   define ENDFN1( x )
+#  define ENDFN1( x )
 
 #endif
 
@@ -134,63 +143,62 @@ extern int StackNumber;
 #include <assert.h>
 
 /* << ASSERT_ERROR >> */
-#   define ASSERT_ERROR( x ) \
-    {\
-      fflush(NULL);\
-      fprintf( stderr, "\n");\
-      fprintf( stderr, "* Assertion failed: %s at %s (%d)\n", x, __FILE__, __LINE__ );\
-      fprintf( stderr, "*\n");\
-      fflush(NULL);\
-      exit( EXIT_FAILURE );\
-      abort();\
-    }
+#define ASSERT_ERROR( x )                                                            \
+  {                                                                                  \
+    fflush( NULL );                                                                  \
+    fprintf( stderr, "\n" );                                                         \
+    fprintf( stderr, "* Assertion failed: %s at %s (%d)\n", x, __FILE__, __LINE__ ); \
+    fprintf( stderr, "*\n" );                                                        \
+    fflush( NULL );                                                                  \
+    exit( EXIT_FAILURE );                                                            \
+    abort();                                                                         \
+  }
 
 /* << ASSERT_CONDITION >> */
-#define ASSERT_CONDITION( condition )  assert( (condition) )
+#define ASSERT_CONDITION( condition ) assert( ( condition ) )
 
 /* << ASSERT >> */
-#define ASSERT( x ) if (!(x)) ASSERT_ERROR( #x )
+#define ASSERT( x ) \
+  if ( !( x ) )     \
+  ASSERT_ERROR( #x )
 
 
-#define BZERO( nelem, type, ptr ) \
-   bzero ( ptr, ((size_t)(nelem)) * sizeof(type) )
+#define BZERO( nelem, type, ptr ) bzero( ptr, ( ( size_t )( nelem ) ) * sizeof( type ) )
 
 #if defined( DEBUG_MEMORY_ALLOC )
 
-#include <Memory.h>
+#  include <Memory.h>
 
 #else
 /* << ALLOC >> */
-#   define ALLOC( nelem, type, var ) \
-      malloc ( ((size_t)(nelem)) * sizeof(type) )
+#  define ALLOC( nelem, type, var ) malloc( ( ( size_t )( nelem ) ) * sizeof( type ) )
 
-# define REALLOC( ptr, nelem, type, var )\
-      realloc ( ptr, ((size_t)(nelem)) * sizeof(type) )
+#  define REALLOC( ptr, nelem, type, var ) realloc( ptr, ( ( size_t )( nelem ) ) * sizeof( type ) )
 
-# define FREE( x )\
-{\
-  free( (void *)x );\
-  x = NULL;\
-}
+#  define FREE( x )      \
+    {                    \
+      free( (void *)x ); \
+      x = NULL;          \
+    }
 
 /* PROGRESS MESSAGE */
-#define SHOW_PROGRESS(channel, message, current, total) \
-  fprintf(channel, "\r%s %03d/%03ld", message, current, total); \
-  fflush(channel)
+#  define SHOW_PROGRESS( channel, message, current, total )         \
+    fprintf( channel, "\r%s %03d/%03ld", message, current, total ); \
+    fflush( channel )
 
 
-#define SHOW_PROGRESS_END(channel, message, total) \
-  fprintf(channel, "\r%s %03ld/%03ld", message, total, total); \
-  fflush(channel)
+#  define SHOW_PROGRESS_END( channel, message, total )             \
+    fprintf( channel, "\r%s %03ld/%03ld", message, total, total ); \
+    fflush( channel )
 
-#define SHOW_PERCENTAGE_PROGRESS(channel, message, percentage) \
-  fprintf(channel, "\r%s %03d %%", message, percentage); \
-  fflush(channel)
+#  define SHOW_PERCENTAGE_PROGRESS( channel, message, percentage ) \
+    fprintf( channel, "\r%s %03d %%", message, percentage );       \
+    fflush( channel )
 
 
-#define SHOW_PERCENTAGE_PROGRESS_END(channel, message) \
-  fprintf(channel, "\r%s 100 %%", message); \
-  fflush(channel)
+#  define SHOW_PERCENTAGE_PROGRESS_END( channel, message ) \
+    fprintf( channel, "\r%s 100 %%", message );            \
+    fflush( channel )
 
 #endif
 

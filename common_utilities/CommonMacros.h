@@ -1,49 +1,55 @@
 #ifndef _COMMON_MACROS_H
 #define _COMMON_MACROS_H
 
-#include <stdlib.h>
 #include <assert.h>
-#include <string.h>
-#include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define BEGINFN( x )
 #define ENDFN( x )
 
 #define DEBUG 1
 
-#   define SWAP( a, b, tmp ) { (tmp)= (a); (a) = (b); (b) = (tmp); }
+#define SWAP( a, b, tmp ) \
+  {                       \
+    ( tmp ) = ( a );      \
+    ( a )   = ( b );      \
+    ( b )   = ( tmp );    \
+  }
 
 /* << WARNING >> */
-#   define WARNING( x ) \
-    {\
-      fprintf( stderr, "Warning message (process %d): %s, file %s (%d)\n", \
-                       getpid(), x, __FILE__, __LINE__ );\
-    }
+#define WARNING( x )                                                                                        \
+  {                                                                                                         \
+    fprintf( stderr, "Warning message (process %d): %s, file %s (%d)\n", getpid(), x, __FILE__, __LINE__ ); \
+  }
 
-#   define DEBUGMESSAGE( x )
+#define DEBUGMESSAGE( x )
 
-#   define BEGINFN1( x )
+#define BEGINFN1( x )
 
-#   define ENDFN1( x )
+#define ENDFN1( x )
 
 /* << ASSERT_ERROR >> */
-#   define ASSERT_ERROR( x ) \
-    {\
-      fflush(NULL);\
-      fprintf( stderr, "\n");\
-      fprintf( stderr, "* Assertion failed: %s at %s (%d)\n", x, __FILE__, __LINE__ );\
-      fprintf( stderr, "*\n");\
-      fflush(NULL);\
-      exit( EXIT_FAILURE );\
-      abort();\
-    }
+#define ASSERT_ERROR( x )                                                            \
+  {                                                                                  \
+    fflush( NULL );                                                                  \
+    fprintf( stderr, "\n" );                                                         \
+    fprintf( stderr, "* Assertion failed: %s at %s (%d)\n", x, __FILE__, __LINE__ ); \
+    fprintf( stderr, "*\n" );                                                        \
+    fflush( NULL );                                                                  \
+    exit( EXIT_FAILURE );                                                            \
+    abort();                                                                         \
+  }
 
 /* << ASSERT_CONDITION >> */
-#define ASSERT_CONDITION( condition )  assert( (condition) )
+#define ASSERT_CONDITION( condition ) assert( ( condition ) )
 
 /* << ASSERT >> */
-#define ASSERT( x ) if (!(x)) ASSERT_ERROR( #x )
+#define ASSERT( x ) \
+  if ( !( x ) )     \
+  ASSERT_ERROR( #x )
 
 /* << ERROR >> */
 /*#   define ERROR( x ) \
@@ -61,23 +67,21 @@
 
 /*#define BZERO( nelem, type, ptr ) \
    memset ( ptr, '\0', ((size_t)(nelem)) * sizeof(type) )*/
-      
-/* << ALLOC >> */
-#   define ALLOC( nelem, type, var ) \
-      malloc ( ((size_t)(nelem)) * sizeof(type) )
-      
-# define REALLOC( ptr, nelem, type, var )\
-      realloc ( ptr, ((size_t)(nelem)) * sizeof(type) )
 
-# define FREE( x )\
-{\
-  free( (void *)x );\
-  x = NULL;\
-}
+/* << ALLOC >> */
+#define ALLOC( nelem, type, var ) malloc( ( ( size_t )( nelem ) ) * sizeof( type ) )
+
+#define REALLOC( ptr, nelem, type, var ) realloc( ptr, ( ( size_t )( nelem ) ) * sizeof( type ) )
+
+#define FREE( x )      \
+  {                    \
+    free( (void *)x ); \
+    x = NULL;          \
+  }
 
 #define DEBUG0( x )
 #define DEBUG1( x, y )
-#define DEBUG2( x, y, z ) 
+#define DEBUG2( x, y, z )
 #define DEBUG3( x, y, z, w )
 #define DEBUG4( x, y, z, w, v )
 

@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -43,15 +43,16 @@
 class SocketException
 {
  public:
-  SocketException ( std::string s ) : m_s ( s ) {};
-  ~SocketException (){};
+  SocketException( std::string s ) : m_s( s ){};
+  ~SocketException(){};
 
-  std::string description() { return m_s; }
+  std::string description()
+  {
+    return m_s;
+  }
 
  private:
-
   std::string m_s;
-
 };
 
 #endif

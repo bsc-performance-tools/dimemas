@@ -33,71 +33,64 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef __list_h
-#define __list_h
+#  define __list_h
 
-#define FALSE 0
-#define TRUE 1
+#  define FALSE 0
+#  define TRUE  1
 
-#include <types.h>
+#  include <types.h>
 
 /**
  * External routines defined in file task.c
  **/
-void  create_queue(struct t_queue *q);
+void create_queue( struct t_queue *q );
 
-void  inFIFO_queue(struct t_queue *queue, char *content);
+void inFIFO_queue( struct t_queue *queue, char *content );
 
-void  inLIFO_queue(struct t_queue *queue, char *content);
+void inLIFO_queue( struct t_queue *queue, char *content );
 
-char* outFIFO_queue(struct t_queue *q);
+char *outFIFO_queue( struct t_queue *q );
 
-char* outLIFO_queue(struct t_queue *q);
+char *outLIFO_queue( struct t_queue *q );
 
-t_count count_queue(struct t_queue *q);
+t_count count_queue( struct t_queue *q );
 
-t_boolean empty_queue(struct t_queue *q);
+t_boolean empty_queue( struct t_queue *q );
 
-char* head_queue(struct t_queue *q);
+char *head_queue( struct t_queue *q );
 
-char* next_queue(struct t_queue *q);
+char *next_queue( struct t_queue *q );
 
-char* tail_queue(struct t_queue *q);
+char *tail_queue( struct t_queue *q );
 
-char* prev_queue(struct t_queue *q);
+char *prev_queue( struct t_queue *q );
 
-void  insert_queue( struct t_queue *queue,
-                    char           *content,
-                    t_priority      prio);
+void insert_queue( struct t_queue *queue, char *content, t_priority prio );
 
-void insert_queue_from_back(struct t_queue *queue,
-                            char           *content,
-                            t_priority      prio);
+void insert_queue_from_back( struct t_queue *queue, char *content, t_priority prio );
 
-void insert_first_queue( struct t_queue *queue,
-                         char           *content,
-                         t_priority      prio);
+void insert_first_queue( struct t_queue *queue, char *content, t_priority prio );
 
-char* query_prio_queue(struct t_queue *queue, t_priority prio);
+char *query_prio_queue( struct t_queue *queue, t_priority prio );
 
-void extract_from_queue(struct t_queue *queue, char * content);
+void extract_from_queue( struct t_queue *queue, char *content );
 
-struct t_thread *find_thread_in_queue(struct t_queue *queue, struct t_thread *thread);
+struct t_thread *find_thread_in_queue( struct t_queue *queue, struct t_thread *thread );
 
-void create_event(struct t_queue *q);
+void create_event( struct t_queue *q );
 
-#ifndef DIMEMAS_GUI
-extern void insert_event(struct t_queue *q, struct t_event *e);
-#endif
-extern struct t_event *top_event(struct t_queue *q);
-extern t_boolean empty_event(struct t_queue *q);
-extern struct t_event *outFIFO_event(struct t_queue *q);
-extern struct t_event *head_event(struct t_queue *q);
-extern struct t_event *next_event(struct t_queue *q);
-extern struct t_queue *new_queue_accounter(void);
+#  ifndef DIMEMAS_GUI
+extern void insert_event( struct t_queue *q, struct t_event *e );
+#  endif
+extern struct t_event *top_event( struct t_queue *q );
+extern t_boolean empty_event( struct t_queue *q );
+extern struct t_event *outFIFO_event( struct t_queue *q );
+extern struct t_event *head_event( struct t_queue *q );
+extern struct t_event *next_event( struct t_queue *q );
+extern struct t_queue *new_queue_accounter( void );
 
 #endif
 
-void remove_queue_elements(struct t_queue * queue);
-void remove_queue_threads(struct t_queue * queue);
-void move_queue_elements(struct t_queue * from, struct t_queue * to);
-
+void remove_queue_elements( struct t_queue *queue );
+void remove_queue_threads( struct t_queue *queue );
+void move_queue_elements( struct t_queue *from, struct t_queue *to );

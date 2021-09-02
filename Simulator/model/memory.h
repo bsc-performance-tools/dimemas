@@ -37,28 +37,21 @@
 /**
  * External routines defined in file memory.c
  **/
-extern void MEMORY_general (int value, struct t_thread *thread);
+extern void MEMORY_general( int value, struct t_thread *thread );
 
-extern void MEMORY_Init(void);
-extern void MEMORY_End(void);
+extern void MEMORY_Init( void );
+extern void MEMORY_End( void );
 
-extern void MEMORY_copy_segment(int module,
-                                struct t_thread *thread,
-                                struct t_node   *node_s,
-                                struct t_node   *node_d,
-                                int              si);
+extern void MEMORY_copy_segment( int module, struct t_thread *thread, struct t_node *node_s, struct t_node *node_d, int si );
 
-extern void really_copy_segment(struct t_thread *thread,
-                                struct t_node   *node_s,
-                                struct t_node   *node_d,
-                                int              si);
+extern void really_copy_segment( struct t_thread *thread, struct t_node *node_s, struct t_node *node_d, int si );
 
-extern void RMA_general (int value, struct t_thread *thread);
-extern void ONE_SIDED_operation (struct t_thread *thread);
+extern void RMA_general( int value, struct t_thread *thread );
+extern void ONE_SIDED_operation( struct t_thread *thread );
 
 
-extern void os_completed (struct t_thread *thread);
-extern void really_RMA (register struct t_thread *thread);
+extern void os_completed( struct t_thread *thread );
+extern void really_RMA( register struct t_thread *thread );
 
 /* Different window modes */
 #define WINDOW_MODE_NONE  0

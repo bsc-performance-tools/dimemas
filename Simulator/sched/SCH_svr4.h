@@ -35,52 +35,54 @@
 #ifndef __SCH_svr4_h
 #define __SCH_svr4_h
 
-typedef short   prio_t;
+typedef short prio_t;
 
 /* These lines comes from Solaris file /usr/include/sys/ts.h */
 
-typedef struct tsdpent {
-  prio_t   ts_globpri;    /* global (class independent) priority        */
-  long     ts_quantum;    /* time quantum given to procs at this level  */
-  prio_t   ts_tqexp;      /* ts_umdpri assigned when proc at this level */
-                          /*                   exceeds its time quantum */
-  prio_t   ts_slpret;     /* ts_umdpri assigned when proc at this level */
-                          /*        returns to user mode after sleeping */
-  short    ts_maxwait;    /* bumped to ts_lwait if more than ts_maxwait */
-                          /* s ecs elapse before receiving full quantum */
-  short    ts_lwait;      /* ts_umdpri assigned if ts_dispwait exceeds  */
-                          /*                                 ts_maxwait */
+typedef struct tsdpent
+{
+  prio_t ts_globpri; /* global (class independent) priority        */
+  long ts_quantum;   /* time quantum given to procs at this level  */
+  prio_t ts_tqexp;   /* ts_umdpri assigned when proc at this level */
+                     /*                   exceeds its time quantum */
+  prio_t ts_slpret;  /* ts_umdpri assigned when proc at this level */
+                     /*        returns to user mode after sleeping */
+  short ts_maxwait;  /* bumped to ts_lwait if more than ts_maxwait */
+                     /* s ecs elapse before receiving full quantum */
+  short ts_lwait;    /* ts_umdpri assigned if ts_dispwait exceeds  */
+                     /*                                 ts_maxwait */
 } tsdpent_t;
 
-typedef struct tsproc {
-   prio_t   ts_umdpri;      /* user mode priority within ts class       */
-   long    ts_timeleft;    /* time remaining in procs quantum           */
-   long    ts_dispwait;    /* number of wall clock seconds since start  */
-                           /*    of quantum (not reset upon preemption  */
-   t_boolean full_quantum;
-   long    last_quantum;
-}tsproc_t;
+typedef struct tsproc
+{
+  prio_t ts_umdpri; /* user mode priority within ts class       */
+  long ts_timeleft; /* time remaining in procs quantum           */
+  long ts_dispwait; /* number of wall clock seconds since start  */
+                    /*    of quantum (not reset upon preemption  */
+  t_boolean full_quantum;
+  long last_quantum;
+} tsproc_t;
 
-typedef struct svr4 {
-   double  context_switch; /* Context Switch cost */
-   double  busy_wait;      /* Busy wait when message not ready */
-   t_boolean priority_preemptive;
-   double minimum_time_preemption;
-   double quantum_factor;
-}svr4_t;
+typedef struct svr4
+{
+  double context_switch; /* Context Switch cost */
+  double busy_wait;      /* Busy wait when message not ready */
+  t_boolean priority_preemptive;
+  double minimum_time_preemption;
+  double quantum_factor;
+} svr4_t;
 
 /**
  * External routines defined in file SCH_fifo.c
  **/
-extern void svr4_thread_to_ready(struct t_thread *thread);
-extern t_nano svr4_get_execution_time(struct t_thread *thread);
-extern struct t_thread *svr4_next_thread_to_run(struct t_node *node);
-extern void svr4_init_scheduler_parameters(struct t_thread *thread);
-extern void svr4_clear_parameters(struct t_thread *thread);
-extern int svr4_info(int info, struct t_thread *thread_s,
-		     struct t_thread *thread_r);
-extern void svr4_init(char *filename, struct t_machine *machine);
-extern void svr4_copy_parameters(struct t_thread *th_o, struct t_thread *th_d);
-extern void svr4_free_parameters (struct t_thread *thread);
+extern void svr4_thread_to_ready( struct t_thread *thread );
+extern t_nano svr4_get_execution_time( struct t_thread *thread );
+extern struct t_thread *svr4_next_thread_to_run( struct t_node *node );
+extern void svr4_init_scheduler_parameters( struct t_thread *thread );
+extern void svr4_clear_parameters( struct t_thread *thread );
+extern int svr4_info( int info, struct t_thread *thread_s, struct t_thread *thread_r );
+extern void svr4_init( char *filename, struct t_machine *machine );
+extern void svr4_copy_parameters( struct t_thread *th_o, struct t_thread *th_d );
+extern void svr4_free_parameters( struct t_thread *thread );
 
 #endif

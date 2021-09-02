@@ -37,12 +37,12 @@
 /**
  * External routines defined in file fs.c
  **/
-extern void FS_Init(void);
-extern void FS_End(void);
-extern void FS_Parameters (double, double, double, int , double);
+extern void FS_Init( void );
+extern void FS_End( void );
+extern void FS_Parameters( double, double, double, int, double );
 
-extern void FS_general(int value, struct t_thread *thread);
-extern void FS_show_version(void);
-extern void FS_new_io_operation (int , char *);
+extern void FS_general( int value, struct t_thread *thread );
+extern void FS_show_version( void );
+extern void FS_new_io_operation( int, char * );
 
 #endif

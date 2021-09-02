@@ -37,28 +37,27 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <types.h>
 
-void IO_Init(void);
+void IO_Init( void );
 
-void IO_End(void);
+void IO_End( void );
 
-size_t IO_available_streams(void);
+size_t IO_available_streams( void );
 
-FILE *IO_fopen(const char *path, const char *mode);
+FILE *IO_fopen( const char *path, const char *mode );
 
-int   IO_fclose(FILE* fp);
+int IO_fclose( FILE *fp );
 
-off_t IO_ftello(FILE* stream);
+off_t IO_ftello( FILE *stream );
 
-int   IO_fseeko(FILE *stream, off_t offset, int whence);
+int IO_fseeko( FILE *stream, off_t offset, int whence );
 
-int   IO_fseek(FILE *stream, long offset, int whence);
+int IO_fseek( FILE *stream, long offset, int whence );
 
-t_boolean IO_file_exists(const char *path);
+t_boolean IO_file_exists( const char *path );
 
-const char* IO_get_error(void);
+const char *IO_get_error( void );
 
 
 #endif

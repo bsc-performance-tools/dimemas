@@ -39,23 +39,21 @@ using cepba_tools::Error;
 #include <string>
 using std::string;
 
-class PCFGeneration: public Error
+class PCFGeneration : public Error
 {
-  private:
-    string InputTraceName;
-    string OutputTraceName;
+ private:
+  string InputTraceName;
+  string OutputTraceName;
 
-  public:
+ public:
+  PCFGeneration( string InputTraceName, string OutputTraceName );
 
-    PCFGeneration(string InputTraceName, string OutputTraceName);
+  void GeneratePCF( string UserSuppliedInputPCF );
 
-    void GeneratePCF(string UserSuppliedInputPCF);
+ private:
+  bool CopyInputPCF( FILE* InputPCF, FILE* OutputPCF );
 
-  private:
-
-    bool CopyInputPCF(FILE* InputPCF, FILE* OutputPCF);
-
-    bool GenerateDefaultPCF(FILE* OutputPCF);
+  bool GenerateDefaultPCF( FILE* OutputPCF );
 };
 
 #endif

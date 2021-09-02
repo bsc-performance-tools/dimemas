@@ -30,24 +30,25 @@
 
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
+#include "ParaverApplicationDescription.hpp"
+
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
 #include <string.h>
-#include "ParaverApplicationDescription.hpp"
 
 /*****************************************************************************
  * class TaskDescription
  ****************************************************************************/
 
-void TaskDescription::Write ( ostream & os ) const
+void TaskDescription::Write( ostream& os ) const
 {
   os << "TASK: " << TaskId << "(" << ThreadCount << ":" << Node << ")";
 };
 
-ostream& operator<< (ostream& os, const TaskDescription& Task)
+ostream& operator<<( ostream& os, const TaskDescription& Task )
 {
-  Task.Write(os);
+  Task.Write( os );
   return os;
 }
 
@@ -55,77 +56,68 @@ ostream& operator<< (ostream& os, const TaskDescription& Task)
  * class ApplicationDescription
  ****************************************************************************/
 
-ApplicationDescription::ApplicationDescription(INT32 ApplicationId,
-                                               INT32 TaskCount,
-                                               INT32 CommunicatorCount)
+ApplicationDescription::ApplicationDescription( INT32 ApplicationId, INT32 TaskCount, INT32 CommunicatorCount )
 {
   this->ApplicationId     = ApplicationId;
   this->TaskCount         = TaskCount;
   this->CommunicatorCount = CommunicatorCount;
 }
 
-ApplicationDescription::ApplicationDescription(INT32 ApplicationId,
-                                               INT32 TaskCount,
-                                               INT32 CommunicatorCount,
-                                               char* ASCIIAppDescription)
+ApplicationDescription::ApplicationDescription( INT32 ApplicationId, INT32 TaskCount, INT32 CommunicatorCount, char* ASCIIAppDescription )
 {
   INT32 CurrentTaskId, ThreadCount, Node;
-  char *InternalAppDescription = (char*) calloc(strlen(ASCIIAppDescription)+1,
-                                                sizeof(char));
-  char *CurrentTaskInfo;
-  
-  strcpy(InternalAppDescription, ASCIIAppDescription);
-  
+  char* InternalAppDescription = (char*)calloc( strlen( ASCIIAppDescription ) + 1, sizeof( char ) );
+  char* CurrentTaskInfo;
+
+  strcpy( InternalAppDescription, ASCIIAppDescription );
+
   this->ApplicationId     = ApplicationId;
   this->TaskCount         = TaskCount;
   this->CommunicatorCount = CommunicatorCount;
-  
-  CurrentTaskId = 1;
-  CurrentTaskInfo = strtok(InternalAppDescription, ",");
-  while (CurrentTaskInfo != NULL)
+
+  CurrentTaskId   = 1;
+  CurrentTaskInfo = strtok( InternalAppDescription, "," );
+  while ( CurrentTaskInfo != NULL )
   {
-    if (sscanf (CurrentTaskInfo, "%d:%d", &ThreadCount, &Node) == 2)
+    if ( sscanf( CurrentTaskInfo, "%d:%d", &ThreadCount, &Node ) == 2 )
     {
-      AddTaskDescription(CurrentTaskId, ThreadCount, Node);
+      AddTaskDescription( CurrentTaskId, ThreadCount, Node );
       CurrentTaskId++;
     }
-    CurrentTaskInfo = strtok(NULL, ",");
+    CurrentTaskInfo = strtok( NULL, "," );
   }
-  
-  if (TaskInfo.size() != TaskCount)
+
+  if ( TaskInfo.size() != TaskCount )
   {
-    SetError(true);
+    SetError( true );
     LastError = "Number of tasks in task info list less than task count";
   }
 }
 
 INT32
-ApplicationDescription::GetCOMM_WORLD_Id(void)
+ApplicationDescription::GetCOMM_WORLD_Id( void )
 {
-  
   vector<Communicator_t>::iterator CommunicatorsIt;
-  
-  for (CommunicatorsIt  = Communicators.begin();
-       CommunicatorsIt != Communicators.end();
-       CommunicatorsIt++)
+
+  for ( CommunicatorsIt = Communicators.begin(); CommunicatorsIt != Communicators.end(); CommunicatorsIt++ )
   {
-    if ((*CommunicatorsIt)->IsCOMM_WORLD())
-      return (*CommunicatorsIt)->GetCommunicatorId();
+    if ( ( *CommunicatorsIt )->IsCOMM_WORLD() )
+      return ( *CommunicatorsIt )->GetCommunicatorId();
   }
-  
+
   return -1; /* Error! */
 }
 
-void ApplicationDescription::Write ( ostream & os ) const
+void ApplicationDescription::Write( ostream& os ) const
 {
   os << "** APPLICATION DESCRIPTION **" << endl;
   os << "Task #: " << TaskCount << " Communicators: ";
   os << CommunicatorCount << endl;
   os << "Tasks information" << endl;
-  for (unsigned int i = 0; i < TaskInfo.size(); i++)
+  for ( unsigned int i = 0; i < TaskInfo.size(); i++ )
   {
-    os << *TaskInfo[i];
-    if ((i+1)%4 == 0)
+    os << *TaskInfo[ i ];
+    if ( ( i + 1 ) % 4 == 0 )
       os << endl;
     else
       os << ", ";
@@ -133,8 +125,8 @@ void ApplicationDescription::Write ( ostream & os ) const
   os << endl;
 };
 
-ostream& operator<< (ostream& os, const ApplicationDescription& App)
+ostream& operator<<( ostream& os, const ApplicationDescription& App )
 {
-  App.Write(os);
+  App.Write( os );
   return os;
 }

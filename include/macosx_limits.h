@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -36,5 +36,4 @@
 #include <float.h>
 #include <limits.h>
 #define MAXDOUBLE DBL_MAX
-#define MAXINT INT_MAX
-
+#define MAXINT    INT_MAX

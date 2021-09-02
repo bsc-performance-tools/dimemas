@@ -39,22 +39,22 @@
 
 namespace bsc_tools
 {
-  bool isDouble(const char* str);
+bool isDouble( const char* str );
 
-  bool isDouble(const std::string& str);
+bool isDouble( const std::string& str );
 
-  double getDouble(const char* str);
+double getDouble( const char* str );
 
-  double getDouble(const std::string& str);
+double getDouble( const std::string& str );
 
-  bool isLongInt(const char* str);
+bool isLongInt( const char* str );
 
-  bool isLongInt(const std::string& str);
+bool isLongInt( const std::string& str );
 
-  long int getLongInt(const char* str);
+long int getLongInt( const char* str );
 
-  long int getLongInt(const std::string& str);
+long int getLongInt( const std::string& str );
 
-} /* End namespace */
+} // namespace bsc_tools
 
 #endif /* _BSC_UTILS_H */

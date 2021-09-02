@@ -33,26 +33,25 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef __check_h
-#define __check_h
+#  define __check_h
+
+#include "types.h"
 
 /**
  * External routines defined in file check.c
  **/
 
-void near_line(void);
-int  free_memory(void);
+void near_line( void );
+int free_memory( void );
 
-t_boolean add_register_definition(int             definition_type,
-                                  char           *definition_name,
-                                  struct t_queue *q);
+t_boolean add_register_definition( int definition_type, char *definition_name, struct t_queue *q );
 
-extern t_boolean all_definitions_exist(void);
-struct t_entry*  exist_identifier(char           *register_name,
-                                  struct t_queue *q);
+extern t_boolean all_definitions_exist( void );
+struct t_entry *exist_identifier( char *register_name, struct t_queue *q );
 
 
 #endif
 
-#define TYPE_INTEGER  0
-#define TYPE_DOUBLE   1
-#define TYPE_CHAR     2
+#define TYPE_INTEGER 0
+#define TYPE_DOUBLE  1
+#define TYPE_CHAR    2

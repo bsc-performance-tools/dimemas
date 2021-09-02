@@ -68,8 +68,8 @@ rmclassfiles:
 
 MANIFEST=$(GUIDIR)/MANIFEST.MF
 manifest:
-	echo "Manifest-Version: 1.0"                           > $(MANIFEST)
-	echo "Main-Class: gui.Main" >> $(MANIFEST)
+	echo "Manifest-Version: 1.0"                          > $(MANIFEST)
+	echo "Main-Class: gui.Main" 						  >> $(MANIFEST)
 	echo "Class-path: commons-io-2.4.jar"                 >> $(MANIFEST)
 	
 VERSION_DIR=$(JAVAROOT)/data

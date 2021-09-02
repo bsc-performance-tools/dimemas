@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -43,13 +43,11 @@
 class ClientSocket : private Socket
 {
  public:
-
-  ClientSocket ( std::string host, int port );
+  ClientSocket( std::string host, int port );
   virtual ~ClientSocket(){};
 
-  const ClientSocket& operator << ( const std::string& ) const;
-  const ClientSocket& operator >> ( std::string& ) const;
-
+  const ClientSocket& operator<<( const std::string& ) const;
+  const ClientSocket& operator>>( std::string& ) const;
 };
 
 
