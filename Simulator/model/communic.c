@@ -588,7 +588,7 @@ t_nano compute_startup( struct t_thread *thread,
        * /launch/sync latency
        */
       if ( ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
-             OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event )  ) &&
+             OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) &&
            mess_commid != 0 )
       {
         startup = send_node->acc.memory_startup;
@@ -2038,7 +2038,6 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
 
   assert( mess->ori_thread != -1 );
   assert( mess->ori == thread->task->taskid );
-
 
   thread_sender = locate_thread_of_task( thread->task, mess->ori_thread );
   if ( thread_sender == (struct t_thread *)T_NIL )
@@ -3543,10 +3542,10 @@ void COMMUNIC_send( struct t_thread *thread_sender )
       PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread_sender ), current_time, thread_sender->acc_in_block_event.type, 0 );
     }
 
+    thread_sender->logical_send = current_time;
+
     if ( startup != (t_nano)0 )
     {
-      thread_sender->logical_send = current_time;
-
       thread_sender->loose_cpu     = FALSE;
       thread_sender->doing_startup = TRUE;
 
@@ -3573,9 +3572,23 @@ void COMMUNIC_send( struct t_thread *thread_sender )
     else /* (startup == (t_nano) 0) */
     {
       thread_sender->startup_done = TRUE;
-      thread_sender->logical_send = current_time;
     }
   } /* thread->startup_done == TRUE */
+
+  if( thread_sender->host && mess->communic_id != 0 && 
+      thread_sender->acc_in_block_event.type == CUDA_LIB_CALL_EV && 
+      ( thread_sender->acc_in_block_event.value == CUDA_LAUNCH_VAL || 
+        thread_sender->acc_in_block_event.value == CUDA_CONFIGURECALL_VAL ) )
+  {
+    PARAVER_Event( thread_partner->cpu->unique_number, 
+                   IDENTIFIERS( thread_partner ), 
+                   current_time, 
+                   thread_sender->acc_in_block_event.type, 
+                   thread_sender->acc_in_block_event.value );
+
+    thread_partner->acc_in_block_event.paraver_time = current_time;
+    thread_partner->logical_recv = current_time;
+  }
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
@@ -7835,7 +7848,7 @@ void COMMUNIC_reset_deadlock()
 }
 
 
-void resetThreadsInKernelSync( struct t_task *task )
+void resumeThreadsInKernelSync( struct t_task *task )
 {
   struct t_action *currentAction;
 
@@ -8143,7 +8156,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
     }
 
     host_th->blocked_in_global_op = FALSE;
-    resetThreadsInKernelSync( task );
+    resumeThreadsInKernelSync( task );
 
     task->HostSync     = TH_NIL;
     task->KernelByComm = -1;

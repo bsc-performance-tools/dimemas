@@ -647,40 +647,40 @@ t_nano PREEMP_overhead( struct t_task *task )
   }
 }
 
-/*
-   void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
-   {
-   register struct t_communicator *comm;
-   comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
-   (t_priority)communicator_id);
-   if (comm!=(struct t_communicator *)0)
-   {
-   panic("Redefinition of communicator %d for P%d\n",
-   communicator_id,
-   Ptask->Ptaskid);
-   }
+/* 
+  void new_communicator_definition (struct t_Ptask *Ptask, int communicator_id)
+  {
+  register struct t_communicator *comm;
+  comm = (struct t_communicator *)query_prio_queue (&Ptask->Communicator,
+  (t_priority)communicator_id);
+  if (comm!=(struct t_communicator *)0)
+  {
+  panic("Redefinition of communicator %d for P%d\n",
+  communicator_id,
+  Ptask->Ptaskid);
+  }
 
-   comm = (struct t_communicator *)malloc(sizeof(struct t_communicator));
+  comm = (struct t_communicator *)malloc(sizeof(struct t_communicator));
 
-   comm->communicator_id = communicator_id;
-   comm->size            = 0;
-   comm->global_ranks    = NULL;
+  comm->communicator_id = communicator_id;
+  comm->size            = 0;
+  comm->global_ranks    = NULL;
 
-   create_queue (&comm->threads);
-   create_queue (&comm->machines_threads);
-   create_queue (&comm->m_threads_with_links);
+  create_queue (&comm->threads);
+  create_queue (&comm->machines_threads);
+  create_queue (&comm->m_threads_with_links);
 
-   create_queue (&comm->nonblock_global_op_threads);
-   create_queue (&comm->nonblock_global_op_machine_threads);
-   create_queue (&comm->nonblock_m_threads_with_links);
-   create_queue (&comm->nonblock_current_root);
+  create_queue (&comm->nonblock_global_op_threads);
+  create_queue (&comm->nonblock_global_op_machine_threads);
+  create_queue (&comm->nonblock_m_threads_with_links);
+  create_queue (&comm->nonblock_current_root);
 
-   comm->current_root = TH_NIL;
-   comm->in_flight_op = FALSE;
+  comm->current_root = TH_NIL;
+  comm->in_flight_op = FALSE;
 
-   insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);
-   }
-   */
+  insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);
+  }
+ */
 
 void new_window_definition( struct t_Ptask *Ptask, int window_id )
 {
@@ -1238,7 +1238,6 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
   copy_thread->blocked_in_global_op  = thread->blocked_in_global_op;
   copy_thread->blocked_in_host_sync  = thread->blocked_in_host_sync;
   copy_thread->blocked_sync_threadid = thread->blocked_sync_threadid;
-  /* Accelerator variables */
 
   copy_thread->omp_in_block_event = thread->omp_in_block_event;
 
