@@ -35,6 +35,7 @@
 #include <eee_communic.h>
 #include <eee_configuration.h>
 #include <events.h>
+#include "event_sync.h"
 #include <extern.h>
 #include <float.h>
 #include <links.h>
@@ -3577,6 +3578,10 @@ void COMMUNIC_send( struct t_thread *thread_sender )
       thread_sender->startup_done = TRUE;
     }
   } /* thread->startup_done == TRUE */
+
+  if( thread_sender->host && 
+      event_sync_add( thread_sender->task, &thread_sender->acc_in_block_event, thread_sender->threadid, thread_partner->threadid, TRUE ) )
+    return;
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )

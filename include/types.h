@@ -21,16 +21,7 @@
  * The GNU LEsser General Public License is contained in the file COPYING.   *
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
- \*****************************************************************************/
-
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-   $URL::                                          $:  File
-   $Rev::                                          $:  Revision of last commit
-   $Author::                                       $:  Author of last commit
-   $Date::                                         $:  Date of last commit
-
-   \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+ \****************************************************************************/
 
 #ifndef __types_h
 #define __types_h
@@ -111,11 +102,6 @@ struct t_queue
   struct t_item *last;  /* Last item in queue */
   struct t_item *curr;  /* Current item in sequential search */
   t_count count;        /* Number of items */
-};
-
-struct t_list
-{
-  struct t_list *next;
 };
 
 struct t_module
@@ -786,6 +772,10 @@ struct t_task
   struct t_thread *HostSync;   /*	Host thread of sync	*/
   int KernelByComm;            /* Kernel_id indicated in comm_id for global_op */
   int threads_in_accelerator;          /* Number of threads (e.g. CUDA streams) executed in gpu */
+
+  // event synchronization
+  struct t_queue event_synchronization_list;
+
 };
 
 struct t_event
@@ -1165,7 +1155,6 @@ struct t_copyseg
 #define L_NIL    (struct t_link *)0
 #define ACC_NIL  (struct t_account *)0
 #define B_NIL    (struct t_both *)0
-#define LI_NIL   (struct t_list *)0
 #define BU_NIL   (struct t_bus_utilization *)0
 #define M_NIL    (struct t_module *)0
 #define F_NIL    (struct t_filed *)0

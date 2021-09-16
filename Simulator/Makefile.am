@@ -43,8 +43,8 @@ Dimemas_LDADD = \
 	$(simulator_dir)/io/libDimemasIO.la \
 	$(simulator_dir)/prv_utils/libDimemas2ParaverUtils.la \
 	$(simulator_dir)/sched/libDimemasScheduling.la \
-	$(simulator_dir)/utils/libDimemasUtils.la \
 	$(simulator_dir)/model/libDimemasModel.la \
+	$(simulator_dir)/utils/libDimemasUtils.la \
 	$(simulator_dir)/eee_model/libDimemasEEEModel.la \
 	$(BOOST_PROGRAM_OPTIONS_LIB)
 

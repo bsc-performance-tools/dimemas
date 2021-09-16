@@ -31,7 +31,9 @@ libDimemasUtils_la_SOURCES = \
 	deadlock_analysis.c \
 	deadlock_analysis.h \
 	graph.c \
-	graph.h
+	graph.h \
+	event_sync.c \
+	event_sync.h
 
 #if USE_EQUEUE
 #libDimemasUtils_la_SOURCES += \
