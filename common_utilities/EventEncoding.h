@@ -131,7 +131,7 @@ extern "C"
 /*
  * OpenMP Event Types
  */
-#define OMP_CALL_EV                      60000001
+#define OMP_PARALLEL_EV                  60000001
 #define OMP_WORKSHARING_EV               60000002
 #define OMP_BARRIER                      60000005
 #define OMP_WORK_EV                      60000011
@@ -147,7 +147,7 @@ extern "C"
 #define OMP_INIT_TASK_FXN_LINE_N_FILE    60000124
 
 
-#define OMP_CALL_LABEL                         "Parallel (OMP)"
+#define OMP_PARALLEL_LABEL                     "Parallel (OMP)"
 #define OMP_WORKSHARING_LABEL                  "Worksharing (OMP)"
 #define OMP_BARRIER_LABEL                      "OpenMP barrier"
 #define OMP_WORK_LABEL                         "OpenMP Worksharing work dispacher"

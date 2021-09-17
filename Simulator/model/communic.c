@@ -3579,8 +3579,12 @@ void COMMUNIC_send( struct t_thread *thread_sender )
     }
   } /* thread->startup_done == TRUE */
 
+  struct t_even tmpEvent;
+  tmpEvent.type = thread_sender->acc_in_block_event.type;
+  tmpEvent.value = thread_sender->acc_in_block_event.value;
+
   if( thread_sender->host && 
-      event_sync_add( thread_sender->task, &thread_sender->acc_in_block_event, thread_sender->threadid, thread_partner->threadid, TRUE ) )
+      event_sync_add( thread_sender->task, &tmpEvent, thread_sender->threadid, thread_partner->threadid, TRUE ) )
     return;
 
   /* Copy latency operations */

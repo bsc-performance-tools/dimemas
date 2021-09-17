@@ -43,6 +43,7 @@ extern "C"
 #include "define.h"
 #include "dimemas_io.h"
 #include "eee_configuration.h"
+#include "event_sync.h"
 #include "events.h"
 #include "extern.h"
 #include "fs.h"
@@ -580,6 +581,7 @@ int main( int argc, char *argv[] )
   SEMAPHORE_Init();
   FS_Init();
   CPU_Get_Unique_CPU_IDs();
+  event_sync_init();
 #ifdef VENUS_ENABLED
   VC_Init(); /* VENUS CLIENT */
 #endif

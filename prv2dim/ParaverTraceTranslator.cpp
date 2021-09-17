@@ -1720,7 +1720,7 @@ bool ParaverTraceTranslator::OpenMPTasksInfo( INT32 tasks_count )
   omp_tasks_count = 0;
   while ( getline( &line, &current_line_length, PcfTraceFile ) != -1 )
   {
-    if ( atoi( &line[ 2 ] ) == OMP_CALL_EV )
+    if ( atoi( &line[ 2 ] ) == OMP_PARALLEL_EV )
     {
       for ( task_id; task_id < tasks_count; task_id++ )
       {

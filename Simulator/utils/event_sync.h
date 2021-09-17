@@ -28,9 +28,12 @@
 
 #include "types.h"
 
-
 #define PARTNER_ID_BARRIER -1
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 struct t_event_sync_node
 {
   int num_participants;
@@ -39,7 +42,13 @@ struct t_event_sync_node
 };
 
 
-t_boolean event_sync_add( struct t_task *whichTask, struct t_event_block *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
+void event_sync_init( void );
+
+t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
 
 
-#endif 
+#ifdef __cplusplus
+}
+#endif
+
+#endif

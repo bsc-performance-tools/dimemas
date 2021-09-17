@@ -1043,7 +1043,7 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning( struct t_event_block event )
 #define NUM_OMP_BLOCKS 10
 CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
 
-  { OMP_CALL_EV, OMP_CALL_LABEL },
+  { OMP_PARALLEL_EV, OMP_PARALLEL_LABEL },
   { OMP_WORKSHARING_EV, OMP_WORKSHARING_LABEL },
   { OMP_BARRIER, OMP_BARRIER_LABEL },
   { OMP_WORK_EV, OMP_WORK_LABEL },
@@ -1107,7 +1107,7 @@ Boolean OMPEventEncoding_Is_Parallel_Begin( struct t_even *event )
 
 Boolean OMPEventEncoding_Is_Outside_OMP( struct t_event_block event )
 {
-  if ( ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) || ( event.type == OMP_CALL_EV && event.value == OMP_END_VAL ) )
+  if ( ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) || ( event.type == OMP_PARALLEL_EV && event.value == OMP_END_VAL ) )
     return TRUE;
   return FALSE;
 }
@@ -1161,7 +1161,7 @@ Boolean OMPEventEncoding_Is_OMPSync( struct t_event_block event )
  */
 Boolean OMPEventEncoding_Is_OMPWork_Dist( struct t_event_block event )
 {
-  if ( event.type == OMP_CALL_EV && event.value == REGION_OPEN )
+  if ( event.type == OMP_PARALLEL_EV && event.value == REGION_OPEN )
     return TRUE;
   return FALSE;
 }

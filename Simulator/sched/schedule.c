@@ -36,7 +36,7 @@
 #include "list.h"
 #include "sched_vars.h"
 #include "types.h"
-
+#include "event_sync.h"
 #include <math.h>
 #ifdef USE_EQUEUE
 #  include "listE.h"
@@ -809,6 +809,9 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           }
           case EVENT:
           {
+            if( event_sync_add( thread->task, &action->desc.even, thread->threadid, PARTNER_ID_BARRIER, FALSE ) )
+              return;
+
             if ( debug & D_SCH )
             {
               PRINT_TIMER( current_time );
