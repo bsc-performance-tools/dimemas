@@ -25,111 +25,163 @@
 
 #include <stdio.h>
 #include <cmath>
+#include <map>
 #include <set>
+#include <unordered_set>
 
 #include "event_sync.h"
 
 #include "define.h"
 #include "EventEncoding.h"
 
+using std::map;
 using std::set;
+using std::unordered_set;
 
-#define debug  1
-// extern int debug;
-extern dimemas_timer current_time;
+bool operator<( const struct t_even& a, const struct t_even& b )
+{
+  return a.type < b.type ||
+         ( a.type == b.type && a.value < b.value );
+}
+
+bool operator==( const struct t_even& a, const struct t_even& b )
+{
+  return a.type == b.type && a.value == b.value;
+}
+
+struct EventTraitIndex
+{
+  bool isHost;
+  struct t_even event;
+
+  bool operator<( const EventTraitIndex& b ) const
+  {
+    return event < b.event ||
+           ( event == b.event && isHost == b.isHost ? false : isHost );
+  }
+};
 
 struct EventTrait
 {
   struct t_even eventHost;
   struct t_even eventRest;
-  bool checkEventValueNotZero;
+
+  bool operator<( const EventTrait& b ) const
+  {
+    return eventHost < b.eventHost ||
+           ( eventHost == b.eventHost && eventRest < b.eventRest );
+  }
 };
 
-auto compareEvent = []( const struct EventTrait& a, const struct EventTrait& b )
-                    { 
-                      if ( b.checkEventValueNotZero ) // a??
-                      {
-                        // Host || Rest
-                        return ( a.eventRest.type == b.eventRest.type ? a.eventRest.value < b.eventRest.value : a.eventRest.type < b.eventRest.type ) ||
-                              ( a.eventHost.type == b.eventHost.type ? a.eventHost.value < b.eventHost.value : a.eventHost.type < b.eventHost.type );
-                      }
-                      else
-                      {
-                        // Host || rest
-                        return ( a.eventRest.type == b.eventRest.type ? a.eventRest.value > 0 && b.eventRest.value > 0:
-                                                                        a.eventRest.type < b.eventRest.type );
+struct TEventSyncQueue
+{
+  set<EventTrait> insertedTraits;
+};
 
-                      }
-                    };
-                      
-                      
-                     // return a.type == b.type ? a.value < b.value : a.type < b.type; };
+#define debug  1
+// extern int debug;
+extern dimemas_timer current_time;
 
+map<EventTraitIndex, EventTrait> syncEvents;
+unordered_set<unsigned long long> validSyncTypes;
 
-
-set<EventTrait, decltype( compareEvent ) > syncEvents( compareEvent );
 
 void event_sync_init( void )
 {
-  EventTrait tmpEvent;
+  EventTraitIndex tmpEventIndex;
+  EventTrait tmpEventTrait;
 
+  validSyncTypes.insert( CUDA_LIB_CALL_EV );
+  validSyncTypes.insert( OMP_BARRIER );
+  validSyncTypes.insert( OMP_EXECUTED_PARALLEL_FXN );
+  validSyncTypes.insert( OMP_PARALLEL_EV );
 
-  tmpEvent.eventHost.type = CUDA_LIB_CALL_EV;
-  tmpEvent.eventHost.value = CUDA_CONFIGURECALL_VAL;
-  tmpEvent.eventRest.type = CUDA_LIB_CALL_EV;
-  tmpEvent.eventRest.value = CUDA_CONFIGURECALL_VAL;
-  tmpEvent.checkEventValueNotZero = true;
-  syncEvents.insert( tmpEvent );
+  // ------- CUDA_LIB_CALL_EV + CUDA_CONFIGURECALL_VAL -------
+  tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
+  tmpEventIndex.event.value = CUDA_CONFIGURECALL_VAL;
+  tmpEventIndex.isHost = true;
 
-  tmpEvent.eventHost.type = CUDA_LIB_CALL_EV;
-  tmpEvent.eventHost.value = CUDA_LAUNCH_VAL;
-  tmpEvent.eventRest.type = CUDA_LIB_CALL_EV;
-  tmpEvent.eventRest.value = CUDA_LAUNCH_VAL;
-  tmpEvent.checkEventValueNotZero = true;
-  syncEvents.insert( tmpEvent );
+  tmpEventTrait.eventHost.type = CUDA_LIB_CALL_EV;
+  tmpEventTrait.eventHost.value = CUDA_CONFIGURECALL_VAL;
+  tmpEventTrait.eventRest.type = CUDA_LIB_CALL_EV;
+  tmpEventTrait.eventRest.value = CUDA_CONFIGURECALL_VAL;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-  tmpEvent.eventHost.type = OMP_BARRIER;
-  tmpEvent.eventHost.value = OMP_END_VAL;
-  tmpEvent.eventRest.type = OMP_BARRIER;
-  tmpEvent.eventRest.value = OMP_END_VAL;
-  tmpEvent.checkEventValueNotZero = true;
-  syncEvents.insert( tmpEvent );
+  tmpEventIndex.isHost = false;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-  tmpEvent.eventHost.type = OMP_EXECUTED_PARALLEL_FXN;
-  tmpEvent.eventHost.value = OMP_BEGIN_VAL;
-  tmpEvent.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
-  tmpEvent.eventRest.value = OMP_BEGIN_VAL;
-  tmpEvent.checkEventValueNotZero = false;
-  syncEvents.insert( tmpEvent );
+  // ------- CUDA_LIB_CALL_EV + CUDA_LAUNCH_VAL -------
+  tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
+  tmpEventIndex.event.value = CUDA_LAUNCH_VAL;
+  tmpEventIndex.isHost = true;
 
-  tmpEvent.eventHost.type = OMP_PARALLEL_EV;
-  tmpEvent.eventHost.value = OMP_END_VAL;
-  tmpEvent.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
-  tmpEvent.eventRest.value = OMP_END_VAL;
-  tmpEvent.checkEventValueNotZero = true;
-  syncEvents.insert( tmpEvent );
+  tmpEventTrait.eventHost.type = CUDA_LIB_CALL_EV;
+  tmpEventTrait.eventHost.value = CUDA_LAUNCH_VAL;
+  tmpEventTrait.eventRest.type = CUDA_LIB_CALL_EV;
+  tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  tmpEventIndex.isHost = false;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  // ------- OMP_BARRIER + OMP_END_VAL -------
+  tmpEventIndex.event.type = OMP_BARRIER;
+  tmpEventIndex.event.value = OMP_END_VAL;
+  tmpEventIndex.isHost = true;
+  
+  tmpEventTrait.eventHost.type = OMP_BARRIER;
+  tmpEventTrait.eventHost.value = OMP_END_VAL;
+  tmpEventTrait.eventRest.type = OMP_BARRIER;
+  tmpEventTrait.eventRest.value = OMP_END_VAL;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  tmpEventIndex.isHost = false;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  // ------- OMP_EXECUTED_PARALLEL_FXN + OMP_BEGIN_VAL -------
+  tmpEventIndex.event.type = OMP_EXECUTED_PARALLEL_FXN;
+  tmpEventIndex.event.value = OMP_BEGIN_VAL;
+  tmpEventIndex.isHost = true;
+
+  tmpEventTrait.eventHost.type = OMP_EXECUTED_PARALLEL_FXN;
+  tmpEventTrait.eventHost.value = OMP_BEGIN_VAL;
+  tmpEventTrait.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
+  tmpEventTrait.eventRest.value = OMP_BEGIN_VAL;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  tmpEventIndex.isHost = false;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+  
+  // ------- OMP_PARALLEL_EV + OMP_END_VAL -------
+  tmpEventIndex.event.type = OMP_PARALLEL_EV;
+  tmpEventIndex.event.value = OMP_END_VAL;
+  tmpEventIndex.isHost = true;
+  
+  tmpEventTrait.eventHost.type = OMP_PARALLEL_EV;
+  tmpEventTrait.eventHost.value = OMP_END_VAL;
+  tmpEventTrait.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
+  tmpEventTrait.eventRest.value = OMP_END_VAL;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  tmpEventIndex.event.type = OMP_EXECUTED_PARALLEL_FXN;
+  tmpEventIndex.event.value = OMP_END_VAL;
+  tmpEventIndex.isHost = false;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
 }
 
-t_boolean event_sync_add( struct t_task *whichTask, 
+struct TEventSyncQueue *createEventSyncQueue()
+{
+  return new struct TEventSyncQueue;
+}
+
+t_boolean event_sync_add( struct t_task *whichTask,
                           struct t_even *whichEvent,
                           int threadID,
                           int partnerThreadID,
                           t_boolean isCommCall )
 {
-  EventTrait tmpEvent;
-
-  if (threadID == 0)
-  {
-    tmpEvent.eventHost.type = whichEvent->type;
-    tmpEvent.eventHost.value = whichEvent->value;
-  }
-  else
-  {
-    tmpEvent.eventRest.type = whichEvent->type;
-    tmpEvent.eventRest.value = whichEvent->value;
-  }
-
-  if( syncEvents.find( tmpEvent ) == syncEvents.end() )
+  if( validSyncTypes.find( whichEvent->type ) == validSyncTypes.end() ||
+      ( whichEvent->type == CUDA_LIB_CALL_EV && !isCommCall ) )
     return FALSE;
 
   if ( debug )
@@ -143,6 +195,41 @@ t_boolean event_sync_add( struct t_task *whichTask,
             partnerThreadID,
             isCommCall );
   }
+
+  EventTraitIndex tmpEventTraitIndex;
+
+  tmpEventTraitIndex.event.type = whichEvent->type;
+  if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
+    tmpEventTraitIndex.event.value = OMP_BEGIN_VAL;
+  tmpEventTraitIndex.isHost = ( threadID == 0 );
+
+  map<EventTraitIndex, EventTrait>::iterator tmpItTrait = syncEvents.find( tmpEventTraitIndex );
+  if( tmpItTrait == syncEvents.end() )
+    return FALSE;
+
+  EventTrait tmpEventTrait = tmpItTrait->second;
+  if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
+  {
+    tmpEventTrait.eventHost.value = whichEvent->value;
+    tmpEventTrait.eventRest.value = whichEvent->value;
+  }
+
+  set<EventTrait>::iterator tmpIt = whichTask->event_sync_queue->insertedTraits.find( tmpEventTrait );
+  if ( tmpIt != whichTask->event_sync_queue->insertedTraits.end() )
+  {
+    // found: apuntarse al contador del "barrier" y comprobar si ya están todos
+    if( debug )
+      printf( "FOUND in task queue\n" );
+  }
+  else
+  {
+    // not found: insertar el nuevo trait y apuntarse a si mismo
+    if( debug )
+      printf( "NOT FOUND in task queue\n" );
+  }
+
+  // las colectivas: barrier, apertura y cierre no llevan identificador pero, los p2p si.
+  // 
 
   return FALSE;
 }

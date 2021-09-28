@@ -30,6 +30,7 @@
 #include <cpu.h>
 #include <define.h>
 #include <dim_omp.h>
+#include "event_sync.h"
 #include <events.h>
 #include <extern.h>
 #include <file_data_access.h>
@@ -512,6 +513,8 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   task->io_thread     = FALSE;
   task->threads_count = 0;
   task->threads       = NULL;
+
+  task->event_sync_queue = createEventSyncQueue();
 
   /* OMP variables  */
   task->master_time = 0;

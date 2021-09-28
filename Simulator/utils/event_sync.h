@@ -41,8 +41,11 @@ struct t_event_sync_node
   int partner_id;
 };
 
+struct TEventSyncQueue;
 
 void event_sync_init( void );
+
+struct TEventSyncQueue *createEventSyncQueue();
 
 t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
 

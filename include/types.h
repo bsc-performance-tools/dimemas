@@ -774,7 +774,7 @@ struct t_task
   int threads_in_accelerator;          /* Number of threads (e.g. CUDA streams) executed in gpu */
 
   // event synchronization
-  struct t_queue event_synchronization_list;
+  struct TEventSyncQueue *event_sync_queue;
 
 };
 
