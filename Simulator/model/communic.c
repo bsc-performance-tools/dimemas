@@ -3940,6 +3940,14 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
 
   mess->comm_type = kind;
 
+  struct t_even tmpEvent;
+  tmpEvent.type = thread_receiver->acc_in_block_event.type;
+  tmpEvent.value = thread_receiver->acc_in_block_event.value;
+
+  if( !thread_receiver->host && 
+      event_sync_add( thread_receiver->task, &tmpEvent, thread_receiver->threadid, thread_receiver->threadid, TRUE ) )
+    return;
+
   if ( thread_receiver->startup_done == FALSE )
   { /* Compute startup duration and re-schedule thread if needed */
     // startup = compute_startup (thread, kind, node_s, connection);

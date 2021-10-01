@@ -26,10 +26,14 @@
 #include <stdio.h>
 #include <cmath>
 #include <map>
+#include <tuple>
 #include <set>
 #include <unordered_set>
 
 #include "event_sync.h"
+extern "C" {
+  #include "schedule.h"
+}
 
 #include "define.h"
 #include "EventEncoding.h"
@@ -66,10 +70,14 @@ struct EventTrait
   struct t_even eventHost;
   struct t_even eventRest;
 
+  int partnerThreadID;
+
+  int numParticipants;
+  mutable int numArrived;
+
   bool operator<( const EventTrait& b ) const
   {
-    return eventHost < b.eventHost ||
-           ( eventHost == b.eventHost && eventRest < b.eventRest );
+    return std::tie( eventHost, eventRest, partnerThreadID ) < std::tie( b.eventHost, b.eventRest, b.partnerThreadID );
   }
 };
 
@@ -213,21 +221,36 @@ t_boolean event_sync_add( struct t_task *whichTask,
     tmpEventTrait.eventHost.value = whichEvent->value;
     tmpEventTrait.eventRest.value = whichEvent->value;
   }
+  tmpEventTrait.partnerThreadID = partnerThreadID;
 
   set<EventTrait>::iterator tmpIt = whichTask->event_sync_queue->insertedTraits.find( tmpEventTrait );
-  if ( tmpIt != whichTask->event_sync_queue->insertedTraits.end() )
+  if ( tmpIt == whichTask->event_sync_queue->insertedTraits.end() )
   {
-    // found: apuntarse al contador del "barrier" y comprobar si ya están todos
-    if( debug )
-      printf( "FOUND in task queue\n" );
-  }
-  else
-  {
-    // not found: insertar el nuevo trait y apuntarse a si mismo
-    if( debug )
-      printf( "NOT FOUND in task queue\n" );
+    if( partnerThreadID == PARTNER_ID_BARRIER )
+      tmpEventTrait.numParticipants = whichTask->threads_count;
+    else
+      tmpEventTrait.numParticipants = 2;
+
+    tmpEventTrait.numArrived = 0;
+
+    whichTask->event_sync_queue->insertedTraits.insert( tmpEventTrait );
   }
 
+  ++tmpIt->numArrived;
+
+  if( tmpIt->numArrived == tmpIt->numParticipants )
+  {
+    for( int iThread = 0; iThread < tmpIt->numParticipants; ++iThread )
+    {
+      int realThread = iThread;
+      if( tmpIt->partnerThreadID != PARTNER_ID_BARRIER && iThread > 0 )
+        realThread = tmpIt->partnerThreadID;
+
+      SCHEDULER_thread_to_ready( whichTask->threads[ realThread ] );
+    }
+
+  }
+  
   // las colectivas: barrier, apertura y cierre no llevan identificador pero, los p2p si.
   // 
 

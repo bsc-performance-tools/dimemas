@@ -34,12 +34,6 @@
 extern "C"
 {
 #endif
-struct t_event_sync_node
-{
-  int num_participants;
-  int num_arrived;
-  int partner_id;
-};
 
 struct TEventSyncQueue;
 
