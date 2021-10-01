@@ -233,7 +233,7 @@ t_boolean event_sync_add( struct t_task *whichTask,
 
     tmpEventTrait.numArrived = 0;
 
-    whichTask->event_sync_queue->insertedTraits.insert( tmpEventTrait );
+    std::tie( tmpIt, std::ignore ) = whichTask->event_sync_queue->insertedTraits.insert( tmpEventTrait );
   }
 
   ++tmpIt->numArrived;
@@ -249,10 +249,8 @@ t_boolean event_sync_add( struct t_task *whichTask,
       SCHEDULER_thread_to_ready( whichTask->threads[ realThread ] );
     }
 
+    whichTask->event_sync_queue->insertedTraits.erase( tmpIt );
   }
-  
-  // las colectivas: barrier, apertura y cierre no llevan identificador pero, los p2p si.
-  // 
 
-  return FALSE;
+  return TRUE;
 }
