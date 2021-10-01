@@ -61,7 +61,7 @@ struct EventTraitIndex
   bool operator<( const EventTraitIndex& b ) const
   {
     return event < b.event ||
-           ( event == b.event && isHost == b.isHost ? false : isHost );
+           ( event == b.event && isHost < b.isHost );
   }
 };
 
@@ -207,6 +207,7 @@ t_boolean event_sync_add( struct t_task *whichTask,
   EventTraitIndex tmpEventTraitIndex;
 
   tmpEventTraitIndex.event.type = whichEvent->type;
+  tmpEventTraitIndex.event.value = whichEvent->value;
   if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
     tmpEventTraitIndex.event.value = OMP_BEGIN_VAL;
   tmpEventTraitIndex.isHost = ( threadID == 0 );
@@ -214,6 +215,9 @@ t_boolean event_sync_add( struct t_task *whichTask,
   map<EventTraitIndex, EventTrait>::iterator tmpItTrait = syncEvents.find( tmpEventTraitIndex );
   if( tmpItTrait == syncEvents.end() )
     return FALSE;
+
+  if( debug )
+    printf( "\t event sync add: EventTrait found\n" );
 
   EventTrait tmpEventTrait = tmpItTrait->second;
   if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
