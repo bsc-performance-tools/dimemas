@@ -65,7 +65,6 @@ extern "C"
 
   void omp_print_event( struct t_thread *thread, struct t_even *event, int iteration );
 
-  void treat_omp_iterations( struct t_thread *thread, struct t_even *event, dimemas_timer current_time );
   void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time, int iteration );
 
 #ifdef __cplusplus

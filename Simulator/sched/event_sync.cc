@@ -92,7 +92,7 @@ struct TEventSyncQueue
   set<EventTrait> insertedTraits;
 };
 
-#define debug  1
+#define debug  0
 // extern int debug;
 extern dimemas_timer current_time;
 
@@ -287,11 +287,6 @@ t_boolean event_sync_add( struct t_task *whichTask,
   if( threadID != 0 && tmpIt->restThreadsCanResume )
   {
     return FALSE;
-  }
-
-  if ( ( count_queue( &( whichTask->node->ready ) ) != 0 ) && ( num_free_cpu( whichTask->node ) > 0 ) )
-  {
-    SCHEDULER_next_thread_to_run( whichTask->node );
   }
 
   return TRUE;

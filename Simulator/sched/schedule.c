@@ -246,7 +246,7 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
 
   machine = node->machine;
 
-  if ( !thread->kernel && !thread->host )
+  if ( !thread->kernel && !thread->host && !thread->event_sync_reentry)
   { /* If is a wait in accelerator event block, no wait thrown to fill original trace */
     PARAVER_Wait( 0, IDENTIFIERS( thread ), thread->last_paraver, current_time, PRV_SYNC_ST );
     thread->last_paraver = current_time;
@@ -891,7 +891,6 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             /* treat acc events */
             treat_acc_event( thread, action );
             /* treating OMP events */
-            treat_omp_iterations( thread, &action->desc.even, current_time );
             treat_omp_events( thread, &action->desc.even, current_time, thread->omp_iteration_count );
 
             /* Not printing block end if it is a clEnqueueNDRangeKernel because
@@ -900,28 +899,11 @@ void SCHEDULER_general( int value, struct t_thread *thread )
              */
             int printing_event =
               !thread->acc_recv_sync &&
-              !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->kernel && action->desc.even.value == 0 ) &&
-              ( thread->task->openmp && !thread->omp_worker_thread || !thread->task->openmp );
+              !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->kernel && action->desc.even.value == 0 );
             if ( printing_event )
             { /* If it is not an accelerator event that has to wait to be written */
               cpu = get_cpu_of_thread( thread );
               PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, action->desc.even.type, action->desc.even.value );
-            }
-
-            if ( thread->task->openmp && thread->omp_worker_thread )
-            {
-              if ( is_omp_master_info_ready( thread->task->omp_queue, thread->omp_iteration_count ) )
-              {
-                omp_print_event( thread, &action->desc.even, thread->omp_iteration_count );
-              }
-              else
-              {
-                struct t_omp_event tmpEvent;
-                tmpEvent.time  = current_time;
-                tmpEvent.type  = action->desc.even.type;
-                tmpEvent.value = action->desc.even.value;
-                add_omp_worker_event( thread->task->omp_queue, thread->omp_iteration_count, thread->threadid, &tmpEvent );
-              }
             }
 
             thread->action = action->next;
