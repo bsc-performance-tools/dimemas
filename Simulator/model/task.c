@@ -1083,6 +1083,8 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   create_queue( &thread->nonblock_glop_done_threads );
   thread->eof_reached = FALSE;
 
+  thread->event_sync_reentry = FALSE;
+
   /* JGG (2012/01/12): thread queue not needed anymore */
   // inFIFO_queue (&(task->threads), (char *) thread);
   /* and store it in the array of all threads in that task */

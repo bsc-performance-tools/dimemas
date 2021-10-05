@@ -993,6 +993,8 @@ struct t_thread
 
   struct t_queue nonblock_glop_done_threads;
 
+  t_boolean event_sync_reentry;
+
   volatile struct t_action **action_buffer;
   volatile int *action_buffer_head;
   volatile int *action_buffer_tail;

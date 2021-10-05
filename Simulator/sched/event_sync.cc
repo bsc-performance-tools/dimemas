@@ -33,10 +33,14 @@
 #include "event_sync.h"
 extern "C" {
   #include "schedule.h"
+  #include "cpu.h"
+  #include "define.h"
+  #include "EventEncoding.h"
+  #include "extern.h"
+  #include "list.h"
+  #include "node.h"
+  #include "read.h"
 }
-
-#include "define.h"
-#include "EventEncoding.h"
 
 using std::map;
 using std::set;
@@ -71,6 +75,8 @@ struct EventTrait
   struct t_even eventRest;
 
   int partnerThreadID;
+
+  bool restThreadsCanResume;
 
   int numParticipants;
   mutable int numArrived;
@@ -113,6 +119,7 @@ void event_sync_init( void )
   tmpEventTrait.eventHost.value = CUDA_CONFIGURECALL_VAL;
   tmpEventTrait.eventRest.type = CUDA_LIB_CALL_EV;
   tmpEventTrait.eventRest.value = CUDA_CONFIGURECALL_VAL;
+  tmpEventTrait.restThreadsCanResume = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -127,6 +134,7 @@ void event_sync_init( void )
   tmpEventTrait.eventHost.value = CUDA_LAUNCH_VAL;
   tmpEventTrait.eventRest.type = CUDA_LIB_CALL_EV;
   tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL;
+  tmpEventTrait.restThreadsCanResume = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -141,6 +149,7 @@ void event_sync_init( void )
   tmpEventTrait.eventHost.value = OMP_END_VAL;
   tmpEventTrait.eventRest.type = OMP_BARRIER;
   tmpEventTrait.eventRest.value = OMP_END_VAL;
+  tmpEventTrait.restThreadsCanResume = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -155,6 +164,7 @@ void event_sync_init( void )
   tmpEventTrait.eventHost.value = OMP_BEGIN_VAL;
   tmpEventTrait.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
   tmpEventTrait.eventRest.value = OMP_BEGIN_VAL;
+  tmpEventTrait.restThreadsCanResume = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -169,6 +179,7 @@ void event_sync_init( void )
   tmpEventTrait.eventHost.value = OMP_END_VAL;
   tmpEventTrait.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
   tmpEventTrait.eventRest.value = OMP_END_VAL;
+  tmpEventTrait.restThreadsCanResume = true;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.event.type = OMP_EXECUTED_PARALLEL_FXN;
@@ -188,6 +199,12 @@ t_boolean event_sync_add( struct t_task *whichTask,
                           int partnerThreadID,
                           t_boolean isCommCall )
 {
+  if( whichTask->threads[ threadID ]->event_sync_reentry )
+  {
+    whichTask->threads[ threadID ]->event_sync_reentry = FALSE;
+    return FALSE;
+  }
+
   if( validSyncTypes.find( whichEvent->type ) == validSyncTypes.end() ||
       ( whichEvent->type == CUDA_LIB_CALL_EV && !isCommCall ) )
     return FALSE;
@@ -217,7 +234,7 @@ t_boolean event_sync_add( struct t_task *whichTask,
     return FALSE;
 
   if( debug )
-    printf( "\t event sync add: EventTrait found\n" );
+    printf( "\tevent sync add: EventTrait found.\n" );
 
   EventTrait tmpEventTrait = tmpItTrait->second;
   if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
@@ -241,19 +258,40 @@ t_boolean event_sync_add( struct t_task *whichTask,
   }
 
   ++tmpIt->numArrived;
+  if( debug )
+    printf( "\tevent sync add: num threads arrived to sync %d of %d participants.\n", tmpIt->numArrived, tmpIt->numParticipants );
 
   if( tmpIt->numArrived == tmpIt->numParticipants )
   {
+    if( debug )
+      printf( "\tevent sync add: all participants have arrived. Resume them.\n" );
+
     for( int iThread = 0; iThread < tmpIt->numParticipants; ++iThread )
     {
+      if( iThread > 0 && tmpIt->restThreadsCanResume )
+        break;
+
       int realThread = iThread;
       if( tmpIt->partnerThreadID != PARTNER_ID_BARRIER && iThread > 0 )
         realThread = tmpIt->partnerThreadID;
 
+      whichTask->threads[ realThread ]->event_sync_reentry = TRUE;
+      whichTask->threads[ realThread ]->loose_cpu = TRUE;
       SCHEDULER_thread_to_ready( whichTask->threads[ realThread ] );
+      reload_done = TRUE;
     }
 
     whichTask->event_sync_queue->insertedTraits.erase( tmpIt );
+  }
+
+  if( threadID != 0 && tmpIt->restThreadsCanResume )
+  {
+    return FALSE;
+  }
+
+  if ( ( count_queue( &( whichTask->node->ready ) ) != 0 ) && ( num_free_cpu( whichTask->node ) > 0 ) )
+  {
+    SCHEDULER_next_thread_to_run( whichTask->node );
   }
 
   return TRUE;

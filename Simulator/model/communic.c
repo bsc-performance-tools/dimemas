@@ -3583,7 +3583,7 @@ void COMMUNIC_send( struct t_thread *thread_sender )
   tmpEvent.type = thread_sender->acc_in_block_event.type;
   tmpEvent.value = thread_sender->acc_in_block_event.value;
 
-  if( thread_sender->host && 
+  if( thread_sender->host && mess->communic_id != 0 &&
       event_sync_add( thread_sender->task, &tmpEvent, thread_sender->threadid, thread_partner->threadid, TRUE ) )
     return;
 
@@ -3940,14 +3940,6 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
 
   mess->comm_type = kind;
 
-  struct t_even tmpEvent;
-  tmpEvent.type = thread_receiver->acc_in_block_event.type;
-  tmpEvent.value = thread_receiver->acc_in_block_event.value;
-
-  if( !thread_receiver->host && 
-      event_sync_add( thread_receiver->task, &tmpEvent, thread_receiver->threadid, thread_receiver->threadid, TRUE ) )
-    return;
-
   if ( thread_receiver->startup_done == FALSE )
   { /* Compute startup duration and re-schedule thread if needed */
     // startup = compute_startup (thread, kind, node_s, connection);
@@ -3998,6 +3990,14 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
     }
   }
   /* Startup has finished */
+
+  struct t_even tmpEvent;
+  tmpEvent.type = thread_receiver->acc_in_block_event.type;
+  tmpEvent.value = thread_receiver->acc_in_block_event.value;
+
+  if( !thread_receiver->host && mess->communic_id != 0 &&
+      event_sync_add( thread_receiver->task, &tmpEvent, thread_receiver->threadid, thread_receiver->threadid, TRUE ) )
+    return;
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
