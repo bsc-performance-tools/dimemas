@@ -760,8 +760,6 @@ struct t_task
 
   /* OMP variables */
   t_boolean openmp;
-  dimemas_timer master_time;
-  struct t_omp_queue *omp_queue;
 
   // CUDA variables
   t_boolean accelerator;

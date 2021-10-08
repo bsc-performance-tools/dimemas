@@ -1091,9 +1091,9 @@ Boolean OMPEventEncoding_Is_BlockBegin( long64_t Op )
 }
 
 
-Boolean OMPEventEncoding_Is_OMPIdle( long64_t Op )
+Boolean OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event )
 {
-  if ( Op == OMP_EXECUTED_PARALLEL_FXN )
+  if ( event.type == OMP_EXECUTED_PARALLEL_FXN && event.value == OMP_END_VAL )
     return TRUE;
   return FALSE;
 }
@@ -1159,7 +1159,7 @@ Boolean OMPEventEncoding_Is_OMPSync( struct t_event_block event )
 /**
  * Scheduling and fork join
  */
-Boolean OMPEventEncoding_Is_OMPWork_Dist( struct t_event_block event )
+Boolean OMPEventEncoding_Is_OMP_fork_begin( struct t_event_block event )
 {
   if ( event.type == OMP_PARALLEL_EV && event.value == REGION_OPEN )
     return TRUE;

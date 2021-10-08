@@ -1076,7 +1076,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 
       if ( debug )
         fprintf( stdout,
-                 "[%03d:%02d %lld] Opening Block %03lld (%s)\n",
+                 "[%03d:%02d %llu] Opening Block %03lld (%s)\n",
                  CurrentEvent->GetTaskId(),
                  CurrentEvent->GetThreadId(),
                  CurrentEvent->GetTimestamp(),
@@ -1178,7 +1178,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 
       if ( debug )
         fprintf( stdout,
-                 "[%03d:%02d %lld] Closing Block %03lld (%s)\n",
+                 "[%03d:%02d %llu] Closing Block %03lld (%s)\n",
                  CurrentEvent->GetTaskId(),
                  CurrentEvent->GetThreadId(),
                  CurrentEvent->GetTimestamp(),
@@ -1374,7 +1374,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
   {
     if ( debug )
     {
-      fprintf( stdout, "Comm: [%03d:%02d] T:%lld ", CurrentComm->GetTaskId(), CurrentComm->GetThreadId(), CurrentComm->GetTimestamp() );
+      fprintf( stdout, "Comm: [%03d:%02d] T:%llu ", CurrentComm->GetTaskId(), CurrentComm->GetThreadId(), CurrentComm->GetTimestamp() );
       switch ( CurrentComm->GetType() )
       {
         case LOGICAL_SEND:
@@ -2364,7 +2364,7 @@ void TaskTranslationInfo::Event2GlobalOp( Event_t CurrentEvent )
 
   if ( debug )
     fprintf( stdout,
-             "[%03d:%02d %lld] Event to global translation: ",
+             "[%03d:%02d %llu] Event to global translation: ",
              CurrentEvent->GetTaskId(),
              CurrentEvent->GetThreadId(),
              CurrentEvent->GetTimestamp() );
@@ -2388,7 +2388,7 @@ void TaskTranslationInfo::Event2GlobalOp( Event_t CurrentEvent )
 
     case MPI_GLOBAL_OP_ROOT:
       if ( debug )
-        fprintf( stdout, "ROOT\n", CurrentEvent->GetFirstValue() );
+        fprintf( stdout, "ROOT\n" );
 
       if ( CurrentEvent->GetFirstValue() == 1 )
       {

@@ -516,10 +516,6 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
 
   task->event_sync_queue = createEventSyncQueue();
 
-  /* OMP variables  */
-  task->master_time = 0;
-  task->omp_queue   = create_omp_queue();
-
   create_queue( &( task->mess_recv ) );
   create_queue( &( task->recv ) );
   create_queue( &( task->send ) );

@@ -891,7 +891,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             /* treat acc events */
             treat_acc_event( thread, action );
             /* treating OMP events */
-            treat_omp_events( thread, &action->desc.even, current_time, thread->omp_iteration_count );
+            treat_omp_events( thread, &action->desc.even, current_time );
 
             /* Not printing block end if it is a clEnqueueNDRangeKernel because
              * it has been printed yet in COMMUNIC_SEND
