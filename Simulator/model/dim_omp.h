@@ -29,14 +29,12 @@
 #include "define.h"
 #include "types.h"
 
-#include <stdbool.h>
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time);
+  void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time );
 
 #ifdef __cplusplus
 }

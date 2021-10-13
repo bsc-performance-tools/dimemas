@@ -26,14 +26,14 @@
 #include <stdio.h>
 #include <cmath>
 #include <map>
-#include <tuple>
 #include <set>
+#include <tuple>
 #include <unordered_set>
 
 #include "event_sync.h"
 extern "C" {
-  #include "schedule.h"
   #include "cpu.h"
+  #include "schedule.h"
   #include "define.h"
   #include "EventEncoding.h"
   #include "extern.h"
@@ -45,6 +45,7 @@ extern "C" {
 using std::map;
 using std::set;
 using std::unordered_set;
+using std::vector;
 
 bool operator<( const struct t_even& a, const struct t_even& b )
 {
@@ -77,6 +78,8 @@ struct EventTrait
   int partnerThreadID;
 
   bool restThreadsCanResume;
+  bool capturePreviousEvents;
+  bool rewriteLogicalReceive;
 
   int numParticipants;
   mutable int numArrived;
@@ -92,7 +95,7 @@ struct TEventSyncQueue
   set<EventTrait> insertedTraits;
 };
 
-#define debug  0
+#define debug  1
 // extern int debug;
 extern dimemas_timer current_time;
 
@@ -120,6 +123,8 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.type = CUDA_LIB_CALL_EV;
   tmpEventTrait.eventRest.value = CUDA_CONFIGURECALL_VAL;
   tmpEventTrait.restThreadsCanResume = false;
+  tmpEventTrait.capturePreviousEvents = true;
+  tmpEventTrait.rewriteLogicalReceive = true;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -135,6 +140,8 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.type = CUDA_LIB_CALL_EV;
   tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL;
   tmpEventTrait.restThreadsCanResume = false;
+  tmpEventTrait.capturePreviousEvents = true;
+  tmpEventTrait.rewriteLogicalReceive = true;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -150,6 +157,8 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.type = OMP_BARRIER;
   tmpEventTrait.eventRest.value = OMP_END_VAL;
   tmpEventTrait.restThreadsCanResume = false;
+  tmpEventTrait.capturePreviousEvents = false;
+  tmpEventTrait.rewriteLogicalReceive = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -165,6 +174,8 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
   tmpEventTrait.eventRest.value = OMP_BEGIN_VAL;
   tmpEventTrait.restThreadsCanResume = false;
+  tmpEventTrait.capturePreviousEvents = false;
+  tmpEventTrait.rewriteLogicalReceive = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -180,6 +191,8 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.type = OMP_EXECUTED_PARALLEL_FXN;
   tmpEventTrait.eventRest.value = OMP_END_VAL;
   tmpEventTrait.restThreadsCanResume = true;
+  tmpEventTrait.capturePreviousEvents = false;
+  tmpEventTrait.rewriteLogicalReceive = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.event.type = OMP_EXECUTED_PARALLEL_FXN;
@@ -188,10 +201,90 @@ void event_sync_init( void )
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 }
 
+
+map<EventTraitIndex, EventTrait>::iterator find_event_trait(struct t_even *whichEvent, int threadID )
+{
+  EventTraitIndex tmpEventTraitIndex;
+
+  tmpEventTraitIndex.event.type = whichEvent->type;
+  tmpEventTraitIndex.event.value = whichEvent->value;
+  if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
+    tmpEventTraitIndex.event.value = OMP_BEGIN_VAL;
+  tmpEventTraitIndex.isHost = ( threadID == 0 );
+
+  return syncEvents.find( tmpEventTraitIndex );
+}
+
 struct TEventSyncQueue *createEventSyncQueue()
 {
   return new struct TEventSyncQueue;
 }
+
+struct TCapturedEvents *createCapturedEvents()
+{
+  TCapturedEvents *tmp = new struct TCapturedEvents;
+  tmp->captureEvents = false;
+  tmp->treatAccEventBehavior = t_treat_acc_events_behavior::ALL;
+
+  return tmp;
+}
+
+
+t_boolean capture_previous_events( struct t_thread *whichThread,
+                                   struct t_even *whichEvent,
+                                   int threadID )
+{
+  if( whichThread->host )
+    return FALSE;
+
+  if( !whichThread->captured_events->captureEvents )
+  {
+    auto it = find_event_trait( whichEvent, threadID );
+    if( it == syncEvents.end() || !it->second.capturePreviousEvents )
+      return FALSE;
+
+    if( debug )
+      printf( "capture_previous_events-->after RET false\n");
+  
+    whichThread->captured_events->treatAccEventBehavior = t_treat_acc_events_behavior::STATES_AND_BLOCK;
+    treat_acc_event( whichThread, whichEvent );
+
+    whichThread->captured_events->captureEvents = true;
+  }
+
+  if( debug )
+  {
+    printf("\t event sync capture events:tid %d event type %llu val %llu\n", threadID, whichEvent->type, whichEvent->value);
+  }
+  
+  whichThread->captured_events->events.push_back( *whichEvent );
+
+  return TRUE;
+}
+
+
+t_boolean requires_rewrite_logical_receive( struct t_task *whichTask,
+                                            struct t_even *whichEvent,
+                                            int threadID )
+{
+  return FALSE;
+}
+
+
+void resumeCapturedEvents( struct t_thread *thread )
+{
+  thread->captured_events->captureEvents = false;
+  if( !thread->host )
+    thread->captured_events->treatAccEventBehavior = t_treat_acc_events_behavior::PARAVER_TIME;
+  for( auto it : thread->captured_events->events )
+  {
+    scheduler_treat_event( thread, &it );
+  }
+  if( !thread->host )
+    thread->captured_events->treatAccEventBehavior = t_treat_acc_events_behavior::ALL;
+  thread->captured_events->events.clear();
+}
+
 
 t_boolean event_sync_add( struct t_task *whichTask,
                           struct t_even *whichEvent,
@@ -221,16 +314,8 @@ t_boolean event_sync_add( struct t_task *whichTask,
             isCommCall );
   }
 
-  EventTraitIndex tmpEventTraitIndex;
-
-  tmpEventTraitIndex.event.type = whichEvent->type;
-  tmpEventTraitIndex.event.value = whichEvent->value;
-  if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
-    tmpEventTraitIndex.event.value = OMP_BEGIN_VAL;
-  tmpEventTraitIndex.isHost = ( threadID == 0 );
-
-  map<EventTraitIndex, EventTrait>::iterator tmpItTrait = syncEvents.find( tmpEventTraitIndex );
-  if( tmpItTrait == syncEvents.end() )
+  auto tmpItTrait = find_event_trait( whichEvent, threadID );
+  if ( tmpItTrait == syncEvents.end() )
     return FALSE;
 
   if( debug )
@@ -275,9 +360,13 @@ t_boolean event_sync_add( struct t_task *whichTask,
       if( tmpIt->partnerThreadID != PARTNER_ID_BARRIER && iThread > 0 )
         realThread = tmpIt->partnerThreadID;
 
-      whichTask->threads[ realThread ]->event_sync_reentry = TRUE;
-      whichTask->threads[ realThread ]->loose_cpu = TRUE;
-      SCHEDULER_thread_to_ready( whichTask->threads[ realThread ] );
+      struct t_thread * tmpThread = whichTask->threads[ realThread ];
+
+      resumeCapturedEvents( tmpThread );
+
+      tmpThread->event_sync_reentry = TRUE;
+      tmpThread->loose_cpu = TRUE;
+      SCHEDULER_thread_to_ready( tmpThread );
       reload_done = TRUE;
     }
 

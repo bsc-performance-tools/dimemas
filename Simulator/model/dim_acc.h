@@ -21,51 +21,20 @@
  * The GNU LEsser General Public License is contained in the file COPYING.   *
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
- \****************************************************************************/
+ \*****************************************************************************/
 
-#ifndef __event_sync_h
-#define __event_sync_h
+#ifndef __dim_acc_h
+#define __dim_acc_h
 
+#include "define.h"
 #include "types.h"
 
-#define PARTNER_ID_BARRIER -1
-
 #ifdef __cplusplus
-
-#include <vector>
-
-enum class t_treat_acc_events_behavior
-{
-  ALL = 0,
-  STATES_AND_BLOCK,
-  PARAVER_TIME
-};
-
-struct TCapturedEvents
-{
-  bool captureEvents;
-  std::vector<struct t_even > events;
-  t_treat_acc_events_behavior treatAccEventBehavior;
-};
-
 extern "C"
 {
-#else
-struct TCapturedEvents;
 #endif
-struct TEventSyncQueue;
 
-
-void event_sync_init( void );
-
-struct TEventSyncQueue *createEventSyncQueue();
-struct TCapturedEvents *createCapturedEvents();
-
-t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
-
-t_boolean capture_previous_events( struct t_thread *whichThread,
-                                   struct t_even *whichEvent,
-                                   int threadID );
+  void treat_acc_event( struct t_thread *thread, struct t_even *event );
 
 #ifdef __cplusplus
 }

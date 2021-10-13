@@ -594,7 +594,7 @@ t_nano compute_startup( struct t_thread *thread,
       {
         startup = send_node->acc.memory_startup;
       }
-      else if( mess_commid != 0 )
+      else if( mess_commid != 0 && thread->host )
       {
         startup = send_node->acc.startup;
       }
@@ -3998,6 +3998,13 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
   if( !thread_receiver->host && mess->communic_id != 0 &&
       event_sync_add( thread_receiver->task, &tmpEvent, thread_receiver->threadid, thread_receiver->threadid, TRUE ) )
     return;
+
+  //TODO: el logical recv tiene que pasar a ser current time en la reentrada del event_sync
+  //TODO: eso lo sabremos llamando a la funcion requires_rewrite_logical_receive
+  //TODO: una alternativa es que event_sync_add tenga un parametro de salida que ya lo indique para
+  //TODO: no hacer 2 veces la busqueda 
+  /* recieve time must be after synchronization */
+  // if (buscar_en_ev_trait) thread_receiver->logical_recv = current_time;
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
