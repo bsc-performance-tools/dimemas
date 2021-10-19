@@ -289,11 +289,12 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
   {
     cpu = select_free_cpu( node, thread );
 
-    assert( cpu->is_gpu == FALSE );
     if ( cpu == C_NIL )
     {
       panic( "Can't get free processor on node %d\n", node->nodeid );
     }
+    assert( cpu->is_gpu == FALSE );
+
     cpu->current_thread = thread;
     thread->cpu         = cpu;
 
@@ -681,12 +682,6 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               { /*	It's a CPU burst	*/
                 PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
               }
-              else if ( thread->kernel && ( CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) ||
-                                            OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
-              {
-                /*	It's a GPU burst	*/
-                PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-              }
               else if ( ( thread->host || thread->kernel ) &&
                         ( CUDAEventEncoding_Is_CUDABlock( thread->acc_in_block_event.type ) ||
                           OCLEventEncoding_Is_OCLBlock( thread->acc_in_block_event.type ) ) &&
@@ -973,7 +968,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             break;
           }
           default:
-            panic( "Unkown action %d to P%02d T%02d (t%02d)\n", action->action, IDENTIFIERS( thread ) );
+            panic( "Unknown action %d to P%02d T%02d (t%02d)\n", action->action, IDENTIFIERS( thread ) );
         }
       }
 

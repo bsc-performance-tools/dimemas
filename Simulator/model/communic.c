@@ -3799,7 +3799,6 @@ void COMMUNIC_send( struct t_thread *thread_sender )
           }
           else
           {
-            // TODO revisar esta condicion si ha de ser para todas las llamadas o solo para los memcopy
             if ( thread_sender->original_thread &&
                  ( CUDAEventEncoding_Is_CUDABlock( thread_sender->acc_in_block_event.type ) ||
                    OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event ) ) &&
@@ -3815,7 +3814,6 @@ void COMMUNIC_send( struct t_thread *thread_sender )
       }
       else /* hi_ha_irecv || partner != TH_NIL */
       {
-        // TODO revisar esta condicion si ha de ser para todas las llamadas o solo para los memcopy
         if ( thread_sender->original_thread && ( CUDAEventEncoding_Is_CUDABlock( thread_sender->acc_in_block_event.type ) ||
                                           OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event ) ) )
         {
@@ -3998,13 +3996,6 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
   if( !thread_receiver->host && mess->communic_id != 0 &&
       event_sync_add( thread_receiver->task, &tmpEvent, thread_receiver->threadid, thread_receiver->threadid, TRUE ) )
     return;
-
-  //TODO: el logical recv tiene que pasar a ser current time en la reentrada del event_sync
-  //TODO: eso lo sabremos llamando a la funcion requires_rewrite_logical_receive
-  //TODO: una alternativa es que event_sync_add tenga un parametro de salida que ya lo indique para
-  //TODO: no hacer 2 veces la busqueda 
-  /* recieve time must be after synchronization */
-  // if (buscar_en_ev_trait) thread_receiver->logical_recv = current_time;
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )

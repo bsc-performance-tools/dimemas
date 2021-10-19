@@ -79,6 +79,11 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     {
       PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
+    else if ( thread->kernel && ( CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) ||
+                                  OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
+    {
+      PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
+    }
     /* CUDA cpu states */
 
     /* OpenCL cpu states */

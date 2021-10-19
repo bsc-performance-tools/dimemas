@@ -938,6 +938,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->action                   = AC_NIL;
   thread->original_thread          = TRUE;
   thread->twin_thread              = TH_NIL;
+  thread->cpu                      = C_NIL;
   thread->doing_context_switch     = FALSE;
   thread->min_time_to_be_preempted = current_time;
   thread->doing_busy_wait          = FALSE;

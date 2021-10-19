@@ -36,6 +36,7 @@ extern "C" {
   #include "schedule.h"
   #include "define.h"
   #include "EventEncoding.h"
+  #include "events.h"
   #include "extern.h"
   #include "list.h"
   #include "node.h"
@@ -79,7 +80,7 @@ struct EventTrait
 
   bool restThreadsCanResume;
   bool capturePreviousEvents;
-  bool rewriteLogicalReceive;
+  t_boolean rewriteLogicalReceive;
 
   int numParticipants;
   mutable int numArrived;
@@ -124,7 +125,7 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.value = CUDA_CONFIGURECALL_VAL;
   tmpEventTrait.restThreadsCanResume = false;
   tmpEventTrait.capturePreviousEvents = true;
-  tmpEventTrait.rewriteLogicalReceive = true;
+  tmpEventTrait.rewriteLogicalReceive = TRUE;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -141,7 +142,7 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL;
   tmpEventTrait.restThreadsCanResume = false;
   tmpEventTrait.capturePreviousEvents = true;
-  tmpEventTrait.rewriteLogicalReceive = true;
+  tmpEventTrait.rewriteLogicalReceive = TRUE;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -158,7 +159,7 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.value = OMP_END_VAL;
   tmpEventTrait.restThreadsCanResume = false;
   tmpEventTrait.capturePreviousEvents = false;
-  tmpEventTrait.rewriteLogicalReceive = false;
+  tmpEventTrait.rewriteLogicalReceive = FALSE;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -175,7 +176,7 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.value = OMP_BEGIN_VAL;
   tmpEventTrait.restThreadsCanResume = false;
   tmpEventTrait.capturePreviousEvents = false;
-  tmpEventTrait.rewriteLogicalReceive = false;
+  tmpEventTrait.rewriteLogicalReceive = FALSE;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.isHost = false;
@@ -192,7 +193,7 @@ void event_sync_init( void )
   tmpEventTrait.eventRest.value = OMP_END_VAL;
   tmpEventTrait.restThreadsCanResume = true;
   tmpEventTrait.capturePreviousEvents = false;
-  tmpEventTrait.rewriteLogicalReceive = false;
+  tmpEventTrait.rewriteLogicalReceive = FALSE;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.event.type = OMP_EXECUTED_PARALLEL_FXN;
@@ -263,11 +264,17 @@ t_boolean capture_previous_events( struct t_thread *whichThread,
 }
 
 
-t_boolean requires_rewrite_logical_receive( struct t_task *whichTask,
-                                            struct t_even *whichEvent,
+t_boolean requires_rewrite_logical_receive( struct t_even *whichEvent,
                                             int threadID )
 {
-  return FALSE;
+  if( validSyncTypes.find( whichEvent->type ) == validSyncTypes.end() )
+    return FALSE;
+
+  auto tmpItTrait = find_event_trait( whichEvent, threadID );
+  if ( tmpItTrait == syncEvents.end() )
+    return FALSE;
+  
+  return tmpItTrait->second.rewriteLogicalReceive;
 }
 
 
@@ -363,6 +370,10 @@ t_boolean event_sync_add( struct t_task *whichTask,
       struct t_thread * tmpThread = whichTask->threads[ realThread ];
 
       resumeCapturedEvents( tmpThread );
+      if( tmpEventTrait.rewriteLogicalReceive )
+      {
+        tmpThread->logical_recv = current_time;
+      }
 
       tmpThread->event_sync_reentry = TRUE;
       tmpThread->loose_cpu = TRUE;
