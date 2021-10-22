@@ -438,6 +438,7 @@ t_nano SCHEDULER_get_execution_time( struct t_thread *thread )
   /* the following call " .get_execution_time " is mandatory */
   ti = ( *SCH[ machine->scheduler.policy ].get_execution_time )( thread );
   
+  /* for ideal configuration ignore the burst inside the configure call */
   if ( thread->kernel && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 )
     ti = 0;
 
@@ -841,7 +842,10 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               if ( action->action != WORK && action->action != GPU_BURST )
                 goto next_op;
 
-              thread->loose_cpu = FALSE;
+              if ( thread->kernel == TRUE )
+                thread->loose_cpu = FALSE;
+              else
+                thread->loose_cpu = TRUE;
               SCHEDULER_thread_to_ready( thread );
             }
             break;
@@ -990,7 +994,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
     }
     case SCH_NEW_JOB:
     {
-      if ( num_free_cpu( node ) > 0 )
+      if ( num_free_cpu( node ) > 0 || thread->kernel == TRUE )
       {
         /* The new one is the unique one */
         SCHEDULER_next_thread_to_run( node );
