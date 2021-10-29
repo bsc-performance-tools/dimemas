@@ -7966,7 +7966,13 @@ t_boolean haveAllKernelsArrived( struct t_task *task, int comm_id )
   t_boolean return_val = FALSE;
   if ( comm_id == -1 )
   {
-    return_val = task->KernelSync_n_elems == task->threads_in_accelerator;
+    int numNotCreated = 0;
+    for( int i = 0; i < task->threads_in_accelerator; ++i)
+    {
+      if( task->threads[ i ]->first_acc_event_read == FALSE )
+        ++numNotCreated;
+    }
+    return_val = task->KernelSync_n_elems + numNotCreated == task->threads_in_accelerator;
   }
   else
   {
