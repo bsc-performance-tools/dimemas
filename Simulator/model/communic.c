@@ -1576,8 +1576,7 @@ static void message_received( struct t_thread *thread_sender )
     /* Host will compute a startup after the communication */
     int host_startup = !ocl_comm && 
                        ( cuda_comm  && !sync_comm && 
-                         thread_sender->acc_in_block_event.type == CUDA_LIB_CALL_EV &&
-                         thread_sender->acc_in_block_event.value == CUDA_MEMCPY_VAL );
+                         CUDAEventEncoding_Is_CUDAMemcpy( thread_sender->acc_in_block_event ) );
 
     if ( paraver_comm )
     {
@@ -4376,21 +4375,12 @@ void COMMUNIC_Irecv( struct t_thread *thread_receiver )
     }
   }
 
-  if ( thread_receiver->acc_in_block_event.type == CUDA_LIB_CALL_EV && thread_receiver->acc_in_block_event.value == CUDA_MEMCPY_ASYNC_VAL )
+  thread_receiver->action = action->next;
+  READ_free_action( action );
+  if ( more_actions( thread_receiver ) )
   {
-    /* this is a dependency synchronization
-        put it on the recv list of the thread  */
-    inFIFO_queue( &( thread_receiver->recv ), (char *)thread_receiver );
-  }
-  else
-  {
-    thread_receiver->action = action->next;
-    READ_free_action( action );
-    if ( more_actions( thread_receiver ) )
-    {
-      thread_receiver->loose_cpu = FALSE;
-      SCHEDULER_thread_to_ready( thread_receiver );
-    }
+    thread_receiver->loose_cpu = FALSE;
+    SCHEDULER_thread_to_ready( thread_receiver );
   }
 }
 

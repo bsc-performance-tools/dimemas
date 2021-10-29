@@ -177,6 +177,7 @@ extern "C"
      ==== CUDA Event Types
      ========================================================================== */
 
+#define NEW_CUDA_LIB_CALL_EV  63100000
 #define CUDA_LIB_CALL_EV      63000001
 #define CUDA_MEMCPY_SIZE_EV   63000002
 #define CUDA_KERNEL_EV        63000019
@@ -1054,6 +1055,7 @@ extern "C"
   int CUDAEventEncoding_Is_BlockBegin( long64_t Op );
   int CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver );
   int CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event );
   int CUDAEventEconding_Is_CUDALaunch( struct t_event_block event );
   int CUDAEventEconding_Is_CUDASync( struct t_event_block event );

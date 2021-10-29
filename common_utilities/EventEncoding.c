@@ -759,11 +759,6 @@ int ClusterEventEncoding_Is_BlockBegin( long64_t Op )
   return ( ( Op == (long64_t)CLUSTEREND_VAL ) ? FALSE : TRUE );
 }
 
-/******************************************************************************
- **      Function name : ClusterEventEncoding_DimemasBlockId
- **
- **      Description :
- ******************************************************************************/
 
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value )
 {
@@ -779,31 +774,15 @@ typedef struct
 
 } CUDATypeInfo;
 
-/******************************************************************************
- **      Function name : CUDAEventEncoding_Is_CUDABlock
- **
- **      Description :
- ******************************************************************************/
 Boolean CUDAEventEncoding_Is_CUDABlock( long64_t type )
 {
-  return ( ( type == (long64_t)CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
+  return ( ( type == CUDA_LIB_CALL_EV || type == NEW_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEncoding_Is_BlockBegin
- **
- **      Description :
- ******************************************************************************/
 Boolean CUDAEventEncoding_Is_BlockBegin( long64_t Op )
 {
   return ( ( Op == (long64_t)CUDA_END_VAL ) ? FALSE : TRUE );
 }
-
-/******************************************************************************
- **      Function name : CUDAEventEncoding_Is_CUDAComm
- **
- **      Description : Returns true if it's a CUDA communication
- ******************************************************************************/
 
 Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver )
 {
@@ -812,51 +791,37 @@ Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread 
     return TRUE;
   return FALSE;
 }
-
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDAConfigCall
- **
- **      Description : Returns true if it's a Cuda_MemCpy event
- ******************************************************************************/
 Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
     return TRUE;
   return FALSE;
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDAConfigCall
- **
- **      Description : Returns true if it's a CudaConfigCall event
- ******************************************************************************/
+Boolean CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_MEMCPY_VAL )
+    return TRUE;
+  return FALSE;
+}
+
 Boolean CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && event.value == CUDA_CONFIGURECALL_VAL )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_CONFIGURECALL_VAL )
     return TRUE;
   return FALSE;
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDALaunch
- **
- **      Description : Returns true if it's a CudaLaunch event
- ******************************************************************************/
 Boolean CUDAEventEconding_Is_CUDALaunch( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && event.value == CUDA_LAUNCH_VAL )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_LAUNCH_VAL )
     return TRUE;
   return FALSE;
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDASync
- **
- **      Description : Returns true if it's a CudaThreadSync or CudaStreamSync
- ******************************************************************************/
 Boolean CUDAEventEconding_Is_CUDASync( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && ( event.value == CUDA_THREADSYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_THREADSYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
     return TRUE;
   return FALSE;
 }

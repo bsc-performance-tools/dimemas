@@ -96,8 +96,7 @@ struct TEventSyncQueue
   set<EventTrait> insertedTraits;
 };
 
-#define debug  1
-// extern int debug;
+extern int debug;
 extern dimemas_timer current_time;
 
 map<EventTraitIndex, EventTrait> syncEvents;
@@ -110,6 +109,7 @@ void event_sync_init( void )
   EventTrait tmpEventTrait;
 
   validSyncTypes.insert( CUDA_LIB_CALL_EV );
+  validSyncTypes.insert( NEW_CUDA_LIB_CALL_EV );
   validSyncTypes.insert( OMP_BARRIER );
   validSyncTypes.insert( OMP_EXECUTED_PARALLEL_FXN );
   validSyncTypes.insert( OMP_PARALLEL_EV );
@@ -131,6 +131,18 @@ void event_sync_init( void )
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
+
+  // NEW_CUDA_LIB_CALL_EV
+  tmpEventIndex.event.type = NEW_CUDA_LIB_CALL_EV;
+  tmpEventIndex.isHost = true;
+
+  tmpEventTrait.eventHost.type = NEW_CUDA_LIB_CALL_EV;
+  tmpEventTrait.eventRest.type = NEW_CUDA_LIB_CALL_EV;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  tmpEventIndex.isHost = false;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
   // ------- CUDA_LIB_CALL_EV + CUDA_LAUNCH_VAL -------
   tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
   tmpEventIndex.event.value = CUDA_LAUNCH_VAL;
@@ -147,6 +159,18 @@ void event_sync_init( void )
 
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  // NEW_CUDA_LIB_CALL_EV
+  tmpEventIndex.event.type = NEW_CUDA_LIB_CALL_EV;
+  tmpEventIndex.isHost = true;
+
+  tmpEventTrait.eventHost.type = NEW_CUDA_LIB_CALL_EV;
+  tmpEventTrait.eventRest.type = NEW_CUDA_LIB_CALL_EV;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+
+  tmpEventIndex.isHost = false;
+  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+  
 
   // ------- OMP_BARRIER + OMP_END_VAL -------
   tmpEventIndex.event.type = OMP_BARRIER;
@@ -306,7 +330,7 @@ t_boolean event_sync_add( struct t_task *whichTask,
   }
 
   if( validSyncTypes.find( whichEvent->type ) == validSyncTypes.end() ||
-      ( whichEvent->type == CUDA_LIB_CALL_EV && !isCommCall ) )
+      ( CUDAEventEncoding_Is_CUDABlock( whichEvent->type ) && !isCommCall ) )
     return FALSE;
 
   if ( debug )
