@@ -88,6 +88,8 @@ int *PREEMP_table; /* Array to manage preemption cycles for each task */
 t_boolean synthetic_bursts = FALSE;
 struct t_queue burst_categories;
 
+extern t_boolean all_CUDA_streams_created;
+
 /*
  * Private functions
  */
@@ -531,10 +533,11 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   create_queue( &( task->th_for_in ) );
   create_queue( &( task->th_for_out ) );
 
-  task->KernelSync             = NULL; // Means no thread is waiting
-  task->KernelSync_n_elems     = 0;
+  task->totalCreatedStreams    = 1;      // Execution starts with default stream created
+  task->StreamSync             = NULL;   // Means no thread is waiting
+  task->StreamSync_n_elems     = 0;
   task->HostSync               = TH_NIL; // Means no root is waiting
-  task->KernelByComm           = -1;     // Means no root is waiting for kernel
+  task->StreamByComm           = -1;     // Means no root is waiting for kernel
   task->threads_in_accelerator = 0;
 }
 
@@ -971,6 +974,8 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->seek_position            = 0;
   thread->base_priority            = 0;
 
+  thread->stream_created           = FALSE;  // stream_created field should not be checked unless it is an accelerator stream
+
   thread->sstask_id   = 0;
   thread->sstask_type = 0;
 
@@ -1014,21 +1019,23 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   /* Accelerator variables */
   if ( task->accelerator && thread_id > 0 )
   {
-    thread->kernel = TRUE;
+    thread->stream = TRUE;
     thread->host   = FALSE;
 
+    thread->stream_created = ( all_CUDA_streams_created || thread_id <= 1 );  // only default stream starts created 
+
     ++task->threads_in_accelerator;
-    task->KernelSync = realloc( task->KernelSync, sizeof(struct t_thread *) * task->threads_in_accelerator );
-    task->KernelSync[ task->threads_in_accelerator - 1 ] = TH_NIL;
+    task->StreamSync = realloc( task->StreamSync, sizeof(struct t_thread *) * task->threads_in_accelerator );
+    task->StreamSync[ task->threads_in_accelerator - 1 ] = TH_NIL;
   }
   else if ( task->accelerator && thread_id == 0 )
   {
-    thread->kernel = FALSE;
+    thread->stream = FALSE;
     thread->host   = TRUE;
   }
   else
   { /*	It's not an accelerator task	*/
-    thread->kernel = FALSE;
+    thread->stream = FALSE;
     thread->host   = FALSE;
   }
 
@@ -1232,7 +1239,7 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
 
   /* Accelerator variables */
   copy_thread->host                  = thread->host;
-  copy_thread->kernel                = thread->kernel;
+  copy_thread->stream                = thread->stream;
   copy_thread->accelerator_link      = thread->accelerator_link;
   copy_thread->first_acc_event_read  = thread->first_acc_event_read;
   copy_thread->acc_in_block_event    = thread->acc_in_block_event;
@@ -1308,7 +1315,7 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   new_account( &( copy_thread->account ), node->nodeid );
 
   copy_thread->host                      = thread->host;
-  copy_thread->kernel                    = thread->kernel;
+  copy_thread->stream                    = thread->stream;
   copy_thread->accelerator_link          = thread->accelerator_link;
   copy_thread->first_acc_event_read      = thread->first_acc_event_read;
   copy_thread->acc_in_block_event        = thread->acc_in_block_event;

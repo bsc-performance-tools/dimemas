@@ -1059,6 +1059,8 @@ extern "C"
   int CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event );
   int CUDAEventEconding_Is_CUDALaunch( struct t_event_block event );
   int CUDAEventEconding_Is_CUDASync( struct t_event_block event );
+  int CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event );
+
 
   /* OpenCL EventEncoding calls	*/
   int OCLEventEncoding_Is_OCLBlock( long64_t type );

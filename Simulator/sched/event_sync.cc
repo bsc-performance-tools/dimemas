@@ -415,3 +415,9 @@ t_boolean event_sync_add( struct t_task *whichTask,
 
   return TRUE;
 }
+
+//todo: hay comunicaciones a si mismo en el host (cudalaunch dirigidas al host) y esto no funciona en dimemas.
+
+//TODO: EN EL PRV2DIM SE HAN DE BORRAR LAS COMUNICACIONES A SÍ MISMO (A NIVEL DE THREAD).
+//TODO: en el capture_events si llega el evento de cierre del bloque, la comunicacion que deberia haber resumido a los eventos capturados
+//todo: se ha eliminado en el prv2dim y por tanto se ha de resumir en este instante.

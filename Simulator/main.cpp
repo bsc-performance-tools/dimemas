@@ -137,6 +137,8 @@ t_boolean simulation_rebooted        = FALSE;
 t_boolean extra_assert           = FALSE;
 t_boolean Critical_Path_Analysis = FALSE;
 
+t_boolean all_CUDA_streams_created = FALSE;
+
 using namespace std;
 
 void print_dimemas_header()
@@ -230,6 +232,8 @@ void parse_arguments( int argc, char *argv[] )
   bool asynch_read_bool;
 
   int sintetic_io_applications;
+  
+  bool all_streams_created;
 
   namespace po = boost::program_options;
 
@@ -285,15 +289,17 @@ void parse_arguments( int argc, char *argv[] )
     */
     ( "clean-deadlocks", po::value<float>( &danalysis_deactivation_percent ), "Try to recover from deadlocks if any" )
 #ifdef VENUS_ENABLED
-      ( "venus", po::bool_switch( &venus_enabled ), "Enable venus (default conn localhost:default_port)" )(
-        "venuscon",
-        po::value<string>( &venus_conn_url )->default_value( NULL ),
-        "Connect to venus server at host:port" )
+    ( "venus", po::bool_switch( &venus_enabled ), "Enable venus (default conn localhost:default_port)" )
+    ( "venuscon",
+      po::value<string>( &venus_conn_url )->default_value( NULL ),
+      "Connect to venus server at host:port" )
 #endif
-        ( "asynch-read", po::bool_switch( &asynch_read_bool ), "Wakes up a new thread for read the input trace" )(
-          "asynch-max-buffer",
-          po::value<int>( &asynch_buffer_size_mb ),
-          "Max size of the asynch read buffer in MB (default: 10MB)" );
+    ( "asynch-read", po::bool_switch( &asynch_read_bool ), "Wakes up a new thread for read the input trace" )(
+      "asynch-max-buffer",
+      po::value<int>( &asynch_buffer_size_mb ),
+      "Max size of the asynch read buffer in MB (default: 10MB)" ),
+    ( "create-cuda-streams", po::bool_switch( &all_streams_created ), "Force all CUDA streams to be created from the beginning." );
+
 
   po::options_description mandatory( "Mandatory options" );
   mandatory.add_options()
@@ -502,6 +508,9 @@ void parse_arguments( int argc, char *argv[] )
     short_out_info = TRUE;
   else
     short_out_info = FALSE;
+
+  if ( all_streams_created )
+    all_CUDA_streams_created = TRUE;
 }
 
 double ddiff( struct timespec start, struct timespec end )

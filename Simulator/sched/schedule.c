@@ -105,7 +105,7 @@ void SCHEDULER_Init()
           panic( "P%02d T%02d (t%02d) must begin execution with work\n", IDENTIFIERS( thread ) );
         }
 
-        if ( thread->task->accelerator && thread->kernel )
+        if ( thread->task->accelerator && thread->stream )
         {
           thread->loose_cpu = FALSE;
         }
@@ -115,7 +115,10 @@ void SCHEDULER_Init()
         }
 
         ( *SCH[ machine->scheduler.policy ].init_scheduler_parameters )( thread );
-        SCHEDULER_thread_to_ready( thread );
+        if ( thread->stream == FALSE || thread->stream_created == TRUE )
+        {
+          SCHEDULER_thread_to_ready( thread );
+        }
       }
     }
   }
@@ -205,7 +208,7 @@ void SCHEDULER_reload( struct t_Ptask *Ptask )
       {
         panic( "P%02d T%02d (t%02d) without initial actions\n", IDENTIFIERS( thread ) );
       }
-      if ( thread->task->accelerator && thread->kernel )
+      if ( thread->task->accelerator && thread->stream )
       {
         thread->loose_cpu = FALSE;
       }
@@ -248,7 +251,7 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
 
   machine = node->machine;
 
-  if ( !thread->kernel && !thread->host && !thread->event_sync_reentry)
+  if ( !thread->stream && !thread->host && !thread->event_sync_reentry)
   { /* If is a wait in accelerator event block, no wait thrown to fill original trace */
     PARAVER_Wait( 0, IDENTIFIERS( thread ), thread->last_paraver, current_time, PRV_SYNC_ST );
     thread->last_paraver = current_time;
@@ -257,7 +260,7 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
   SUB_TIMER( current_time, thread->put_into_ready, tmp_timer );
   ADD_TIMER( tmp_timer, account->time_ready_without_cpu, account->time_ready_without_cpu );
 
-  if ( thread->task->accelerator && thread->kernel == TRUE )
+  if ( thread->task->accelerator && thread->stream == TRUE )
   {
     // 0. Ensure that this is an heterogeneous node
     // 1. Look for CPU with is_gpu = 1
@@ -439,7 +442,7 @@ t_nano SCHEDULER_get_execution_time( struct t_thread *thread )
   ti = ( *SCH[ machine->scheduler.policy ].get_execution_time )( thread );
   
   /* for ideal configuration ignore the burst inside the configure call */
-  if ( thread->kernel && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 )
+  if ( thread->stream && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 )
     ti = 0;
 
   account = current_account( thread );
@@ -588,11 +591,11 @@ void scheduler_treat_event(struct t_thread *thread, struct t_even *event )
 
   /* Not printing block end if it is a clEnqueueNDRangeKernel because
     * it has been printed yet in COMMUNIC_SEND
-    * Not printing event if kernel needs a previous sync (in barrier)
+    * Not printing event if stream needs a previous sync (in barrier)
     */
   int printing_event =
     !thread->acc_recv_sync &&
-    !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->kernel && event->value == 0 );
+    !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->stream && event->value == 0 );
   if ( printing_event )
   { /* If it is not an accelerator event that has to wait to be written */
     struct t_cpu *cpu;
@@ -668,9 +671,9 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           {
             action = thread->action;
 
-            if ( thread->kernel && !thread->first_acc_event_read )
+            if ( thread->stream && !thread->first_acc_event_read )
             {
-              /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
+              /* Previous at accelerator events in stream thread must be NOT_CREATED state in CPU	*/
               PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
             }
             else if ( thread->idle_block )
@@ -683,12 +686,12 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               { /*	It's a CPU burst	*/
                 PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
               }
-              else if ( ( thread->host || thread->kernel ) &&
+              else if ( ( thread->host || thread->stream ) &&
                         ( CUDAEventEncoding_Is_CUDABlock( thread->acc_in_block_event.type ) ||
                           OCLEventEncoding_Is_OCLBlock( thread->acc_in_block_event.type ) ) &&
                         CUDAEventEncoding_Is_BlockBegin( thread->acc_in_block_event.value ) )
               {
-                /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
+                /* Do not throw anything if host or stream is inside a CUDA or OpenCL event block	*/
               }
               else if ( thread->omp_worker_thread || ( thread->omp_master_thread && OMPEventEncoding_Is_OMPType( thread->omp_in_block_event.type ) &&
                                                        OMPEventEncoding_Is_BlockBegin( thread->omp_in_block_event.value ) ) )
@@ -706,8 +709,8 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         }
       }
       thread->last_paraver = current_time;
-      // Accelerator kernel threads always in same gpu
-      if( !( thread->task->accelerator == TRUE && thread->kernel == TRUE ) )
+      // Accelerator stream threads always in same gpu
+      if( !( thread->task->accelerator == TRUE && thread->stream == TRUE ) )
         cpu->current_thread  = TH_NIL;
 
       if ( thread->doing_context_switch )
@@ -842,7 +845,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               if ( action->action != WORK && action->action != GPU_BURST )
                 goto next_op;
 
-              if ( thread->kernel == TRUE )
+              if ( thread->stream == TRUE )
                 thread->loose_cpu = FALSE;
               else
                 thread->loose_cpu = TRUE;
@@ -976,7 +979,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         }
       }
 
-      if ( thread->kernel == TRUE )
+      if ( thread->stream == TRUE )
         thread->loose_cpu = FALSE;
       /*assert (thread->loose_cpu == FALSE);*/
 
@@ -994,7 +997,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
     }
     case SCH_NEW_JOB:
     {
-      if ( num_free_cpu( node ) > 0 || thread->kernel == TRUE )
+      if ( num_free_cpu( node ) > 0 || thread->stream == TRUE )
       {
         /* The new one is the unique one */
         SCHEDULER_next_thread_to_run( node );
@@ -1332,13 +1335,13 @@ t_boolean more_actions( struct t_thread *thread )
     else
     {
       struct t_cpu *cpu;
-      if ( !thread->kernel )
-      { /* In kernel thread last cpu state is Not_Created thrown by host (above) */
+      if ( !thread->stream )
+      { /* In stream thread last cpu state is Not_Created thrown by host (above) */
         cpu = get_cpu_of_thread( thread );
         PARAVER_Dead( cpu->unique_number, IDENTIFIERS( thread ), current_time );
       }
 
-      /* Not_created state in kernel from last paraver event to end of trace */
+      /* Not_created state in stream from last paraver event to end of trace */
       if ( thread->host )
       {
         int threads_it;
@@ -1346,7 +1349,7 @@ t_boolean more_actions( struct t_thread *thread )
         for ( threads_it = 0; threads_it < task->threads_count; threads_it++ )
         {
           tmp_thread = task->threads[ threads_it ];
-          if ( tmp_thread->kernel )
+          if ( tmp_thread->stream )
           {
             PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( tmp_thread ), tmp_thread->last_paraver, current_time );
           }

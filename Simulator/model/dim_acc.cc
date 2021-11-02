@@ -29,6 +29,7 @@ extern "C" {
   #include "define.h"
   #include "EventEncoding.h"
   #include "paraver.h"
+  #include "schedule.h"
 }
 
 #include "event_sync.h"
@@ -49,7 +50,7 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
   int block_begin = CUDAEventEncoding_Is_BlockBegin( event->value );
 
   if ( !thread->first_acc_event_read )
-  { /*	when in kernel thread first CUDA/OpenCL event  occurred,
+  { /*	when in stream thread first CUDA/OpenCL event  occurred,
         indicated to stop generating NOT_CREATED states in CPU	*/
     thread->first_acc_event_read = TRUE;
   }
@@ -59,13 +60,21 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
   {
     struct t_cpu *cpu = get_cpu_of_thread( thread );
 
+
+    if ( CUDAEventEconding_Is_CUDAStreamCreate( event ) )
+    {
+      ++thread->task->totalCreatedStreams;
+      thread->task->threads[ thread->task->totalCreatedStreams ]->stream_created = TRUE;
+      SCHEDULER_thread_to_ready( thread->task->threads[ thread->task->totalCreatedStreams ] );
+    }
+
     /* CUDA cpu states */
     if ( !block_begin && CUDAEventEconding_Is_CUDAConfigCall( thread->acc_in_block_event ) )
     { /* If ending a Config Call event, cpu state is Others	*/
       PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
-    else if ( !block_begin && !thread->kernel && CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) )
+    else if ( !block_begin && !thread->stream && CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) )
     { /* If ending a Launch event, cpu state is Thread Scheduling	*/
       PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
@@ -79,7 +88,7 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     {
       PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
-    else if ( thread->kernel && ( CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) ||
+    else if ( thread->stream && ( CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) ||
                                   OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
     {
       PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
@@ -111,7 +120,7 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
   if( thread->captured_events->treatAccEventBehavior == t_treat_acc_events_behavior::PARAVER_TIME ||
       thread->captured_events->treatAccEventBehavior == t_treat_acc_events_behavior::ALL )
   {
-    // if ( CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) && thread->kernel )
+    // if ( CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) && thread->stream )
     // { /* Event waits when receive comm to be written	*/
     //   thread->acc_recv_sync = TRUE;
     // }

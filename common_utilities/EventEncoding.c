@@ -786,8 +786,8 @@ Boolean CUDAEventEncoding_Is_BlockBegin( long64_t Op )
 
 Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver )
 {
-  if( ( sender != NULL && sender->kernel ) ||
-      ( receiver != NULL && receiver->kernel ) )
+  if( ( sender != NULL && sender->stream ) ||
+      ( receiver != NULL && receiver->stream ) )
     return TRUE;
   return FALSE;
 }
@@ -822,6 +822,13 @@ Boolean CUDAEventEconding_Is_CUDALaunch( struct t_event_block event )
 Boolean CUDAEventEconding_Is_CUDASync( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_THREADSYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event->type ) == TRUE && event->value == CUDA_STREAM_CREATE_VAL )
     return TRUE;
   return FALSE;
 }

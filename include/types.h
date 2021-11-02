@@ -764,12 +764,14 @@ struct t_task
   // CUDA variables
   t_boolean accelerator;
 
-  struct t_thread **KernelSync; /*	Kernel thread of sync	*/
-  int KernelSync_n_elems;
+  int totalCreatedStreams;      /* number of streams already created */
+
+  struct t_thread **StreamSync; /* Kernel thread of sync */
+  int StreamSync_n_elems;
   
-  struct t_thread *HostSync;   /*	Host thread of sync	*/
-  int KernelByComm;            /* Kernel_id indicated in comm_id for global_op */
-  int threads_in_accelerator;          /* Number of threads (e.g. CUDA streams) executed in gpu */
+  struct t_thread *HostSync;    /* Host thread of sync */
+  int StreamByComm;             /* Stream_id indicated in comm_id for global_op */
+  int threads_in_accelerator;   /* Number of threads (e.g. CUDA streams) executed in gpu */
 
   // event synchronization
   struct TEventSyncQueue *event_sync_queue;
@@ -955,11 +957,11 @@ struct t_thread
 
   // Accelerator variables
   t_boolean host;                  /* Indicates if it's an accelerator host thread	*/
-  t_boolean kernel;                /* Indicates if it's an accelerator kernel thread	*/
+  t_boolean stream;                /* Indicates if it's an accelerator stream thread	*/
+  t_boolean stream_created;        /* Indicates if this stream has been created */
   struct t_link *accelerator_link; /* Accelerator link for communications	*/
-  t_boolean first_acc_event_read;  /* Throws a NOT_CREATED_ST before */
-  /* start if it's a kernel thread	*/
-  t_boolean acc_recv_sync;                   /* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
+  t_boolean first_acc_event_read;  /* Throws a NOT_CREATED_ST before start if it's a stream thread	*/
+  t_boolean acc_recv_sync;                   /* Indicates if receiver has to wait to comm to start block (Syncs in stream) */
   t_boolean acc_sender_sync;                 /* Indicates if sender has to wait to receiver receives	*/
   t_boolean doing_acc_comm;                  /* Do not print startup latencies	*/
   t_boolean blocked_in_global_op;            /* To control threads inside acc sync */
