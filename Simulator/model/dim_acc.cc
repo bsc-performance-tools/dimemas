@@ -63,9 +63,9 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
 
     if ( CUDAEventEconding_Is_CUDAStreamCreate( event ) )
     {
-      ++thread->task->totalCreatedStreams;
-      thread->task->threads[ thread->task->totalCreatedStreams ]->stream_created = TRUE;
-      SCHEDULER_thread_to_ready( thread->task->threads[ thread->task->totalCreatedStreams ] );
+      struct t_thread * created_stream = thread->task->threads[ ++thread->task->totalCreatedStreams ];
+      created_stream->stream_created = TRUE;
+      SCHEDULER_thread_to_ready( created_stream );
     }
 
     /* CUDA cpu states */

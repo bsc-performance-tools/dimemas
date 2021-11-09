@@ -241,6 +241,34 @@ struct t_cpu *select_free_cpu( struct t_node *node, struct t_thread *thread )
   return ( C_NIL );
 }
 
+struct t_cpu * assign_gpu( struct t_thread *thread, struct t_node *node )
+{
+  struct t_cpu *cpu = NULL;
+  struct t_account *account = current_account( thread );
+  
+  if (thread->cpu != NULL)
+    return thread->cpu;
+  // 1. Look for CPU with is_gpu = 1
+  for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
+  {
+    // check either the cpu has thread or not.
+    if ( cpu->is_gpu == TRUE && cpu->current_thread == TH_NIL )
+    {
+      // 2.Assigning thread to this GPU
+      cpu->current_thread = thread;
+      thread->cpu         = cpu;
+      // context switch
+      if ( cpu->current_thread_context != thread )
+      {
+        account->n_th_in_run++;
+        cpu->current_thread_context = thread;
+      }
+      break;
+    }
+  }
+  return cpu;
+} 
+
 static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
 {
   t_nano ti;
@@ -263,25 +291,7 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
   if ( thread->task->accelerator && thread->stream == TRUE )
   {
     // 0. Ensure that this is an heterogeneous node
-    // 1. Look for CPU with is_gpu = 1
-    for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
-    {
-      // check either the cpu has thread or not.
-      if ( cpu->is_gpu == TRUE && cpu->current_thread == TH_NIL )
-      {
-        // 2.Assigning thread to this GPU
-        cpu->current_thread = thread;
-        thread->cpu         = cpu;
-        // context switch
-        if ( cpu->current_thread_context != thread )
-        {
-          account->n_th_in_run++;
-          cpu->current_thread_context = thread;
-        }
-
-        break;
-      }
-    }
+    cpu = assign_gpu( thread, node );
 
 /*    if( cpu == C_NIL )
       printf("task %d thread %d without cpu in node %d\n",thread->task->taskid,thread->threadid,node->nodeid);
