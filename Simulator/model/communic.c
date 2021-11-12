@@ -3582,7 +3582,7 @@ void COMMUNIC_send( struct t_thread *thread_sender )
   tmpEvent.type = thread_sender->acc_in_block_event.type;
   tmpEvent.value = thread_sender->acc_in_block_event.value;
 
-  if( thread_sender->host && mess->communic_id != 0 &&
+  if( thread_sender->host && mess->communic_id != 0 && thread_partner != NULL &&
       event_sync_add( thread_sender->task, &tmpEvent, thread_sender->threadid, thread_partner->threadid, TRUE ) )
     return;
 
@@ -7840,30 +7840,39 @@ void COMMUNIC_reset_deadlock()
   DEADLOCK_reset();
 }
 
+void resumeSingleStream( struct t_thread *thread )
+{
+  struct t_action *currentAction = thread->action;
+  thread->action = currentAction->next;
+  READ_free_action( currentAction );
+
+  if ( more_actions( thread ) )
+  {
+    thread->loose_cpu = TRUE;
+    SCHEDULER_thread_to_ready( thread );
+    reload_done = TRUE;
+  }
+
+  thread->startup_done         = FALSE;
+  thread->blocked_in_global_op = FALSE;
+}
 
 void resumeThreadsInStreamSync( struct t_task *task )
 {
-  struct t_action *currentAction;
-
-  for ( int i = 0; i < task->StreamSync_n_elems; ++i )
+  if (task->StreamByComm == -1)
   {
-    currentAction                 = task->StreamSync[ i ]->action;
-    task->StreamSync[ i ]->action = currentAction->next;
-    READ_free_action( currentAction );
-
-    if ( more_actions( task->StreamSync[ i ] ) )
+    for ( int i = 0; i < task->StreamSync_n_elems; ++i )
     {
-      task->StreamSync[ i ]->loose_cpu = TRUE;
-      SCHEDULER_thread_to_ready( task->StreamSync[ i ] );
-      reload_done = TRUE;
+      resumeSingleStream( task->StreamSync[ i ] );
+      task->StreamSync[ i ] = TH_NIL;
     }
 
-    task->StreamSync[ i ]->startup_done         = FALSE;
-    task->StreamSync[ i ]->blocked_in_global_op = FALSE;
-    task->StreamSync[ i ]                       = TH_NIL;
+    task->StreamSync_n_elems = 0;
   }
-
-  task->StreamSync_n_elems = 0;
+  else
+  {
+    resumeSingleStream( task->threads[ task->StreamByComm ] );
+  }
 }
 
 
@@ -7926,16 +7935,20 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
     //        "P%02d T%02d (t%02d)",
     //        IDENTIFIERS( thread ) );
     // }
+    // if (task->StreamByComm != -1 )
     if ( task->HostSync != TH_NIL && task->StreamByComm != -1 && task->StreamByComm != thread_id )
     {
       die( "In accelerator synchronization, host was waiting another thread:"
            "P%02d T%02d (t%02d)",
            IDENTIFIERS( thread ) );
     }
-
-    /* Add current thread to its synchronization list */
-    if ( !foundThreadInStreamSync( task->StreamSync, thread ) )
+    if ( CUDAEventEconding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
     {
+      thread->blocked_in_global_op = TRUE;
+    }
+    else if ( !foundThreadInStreamSync( task->StreamSync, thread ) )
+    {
+      /* Add current thread to its synchronization list */
       task->StreamSync[ task->StreamSync_n_elems ] = thread;
       ++task->StreamSync_n_elems;
       thread->blocked_in_global_op = TRUE;
@@ -7951,16 +7964,19 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
   }
 }
 
-t_boolean haveAllStreamsArrived( struct t_task *task, int comm_id )
+t_boolean haveAllStreamsArrived( struct t_thread *thread, int comm_id )
 {
   t_boolean return_val = FALSE;
   if ( comm_id == -1 )
   {
-    return_val = task->StreamSync_n_elems == task->totalCreatedStreams;
+    return_val = thread->task->StreamSync_n_elems == thread->task->totalCreatedStreams;
   }
   else
   {
-    return_val = task->StreamSync_n_elems == 1;
+    struct t_thread * tmp_thread = thread;
+    if ( thread->host == TRUE )
+      tmp_thread = thread->task->threads[ thread->task->StreamByComm ];
+    return_val = tmp_thread->blocked_in_global_op;
   }
 
   return return_val;
@@ -7979,7 +7995,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
   struct t_account *account;
   struct t_cpu *cpu;
 
-  if ( task->HostSync == TH_NIL || !haveAllStreamsArrived( task, comm_id ) )
+  if ( task->HostSync == TH_NIL || !haveAllStreamsArrived( thread, comm_id ) )
   { /*	Or kernels or host has not arrived yet, blocked	*/
     if ( debug & D_COMM )
     {
@@ -8049,7 +8065,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
       }
     }
 
-    if ( !host && thread->startup_done == FALSE )
+    if ( !host && thread->startup_done == FALSE && task->StreamByComm == -1 )
     {
       for ( int i = 0; i < task->StreamSync_n_elems; ++i )
       {

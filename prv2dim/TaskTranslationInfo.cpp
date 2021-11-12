@@ -1930,7 +1930,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             if ( AcceleratorThread == ACCELERATOR_HOST )
             {
               /* In the Host thread, first a synchronization */
-              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)Tag ) < 0 )
+              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
               // CommId and Size are set to 0
               {
                 SetError( true );
@@ -1962,7 +1962,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             if ( AcceleratorThread == ACCELERATOR_HOST )
             {
               /* In the Host thread, first a synchronization */
-              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)Tag ) < 0 )
+              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
               // CommId and Size are set to 0
               {
                 SetError( true );
@@ -2000,7 +2000,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                           0,
                                           0,
                                           // CommId and Size are set to 0
-                                          (INT64)Tag ) < 0 )
+                                          (INT64)CUDA_TAG ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2032,7 +2032,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                           PartnerThreadId,
                                           0,
                                           0, // CommId and Size are set to 0
-                                          (INT64)Tag ) < 0 )
+                                          (INT64)CUDA_TAG ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2067,7 +2067,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                         0,
                                         0,
                                         // CommId and Size are set to 0
-                                        (INT64)Tag ) < 0 )
+                                        (INT64)CUDA_TAG ) < 0 )
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2111,7 +2111,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                         0,
                                         0,
                                         // CommId and Size are set to 0
-                                        (INT64)Tag ) < 0 )
+                                        (INT64)CUDA_TAG ) < 0 )
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
