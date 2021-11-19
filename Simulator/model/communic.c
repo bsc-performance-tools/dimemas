@@ -1567,11 +1567,10 @@ static void message_received( struct t_thread *thread_sender )
     int ocl_comm  = OCLEventEncoding_Is_OCLComm( mess->mess_tag );
 
     /* Paraver P2P communication has to be thrown */
-    int paraver_comm = cuda_comm && !sync_comm && !( ocl_comm && sync_comm && transf_comm );
+    int paraver_comm = ( !cuda_comm && !ocl_comm ) || ( cuda_comm && !sync_comm ) || ( ocl_comm && !sync_comm );
 
     /* Partner communication loads next action */
     int partner_next_action = !( partner->host && transf_comm && cuda_comm ) || ocl_comm;
-    //int partner_next_action = !partner->host || !transf_comm || !cuda_comm || ocl_comm;
 
     /* Host will compute a startup after the communication */
     int host_startup = !ocl_comm && 
