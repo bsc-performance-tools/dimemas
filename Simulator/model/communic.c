@@ -8129,6 +8129,8 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
     // host_th->doing_startup = TRUE;
     host_th->doing_acc_comm = TRUE;
 
+    host_th->startup_done = FALSE;
+
     FLOAT_TO_TIMER( current_time, tmp_timer2 );
 
     host_th->event = (struct t_event *)EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, host_th, COM_TIMER_OUT );
@@ -8146,3 +8148,5 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
     task->StreamByComm = -1;
   }
 }
+
+//todo: hacer un programa sencillo mpi + cuda: con menos tareas y streams
