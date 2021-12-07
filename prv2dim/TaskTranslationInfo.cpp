@@ -654,6 +654,14 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   {
     if ( CUDAEventEncoding_Is_BlockBegin( Value ) )
     {
+      if( CUDABlockIdStack.size() != 0 )
+      {
+        cout << "WARNING: overlapped CUDA calls in original trace. Simulation could be inconsistent" << endl;
+        cout << "\t Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " Time " << Timestamp << endl;
+        cout << "\t Previous type: " << CUDABlockIdStack.back().first << " value: " << CUDABlockIdStack.back().second << endl;
+        cout << "\t  Current type: " << Type << " value: " << Value << endl;
+      }
+
       if ( Timestamp > LastBlockEnd )
       {
         if ( AcceleratorThread == ACCELERATOR_HOST )
@@ -726,7 +734,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         {
           // There is a event closing without its opening in the middle of the
           // trace
-          cout << "WARNING: unbalanced CUDA blocks on original trace" << endl;
+          cout << "WARNING: CUDA call exit without entry in original trace" << endl;
           cout << "Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " ";
           cout << "Time " << Timestamp << endl;
         }
