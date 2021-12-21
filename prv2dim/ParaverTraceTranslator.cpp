@@ -1369,8 +1369,8 @@ bool ParaverTraceTranslator::InitTranslationStructures( ApplicationDescription_t
       bool EmptyTask         = false;
       UINT64 FirstRecordTime = 0;
 
-      INT32 AcceleratorThread = ACCELERATOR_NULL; // not an acc task
-      INT32 OpenMP_thread     = OpenMP_NULL;      // not an acc task
+      INT32 AcceleratorThread = ACCELERATOR_NULL;
+      INT32 OpenMP_thread     = OpenMP_NULL;
 
       if ( is_acc_task && CurrentThread != 0 )
         AcceleratorThread = ACCELERATOR_KERNEL;
@@ -1705,62 +1705,32 @@ bool ParaverTraceTranslator::OpenMPTasksInfo( INT32 tasks_count )
   }
   if ( ( PcfTraceFile = fopen( PcfTraceName.c_str(), "r" ) ) == NULL )
   {
-    cout << "-> No input trace ROW file found" << endl;
-    RowTraceFile = NULL;
+    cout << "-> No input trace pcf file found" << endl;
+    PcfTraceFile = NULL;
     return false;
   }
   if ( fseeko( PcfTraceFile, (size_t)0, SEEK_SET ) == -1 )
   {
     SetError( true );
-    SetErrorMessage( "Error seeking position in row trace file", strerror( errno ) );
+    SetErrorMessage( "Error seeking position in pcf trace file", strerror( errno ) );
     return false;
   }
 
-  omp_tasks.resize( tasks_count, false );
   omp_tasks_count = 0;
-  while ( getline( &line, &current_line_length, PcfTraceFile ) != -1 )
+  while ( !is_openmp_trace && getline( &line, &current_line_length, PcfTraceFile ) != -1 )
   {
     if ( atoi( &line[ 2 ] ) == OMP_PARALLEL_EV )
     {
-      for ( task_id; task_id < tasks_count; task_id++ )
-      {
-        if ( !omp_tasks[ task_id ] )
-        {
-          omp_tasks[ task_id ] = true;
-          omp_tasks_count++;
-        }
-      }
+      omp_tasks.resize( tasks_count, true );
+      omp_tasks_count = tasks_count;
       is_openmp_trace = TRUE;
     }
   }
-  /*if(is_openmp_trace)
-  {
-      while (getline(&line1, &current_line_length, RowTraceFile) !=-1)
-      {
-          Line1 = (string) line1;
-          if ( Line1.find(pattern_thread_lvl) != std::string::npos )
-          {
-              while (getline(&line1, &current_line_length, RowTraceFile) !=-1)
-              {
-                  Line1 = (string) line1;
-                  if ( Line1.find(pattern_thread_tag) != std::string::npos)
-                  {
-                      for(task_id; task_id < tasks_count; task_id++)
-                      {
-                          if(!omp_tasks[task_id])
-                          {
-                          omp_tasks[task_id] = true;
-                          omp_tasks_count++;
-                          }
-                      }
-                  }
-              }
-          }
-      }
-  }*/
-  if ( is_openmp_trace )
-    return true;
-  return false;
+
+  if ( !is_openmp_trace )
+    omp_tasks.resize( tasks_count, false );
+
+  return is_openmp_trace;
 }
 /**
  * Checks in .row file if there are CUDA or OpenCL devices and

@@ -118,6 +118,7 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
   FirstOCLRead            = false;
   this->AcceleratorThread = AcceleratorThread;
   this->OpenMP_thread     = OpenMP_thread;
+  OpenMP_nesting_level    = 0;
   InCUDAHostToHost        = false;
 
   if ( !FilePointerAvailable )
@@ -199,7 +200,6 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
       cout << ThreadId << "]";
       cout << endl;
     }
-
     if ( Dimemas_CPU_Burst( TemporaryFile, TaskId - 1, ThreadId - 1, 1.0 * InitialTime * TimeFactor ) < 0 )
     {
       SetError( true );
@@ -623,13 +623,19 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     if ( ( LastBlockEnd != Timestamp || ( LastBlockEnd == 0 && Timestamp == 0 ) ) && MPIBlockIdStack.size() == 0 && CUDABlockIdStack.size() == 0 &&
          OCLBlockIdStack.size() == 0 )
     {
-      if ( Type != FLUSHING_EV && Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER && AcceleratorThread != ACCELERATOR_KERNEL)
+      if ( Type != FLUSHING_EV && Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER && AcceleratorThread != ACCELERATOR_KERNEL )
       {
-        if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+        if ( LastBlockEnd == 0 && OpenMP_thread == WORKER )
+        {
+          if ( !GenerateBurst( TaskId, ThreadId, 0 ) )
+          {
+            return false;
+          }
+        }
+        else if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) ) 
         {
           return false;
         }
-
         LastBlockEnd = Timestamp;
       }
     }
@@ -762,7 +768,6 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
             return false;
           InCUDAHostToHost = false;
         }
-
 
         /* Generation of pseudo-collectives to simulate the thread/stream
            synchronizations */
@@ -1321,7 +1326,8 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     {
       if ( Timestamp > LastBlockEnd )
       {
-        if ( OpenMP_thread == WORKER )
+        if ( ( OpenMP_thread == MASTER && LastBlockEnd > 0 ) || 
+             ( OpenMP_thread == WORKER && OpenMP_nesting_level > 0 ) )
         {
           if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
             return false;
@@ -1329,6 +1335,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
       }
 
       LastBlockEnd = Timestamp;
+      ++OpenMP_nesting_level;
 
       if ( debug )
         cout << "Printing OpenMP Block Begin " << *CurrentEvent;
@@ -1344,14 +1351,12 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     {
       if ( Timestamp > LastBlockEnd )
       {
-        if ( OpenMP_thread = WORKER )
-        {
-          if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
-            return false;
-        }
+        if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+          return false;
       }
 
       LastBlockEnd = Timestamp;
+      --OpenMP_nesting_level;
 
       if ( debug )
         cout << "Printing OpenMP Block End " << *CurrentEvent;

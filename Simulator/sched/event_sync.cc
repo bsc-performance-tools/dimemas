@@ -353,7 +353,7 @@ t_boolean event_sync_add( struct t_task *whichTask,
     printf( "\tevent sync add: EventTrait found.\n" );
 
   EventTrait tmpEventTrait = tmpItTrait->second;
-  if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
+  if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != OMP_END_VAL )
   {
     tmpEventTrait.eventHost.value = whichEvent->value;
     tmpEventTrait.eventRest.value = whichEvent->value;
