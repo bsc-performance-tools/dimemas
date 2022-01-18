@@ -980,6 +980,11 @@ struct t_thread
   dimemas_timer omp_last_running_end;
   dimemas_timer omp_last_synchro_end;
 
+  // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
+  //   nested parallel function calls after worksharing single
+  // size_t omp_nesting_level;
+
+
   // Non-blocking GLOP variables
   // in_flight: Indicates how many non-block glops are already executing.
   // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.

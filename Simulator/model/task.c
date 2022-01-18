@@ -1077,6 +1077,10 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->omp_flag_at_end                 = FALSE;
   thread->omp_flag_at_start               = FALSE;
 
+  // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
+  //   nested parallel function calls after worksharing single
+  // thread->omp_nesting_level               = 0;
+
   /* NON-Block global operations variables */
   thread->n_nonblock_glob_in_flight = 0;
   thread->n_nonblock_glob_waiting   = 0;
