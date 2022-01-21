@@ -65,6 +65,8 @@ static int SCH_prio          = 0;
 t_boolean monitorize_event = FALSE;
 int event_to_monitorize    = 0;
 
+
+extern t_boolean is_ideal_openmp;
 // void SCHEDULER_thread_to_gpu(struct t_node *node, struct t_thread *kernel_thread);
 
 void SCHEDULER_Init()
@@ -452,7 +454,13 @@ t_nano SCHEDULER_get_execution_time( struct t_thread *thread )
   ti = ( *SCH[ machine->scheduler.policy ].get_execution_time )( thread );
   
   /* for ideal configuration ignore the burst inside the configure call */
-  if ( thread->stream && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 )
+  if ( ( thread->stream && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 ) ||
+       ( is_ideal_openmp == TRUE &&
+         !OMPEventEncoding_Is_OMPWorker_Running( thread->omp_in_block_event ) &&
+         ( OMPEventEncoding_Is_OMPBlock( thread->omp_in_block_event.type ) && thread->omp_in_block_event.value > 0 ||
+           OMPEventEncoding_Is_OMPWorker_Running_End( thread->omp_in_block_event ) ) 
+       )
+     )
     ti = 0;
 
   account = current_account( thread );

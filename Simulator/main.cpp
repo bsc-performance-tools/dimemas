@@ -138,6 +138,7 @@ t_boolean extra_assert           = FALSE;
 t_boolean Critical_Path_Analysis = FALSE;
 
 t_boolean all_CUDA_streams_created = FALSE;
+t_boolean is_ideal_openmp = FALSE;
 
 using namespace std;
 
@@ -235,6 +236,8 @@ void parse_arguments( int argc, char *argv[] )
   
   bool all_streams_created;
 
+  bool ideal_openmp;
+
   namespace po = boost::program_options;
 
   po::options_description general( "Miscellany options" );
@@ -294,11 +297,10 @@ void parse_arguments( int argc, char *argv[] )
       po::value<string>( &venus_conn_url )->default_value( NULL ),
       "Connect to venus server at host:port" )
 #endif
-    ( "asynch-read", po::bool_switch( &asynch_read_bool ), "Wakes up a new thread for read the input trace" )(
-      "asynch-max-buffer",
-      po::value<int>( &asynch_buffer_size_mb ),
-      "Max size of the asynch read buffer in MB (default: 10MB)" ),
-    ( "create-cuda-streams", po::bool_switch( &all_streams_created ), "Force all CUDA streams to be created from the beginning." );
+    ( "asynch-read", po::bool_switch( &asynch_read_bool ), "Wakes up a new thread for read the input trace" )
+    ( "asynch-max-buffer", po::value<int>( &asynch_buffer_size_mb ), "Max size of the asynch read buffer in MB (default: 10MB)" )
+    ( "create-cuda-streams", po::bool_switch( &all_streams_created ), "Force all CUDA streams to be created from the beginning." )
+    ( "ideal-openmp", po::bool_switch( &ideal_openmp ), "Ignores the duration of openmp runtime events. Any remaining duration is due to implicit synchronization" );
 
 
   po::options_description mandatory( "Mandatory options" );
@@ -511,7 +513,11 @@ void parse_arguments( int argc, char *argv[] )
 
   if ( all_streams_created )
     all_CUDA_streams_created = TRUE;
+
+  if ( ideal_openmp )
+    is_ideal_openmp = TRUE;
 }
+
 
 double ddiff( struct timespec start, struct timespec end )
 {

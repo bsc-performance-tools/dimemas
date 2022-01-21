@@ -24,12 +24,13 @@
  \*****************************************************************************/
 
 extern "C" {
-    #include "types.h"
-    #include "dim_omp.h"
-    #include "define.h"
-    #include "EventEncoding.h"
-    #include "paraver.h"
+  #include "types.h"
+  #include "dim_omp.h"
+  #include "define.h"
+  #include "EventEncoding.h"
+  #include "paraver.h"
 }
+
 using namespace std; 
 
 /**
@@ -39,58 +40,58 @@ using namespace std;
  */
 void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time )
 {
-    struct t_cpu *cpu;
-    cpu = get_cpu_of_thread( thread );
-    
-    if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
-    {
-        return;
-    }
+  struct t_cpu *cpu;
+  cpu = get_cpu_of_thread( thread );
+  
+  if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
+  {
+    return;
+  }
 
-    if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
+  if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
+  {
+    PARAVER_Running( cpu->unique_number,
+                     IDENTIFIERS( thread ),
+                     thread->omp_in_block_event.paraver_time,
+                     current_time );
+  }
+  else if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
+  {
+    PARAVER_Thread_Sync( cpu->unique_number,
+                         IDENTIFIERS( thread ),
+                         thread->omp_in_block_event.paraver_time,
+                         current_time );
+  }
+  else if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
+  {
+    PARAVER_Thread_Sched( cpu->unique_number,
+                          IDENTIFIERS(thread),
+                          thread->omp_in_block_event.paraver_time,
+                          current_time);
+  }
+  else if( thread->omp_master_thread )
+  {
+    if( OMPEventEncoding_Is_OMP_fork_begin( thread->omp_in_block_event ) || 
+        OMPEventEncoding_Is_OMP_fork_end( thread->omp_in_block_event ) )
     {
-        PARAVER_Running( cpu->unique_number,
-                        IDENTIFIERS( thread ),
-                        thread->omp_in_block_event.paraver_time,
-                        current_time );
+      PARAVER_Thread_Sched( cpu->unique_number,
+                            IDENTIFIERS( thread ),
+                            thread->omp_in_block_event.paraver_time,
+                            current_time );
     }
-    else if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
+  }
+  else if( thread->omp_worker_thread ) 
+  {
+    if( thread->omp_in_block_event.type == 0 )
     {
-        PARAVER_Thread_Sync(cpu->unique_number,
-                IDENTIFIERS(thread),
-                thread->omp_in_block_event.paraver_time,
-                current_time);
+      PARAVER_Not_Created( cpu->unique_number,
+                           IDENTIFIERS (thread),
+                           0,
+                           current_time );
     }
-    else if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
-    {
-        PARAVER_Thread_Sched(cpu->unique_number,
-                IDENTIFIERS(thread),
-                thread->omp_in_block_event.paraver_time,
-                current_time);
-    }
-    else if( thread->omp_master_thread )
-    {
-        if( OMPEventEncoding_Is_OMP_fork_begin(thread->omp_in_block_event) || 
-            OMPEventEncoding_Is_OMP_fork_end(thread->omp_in_block_event) )
-        {
-            PARAVER_Thread_Sched(cpu->unique_number,
-                    IDENTIFIERS(thread),
-                    thread->omp_in_block_event.paraver_time,
-                    current_time);
-        }
-    }
-    else if( thread->omp_worker_thread ) 
-    {
-        if( thread->omp_in_block_event.type == 0 )
-        {
-            PARAVER_Not_Created( cpu->unique_number,
-                                 IDENTIFIERS (thread),
-                                 0,
-                                 current_time );
-        }
-    }
+  }
 
-    thread->omp_in_block_event.type = event->type;
-    thread->omp_in_block_event.value = event->value;
-    thread->omp_in_block_event.paraver_time = current_time;
+  thread->omp_in_block_event.type = event->type;
+  thread->omp_in_block_event.value = event->value;
+  thread->omp_in_block_event.paraver_time = current_time;
 }
