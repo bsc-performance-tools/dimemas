@@ -439,6 +439,7 @@ public class EnvironmentWindow extends GUIWindow
 
         } catch(Exception exc)
         {
+          System.err.println("Exception when changing number of nodes");
         }
 
         if ( (result = data.map.changeAtNodes()) != null)
