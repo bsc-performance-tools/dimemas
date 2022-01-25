@@ -544,8 +544,10 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   INT32 Type;
   INT64 Value;
   UINT64 Timestamp;
-  int pseudo_logic_recv_events = 0;
   double OnTraceTime;
+
+  pseudo_logic_recv_events = 0;
+
   if ( debug )
     cout << "Processing User Event: " << *CurrentEvent;
 
@@ -559,7 +561,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
        CurrentEvent->GetFirstType() == 12 || CurrentEvent->GetFirstType() == 13 || CurrentEvent->GetFirstType() == 14 ||
        CurrentEvent->GetFirstType() == 15 || CurrentEvent->GetFirstType() == 16 )
   {
-    this->pseudo_logic_recv_events++;
+    ++pseudo_logic_recv_events;
     return true;
   }
 
@@ -2743,7 +2745,7 @@ bool TaskTranslationInfo::PrintPseudoCommunicationEndpoint( INT32 CommType,
                                                             INT32 Tag,
                                                             INT32 CommId )
 {
-  if ( this->pseudo_logic_recv_events > 0 )
+  if ( pseudo_logic_recv_events > 0 )
   {
     if ( Dimemas_User_Event( TemporaryFile, TaskId, ThreadId, (INT64)9, CommType ) < 0 )
     {
@@ -2789,7 +2791,7 @@ bool TaskTranslationInfo::PrintPseudoCommunicationEndpoint( INT32 CommType,
       SetErrorMessage( "error writing output trace", strerror( errno ) );
       return false;
     }
-    this->pseudo_logic_recv_events--;
+    --pseudo_logic_recv_events;
   }
   return true;
 }
