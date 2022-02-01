@@ -257,6 +257,7 @@ struct t_cpu * assign_gpu( struct t_thread *thread, struct t_node *node )
     if ( cpu->is_gpu == TRUE && cpu->current_thread == TH_NIL )
     {
       // 2.Assigning thread to this GPU
+      cpu->cpu_is_used    = TRUE;
       cpu->current_thread = thread;
       thread->cpu         = cpu;
       // context switch
@@ -310,6 +311,7 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
     }
     assert( cpu->is_gpu == FALSE );
 
+    cpu->cpu_is_used    = TRUE;
     cpu->current_thread = thread;
     thread->cpu         = cpu;
 

@@ -1941,7 +1941,7 @@ int *TASK_Map_Filling_Nodes( int task_count )
         task_mapping[ last_task_assigned ] = i_node;
         ++last_task_assigned;
         node->used_node  = TRUE;
-        cpu->cpu_is_used = TRUE;
+        // cpu->cpu_is_used = TRUE;
       }
     }
   }
