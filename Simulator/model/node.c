@@ -168,7 +168,6 @@ void NODE_Fill_Node_Fields( struct t_node *node,
   node->remote_port_startup   = remote_port_startup;
   node->local_memory_startup  = local_memory_startup;
   node->remote_memory_startup = remote_memory_startup;
-  node->has_accelerated_task  = FALSE;
   node->used_node             = FALSE;
   node->initialized           = TRUE;
 }

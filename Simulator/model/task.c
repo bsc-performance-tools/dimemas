@@ -1894,19 +1894,25 @@ int *TASK_Map_Filling_Nodes( int task_count )
       struct t_task *task = &( Ptask->tasks[ tasks_it ] );
       if ( task->accelerator )
       {
+        t_boolean taskAssigned = FALSE;
         for ( i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++ )
         {
           node = get_node_by_id( i_node );
 
           if ( node->accelerator && node->acc.num_gpu_in_node >= task->threads_in_accelerator )
           {
+            taskAssigned = TRUE;
             task_mapping[ tasks_it ] = i_node;
             n_cpus_per_node[ i_node ]--; // One CPU is now occupied
             node->used_node  = TRUE;
             node->acc.num_gpu_in_node = node->acc.num_gpu_in_node - task->threads_in_accelerator;
-            node->has_accelerated_task = TRUE; // One GPU is now occupied
             break;
           }
+        }
+
+        if( !taskAssigned )
+        {
+          die( "Insufficient number of GPUs for task P%d T%d\n", Ptask->Ptaskid, tasks_it );
         }
       }
     }
@@ -2002,20 +2008,27 @@ int *TASK_Map_N_Tasks_Per_Node( int n_tasks_per_node )
       struct t_task *task = &( Ptask->tasks[ tasks_it ] );
       if ( task->accelerator )
       {
+        t_boolean taskAssigned = FALSE;
         for ( i_node = 0; i_node < n_nodes; ++i_node )
         {
           if ( tasks_in_node[ i_node ] < n_tasks_per_node )
           {
             node = get_node_by_id( i_node );
-            if ( node->accelerator == TRUE && node->has_accelerated_task == FALSE )
+            if ( node->accelerator == TRUE && node->acc.num_gpu_in_node >= task->threads_in_accelerator )
             {
+              taskAssigned = TRUE;
               task_mapping[ tasks_it ] = i_node;
               ++tasks_in_node[ i_node ];
               node->used_node  = TRUE;
-              node->has_accelerated_task = TRUE;
+              node->acc.num_gpu_in_node = node->acc.num_gpu_in_node - task->threads_in_accelerator;
               break;
             }
           }
+        }
+
+        if( !taskAssigned )
+        {
+          die( "Insufficient number of GPUs for task P%d T%d\n", Ptask->Ptaskid, tasks_it );
         }
       }
     }
@@ -2086,18 +2099,25 @@ int *TASK_Map_Interleaved( int task_count )
       struct t_task *task = &( Ptask->tasks[ tasks_it ] );
       if ( task->accelerator )
       {
+        t_boolean taskAssigned = FALSE;
         for ( i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++ )
         {
           node = get_node_by_id( i_node );
-          if ( node->accelerator == TRUE && node->has_accelerated_task == FALSE )
+          if ( node->accelerator == TRUE && node->acc.num_gpu_in_node >= task->threads_in_accelerator )
           {
+            taskAssigned = TRUE;
             n_cpus_per_node[ i_node ]--; // One CPU is now occupied
             task_mapping[ tasks_it ] = i_node % n_nodes;
             last_task_assigned++;
-            node->used_node            = TRUE;
-            node->has_accelerated_task = TRUE; // One GPU is now occupied
+            node->used_node = TRUE;
+            node->acc.num_gpu_in_node = node->acc.num_gpu_in_node - task->threads_in_accelerator;
             break;
           }
+        }
+
+        if( !taskAssigned )
+        {
+          die( "Insufficient number of GPUs for task P%d T%d\n", Ptask->Ptaskid, tasks_it );
         }
       }
     }
