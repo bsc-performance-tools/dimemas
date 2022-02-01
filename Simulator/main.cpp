@@ -146,9 +146,7 @@ void print_dimemas_header()
 {
   cout << endl;
   cout << "Dimemas - DIstributed MEmory MAchine Simulator" << endl;
-  cout << "Barcelona Supercomputing Center - Centro Nacional de"
-          " Supercomputacion"
-       << endl;
+  cout << "Barcelona Supercomputing Center - Centro Nacional de Supercomputacion" << endl;
   cout << endl;
 }
 
@@ -161,9 +159,7 @@ static long long int read_size( const char *c )
   i = sscanf( c, "%lld%c", &mida_tmp, &unitats );
   if ( i == 0 )
   {
-    fprintf( stderr,
-             "Incorrect minimum message size"
-             " to use Rendez vous!\n" );
+    fprintf( stderr, "Incorrect minimum message size to use Rendez vous!\n" );
     exit( EXIT_FAILURE );
   }
   else if ( i == 1 )
@@ -240,138 +236,126 @@ void parse_arguments( int argc, char *argv[] )
 
   namespace po = boost::program_options;
 
+// clang-format off
   po::options_description general( "Miscellany options" );
-  general.add_options()( "help,h", "Show this help message" )( "version,v", "Show the version" );
+  general.add_options()
+    ( "help,h",    "Show this help message" )
+    ( "version,v", "Show the version" )
+  ;
 
-  po::options_description conf( "Configuration options: This options are going to"
-                                " rewrite the options defined in the configuration file" );
-  conf.add_options()( "asynch-sends,F",
-                      po::bool_switch( &asynch_sends_enabled ),
-                      "All sends are asynchronous" )( "eager-limit,S", po::value<string>( &eager_limit ), "Eager limit is set to this value" )(
-    "sched,s",
-    po::value<string>( &fine_conf_sched ),
-    "Scheduler definition filename" )( "fs,f", po::value<string>( &fine_conf_fs ), "File-system definition filename" )(
-    "comms,c",
-    po::value<string>( &fine_conf_comm ),
-    "Communications fine-tunning definition filename" )( "random,r", po::value<string>( &fine_conf_rand ), "Random definition filename" )(
-    "bandwidth,bw",
-    po::value<double>( &parameter_bw ),
-    "Bandwidth for the modeled machine" )( "latency,lat", po::value<double>( &parameter_lat ), "Latency for the modeled machine" )(
-    "fill-nodes,fill",
-    po::bool_switch( &map_fill_enabled ),
-    "Mapping policy where all processors in nodes are filled up" )( "process-per-node",
-                                                                    po::value<int>( &parameter_tasks_per_node ),
-                                                                    "Processes per node for the modeled machine" )(
-    "interleaved",
-    po::bool_switch( &map_interleaved_enabled ),
-    "Mapping policy where the processes are mapped"
-    " in an interleaved fashion" )( "dim", po::value<string>( &str_parameter_tracefile ), "Dimemas input tracefile" );
+  po::options_description conf( "Configuration options: This options are going to rewrite the options defined in the configuration file" );
+  conf.add_options()
+    ( "asynch-sends,F",   po::bool_switch( &asynch_sends_enabled ),      "All sends are asynchronous" )
+    ( "eager-limit,S",    po::value<string>( &eager_limit ),             "Eager limit is set to this value" )
+    ( "sched,s",          po::value<string>( &fine_conf_sched ),         "Scheduler definition filename" )
+    ( "fs,f",             po::value<string>( &fine_conf_fs ),            "File-system definition filename" )
+    ( "comms,c",          po::value<string>( &fine_conf_comm ),          "Communications fine-tunning definition filename" )
+    ( "random,r",         po::value<string>( &fine_conf_rand ),          "Random definition filename" )
+    ( "bandwidth,bw",     po::value<double>( &parameter_bw ),            "Bandwidth for the modeled machine" )
+    ( "latency,lat",      po::value<double>( &parameter_lat ),           "Latency for the modeled machine" )
+    ( "fill-nodes,fill",  po::bool_switch( &map_fill_enabled ),          "Mapping policy where all processors in nodes are filled up" )
+    ( "process-per-node", po::value<int>( &parameter_tasks_per_node ),   "Processes per node for the modeled machine" )
+    ( "interleaved",      po::bool_switch( &map_interleaved_enabled ),   "Mapping policy where the processes are mapped in an interleaved fashion" )
+    ( "dim",              po::value<string>( &str_parameter_tracefile ), "Dimemas input tracefile" )
+  ;
 
-  po::options_description simulation( "Simulation options: This options"
-                                      " are going to affect the simulation but not the model" );
-  simulation.add_options()( "prv-start-time,y", po::value<dimemas_timer>( &paraver_start ), "Set paraver tracefile start time" )(
-    "prv-end-time,z",
-    po::value<dimemas_timer>( &paraver_end ),
-    "Set paraver tracefile stop time" )( "prv-priorities,P", po::bool_switch( &paraver_priorities_enabled ), "Paraver priorities" )(
-    "stop-time,T",
-    po::value<dimemas_timer>( &time_limit ),
-    "Set the simulation stop time" )( "critical-path-analysis,C", po::bool_switch( &critical_path_enabled ), "Performs critical path analysis" )(
-    "logic-irecv-at-wait,w",
-    po::bool_switch( &wait_logical_recv_enabled ),
-    "Logic receive of Irecv when MPI_Wait take place" )(
-    "synthetic-io-app,I",
-    po::value<int>( &sintetic_io_applications ),
-    "Adds synthetic applications with I/O workloads" )( "reload,R", po::value<int>( &reload_limit ), "Reload simulation the indicated times" )
+  po::options_description simulation( "Simulation options: This options are going to affect the simulation but not the model" );
+  simulation.add_options()
+    ( "prv-start-time,y",         po::value<dimemas_timer>( &paraver_start ),          "Set paraver tracefile start time" )
+    ( "prv-end-time,z",           po::value<dimemas_timer>( &paraver_end ),            "Set paraver tracefile stop time" )
+    ( "prv-priorities,P",         po::bool_switch( &paraver_priorities_enabled ),      "Paraver priorities" )
+    ( "stop-time,T",              po::value<dimemas_timer>( &time_limit ),             "Set the simulation stop time" )
+    ( "critical-path-analysis,C", po::bool_switch( &critical_path_enabled ),           "Performs critical path analysis" )
+    ( "logic-irecv-at-wait,w",    po::bool_switch( &wait_logical_recv_enabled ),       "Logic receive of Irecv when MPI_Wait take place" )
+    ( "synthetic-io-app,I",       po::value<int>( &sintetic_io_applications ),         "Adds synthetic applications with I/O workloads" )
+    ( "reload,R",                 po::value<int>( &reload_limit ),                     "Reload simulation the indicated times" )
     /*
-    ("eee-enable", po::bool_switch(&b_eee_enabled),
-        "Enable EEE network model")
-    ("eee-network", po::value<string>(&str_eee_config_file),
-        "EEE network definition filename")
-    ("eee-framesize", po::value<int>(&eee_frame_header_size),
-        "EEE network frame size")
+    ("eee-enable",                po::bool_switch(&b_eee_enabled),                     "Enable EEE network model")
+    ("eee-network",               po::value<string>(&str_eee_config_file),             "EEE network definition filename")
+    ("eee-framesize",             po::value<int>(&eee_frame_header_size),              "EEE network frame size")
     */
-    ( "clean-deadlocks", po::value<float>( &danalysis_deactivation_percent ), "Try to recover from deadlocks if any" )
+    ( "clean-deadlocks",          po::value<float>( &danalysis_deactivation_percent ), "Try to recover from deadlocks if any" )
 #ifdef VENUS_ENABLED
-    ( "venus", po::bool_switch( &venus_enabled ), "Enable venus (default conn localhost:default_port)" )
-    ( "venuscon",
-      po::value<string>( &venus_conn_url )->default_value( NULL ),
-      "Connect to venus server at host:port" )
+    ( "venus",                    po::bool_switch( &venus_enabled ),                   "Enable venus (default conn localhost:default_port)" )
+    ( "venuscon",                 po::value<string>( &venus_conn_url )->default_value( NULL ), "Connect to venus server at host:port" )
 #endif
-    ( "asynch-read", po::bool_switch( &asynch_read_bool ), "Wakes up a new thread for read the input trace" )
-    ( "asynch-max-buffer", po::value<int>( &asynch_buffer_size_mb ), "Max size of the asynch read buffer in MB (default: 10MB)" )
-    ( "create-cuda-streams", po::bool_switch( &all_streams_created ), "Force all CUDA streams to be created from the beginning." )
-    ( "ideal-openmp", po::bool_switch( &ideal_openmp ), "Ignores the duration of openmp runtime events. Any remaining duration is due to implicit synchronization" );
-
+    ( "asynch-read",              po::bool_switch( &asynch_read_bool ),                "Wakes up a new thread for read the input trace" )
+    ( "asynch-max-buffer",        po::value<int>( &asynch_buffer_size_mb ),            "Max size of the asynch read buffer in MB (default: 10MB)" )
+    ( "create-cuda-streams",      po::bool_switch( &all_streams_created ),             "Force all CUDA streams to be created from the beginning." )
+    ( "ideal-openmp",             po::bool_switch( &ideal_openmp ),                    "Ignores the duration of openmp runtime events. Any remaining duration is due to implicit synchronization" )
+  ;
 
   po::options_description mandatory( "Mandatory options" );
   mandatory.add_options()
-    // ("dim", po::value<string>(&str_parameter_tracefile)->required(),
-    //   "Dimemas Input Trace File")
-    //("prv-trace,p", po::value<string>(&str_paraver_file),//->required(),
-    //    "Generated paraver trace(OPTIONAL)")
-    ( "config-file", po::value<string>( &str_config_file )->required(), "Dimemas configuration file" );
+    ( "config-file", po::value<string>( &str_config_file )->required(), "Dimemas configuration file" )
+  ;
 
-  po::options_description optional( "Optional options :"
-                                    " To generate simulated paraver trace file" );
-  optional.add_options()( "prv-trace,p", po::value<string>( &str_paraver_file ), "Generate simulated paraver trace file" );
+  po::options_description optional( "Optional options : To generate simulated paraver trace file" );
+  optional.add_options()
+    ( "prv-trace,p", po::value<string>( &str_paraver_file ), "Generate simulated paraver trace file" )
+  ;
+  
   po::options_description output( "Output options" );
   output.add_options()
-    //("output,o", po::value<string>(&str_fichero_salida), "Set output file")
-    ( "only-time,t", po::bool_switch( &b_short_out_info ), "Shows just timing information as output" )(
-      "monitorize-event,e",
-      po::value<string>( &event_to_monitorize ),
-      "Show time distance between event occurrences" )(
-      "monitorize-event-output,g",
-      po::value<string>( &str_file_for_event_to_monitorize ),
-      "File for output info about event monitoring" )( "pcf-file", po::value<string>( &str_paraver_pcf_insert ), "Set the pcf output file" );
+    //("output,o",                  po::value<string>(&str_fichero_salida),                 "Set output file")
+    ( "only-time,t",               po::bool_switch( &b_short_out_info ),                   "Shows just timing information as output" )
+    ( "monitorize-event,e",        po::value<string>( &event_to_monitorize ),              "Show time distance between event occurrences" )
+    ( "monitorize-event-output,g", po::value<string>( &str_file_for_event_to_monitorize ), "File for output info about event monitoring" )
+    ( "pcf-file",                  po::value<string>( &str_paraver_pcf_insert ),           "Set the pcf output file" )
+  ;
 
   po::options_description debug_args( "Debug options" );
-  debug_args.add_options()( "debug,d", po::bool_switch( &debug_enabled ), "Show debug information during the simulation" )(
-    "xtra-asserts",
-    po::bool_switch( &extra_asserts_enabled ),
-    "Extra assertations" )( "xtra-sched-debug", po::bool_switch( &extra_sched_debug_enabled ), "Extra scheduler debug information" )(
-    "xtra-event-debug",
-    po::bool_switch( &extra_event_debug_enabled ),
-    "Extra events debug information" )( "xtra-paraver-debug",
-                                        po::bool_switch( &extra_paraver_debug_enabled ),
-                                        "Extra paraver tracefile generation debug information" )
-    //("xtra-task-debug", po::bool_switch(&extra_task_debug_enabled),
-    //    "Extra task debug information")
-    ;
+  debug_args.add_options()
+    ( "debug,d",            po::bool_switch( &debug_enabled ),               "Show debug information during the simulation" )
+    ( "xtra-asserts",       po::bool_switch( &extra_asserts_enabled ),       "Extra assertations" )
+    ( "xtra-sched-debug",   po::bool_switch( &extra_sched_debug_enabled ),   "Extra scheduler debug information" )
+    ( "xtra-event-debug",   po::bool_switch( &extra_event_debug_enabled ),   "Extra events debug information" )
+    ( "xtra-paraver-debug", po::bool_switch( &extra_paraver_debug_enabled ), "Extra paraver tracefile generation debug information" )
+    //("xtra-task-debug",    po::bool_switch(&extra_task_debug_enabled),      "Extra task debug information")
+  ;
 
   po::options_description all( "Allowed options" );
-  all.add( mandatory ).add( optional ).add( conf ).add( simulation ).add( output ).add( debug_args ).add( general );
+  all.add( mandatory )
+     .add( optional )
+     .add( conf )
+     .add( simulation )
+     .add( output )
+     .add( debug_args )
+     .add( general );
+// clang-format on
 
   po::positional_options_description pd;
   pd.add( "config-file", 1 );
+
+  auto usageMessage = [&argv]() { 
+    cout << "USAGE: " << argv[ 0 ] << " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+  };
 
   po::variables_map varmap;
   try
   {
     po::store( po::command_line_parser( argc, argv ).options( all ).positional( pd ).run(), varmap );
   }
-
   catch ( ... )
   {
     cout << "Error in the arguments. Please check it again." << endl;
     cout << "To see help, use -h flag" << endl;
     cout << endl;
-    cout << "USAGE: " << argv[ 0 ] << " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+    usageMessage();
     exit( EXIT_FAILURE );
   }
+
   if ( varmap.count( "help" ) )
   {
     print_dimemas_header();
-    cout << "USAGE: " << argv[ 0 ] << " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
-    //" -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+    usageMessage();
     cout << endl;
     cout << all << endl;
     exit( EXIT_SUCCESS );
   }
   else if ( varmap.count( "version" ) )
   {
-    cout << "Dimemas"
-         << " " VERSION << " (" << DATE << ")" << endl;
+    cout << "Dimemas" << " " VERSION << " (" << DATE << ")" << endl;
     exit( EXIT_SUCCESS );
   }
 
@@ -383,8 +367,7 @@ void parse_arguments( int argc, char *argv[] )
   {
     cout << "Error parsing arguments" << endl;
     cout << endl;
-    // cout << "plase specify the dim trace file " << endl;
-    cout << "USAGE: " << argv[ 0 ] << " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
+    usageMessage();
     cout << endl;
     cout << e.what() << endl;
     exit( EXIT_FAILURE );
