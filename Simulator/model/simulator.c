@@ -218,7 +218,7 @@ void SIMULATOR_Generate_row( const char *row_filename )
   fprintf( row_file, "\n" );
 
   // CPU information
-  long unsigned int ncpus = 0;
+  unsigned long ncpus = 0;
   for ( unsigned int i = 0; i < nodes_size; ++i )
   {
     for ( struct t_cpu *cpu = (struct t_cpu *)head_queue( &nodes[ i ].Cpus ); cpu != C_NIL;
