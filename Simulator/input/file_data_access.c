@@ -48,6 +48,8 @@
 #include <types.h>
 #include <unistd.h>
 
+#include "progress.h"
+
 t_boolean UseRendezVous( t_boolean trace_rendez_vous, long long int msg_size, t_boolean is_acc_comm )
 {
   /*
@@ -107,7 +109,7 @@ typedef struct _app_struct
   count_t comms_count;
   struct t_queue comms;
 
-  int *thread_trace_sizes;
+  size_t **thread_trace_sizes;
 
 } app_struct;
 
@@ -1171,7 +1173,7 @@ t_boolean DAP_read_offsets( app_struct *app )
   char *threads_offsets_str;
   char *current_thread_offset_str;
 
-  app->thread_trace_sizes = (int *)malloc( sizeof( int ) * app->total_threads_count );
+  app->thread_trace_sizes = (size_t **)malloc( sizeof( size_t * ) * app->tasks_count );
 
   // Set the stream to the offsets offset position
   if ( IO_fseeko( main_struct.current_stream, app->offsets_offset, SEEK_SET ) < 0 )
@@ -1184,6 +1186,8 @@ t_boolean DAP_read_offsets( app_struct *app )
   for ( current_task = 0; current_task < app->tasks_count; current_task++ )
   {
     count_t current_thread;
+
+    app->thread_trace_sizes[ current_task ] = (size_t *)malloc( sizeof( size_t ) * app->threads_count[ current_task ] );
 
     line        = NULL;
     line_length = 0;
@@ -1220,17 +1224,10 @@ t_boolean DAP_read_offsets( app_struct *app )
     current_thread            = 0;
     current_thread_offset_str = strtok( threads_offsets_str, ":" );
 
-
-    int index                        = app->threads_count[ current_task ] * current_task + current_thread;
-    app->thread_trace_sizes[ index ] = atoi( current_thread_offset_str );
-
-    if ( index > 0 )
+    if ( current_task > 0 )
     {
-      app->thread_trace_sizes[ index - 1 ] = app->thread_trace_sizes[ index ] - app->thread_trace_sizes[ index - 1 ];
-    }
-    if ( index == app->total_threads_count - 1 )
-    {
-      app->thread_trace_sizes[ index ] = app->offsets_offset - app->thread_trace_sizes[ index ];
+      app->thread_trace_sizes[ current_task - 1 ][ app->threads_count[ current_task ] - 1 ] = 
+              strtoul( current_thread_offset_str, NULL, 0 ) - app->thread_trace_sizes[ current_task - 1 ][ app->threads_count[ current_task ] - 1 ];
     }
 
     while ( current_thread_offset_str != NULL )
@@ -1241,6 +1238,14 @@ t_boolean DAP_read_offsets( app_struct *app )
                           app->threads_count[ current_task ],
                           current_thread );
         return FALSE;
+      }
+
+      app->thread_trace_sizes[ current_task ][ current_thread ] = strtoul( current_thread_offset_str, NULL, 0 );
+
+      if ( current_thread > 0 )
+      {
+        app->thread_trace_sizes[ current_task ][ current_thread - 1 ] = app->thread_trace_sizes[ current_task ][ current_thread ]
+                                                                        - app->thread_trace_sizes[ current_task ][ current_thread - 1 ];
       }
 
       app->threads_offsets[ current_task ][ current_thread ] = (off_t)strtoul( current_thread_offset_str, NULL, 0 );
@@ -1257,6 +1262,12 @@ t_boolean DAP_read_offsets( app_struct *app )
                         app->threads_count[ current_task ],
                         current_thread );
       return FALSE;
+    }
+
+    if( current_task == app->tasks_count - 1 )
+    {
+      app->thread_trace_sizes[ current_task ][ current_thread - 1 ] = app->offsets_offset
+                                                                      - app->thread_trace_sizes[ current_task ][ current_thread - 1 ];
     }
 
     free( threads_offsets_str );
@@ -1909,6 +1920,9 @@ t_boolean DAP_read_action( app_struct *app, int task_id, int thread_id, struct t
     }
   }
 
+  updateProgress( ( app->current_threads_offsets[ task_id ][ thread_id ] - app->threads_offsets[ task_id ][ thread_id ] ) /
+                  ( app->thread_trace_sizes[ task_id ][ thread_id ] *1.0 ) );
+
   free( op_fields );
   free( line );
   return result;
@@ -2157,7 +2171,7 @@ float DAP_get_progression( int Ptaskid, int taskid, int threadid )
   long int current_offset  = this_app->current_threads_offsets[ taskid ][ threadid ];
 
   long int progress_fp = current_offset - original_offset;
-  long int total_size  = this_app->thread_trace_sizes[ this_app->threads_count[ taskid ] * ( taskid + threadid ) ];
+  long int total_size  = this_app->thread_trace_sizes[ taskid ][ threadid ];
   float progression    = ( (float)progress_fp ) / total_size;
 
   printf( "progression ======== >>>>>>>  %f\n", progression );
