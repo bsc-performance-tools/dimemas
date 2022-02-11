@@ -24,6 +24,7 @@
  \*****************************************************************************/
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <iterator>
 #include "progress.h"
@@ -31,6 +32,7 @@
 using namespace std;
 
 constexpr unsigned int STEPS_LIMIT = 1000;
+constexpr unsigned int BAR_WIDTH = 30;
 
 class ProgressManager
 {
@@ -82,7 +84,12 @@ void ProgressManager::printProgress()
 {
   if( ++countSteps % STEPS_LIMIT == 0 || currentProgress == 1.0 )
   {
-    if( countSteps > 1 ) std::fill_n( std::ostream_iterator<char>( std::cout ), 6, '\b' );
+    std::cout << "[";
+
+    std::fill_n( std::ostream_iterator<char>( std::cout ), std::floor( currentProgress * BAR_WIDTH ), '#' );
+    std::fill_n( std::ostream_iterator<char>( std::cout ), BAR_WIDTH - std::floor( currentProgress * BAR_WIDTH ), ' ' );
+
+    std::cout << "] ";
 
     std::cout << std::fixed;
     std::cout.precision( 1 );
@@ -91,7 +98,10 @@ void ProgressManager::printProgress()
     if( currentProgress == 1.0 ) 
       std::cout << "\n";
     else
+    {
+      std::cout << "\r";
       std::cout.flush();
+    }
   }
 }
 
