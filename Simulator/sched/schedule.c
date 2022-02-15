@@ -99,7 +99,8 @@ void SCHEDULER_Init()
         action = thread->action;
         if ( action == AC_NIL )
         {
-          panic( "P%02d T%02d (t%02d) initialized without actions\n", IDENTIFIERS( thread ) );
+          // this thread has no records
+          continue;
         }
 
         if ( action->action != WORK && action->action != GPU_BURST )
