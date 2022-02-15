@@ -1150,7 +1150,7 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
 
       Header << ncpus;
 
-      if ( nodes_used_i < nodes_used - 1 )
+      if ( nodes_used_i < nodes_used )
       {
         Header << ",";
       }
