@@ -108,7 +108,6 @@ struct t_node
   t_boolean accelerator;
   struct t_accelerator acc;
   double acc_relative;
-  t_boolean has_accelerated_task;
 };
 
 void NODE_Init_Empty_Node( struct t_machine *machine, struct t_node *node );

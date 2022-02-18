@@ -34,4 +34,7 @@ libDimemasScheduling_la_SOURCES = \
 	SCH_svr4.c \
 	SCH_svr4.h \
 	SCH_ss_mpi_cp.c \
-	SCH_ss_mpi_cp.h
+	SCH_ss_mpi_cp.h \
+	event_sync.cc \
+	event_sync.h
+

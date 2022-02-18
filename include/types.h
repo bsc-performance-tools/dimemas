@@ -21,16 +21,7 @@
  * The GNU LEsser General Public License is contained in the file COPYING.   *
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
- \*****************************************************************************/
-
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-   $URL::                                          $:  File
-   $Rev::                                          $:  Revision of last commit
-   $Author::                                       $:  Author of last commit
-   $Date::                                         $:  Date of last commit
-
-   \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+ \****************************************************************************/
 
 #ifndef __types_h
 #define __types_h
@@ -111,11 +102,6 @@ struct t_queue
   struct t_item *last;  /* Last item in queue */
   struct t_item *curr;  /* Current item in sequential search */
   t_count count;        /* Number of items */
-};
-
-struct t_list
-{
-  struct t_list *next;
 };
 
 struct t_module
@@ -774,18 +760,22 @@ struct t_task
 
   /* OMP variables */
   t_boolean openmp;
-  dimemas_timer master_time;
-  struct t_omp_queue *omp_queue;
 
   // CUDA variables
   t_boolean accelerator;
 
-  struct t_thread **KernelSync; /*	Kernel thread of sync	*/
-  int KernelSync_n_elems;
+  int totalCreatedStreams;      /* number of streams already created */
+
+  struct t_thread **StreamSync; /* Kernel thread of sync */
+  int StreamSync_n_elems;
   
-  struct t_thread *HostSync;   /*	Host thread of sync	*/
-  int KernelByComm;            /* Kernel_id indicated in comm_id for global_op */
-  int threads_in_accelerator;          /* Number of threads (e.g. CUDA streams) executed in gpu */
+  struct t_thread *HostSync;    /* Host thread of sync */
+  int StreamByComm;             /* Stream_id indicated in comm_id for global_op */
+  int threads_in_accelerator;   /* Number of threads (e.g. CUDA streams) executed in gpu */
+
+  // event synchronization
+  struct TEventSyncQueue *event_sync_queue;
+
 };
 
 struct t_event
@@ -967,11 +957,11 @@ struct t_thread
 
   // Accelerator variables
   t_boolean host;                  /* Indicates if it's an accelerator host thread	*/
-  t_boolean kernel;                /* Indicates if it's an accelerator kernel thread	*/
+  t_boolean stream;                /* Indicates if it's an accelerator stream thread	*/
+  t_boolean stream_created;        /* Indicates if this stream has been created */
   struct t_link *accelerator_link; /* Accelerator link for communications	*/
-  t_boolean first_acc_event_read;  /* Throws a NOT_CREATED_ST before */
-  /* start if it's a kernel thread	*/
-  t_boolean acc_recv_sync;                   /* Indicates if receiver has to wait to comm to start block (Syncs in kernel) */
+  t_boolean first_acc_event_read;  /* Throws a NOT_CREATED_ST before start if it's a stream thread	*/
+  t_boolean acc_recv_sync;                   /* Indicates if receiver has to wait to comm to start block (Syncs in stream) */
   t_boolean acc_sender_sync;                 /* Indicates if sender has to wait to receiver receives	*/
   t_boolean doing_acc_comm;                  /* Do not print startup latencies	*/
   t_boolean blocked_in_global_op;            /* To control threads inside acc sync */
@@ -990,6 +980,11 @@ struct t_thread
   dimemas_timer omp_last_running_end;
   dimemas_timer omp_last_synchro_end;
 
+  // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
+  //   nested parallel function calls after worksharing single
+  // size_t omp_nesting_level;
+
+
   // Non-blocking GLOP variables
   // in_flight: Indicates how many non-block glops are already executing.
   // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.
@@ -1002,6 +997,9 @@ struct t_thread
   int n_nonblock_glob_done;
 
   struct t_queue nonblock_glop_done_threads;
+
+  t_boolean event_sync_reentry;
+  struct TCapturedEvents *captured_events;
 
   volatile struct t_action **action_buffer;
   volatile int *action_buffer_head;
@@ -1165,7 +1163,6 @@ struct t_copyseg
 #define L_NIL    (struct t_link *)0
 #define ACC_NIL  (struct t_account *)0
 #define B_NIL    (struct t_both *)0
-#define LI_NIL   (struct t_list *)0
 #define BU_NIL   (struct t_bus_utilization *)0
 #define M_NIL    (struct t_module *)0
 #define F_NIL    (struct t_filed *)0

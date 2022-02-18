@@ -36,6 +36,8 @@
 #include "list.h"
 #include "sched_vars.h"
 #include "types.h"
+#include "event_sync.h"
+#include "dim_acc.h"
 
 #include <math.h>
 #ifdef USE_EQUEUE
@@ -63,6 +65,8 @@ static int SCH_prio          = 0;
 t_boolean monitorize_event = FALSE;
 int event_to_monitorize    = 0;
 
+
+extern t_boolean is_ideal_openmp;
 // void SCHEDULER_thread_to_gpu(struct t_node *node, struct t_thread *kernel_thread);
 
 void SCHEDULER_Init()
@@ -103,7 +107,7 @@ void SCHEDULER_Init()
           panic( "P%02d T%02d (t%02d) must begin execution with work\n", IDENTIFIERS( thread ) );
         }
 
-        if ( thread->task->accelerator && thread->kernel )
+        if ( thread->task->accelerator && thread->stream )
         {
           thread->loose_cpu = FALSE;
         }
@@ -113,7 +117,10 @@ void SCHEDULER_Init()
         }
 
         ( *SCH[ machine->scheduler.policy ].init_scheduler_parameters )( thread );
-        SCHEDULER_thread_to_ready( thread );
+        if ( thread->stream == FALSE || thread->stream_created == TRUE )
+        {
+          SCHEDULER_thread_to_ready( thread );
+        }
       }
     }
   }
@@ -203,7 +210,7 @@ void SCHEDULER_reload( struct t_Ptask *Ptask )
       {
         panic( "P%02d T%02d (t%02d) without initial actions\n", IDENTIFIERS( thread ) );
       }
-      if ( thread->task->accelerator && thread->kernel )
+      if ( thread->task->accelerator && thread->stream )
       {
         thread->loose_cpu = FALSE;
       }
@@ -236,6 +243,34 @@ struct t_cpu *select_free_cpu( struct t_node *node, struct t_thread *thread )
   return ( C_NIL );
 }
 
+struct t_cpu * assign_gpu( struct t_thread *thread, struct t_node *node )
+{
+  struct t_cpu *cpu = NULL;
+  struct t_account *account = current_account( thread );
+  
+  if (thread->cpu != NULL)
+    return thread->cpu;
+  // 1. Look for CPU with is_gpu = 1
+  for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
+  {
+    // check either the cpu has thread or not.
+    if ( cpu->is_gpu == TRUE && cpu->current_thread == TH_NIL )
+    {
+      // 2.Assigning thread to this GPU
+      cpu->current_thread = thread;
+      thread->cpu         = cpu;
+      // context switch
+      if ( cpu->current_thread_context != thread )
+      {
+        account->n_th_in_run++;
+        cpu->current_thread_context = thread;
+      }
+      break;
+    }
+  }
+  return cpu;
+} 
+
 static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
 {
   t_nano ti;
@@ -246,7 +281,7 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
 
   machine = node->machine;
 
-  if ( !thread->kernel && !thread->host )
+  if ( !thread->stream && !thread->host && !thread->event_sync_reentry)
   { /* If is a wait in accelerator event block, no wait thrown to fill original trace */
     PARAVER_Wait( 0, IDENTIFIERS( thread ), thread->last_paraver, current_time, PRV_SYNC_ST );
     thread->last_paraver = current_time;
@@ -255,28 +290,10 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
   SUB_TIMER( current_time, thread->put_into_ready, tmp_timer );
   ADD_TIMER( tmp_timer, account->time_ready_without_cpu, account->time_ready_without_cpu );
 
-  if ( thread->task->accelerator && thread->kernel == TRUE )
+  if ( thread->task->accelerator && thread->stream == TRUE )
   {
     // 0. Ensure that this is an heterogeneous node
-    // 1. Look for CPU with is_gpu = 1
-    for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
-    {
-      // check either the cpu has thread or not.
-      if ( cpu->is_gpu == TRUE && cpu->current_thread == TH_NIL )
-      {
-        // 2.Assigning thread to this GPU
-        cpu->current_thread = thread;
-        thread->cpu         = cpu;
-        // context switch
-        if ( cpu->current_thread_context != thread )
-        {
-          account->n_th_in_run++;
-          cpu->current_thread_context = thread;
-        }
-
-        break;
-      }
-    }
+    cpu = assign_gpu( thread, node );
 
 /*    if( cpu == C_NIL )
       printf("task %d thread %d without cpu in node %d\n",thread->task->taskid,thread->threadid,node->nodeid);
@@ -287,11 +304,12 @@ static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
   {
     cpu = select_free_cpu( node, thread );
 
-    assert( cpu->is_gpu == FALSE );
     if ( cpu == C_NIL )
     {
       panic( "Can't get free processor on node %d\n", node->nodeid );
     }
+    assert( cpu->is_gpu == FALSE );
+
     cpu->current_thread = thread;
     thread->cpu         = cpu;
 
@@ -435,7 +453,14 @@ t_nano SCHEDULER_get_execution_time( struct t_thread *thread )
   /* the following call " .get_execution_time " is mandatory */
   ti = ( *SCH[ machine->scheduler.policy ].get_execution_time )( thread );
   
-  if ( thread->kernel && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 )
+  /* for ideal configuration ignore the burst inside the configure call */
+  if ( ( thread->stream && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 ) ||
+       ( is_ideal_openmp == TRUE &&
+         !OMPEventEncoding_Is_OMPWorker_Running( thread->omp_in_block_event ) &&
+         ( OMPEventEncoding_Is_OMPBlock( thread->omp_in_block_event.type ) && thread->omp_in_block_event.value > 0 ||
+           OMPEventEncoding_Is_OMPWorker_Running_End( thread->omp_in_block_event ) ) 
+       )
+     )
     ti = 0;
 
   account = current_account( thread );
@@ -495,88 +520,106 @@ void SCHEDULER_next_thread_to_run( struct t_node *node )
   put_thread_on_run( thread, node );
 }
 
-/******************************************************************
- ** Aquesta funcio serveix per fer algun tractament extra en alguns
- ** events concrets. Per exemple, si l'event es un block d'entrada/
- ** sortida, cal contar el temps que el thread passa dins d'aquest
- ** block a l'accounting.
- ******************************************************************/
-void TractaEvent( struct t_thread *thread, struct t_action *action )
+void scheduler_treat_event(struct t_thread *thread, struct t_even *event )
 {
-  struct t_account *account;
-  dimemas_timer tmp_timer;
-#define IDLE_BLOCK     0
-#define IO_READ_BLOCK  129
-#define IO_WRITE_BLOCK 130
-#define IO_CALL_BLOCK  131
-
-  if ( action->desc.even.type == BLOCK_BEGIN )
+  if ( debug & D_SCH )
   {
-    if ( action->desc.even.value == IO_READ_BLOCK )
+    PRINT_TIMER( current_time );
+    printf( ": SCHEDULER general P%02d T%02d (t%02d) User Event %llu (%llu)\n",
+            IDENTIFIERS( thread ),
+            event->type,
+            event->value );
+  }
+
+  if ( monitorize_event )
+  {
+    if ( event_to_monitorize == event->type )
     {
-      /* Comença una lectura de disc */
-      account = current_account( thread );
-      ASS_ALL_TIMER( ( account->initial_io_read_time ), current_time );
-    }
-    else if ( action->desc.even.value == IO_WRITE_BLOCK )
-    {
-      /* Comença una escriptura de disc */
-      account = current_account( thread );
-      ASS_ALL_TIMER( ( account->initial_io_write_time ), current_time );
-    }
-    else if ( action->desc.even.value == IO_CALL_BLOCK )
-    {
-      /* Comença una lectura/escriptura de disc */
-      account = current_account( thread );
-      ASS_ALL_TIMER( ( account->initial_io_call_time ), current_time );
-    }
-    else if ( action->desc.even.value == IDLE_BLOCK )
-    {
-      thread->idle_block = TRUE;
+      dimemas_timer tmp_timer;
+
+      SUB_TIMER( current_time, thread->last_time_event_number, tmp_timer );
+      fprintf( File_for_Event, "Event monitorized  P%02d T%02d (th%02d) distance ", IDENTIFIERS( thread ) );
+      FPRINT_TIMER( File_for_Event, tmp_timer );
+      fprintf( File_for_Event, "\n" );
+      ASS_ALL_TIMER( thread->last_time_event_number, current_time );
     }
   }
-  else if ( action->desc.even.type == BLOCK_END )
+
+  /* JGG (2012/01/10): New module management */
+  if ( event->value != (unsigned long int)0 )
   {
-    if ( action->desc.even.value == IO_READ_BLOCK )
+    if ( debug & D_SCH )
     {
-      /* Acaba una lectura de disc */
-      account = current_account( thread );
-      FLOAT_TO_TIMER( 0, tmp_timer );
-      if ( !EQ_TIMER( ( account->initial_io_read_time ), tmp_timer ) )
-      {
-        SUB_TIMER( current_time, ( account->initial_io_read_time ), tmp_timer );
-        ADD_TIMER( tmp_timer, ( account->io_read_time ), ( account->io_read_time ) );
-        FLOAT_TO_TIMER( 0, ( account->initial_io_read_time ) );
-      }
+      PRINT_TIMER( current_time );
+      printf( ": Checking 'module_entrance [%lld:%lld] for P%02d T%02d (t%02d)\n",
+              event->type,
+              event->value,
+              IDENTIFIERS( thread ) );
     }
-    else if ( action->desc.even.value == IO_WRITE_BLOCK )
+    module_entrance( thread, (unsigned long int)event->type, (unsigned long int)event->value );
+  }
+  else
+  {
+    module_exit( thread, (unsigned long int)event->type );
+  }
+
+  if ( event->type == PRIORITY_SET_EVENT )
+  {
+    struct t_machine *machine = get_node_of_thread( thread )->machine;
+
+    if ( event->value == 0 )
     {
-      /* Acaba una escriptura de disc */
-      account = current_account( thread );
-      FLOAT_TO_TIMER( 0, tmp_timer );
-      if ( !EQ_TIMER( ( account->initial_io_write_time ), tmp_timer ) )
-      {
-        SUB_TIMER( current_time, ( account->initial_io_write_time ), tmp_timer );
-        ADD_TIMER( tmp_timer, ( account->io_write_time ), ( account->io_write_time ) );
-        FLOAT_TO_TIMER( 0, ( account->initial_io_write_time ) );
-      }
+      /* this is the ultimate priority that a task can have
+          highest priority + preempting tasks with smaller priorities */
+      ( *SCH[ machine->scheduler.policy ].modify_priority )( thread, ( t_priority )( 0 ) );
+      /* this is a task that can preempt*/
+      ( *SCH[ machine->scheduler.policy ].modify_preemption )( thread, (t_priority)1 );
     }
-    else if ( action->desc.even.value == IO_CALL_BLOCK )
+    else
     {
-      /* Acaba una lectura/escriptura de disc */
-      account = current_account( thread );
-      FLOAT_TO_TIMER( 0, tmp_timer );
-      if ( !EQ_TIMER( ( account->initial_io_call_time ), tmp_timer ) )
-      {
-        SUB_TIMER( current_time, ( account->initial_io_call_time ), tmp_timer );
-        ADD_TIMER( tmp_timer, ( account->io_call_time ), ( account->io_call_time ) );
-        FLOAT_TO_TIMER( 0, ( account->initial_io_call_time ) );
-      }
+      /* this is a regular priority of a task */
+      t_priority new_priority = 1 / (t_priority)event->value;
+      ( *SCH[ machine->scheduler.policy ].modify_priority )( thread, ( t_priority )( new_priority ) );
     }
-    else if ( action->desc.even.value == IDLE_BLOCK )
-    {
-      thread->idle_block = FALSE;
-    }
+  }
+
+  if ( event->type == PREEMPTION_SET_EVENT )
+  {
+    printf( "warning - this was BEFORE used as an user event for PREEMPTION_SET_EVENT - BUT NOT ANY MORE???\n" );
+  }
+
+  /* remember the sstaskid of this thread */
+  if ( event->type == USER_EVENT_TYPE_TASKID_START_TASK )
+  {
+    if ( event->type != 0 )
+      thread->sstask_id = event->value;
+  }
+
+  /* remember the sstask_type of this thread */
+  if ( event->type == USER_EVENT_TYPE_TASKTYPE_START_TASK )
+  {
+    if ( event->type != 0 )
+      thread->sstask_type = event->value;
+  }
+
+  /* treat acc events */
+  treat_acc_event( thread, event );
+  /* treating OMP events */
+  treat_omp_events( thread, event, current_time );
+
+  /* Not printing block end if it is a clEnqueueNDRangeKernel because
+    * it has been printed yet in COMMUNIC_SEND
+    * Not printing event if stream needs a previous sync (in barrier)
+    */
+  int printing_event =
+    !thread->acc_recv_sync &&
+    !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->stream && event->value == 0 );
+  if ( printing_event )
+  { /* If it is not an accelerator event that has to wait to be written */
+    struct t_cpu *cpu;
+    
+    cpu = get_cpu_of_thread( thread );
+    PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, event->type, event->value );
   }
 }
 
@@ -646,9 +689,9 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           {
             action = thread->action;
 
-            if ( thread->kernel && !thread->first_acc_event_read )
+            if ( thread->stream && !thread->first_acc_event_read )
             {
-              /* Previous at accelerator events in kernel thread must be NOT_CREATED state in CPU	*/
+              /* Previous at accelerator events in stream thread must be NOT_CREATED state in CPU	*/
               PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
             }
             else if ( thread->idle_block )
@@ -661,18 +704,12 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               { /*	It's a CPU burst	*/
                 PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
               }
-              else if ( thread->kernel && ( CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) ||
-                                            OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
-              {
-                /*	It's a GPU burst	*/
-                PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-              }
-              else if ( ( thread->host || thread->kernel ) &&
+              else if ( ( thread->host || thread->stream ) &&
                         ( CUDAEventEncoding_Is_CUDABlock( thread->acc_in_block_event.type ) ||
                           OCLEventEncoding_Is_OCLBlock( thread->acc_in_block_event.type ) ) &&
                         CUDAEventEncoding_Is_BlockBegin( thread->acc_in_block_event.value ) )
               {
-                /* Do not throw anything if host or kernel is inside a CUDA or OpenCL event block	*/
+                /* Do not throw anything if host or stream is inside a CUDA or OpenCL event block	*/
               }
               else if ( thread->omp_worker_thread || ( thread->omp_master_thread && OMPEventEncoding_Is_OMPType( thread->omp_in_block_event.type ) &&
                                                        OMPEventEncoding_Is_BlockBegin( thread->omp_in_block_event.value ) ) )
@@ -690,8 +727,8 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         }
       }
       thread->last_paraver = current_time;
-      // Accelerator kernel threads always in same gpu
-      if( !( thread->task->accelerator == TRUE && thread->kernel == TRUE ) )
+      // Accelerator stream threads always in same gpu
+      if( !( thread->task->accelerator == TRUE && thread->stream == TRUE ) )
         cpu->current_thread  = TH_NIL;
 
       if ( thread->doing_context_switch )
@@ -809,116 +846,12 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           }
           case EVENT:
           {
-            if ( debug & D_SCH )
+            if( capture_previous_events( thread, &action->desc.even, thread->threadid) == FALSE )
             {
-              PRINT_TIMER( current_time );
-              printf( ": SCHEDULER general P%02d T%02d (t%02d) User Event %llu (%llu)\n",
-                      IDENTIFIERS( thread ),
-                      action->desc.even.type,
-                      action->desc.even.value );
-            }
+              if( event_sync_add( thread->task, &action->desc.even, thread->threadid, PARTNER_ID_BARRIER, FALSE ) )
+                return;
 
-            if ( monitorize_event )
-            {
-              if ( event_to_monitorize == action->desc.even.type )
-              {
-                SUB_TIMER( current_time, thread->last_time_event_number, tmp_timer );
-                fprintf( File_for_Event, "Event monitorized  P%02d T%02d (th%02d) distance ", IDENTIFIERS( thread ) );
-                FPRINT_TIMER( File_for_Event, tmp_timer );
-                fprintf( File_for_Event, "\n" );
-                ASS_ALL_TIMER( thread->last_time_event_number, current_time );
-              }
-            }
-
-            /* JGG (2012/01/10): New module management */
-            if ( action->desc.even.value != (unsigned long int)0 )
-            {
-              if ( debug & D_SCH )
-              {
-                PRINT_TIMER( current_time );
-                printf( ": Checking 'module_entrance [%lld:%lld] for P%02d T%02d (t%02d)\n",
-                        action->desc.even.type,
-                        action->desc.even.value,
-                        IDENTIFIERS( thread ) );
-              }
-              module_entrance( thread, (unsigned long int)action->desc.even.type, (unsigned long int)action->desc.even.value );
-            }
-            else
-            {
-              module_exit( thread, (unsigned long int)action->desc.even.type );
-            }
-
-            if ( action->desc.even.type == PRIORITY_SET_EVENT )
-            {
-              if ( action->desc.even.value == 0 )
-              {
-                /* this is the ultimate priority that a task can have
-                   highest priority + preempting tasks with smaller priorities */
-                ( *SCH[ machine->scheduler.policy ].modify_priority )( thread, ( t_priority )( 0 ) );
-                /* this is a task that can preempt*/
-                ( *SCH[ machine->scheduler.policy ].modify_preemption )( thread, (t_priority)1 );
-              }
-              else
-              {
-                /* this is a regular priority of a task */
-                t_priority new_priority = 1 / (t_priority)action->desc.even.value;
-                ( *SCH[ machine->scheduler.policy ].modify_priority )( thread, ( t_priority )( new_priority ) );
-              }
-            }
-
-            if ( action->desc.even.type == PREEMPTION_SET_EVENT )
-            {
-              printf( "warning - this was BEFORE used as an user event for PREEMPTION_SET_EVENT - BUT NOT ANY MORE???\n" );
-            }
-
-            /* remember the sstaskid of this thread */
-            if ( action->desc.even.type == USER_EVENT_TYPE_TASKID_START_TASK )
-            {
-              if ( action->desc.even.type != 0 )
-                thread->sstask_id = action->desc.even.value;
-            }
-
-            /* remember the sstask_type of this thread */
-            if ( action->desc.even.type == USER_EVENT_TYPE_TASKTYPE_START_TASK )
-            {
-              if ( action->desc.even.type != 0 )
-                thread->sstask_type = action->desc.even.value;
-            }
-
-            /* treat acc events */
-            treat_acc_event( thread, action );
-            /* treating OMP events */
-            treat_omp_iterations( thread, &action->desc.even, current_time );
-            treat_omp_events( thread, &action->desc.even, current_time, thread->omp_iteration_count );
-
-            /* Not printing block end if it is a clEnqueueNDRangeKernel because
-             * it has been printed yet in COMMUNIC_SEND
-             * Not printing event if kernel needs a previous sync (in barrier)
-             */
-            int printing_event =
-              !thread->acc_recv_sync &&
-              !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->kernel && action->desc.even.value == 0 ) &&
-              ( thread->task->openmp && !thread->omp_worker_thread || !thread->task->openmp );
-            if ( printing_event )
-            { /* If it is not an accelerator event that has to wait to be written */
-              cpu = get_cpu_of_thread( thread );
-              PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, action->desc.even.type, action->desc.even.value );
-            }
-
-            if ( thread->task->openmp && thread->omp_worker_thread )
-            {
-              if ( is_omp_master_info_ready( thread->task->omp_queue, thread->omp_iteration_count ) )
-              {
-                omp_print_event( thread, &action->desc.even, thread->omp_iteration_count );
-              }
-              else
-              {
-                struct t_omp_event tmpEvent;
-                tmpEvent.time  = current_time;
-                tmpEvent.type  = action->desc.even.type;
-                tmpEvent.value = action->desc.even.value;
-                add_omp_worker_event( thread->task->omp_queue, thread->omp_iteration_count, thread->threadid, &tmpEvent );
-              }
+              scheduler_treat_event( thread, &action->desc.even );
             }
 
             thread->action = action->next;
@@ -930,7 +863,10 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               if ( action->action != WORK && action->action != GPU_BURST )
                 goto next_op;
 
-              thread->loose_cpu = FALSE;
+              if ( thread->stream == TRUE )
+                thread->loose_cpu = FALSE;
+              else
+                thread->loose_cpu = TRUE;
               SCHEDULER_thread_to_ready( thread );
             }
             break;
@@ -1057,11 +993,11 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             break;
           }
           default:
-            panic( "Unkown action %d to P%02d T%02d (t%02d)\n", action->action, IDENTIFIERS( thread ) );
+            panic( "Unknown action %d to P%02d T%02d (t%02d)\n", action->action, IDENTIFIERS( thread ) );
         }
       }
 
-      if ( thread->kernel == TRUE )
+      if ( thread->stream == TRUE )
         thread->loose_cpu = FALSE;
       /*assert (thread->loose_cpu == FALSE);*/
 
@@ -1079,7 +1015,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
     }
     case SCH_NEW_JOB:
     {
-      if ( num_free_cpu( node ) > 0 )
+      if ( num_free_cpu( node ) > 0 || thread->stream == TRUE )
       {
         /* The new one is the unique one */
         SCHEDULER_next_thread_to_run( node );
@@ -1417,13 +1353,13 @@ t_boolean more_actions( struct t_thread *thread )
     else
     {
       struct t_cpu *cpu;
-      if ( !thread->kernel )
-      { /* In kernel thread last cpu state is Not_Created thrown by host (above) */
+      if ( !thread->stream )
+      { /* In stream thread last cpu state is Not_Created thrown by host (above) */
         cpu = get_cpu_of_thread( thread );
         PARAVER_Dead( cpu->unique_number, IDENTIFIERS( thread ), current_time );
       }
 
-      /* Not_created state in kernel from last paraver event to end of trace */
+      /* Not_created state in stream from last paraver event to end of trace */
       if ( thread->host )
       {
         int threads_it;
@@ -1431,7 +1367,7 @@ t_boolean more_actions( struct t_thread *thread )
         for ( threads_it = 0; threads_it < task->threads_count; threads_it++ )
         {
           tmp_thread = task->threads[ threads_it ];
-          if ( tmp_thread->kernel )
+          if ( tmp_thread->stream )
           {
             PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( tmp_thread ), tmp_thread->last_paraver, current_time );
           }
@@ -1478,83 +1414,4 @@ t_boolean more_actions( struct t_thread *thread )
     return ( FALSE );
   }
   return ( TRUE );
-}
-
-
-/***************************************************************
- ** treat_acc_event
- ************************
- ** if action->desc.even is an accelerator event (CUDA or OpenCL), affects
- ** to cpu (or gpu) states, communications.
- ** Updates acc_in_block_event
-
- ***************************************************************/
-void treat_acc_event( struct t_thread *thread, struct t_action *action )
-{
-  struct t_cpu *cpu;
-
-  if ( !CUDAEventEncoding_Is_CUDABlock( action->desc.even.type ) && !OCLEventEncoding_Is_OCLBlock( action->desc.even.type ) )
-    return;
-
-  int block_begin = CUDAEventEncoding_Is_BlockBegin( action->desc.even.value );
-
-  if ( !thread->first_acc_event_read )
-  { /*	when in kernel thread first CUDA/OpenCL event  occurred,
-        indicated to stop generating NOT_CREATED states in CPU	*/
-    thread->first_acc_event_read = TRUE;
-  }
-
-  cpu = get_cpu_of_thread( thread );
-
-  /* CUDA cpu states */
-  if ( !block_begin && CUDAEventEconding_Is_CUDAConfigCall( thread->acc_in_block_event ) )
-  { /* If ending a Config Call event, cpu state is Others	*/
-    PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-  }
-
-  else if ( !block_begin && !thread->kernel && CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) )
-  { /* If ending a Launch event, cpu state is Thread Scheduling	*/
-    PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-  }
-
-  else if ( !block_begin && CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) )
-  {
-    PARAVER_Thread_Sync( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-  }
-
-  else if ( !block_begin && CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) )
-  {
-    PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-  }
-  /* CUDA cpu states */
-
-  /* OpenCL cpu states */
-  else if ( !block_begin && OCLEventEncoding_Is_OCLSchedBlock( thread->acc_in_block_event ) && thread->host )
-  {
-    PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-  }
-
-  else if ( !block_begin && OCLEventEncoding_Is_OCLSyncBlock( thread->acc_in_block_event ) )
-  {
-    PARAVER_Thread_Sync( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-  }
-
-  else if ( !block_begin && OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) )
-  {
-    PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
-  }
-  /* OpenCL cpu states */
-
-  /* Update the current accelerator block	*/
-  thread->acc_in_block_event.type  = action->desc.even.type;
-  thread->acc_in_block_event.value = action->desc.even.value;
-
-  if ( CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) && thread->kernel )
-  { /* Event waits when receive comm to be written	*/
-    thread->acc_recv_sync = TRUE;
-  }
-  else
-  { /* Do not get current_time if block is going to start later */
-    thread->acc_in_block_event.paraver_time = current_time;
-  }
 }

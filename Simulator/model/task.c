@@ -30,6 +30,7 @@
 #include <cpu.h>
 #include <define.h>
 #include <dim_omp.h>
+#include "event_sync.h"
 #include <events.h>
 #include <extern.h>
 #include <file_data_access.h>
@@ -86,6 +87,8 @@ int *PREEMP_table; /* Array to manage preemption cycles for each task */
  */
 t_boolean synthetic_bursts = FALSE;
 struct t_queue burst_categories;
+
+extern t_boolean all_CUDA_streams_created;
 
 /*
  * Private functions
@@ -513,9 +516,7 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   task->threads_count = 0;
   task->threads       = NULL;
 
-  /* OMP variables  */
-  task->master_time = 0;
-  task->omp_queue   = create_omp_queue();
+  task->event_sync_queue = createEventSyncQueue();
 
   create_queue( &( task->mess_recv ) );
   create_queue( &( task->recv ) );
@@ -532,10 +533,11 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   create_queue( &( task->th_for_in ) );
   create_queue( &( task->th_for_out ) );
 
-  task->KernelSync             = NULL; // Means no thread is waiting
-  task->KernelSync_n_elems     = 0;
+  task->totalCreatedStreams    = 1;      // Execution starts with default stream created
+  task->StreamSync             = NULL;   // Means no thread is waiting
+  task->StreamSync_n_elems     = 0;
   task->HostSync               = TH_NIL; // Means no root is waiting
-  task->KernelByComm           = -1;     // Means no root is waiting for kernel
+  task->StreamByComm           = -1;     // Means no root is waiting for kernel
   task->threads_in_accelerator = 0;
 }
 
@@ -939,6 +941,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->action                   = AC_NIL;
   thread->original_thread          = TRUE;
   thread->twin_thread              = TH_NIL;
+  thread->cpu                      = C_NIL;
   thread->doing_context_switch     = FALSE;
   thread->min_time_to_be_preempted = current_time;
   thread->doing_busy_wait          = FALSE;
@@ -970,6 +973,8 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->original_seek            = 0;
   thread->seek_position            = 0;
   thread->base_priority            = 0;
+
+  thread->stream_created           = FALSE;  // stream_created field should not be checked unless it is an accelerator stream
 
   thread->sstask_id   = 0;
   thread->sstask_type = 0;
@@ -1014,21 +1019,23 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   /* Accelerator variables */
   if ( task->accelerator && thread_id > 0 )
   {
-    thread->kernel = TRUE;
+    thread->stream = TRUE;
     thread->host   = FALSE;
 
+    thread->stream_created = ( all_CUDA_streams_created || thread_id <= 1 );  // only default stream starts created 
+
     ++task->threads_in_accelerator;
-    task->KernelSync = realloc( task->KernelSync, sizeof(struct t_thread *) * task->threads_in_accelerator );
-    task->KernelSync[ task->threads_in_accelerator - 1 ] = TH_NIL;
+    task->StreamSync = realloc( task->StreamSync, sizeof(struct t_thread *) * task->threads_in_accelerator );
+    task->StreamSync[ task->threads_in_accelerator - 1 ] = TH_NIL;
   }
   else if ( task->accelerator && thread_id == 0 )
   {
-    thread->kernel = FALSE;
+    thread->stream = FALSE;
     thread->host   = TRUE;
   }
   else
   { /*	It's not an accelerator task	*/
-    thread->kernel = FALSE;
+    thread->stream = FALSE;
     thread->host   = FALSE;
   }
 
@@ -1070,6 +1077,10 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->omp_flag_at_end                 = FALSE;
   thread->omp_flag_at_start               = FALSE;
 
+  // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
+  //   nested parallel function calls after worksharing single
+  // thread->omp_nesting_level               = 0;
+
   /* NON-Block global operations variables */
   thread->n_nonblock_glob_in_flight = 0;
   thread->n_nonblock_glob_waiting   = 0;
@@ -1079,6 +1090,10 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
 
   create_queue( &thread->nonblock_glop_done_threads );
   thread->eof_reached = FALSE;
+
+  thread->event_sync_reentry = FALSE;
+
+  thread->captured_events = createCapturedEvents();
 
   /* JGG (2012/01/12): thread queue not needed anymore */
   // inFIFO_queue (&(task->threads), (char *) thread);
@@ -1228,7 +1243,7 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
 
   /* Accelerator variables */
   copy_thread->host                  = thread->host;
-  copy_thread->kernel                = thread->kernel;
+  copy_thread->stream                = thread->stream;
   copy_thread->accelerator_link      = thread->accelerator_link;
   copy_thread->first_acc_event_read  = thread->first_acc_event_read;
   copy_thread->acc_in_block_event    = thread->acc_in_block_event;
@@ -1304,7 +1319,7 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   new_account( &( copy_thread->account ), node->nodeid );
 
   copy_thread->host                      = thread->host;
-  copy_thread->kernel                    = thread->kernel;
+  copy_thread->stream                    = thread->stream;
   copy_thread->accelerator_link          = thread->accelerator_link;
   copy_thread->first_acc_event_read      = thread->first_acc_event_read;
   copy_thread->acc_in_block_event        = thread->acc_in_block_event;
@@ -1879,19 +1894,25 @@ int *TASK_Map_Filling_Nodes( int task_count )
       struct t_task *task = &( Ptask->tasks[ tasks_it ] );
       if ( task->accelerator )
       {
+        t_boolean taskAssigned = FALSE;
         for ( i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++ )
         {
           node = get_node_by_id( i_node );
 
           if ( node->accelerator && node->acc.num_gpu_in_node >= task->threads_in_accelerator )
           {
+            taskAssigned = TRUE;
             task_mapping[ tasks_it ] = i_node;
             n_cpus_per_node[ i_node ]--; // One CPU is now occupied
             node->used_node  = TRUE;
             node->acc.num_gpu_in_node = node->acc.num_gpu_in_node - task->threads_in_accelerator;
-            node->has_accelerated_task = TRUE; // One GPU is now occupied
             break;
           }
+        }
+
+        if( !taskAssigned )
+        {
+          die( "Insufficient number of GPUs for task P%d T%d\n", Ptask->Ptaskid, tasks_it );
         }
       }
     }
@@ -1987,20 +2008,27 @@ int *TASK_Map_N_Tasks_Per_Node( int n_tasks_per_node )
       struct t_task *task = &( Ptask->tasks[ tasks_it ] );
       if ( task->accelerator )
       {
+        t_boolean taskAssigned = FALSE;
         for ( i_node = 0; i_node < n_nodes; ++i_node )
         {
           if ( tasks_in_node[ i_node ] < n_tasks_per_node )
           {
             node = get_node_by_id( i_node );
-            if ( node->accelerator == TRUE && node->has_accelerated_task == FALSE )
+            if ( node->accelerator == TRUE && node->acc.num_gpu_in_node >= task->threads_in_accelerator )
             {
+              taskAssigned = TRUE;
               task_mapping[ tasks_it ] = i_node;
               ++tasks_in_node[ i_node ];
               node->used_node  = TRUE;
-              node->has_accelerated_task = TRUE;
+              node->acc.num_gpu_in_node = node->acc.num_gpu_in_node - task->threads_in_accelerator;
               break;
             }
           }
+        }
+
+        if( !taskAssigned )
+        {
+          die( "Insufficient number of GPUs for task P%d T%d\n", Ptask->Ptaskid, tasks_it );
         }
       }
     }
@@ -2071,18 +2099,25 @@ int *TASK_Map_Interleaved( int task_count )
       struct t_task *task = &( Ptask->tasks[ tasks_it ] );
       if ( task->accelerator )
       {
+        t_boolean taskAssigned = FALSE;
         for ( i_node = 0; i_node < n_nodes && tasks_it < task_count; i_node++ )
         {
           node = get_node_by_id( i_node );
-          if ( node->accelerator == TRUE && node->has_accelerated_task == FALSE )
+          if ( node->accelerator == TRUE && node->acc.num_gpu_in_node >= task->threads_in_accelerator )
           {
+            taskAssigned = TRUE;
             n_cpus_per_node[ i_node ]--; // One CPU is now occupied
             task_mapping[ tasks_it ] = i_node % n_nodes;
             last_task_assigned++;
-            node->used_node            = TRUE;
-            node->has_accelerated_task = TRUE; // One GPU is now occupied
+            node->used_node = TRUE;
+            node->acc.num_gpu_in_node = node->acc.num_gpu_in_node - task->threads_in_accelerator;
             break;
           }
+        }
+
+        if( !taskAssigned )
+        {
+          die( "Insufficient number of GPUs for task P%d T%d\n", Ptask->Ptaskid, tasks_it );
         }
       }
     }

@@ -23,8 +23,8 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-#ifndef __dim_omp_h
-#define __dim_omp_h
+#ifndef __dim_acc_h
+#define __dim_acc_h
 
 #include "define.h"
 #include "types.h"
@@ -34,10 +34,10 @@ extern "C"
 {
 #endif
 
-  void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time );
+  void treat_acc_event( struct t_thread *thread, struct t_even *event );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __dim_omp_h
+#endif

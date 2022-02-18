@@ -131,7 +131,7 @@ extern "C"
 /*
  * OpenMP Event Types
  */
-#define OMP_CALL_EV                      60000001
+#define OMP_PARALLEL_EV                  60000001
 #define OMP_WORKSHARING_EV               60000002
 #define OMP_BARRIER                      60000005
 #define OMP_WORK_EV                      60000011
@@ -147,7 +147,7 @@ extern "C"
 #define OMP_INIT_TASK_FXN_LINE_N_FILE    60000124
 
 
-#define OMP_CALL_LABEL                         "Parallel (OMP)"
+#define OMP_PARALLEL_LABEL                     "Parallel (OMP)"
 #define OMP_WORKSHARING_LABEL                  "Worksharing (OMP)"
 #define OMP_BARRIER_LABEL                      "OpenMP barrier"
 #define OMP_WORK_LABEL                         "OpenMP Worksharing work dispacher"
@@ -177,6 +177,7 @@ extern "C"
      ==== CUDA Event Types
      ========================================================================== */
 
+#define NEW_CUDA_LIB_CALL_EV  63100000
 #define CUDA_LIB_CALL_EV      63000001
 #define CUDA_MEMCPY_SIZE_EV   63000002
 #define CUDA_KERNEL_EV        63000019
@@ -1040,13 +1041,13 @@ extern "C"
   int OMPEventEncoding_Is_BlockBegin( long64_t Op );
   int OMPEventEncoding_Is_OMPSync( struct t_event_block event );
   int OMPEventEncoding_Is_OMPSched( struct t_event_block event );
-  int OMPEventEncoding_Is_OMPWork_Dist( struct t_event_block event );
+  int OMPEventEncoding_Is_OMP_fork_begin( struct t_event_block event );
   int OMPEventEncoding_Is_Outside_OMP( struct t_event_block event );
   int OMPEventEncoding_Is_OMP_Running( struct t_event_block event );
   int OMPEventEncoding_Is_OMPWorker_Running( struct t_event_block event );
   int OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event );
   int OMPEventEncoding_Is_OMPWorker_After_Synchro( struct t_event_block event );
-  int OMPEventEncoding_Is_OMPIdle( long64_t Op );
+  int OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event );
   int OMPEventEncoding_Is_Parallel_Begin( struct t_even *event );
 
   /* CUDA EventEncoding calls	*/
@@ -1054,9 +1055,13 @@ extern "C"
   int CUDAEventEncoding_Is_BlockBegin( long64_t Op );
   int CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver );
   int CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event );
   int CUDAEventEconding_Is_CUDALaunch( struct t_event_block event );
   int CUDAEventEconding_Is_CUDASync( struct t_event_block event );
+  int CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event );
+  int CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event );
+
 
   /* OpenCL EventEncoding calls	*/
   int OCLEventEncoding_Is_OCLBlock( long64_t type );

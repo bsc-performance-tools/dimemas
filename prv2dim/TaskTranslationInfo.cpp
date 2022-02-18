@@ -118,6 +118,7 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
   FirstOCLRead            = false;
   this->AcceleratorThread = AcceleratorThread;
   this->OpenMP_thread     = OpenMP_thread;
+  OpenMP_nesting_level    = 0;
   InCUDAHostToHost        = false;
 
   if ( !FilePointerAvailable )
@@ -199,7 +200,6 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
       cout << ThreadId << "]";
       cout << endl;
     }
-
     if ( Dimemas_CPU_Burst( TemporaryFile, TaskId - 1, ThreadId - 1, 1.0 * InitialTime * TimeFactor ) < 0 )
     {
       SetError( true );
@@ -625,13 +625,19 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     if ( ( LastBlockEnd != Timestamp || ( LastBlockEnd == 0 && Timestamp == 0 ) ) && MPIBlockIdStack.size() == 0 && CUDABlockIdStack.size() == 0 &&
          OCLBlockIdStack.size() == 0 )
     {
-      if ( Type != FLUSHING_EV && Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER && AcceleratorThread != ACCELERATOR_KERNEL)
+      if ( Type != FLUSHING_EV && Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER && AcceleratorThread != ACCELERATOR_KERNEL )
       {
-        if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+        if ( LastBlockEnd == 0 && OpenMP_thread == WORKER )
+        {
+          if ( !GenerateBurst( TaskId, ThreadId, 0 ) )
+          {
+            return false;
+          }
+        }
+        else if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) ) 
         {
           return false;
         }
-
         LastBlockEnd = Timestamp;
       }
     }
@@ -656,6 +662,14 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   {
     if ( CUDAEventEncoding_Is_BlockBegin( Value ) )
     {
+      if( CUDABlockIdStack.size() != 0 )
+      {
+        cout << "WARNING: overlapped CUDA calls in original trace. Simulation could be inconsistent" << endl;
+        cout << "\t Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " Time " << Timestamp << endl;
+        cout << "\t Previous type: " << CUDABlockIdStack.back().first << " value: " << CUDABlockIdStack.back().second << endl;
+        cout << "\t  Current type: " << Type << " value: " << Value << endl;
+      }
+
       if ( Timestamp > LastBlockEnd )
       {
         if ( AcceleratorThread == ACCELERATOR_HOST )
@@ -728,7 +742,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         {
           // There is a event closing without its opening in the middle of the
           // trace
-          cout << "WARNING: unbalanced CUDA blocks on original trace" << endl;
+          cout << "WARNING: CUDA call exit without entry in original trace" << endl;
           cout << "Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " ";
           cout << "Time " << Timestamp << endl;
         }
@@ -756,7 +770,6 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
             return false;
           InCUDAHostToHost = false;
         }
-
 
         /* Generation of pseudo-collectives to simulate the thread/stream
            synchronizations */
@@ -1078,7 +1091,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 
       if ( debug )
         fprintf( stdout,
-                 "[%03d:%02d %lld] Opening Block %03lld (%s)\n",
+                 "[%03d:%02d %llu] Opening Block %03lld (%s)\n",
                  CurrentEvent->GetTaskId(),
                  CurrentEvent->GetThreadId(),
                  CurrentEvent->GetTimestamp(),
@@ -1180,7 +1193,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 
       if ( debug )
         fprintf( stdout,
-                 "[%03d:%02d %lld] Closing Block %03lld (%s)\n",
+                 "[%03d:%02d %llu] Closing Block %03lld (%s)\n",
                  CurrentEvent->GetTaskId(),
                  CurrentEvent->GetThreadId(),
                  CurrentEvent->GetTimestamp(),
@@ -1315,7 +1328,8 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     {
       if ( Timestamp > LastBlockEnd )
       {
-        if ( OpenMP_thread == WORKER )
+        if ( ( OpenMP_thread == MASTER && LastBlockEnd > 0 ) || 
+             ( OpenMP_thread == WORKER && OpenMP_nesting_level > 0 ) )
         {
           if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
             return false;
@@ -1323,6 +1337,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
       }
 
       LastBlockEnd = Timestamp;
+      ++OpenMP_nesting_level;
 
       if ( debug )
         cout << "Printing OpenMP Block Begin " << *CurrentEvent;
@@ -1338,14 +1353,12 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     {
       if ( Timestamp > LastBlockEnd )
       {
-        if ( OpenMP_thread = WORKER )
-        {
-          if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
-            return false;
-        }
+        if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+          return false;
       }
 
       LastBlockEnd = Timestamp;
+      --OpenMP_nesting_level;
 
       if ( debug )
         cout << "Printing OpenMP Block End " << *CurrentEvent;
@@ -1376,7 +1389,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
   {
     if ( debug )
     {
-      fprintf( stdout, "Comm: [%03d:%02d] T:%lld ", CurrentComm->GetTaskId(), CurrentComm->GetThreadId(), CurrentComm->GetTimestamp() );
+      fprintf( stdout, "Comm: [%03d:%02d] T:%llu ", CurrentComm->GetTaskId(), CurrentComm->GetThreadId(), CurrentComm->GetTimestamp() );
       switch ( CurrentComm->GetType() )
       {
         case LOGICAL_SEND:
@@ -1932,7 +1945,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             if ( AcceleratorThread == ACCELERATOR_HOST )
             {
               /* In the Host thread, first a synchronization */
-              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)Tag ) < 0 )
+              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
               // CommId and Size are set to 0
               {
                 SetError( true );
@@ -1964,7 +1977,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             if ( AcceleratorThread == ACCELERATOR_HOST )
             {
               /* In the Host thread, first a synchronization */
-              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)Tag ) < 0 )
+              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
               // CommId and Size are set to 0
               {
                 SetError( true );
@@ -2002,7 +2015,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                           0,
                                           0,
                                           // CommId and Size are set to 0
-                                          (INT64)Tag ) < 0 )
+                                          (INT64)CUDA_TAG ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2034,7 +2047,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                           PartnerThreadId,
                                           0,
                                           0, // CommId and Size are set to 0
-                                          (INT64)Tag ) < 0 )
+                                          (INT64)CUDA_TAG ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2069,7 +2082,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                         0,
                                         0,
                                         // CommId and Size are set to 0
-                                        (INT64)Tag ) < 0 )
+                                        (INT64)CUDA_TAG ) < 0 )
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2113,7 +2126,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
                                         0,
                                         0,
                                         // CommId and Size are set to 0
-                                        (INT64)Tag ) < 0 )
+                                        (INT64)CUDA_TAG ) < 0 )
           {
             SetError( true );
             SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2366,7 +2379,7 @@ void TaskTranslationInfo::Event2GlobalOp( Event_t CurrentEvent )
 
   if ( debug )
     fprintf( stdout,
-             "[%03d:%02d %lld] Event to global translation: ",
+             "[%03d:%02d %llu] Event to global translation: ",
              CurrentEvent->GetTaskId(),
              CurrentEvent->GetThreadId(),
              CurrentEvent->GetTimestamp() );
@@ -2390,7 +2403,7 @@ void TaskTranslationInfo::Event2GlobalOp( Event_t CurrentEvent )
 
     case MPI_GLOBAL_OP_ROOT:
       if ( debug )
-        fprintf( stdout, "ROOT\n", CurrentEvent->GetFirstValue() );
+        fprintf( stdout, "ROOT\n" );
 
       if ( CurrentEvent->GetFirstValue() == 1 )
       {

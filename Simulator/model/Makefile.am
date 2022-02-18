@@ -20,6 +20,8 @@ libDimemasModel_la_SOURCES = \
 	cpu.h \
 	dim_omp.cc \
 	dim_omp.h \
+	dim_acc.cc \
+	dim_acc.h \
 	fs.c \
 	fs.h \
 	links.c \

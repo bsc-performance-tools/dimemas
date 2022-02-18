@@ -759,11 +759,6 @@ int ClusterEventEncoding_Is_BlockBegin( long64_t Op )
   return ( ( Op == (long64_t)CLUSTEREND_VAL ) ? FALSE : TRUE );
 }
 
-/******************************************************************************
- **      Function name : ClusterEventEncoding_DimemasBlockId
- **
- **      Description :
- ******************************************************************************/
 
 DimBlock ClusterEventEncoding_DimemasBlockId( long64_t value )
 {
@@ -779,84 +774,68 @@ typedef struct
 
 } CUDATypeInfo;
 
-/******************************************************************************
- **      Function name : CUDAEventEncoding_Is_CUDABlock
- **
- **      Description :
- ******************************************************************************/
 Boolean CUDAEventEncoding_Is_CUDABlock( long64_t type )
 {
-  return ( ( type == (long64_t)CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
+  return ( ( type == CUDA_LIB_CALL_EV || type == NEW_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEncoding_Is_BlockBegin
- **
- **      Description :
- ******************************************************************************/
 Boolean CUDAEventEncoding_Is_BlockBegin( long64_t Op )
 {
   return ( ( Op == (long64_t)CUDA_END_VAL ) ? FALSE : TRUE );
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEncoding_Is_CUDAComm
- **
- **      Description : Returns true if it's a CUDA communication
- ******************************************************************************/
-
 Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver )
 {
-  if( ( sender != NULL && sender->kernel ) ||
-      ( receiver != NULL && receiver->kernel ) )
+  if( ( sender != NULL && sender->stream ) ||
+      ( receiver != NULL && receiver->stream ) )
     return TRUE;
   return FALSE;
 }
-
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDAConfigCall
- **
- **      Description : Returns true if it's a Cuda_MemCpy event
- ******************************************************************************/
 Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
     return TRUE;
   return FALSE;
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDAConfigCall
- **
- **      Description : Returns true if it's a CudaConfigCall event
- ******************************************************************************/
+Boolean CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_MEMCPY_VAL )
+    return TRUE;
+  return FALSE;
+}
+
 Boolean CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && event.value == CUDA_CONFIGURECALL_VAL )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_CONFIGURECALL_VAL )
     return TRUE;
   return FALSE;
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDALaunch
- **
- **      Description : Returns true if it's a CudaLaunch event
- ******************************************************************************/
 Boolean CUDAEventEconding_Is_CUDALaunch( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && event.value == CUDA_LAUNCH_VAL )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_LAUNCH_VAL )
     return TRUE;
   return FALSE;
 }
 
-/******************************************************************************
- **      Function name : CUDAEventEconding_Is_CUDASync
- **
- **      Description : Returns true if it's a CudaThreadSync or CudaStreamSync
- ******************************************************************************/
 Boolean CUDAEventEconding_Is_CUDASync( struct t_event_block event )
 {
-  if ( event.type == CUDA_LIB_CALL_EV && ( event.value == CUDA_THREADSYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_THREADSYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_STREAMSYNCHRONIZE_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event->type ) == TRUE && event->value == CUDA_STREAM_CREATE_VAL )
     return TRUE;
   return FALSE;
 }
@@ -1043,7 +1022,7 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning( struct t_event_block event )
 #define NUM_OMP_BLOCKS 10
 CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
 
-  { OMP_CALL_EV, OMP_CALL_LABEL },
+  { OMP_PARALLEL_EV, OMP_PARALLEL_LABEL },
   { OMP_WORKSHARING_EV, OMP_WORKSHARING_LABEL },
   { OMP_BARRIER, OMP_BARRIER_LABEL },
   { OMP_WORK_EV, OMP_WORK_LABEL },
@@ -1091,9 +1070,9 @@ Boolean OMPEventEncoding_Is_BlockBegin( long64_t Op )
 }
 
 
-Boolean OMPEventEncoding_Is_OMPIdle( long64_t Op )
+Boolean OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event )
 {
-  if ( Op == OMP_EXECUTED_PARALLEL_FXN )
+  if ( event.type == OMP_EXECUTED_PARALLEL_FXN && event.value == OMP_END_VAL )
     return TRUE;
   return FALSE;
 }
@@ -1107,7 +1086,7 @@ Boolean OMPEventEncoding_Is_Parallel_Begin( struct t_even *event )
 
 Boolean OMPEventEncoding_Is_Outside_OMP( struct t_event_block event )
 {
-  if ( ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) || ( event.type == OMP_CALL_EV && event.value == OMP_END_VAL ) )
+  if ( ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) || ( event.type == OMP_PARALLEL_EV && event.value == OMP_END_VAL ) )
     return TRUE;
   return FALSE;
 }
@@ -1159,9 +1138,9 @@ Boolean OMPEventEncoding_Is_OMPSync( struct t_event_block event )
 /**
  * Scheduling and fork join
  */
-Boolean OMPEventEncoding_Is_OMPWork_Dist( struct t_event_block event )
+Boolean OMPEventEncoding_Is_OMP_fork_begin( struct t_event_block event )
 {
-  if ( event.type == OMP_CALL_EV && event.value == REGION_OPEN )
+  if ( event.type == OMP_PARALLEL_EV && event.value == REGION_OPEN )
     return TRUE;
   return FALSE;
 }
