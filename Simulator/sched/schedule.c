@@ -99,13 +99,16 @@ void SCHEDULER_Init()
         action = thread->action;
         if ( action == AC_NIL )
         {
-          // this thread has no records
+          warning ("P%02d T%02d (t%02d) will not be simulated: empty thread\n",
+                  IDENTIFIERS (thread));
           continue;
         }
 
         if ( action->action != WORK && action->action != GPU_BURST )
         {
-          panic( "P%02d T%02d (t%02d) must begin execution with work\n", IDENTIFIERS( thread ) );
+          warning ("P%02d T%02d (t%02d) will not be simulated: not begins execution with work\n",
+                  IDENTIFIERS (thread));
+          continue;
         }
 
         if ( thread->task->accelerator && thread->stream )
