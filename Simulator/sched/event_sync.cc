@@ -330,18 +330,18 @@ t_boolean event_sync_add( struct t_task *whichTask,
 
   // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
   //   nested parallel function calls after worksharing single
-  // if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != OMP_END_VAL )
-  // {
-  //   whichTask->threads[ threadID ]->omp_nesting_level++;
-  //   if( whichTask->threads[ threadID ]->omp_nesting_level > 1 )
-  //     return FALSE;
-  // }
-  // else if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value == OMP_END_VAL )
-  // {
-  //   whichTask->threads[ threadID ]->omp_nesting_level--;
-  //   if( whichTask->threads[ threadID ]->omp_nesting_level > 0 )
-  //     return FALSE;
-  // }
+  if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != OMP_END_VAL )
+  {
+    whichTask->threads[ threadID ]->omp_nesting_level++;
+    if( whichTask->threads[ threadID ]->omp_nesting_level > 1 )
+      return FALSE;
+  }
+  else if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value == OMP_END_VAL )
+  {
+    whichTask->threads[ threadID ]->omp_nesting_level--;
+    if( whichTask->threads[ threadID ]->omp_nesting_level > 0 )
+      return FALSE;
+  }
 
   if( validSyncTypes.find( whichEvent->type ) == validSyncTypes.end() ||
       ( CUDAEventEncoding_Is_CUDABlock( whichEvent->type ) && !isCommCall ) )

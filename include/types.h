@@ -982,7 +982,7 @@ struct t_thread
 
   // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
   //   nested parallel function calls after worksharing single
-  // size_t omp_nesting_level;
+  size_t omp_nesting_level;
 
 
   // Non-blocking GLOP variables
