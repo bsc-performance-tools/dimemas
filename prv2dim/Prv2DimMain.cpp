@@ -26,6 +26,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
+
 #include <bsc_utils.hpp>
 #include <cerrno>
 #include <cstdio>
@@ -52,100 +53,131 @@ int debug = 0;
 
 int BurstCounterType;
 
+
+void printError()
+{
+  cout << "Error in the arguments. Use -h/--help." << endl;
+}
+
+
+void printUsage()
+{
+  cout << "USAGE: " << endl; 
+  cout << "  prv2dim [optional-args] [-p|--prv-trace] trace.prv [-d|--dim-trace] trace.dim" << endl;
+}
+
+
+void printAbout()
+{
+  cout << "prv2dim - Paraver to Dimemas trace translator" << endl;
+  cout << "Barcelona Supercomputer Center - Centro Nacional de Supercomputacion" << endl;
+}
+
+
 bool ReadArgs( const int argc, const char *argv[] )
 {
   namespace po = boost::program_options;
 
-  po::options_description mandatory( "Mandatory options" );
-  mandatory.add_options()( "prv-trace,p",
-                           po::value<string>( &PrvTraceName )->required(),
-                           "Input paraver trace" )( "dim-trace,d", po::value<string>( &DimTraceName )->required(), "Output dimemas trace" );
+  po::options_description mandatory("Mandatory options");
+  mandatory.add_options()
+      ("prv-trace,p", po::value<string>(&PrvTraceName)->required(),
+          "Input paraver trace")
+      ("dim-trace,d", po::value<string>(&DimTraceName)->required(),
+          "Output dimemas trace")
+  ;
 
-  po::options_description optional( "Other options" );
-  optional.add_options()( "burst-counter-type,b", po::value<int>( &BurstCounterType ), "Hardware counter type used to generate burst duration" )(
-    "burst-counter-factor,f",
-    po::value<double>( &BurstCounterFactor ),
-    "Factor applied to the hardware counter type value that "
-    "will generate the burst duration" )( "iprobe-miss-rate,i",
-                                          po::value<double>( &IprobeMissesThreshold ),
-                                          "MPI_Iprobe miss rate (ms) to iscard Iprobe area CPU burst" )(
-    "test-miss-rate,t",
-    po::value<double>( &TestMissesThreshold ),
-    "MPI_Test miss rate (ms) to discard Test area CPU burst" )( "initial-idle,n",
-                                                                po::bool_switch( &GenerateFirstIdle ),
-                                                                "Do not generate an initial idle state" )(
-    "init-sync,s",
-    po::bool_switch( &GenerateMPIInitBarrier ),
-    "Do not generate a synchronization primitive on MPI_Init calls" )( "deadlock-extra-statistics,e",
-                                                                       po::bool_switch( &extraStatistics ),
-                                                                       "Generates a file with extra statistics for deadlock analysis" );
+  po::options_description optional("Other options");
+  optional.add_options()
+      ("burst-counter-type,b", po::value<int>(&BurstCounterType),
+          "Hardware counter type used to generate burst duration")
+      ("burst-counter-factor,f", po::value<double>(&BurstCounterFactor),
+          "Factor applied to the hardware counter type value that "\
+          "will generate the burst duration")
+      ("iprobe-miss-rate,i", po::value<double>(&IprobeMissesThreshold),
+          "MPI_Iprobe miss rate (ms) to iscard Iprobe area CPU burst")
+      ("test-miss-rate,t", po::value<double>(&TestMissesThreshold),
+          "MPI_Test miss rate (ms) to discard Test area CPU burst")
+      ("initial-idle,n", po::bool_switch(&GenerateFirstIdle), 
+          "Do not generate an initial idle state")
+      ("init-sync,s", po::bool_switch(&GenerateMPIInitBarrier),
+          "Do not generate a synchronization primitive on MPI_Init calls")
+      ("deadlock-extra-statistics,e", po::bool_switch(&extraStatistics),
+          "Generates a file with extra statistics for deadlock analysis")
+  ;
 
-  po::options_description debug_args( "Debug options" );
-  debug_args.add_options()( "debug,g", po::bool_switch( &debug_enabled ), "Show debug information during the simulation" );
+  po::options_description debug_args("Debug options");
+  debug_args.add_options()
+      ("debug,g", po::bool_switch(&debug_enabled), 
+          "Show debug information during the simulation");
 
-  po::options_description miscellany( "Miscellany options" );
-  miscellany.add_options()( "help,h", "Show this help message" )( "version,v", "Show the version" );
+  po::options_description miscellany("Miscellany options");
+  miscellany.add_options()
+      ("help,h", "Show this help message")
+      ("version,v", "Show the version");
 
-  po::options_description all( "Allowed options" );
-  all.add( mandatory ).add( optional ).add( debug_args ).add( miscellany );
+  po::options_description allOptionsDescription("Allowed options");
+  allOptionsDescription.add(mandatory)
+      .add(optional)
+      .add(debug_args)
+      .add(miscellany);
 
   po::positional_options_description pd;
-  pd.add( "prv-trace", 1 ).add( "dim-trace", 2 );
+  pd.add("prv-trace", 1)
+    .add("dim-trace", 2);
 
   po::variables_map varmap;
-  try
+  try 
   {
-    po::store( po::command_line_parser( argc, argv ).options( all ).positional( pd ).run(), varmap );
+    po::store(po::command_line_parser(argc, argv)
+                  .options(allOptionsDescription)
+                  .positional(pd)
+                  .run(),
+               varmap);
   }
-  catch ( ... )
+  catch(...)
   {
-    cout << "Error in the arguments. Please check it again." << endl;
-    cout << "To see help, use -h flag" << endl;
-    cout << endl;
-    cout << "USAGE: " << argv[ 0 ] << " -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
-    exit( EXIT_FAILURE );
+    printError();
+    printUsage();
+
+    exit(EXIT_FAILURE);
   }
-  // Options treatment
-  //
+
   if ( varmap.count( "help" ) )
   {
+    printAbout();
     cout << endl;
-    cout << "prv2dim - Paraver to Dimemas trace translator" << endl;
-    cout << "Barcelona Supercomputer Center - Centro Nacional de Supercomputacion" << endl;
+    printUsage();
     cout << endl;
-    cout << "USAGE: " << argv[ 0 ] << " [--prv-trace] PRVTRACE [--dim-trace] DIMTRACE" << endl;
-    cout << endl;
-    cout << all << endl;
-    exit( EXIT_SUCCESS );
+    cout << allOptionsDescription << endl;
+
+    exit(EXIT_SUCCESS);
   }
   else if ( varmap.count( "version" ) )
   {
-    cout << "prv2dim"
-         << " " VERSION << " (" << DATE << ")" << endl;
-    exit( EXIT_SUCCESS );
+    cout << "prv2dim " << VERSION << " (" << DATE << ")"<< endl;
+    
+    exit(EXIT_SUCCESS);
   }
 
   try
   {
-    po::notify( varmap );
+    po::notify(varmap);
   }
-  catch ( boost::program_options::required_option &e )
+  catch(boost::program_options::required_option& e)
   {
-    cout << "Error parsing arguments" << endl;
     cout << e.what() << endl;
-    return false;
+    // printError();
+    printUsage();
+    exit(EXIT_FAILURE);
   }
-
-  GenerateFirstIdle      = !GenerateFirstIdle;
-  GenerateMPIInitBarrier = !GenerateMPIInitBarrier;
 
   if ( varmap.count( "burst-counter-type" ) ^ varmap.count( "burst-counter-factor" ) )
   {
-    cout << "Error parsing arguments" << endl;
-    cout << "\"--burst-counter-type\" and \"--burst-counter-factor\" should "
-            " appear together"
-         << endl;
-    exit( EXIT_FAILURE );
+    cout << "Error parsing arguments:" << endl;
+    cout << "\"--burst-counter-type\" and \"--burst-counter-factor\" should "\
+        " appear together" << endl;
+
+    exit(EXIT_FAILURE);
   }
 
   if ( varmap.count( "burst-counter-type" ) )
@@ -154,18 +186,23 @@ bool ReadArgs( const int argc, const char *argv[] )
     cout << "BURST COUNTER FACTOR = " << BurstCounterFactor << endl;
   }
 
+  GenerateFirstIdle = !GenerateFirstIdle;
+  GenerateMPIInitBarrier = !GenerateMPIInitBarrier;
+
   if ( extraStatistics /*varmap.count("deadlock-extra-statistics")*/ )
   {
     string ChoppedFileName;
-    int SubstrPosition = DimTraceName.rfind( ".dim" );
+    int SubstrPosition = DimTraceName.rfind(".dim");
 
-    ChoppedFileName     = DimTraceName.substr( 0, SubstrPosition );
+    ChoppedFileName = DimTraceName.substr(0, SubstrPosition);
     ExtraStatisticsName = ChoppedFileName + ".estats";
 
     cout << "EXTRA STATISTICS NAME = " << ExtraStatisticsName << endl;
   }
-  if ( debug_enabled )
-    debug = D_LINKS | D_COMM | D_SCH | D_EV | D_NONE;
+
+  if( debug_enabled )
+    debug = D_LINKS|D_COMM|D_SCH|D_EV|D_NONE;
+
   return true;
 }
 
@@ -295,8 +332,12 @@ int main( const int argc, const char *argv[] )
     exit( EXIT_FAILURE );
   }
 
-  if ( !Translator
-          ->Translate( GenerateFirstIdle, IprobeMissesThreshold, TestMissesThreshold, BurstCounterType, BurstCounterFactor, GenerateMPIInitBarrier ) )
+  if ( !Translator->Translate( GenerateFirstIdle,
+                               IprobeMissesThreshold,
+                               TestMissesThreshold,
+                               BurstCounterType,
+                               BurstCounterFactor,
+                               GenerateMPIInitBarrier ) )
   {
     cerr << endl;
     cerr << "Error: " << Translator->GetLastError() << endl;
