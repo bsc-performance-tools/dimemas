@@ -715,8 +715,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               {
                 /* Do not throw anything if host or stream is inside a CUDA or OpenCL event block	*/
               }
-              else if ( thread->omp_worker_thread || ( thread->omp_master_thread && OMPEventEncoding_Is_OMPType( thread->omp_in_block_event.type ) &&
-                                                       OMPEventEncoding_Is_BlockBegin( thread->omp_in_block_event.value ) ) )
+              else if ( thread->omp_worker_thread || ( thread->omp_master_thread && OMPEventEncoding_Is_OMPType( thread->omp_in_block_event.type ) ) )
               {
                 // Do not throw anything if it is inside ompblock
               }

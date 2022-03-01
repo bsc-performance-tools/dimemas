@@ -91,7 +91,13 @@ void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_ti
     }
   }
 
-  thread->omp_in_block_event.type = event->type;
+  if( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL )
+  {
+    thread->omp_in_block_event.type = 0;
+  }
+  else
+    thread->omp_in_block_event.type = event->type;
+  
   thread->omp_in_block_event.value = event->value;
   thread->omp_in_block_event.paraver_time = current_time;
 }
