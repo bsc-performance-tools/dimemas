@@ -64,7 +64,7 @@ ParaverTraceParser::ParaverTraceParser( string ParaverTraceName, FILE* ParaverTr
     }
   }
 
-  CurrentLine        = 1;
+  CurrentLine        = 0;
   ParsingInitialized = false;
   return;
 }

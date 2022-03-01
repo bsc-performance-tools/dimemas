@@ -1094,7 +1094,9 @@ Boolean OMPEventEncoding_Is_Outside_OMP( struct t_event_block event )
 
 Boolean OMPEventEncoding_Is_OMP_Running( struct t_event_block event )
 {
-  if ( ( event.type == OMP_EXECUTED_PARALLEL_FXN && event.value > OMP_END_VAL ) || ( event.type == OMP_BARRIER && event.value == OMP_END_VAL ) )
+  if ( ( event.type == OMP_EXECUTED_PARALLEL_FXN && event.value > OMP_END_VAL ) ||
+       ( event.type == OMP_BARRIER && event.value == OMP_END_VAL ) ||
+       ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) )
     return TRUE;
   return FALSE;
 }

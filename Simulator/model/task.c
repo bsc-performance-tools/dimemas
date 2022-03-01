@@ -1079,7 +1079,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
 
   // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
   //   nested parallel function calls after worksharing single
-  // thread->omp_nesting_level               = 0;
+  thread->omp_nesting_level               = 0;
 
   /* NON-Block global operations variables */
   thread->n_nonblock_glob_in_flight = 0;
