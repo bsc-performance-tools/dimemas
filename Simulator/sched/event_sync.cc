@@ -28,25 +28,29 @@
 #include <map>
 #include <set>
 #include <tuple>
-#include <unordered_set>
 
 #include "event_sync.h"
+
 extern "C" {
+  #include "EventEncoding.h"
+#ifndef PRV2DIM
   #include "cpu.h"
   #include "schedule.h"
   #include "define.h"
-  #include "EventEncoding.h"
   #include "events.h"
   #include "extern.h"
   #include "list.h"
   #include "node.h"
   #include "read.h"
+#endif // PRV2DIM
 }
 
 using std::map;
 using std::set;
 using std::unordered_set;
 using std::vector;
+
+#ifndef PRV2DIM
 
 bool operator<( const struct t_even& a, const struct t_even& b )
 {
@@ -100,13 +104,22 @@ extern int debug;
 extern dimemas_timer current_time;
 
 map<EventTraitIndex, EventTrait> syncEvents;
+
+#endif // PRV2DIM
+
 unordered_set<unsigned long long> validSyncTypes;
 
+const unordered_set<unsigned long long>& getValidSyncTypes()
+{
+  return validSyncTypes;
+}
 
 void event_sync_init( void )
 {
+#ifndef PRV2DIM
   EventTraitIndex tmpEventIndex;
   EventTrait tmpEventTrait;
+#endif // PRV2DIM
 
   validSyncTypes.insert( CUDA_LIB_CALL_EV );
   validSyncTypes.insert( NEW_CUDA_LIB_CALL_EV );
@@ -114,6 +127,7 @@ void event_sync_init( void )
   validSyncTypes.insert( OMP_EXECUTED_PARALLEL_FXN );
   validSyncTypes.insert( OMP_PARALLEL_EV );
 
+#ifndef PRV2DIM
   // ------- CUDA_LIB_CALL_EV + CUDA_CONFIGURECALL_VAL -------
   tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
   tmpEventIndex.event.value = CUDA_CONFIGURECALL_VAL;
@@ -224,8 +238,10 @@ void event_sync_init( void )
   tmpEventIndex.event.value = OMP_END_VAL;
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
+#endif // PRV2DIM
 }
 
+#ifndef PRV2DIM
 
 map<EventTraitIndex, EventTrait>::iterator find_event_trait(struct t_even *whichEvent, int threadID )
 {
@@ -429,3 +445,5 @@ t_boolean event_sync_add( struct t_task *whichTask,
 
   return TRUE;
 }
+
+#endif // PRV2DIM

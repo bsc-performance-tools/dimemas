@@ -23,15 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #ifndef __schedule_h
 #define __schedule_h
 /**

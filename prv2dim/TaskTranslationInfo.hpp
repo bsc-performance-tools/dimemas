@@ -33,6 +33,8 @@
 #ifndef _TASKTRANSLATIONINFO_H
 #define _TASKTRANSLATIONINFO_H
 
+#include <unordered_set>
+
 #include <Error.hpp>
 using cepba_tools::Error;
 
@@ -58,6 +60,9 @@ class TaskTranslationInfo : public Error
   vector<Block_t> UserBlockIdStack;
   vector<Block_t> ClusterBlockIdStack;
   UINT64 LastBlockEnd;
+
+  std::unordered_set<INT32> validSyncTypesFirstZeroArrived;
+  vector<INT32> validSyncTypesStack;
 
   // For matching non-block collectives with its MPI_Wait
   vector<GlobalOp_t> NonBlockingGlopsInFlight;
@@ -222,6 +227,8 @@ class TaskTranslationInfo : public Error
   bool GenerateGPUBurst( INT32 TaskId, INT32 ThreadId, UINT64 Timestamp, UINT64 LastBlock );
 
   void PrintStack( void );
+
+  bool checkClosingValidSyncTypes( INT32 whichType, INT64 whichValue );
 };
 
 typedef TaskTranslationInfo* TaskTranslationInfo_t;

@@ -23,6 +23,7 @@
 
 #include "PCFGeneration.hpp"
 #include "ParaverTraceTranslator.hpp"
+#include "Simulator/sched/event_sync.h"
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
@@ -331,6 +332,8 @@ int main( const int argc, const char *argv[] )
     delete Translator;
     exit( EXIT_FAILURE );
   }
+
+  event_sync_init();
 
   if ( !Translator->Translate( GenerateFirstIdle,
                                IprobeMissesThreshold,

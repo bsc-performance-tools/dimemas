@@ -32,6 +32,7 @@
 
 #ifdef __cplusplus
 
+#include <unordered_set>
 #include <vector>
 
 enum class t_treat_acc_events_behavior
@@ -48,16 +49,18 @@ struct TCapturedEvents
   t_treat_acc_events_behavior treatAccEventBehavior;
 };
 
+const std::unordered_set<unsigned long long>& getValidSyncTypes();
+
 extern "C"
 {
-#else
+#else // __cplusplus
 struct TCapturedEvents;
-#endif
+#endif // __cplusplus
 struct TEventSyncQueue;
-
 
 void event_sync_init( void );
 
+#ifndef PRV2DIM
 struct TEventSyncQueue *createEventSyncQueue();
 struct TCapturedEvents *createCapturedEvents();
 
@@ -69,9 +72,10 @@ t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, i
 t_boolean capture_previous_events( struct t_thread *whichThread,
                                    struct t_even *whichEvent,
                                    int threadID );
+#endif // PRV2DIM
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
-#endif
+#endif // __event_sync_h

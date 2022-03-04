@@ -36,6 +36,7 @@
 #include "Dimemas_Generation.h"
 #include "EventEncoding.h"
 #include "ParaverTraceParser.hpp"
+#include "Simulator/sched/event_sync.h"
 
 #include <Macros.h>
 #include <algorithm>
@@ -535,6 +536,40 @@ bool TaskTranslationInfo::ToDimemas( ParaverRecord_t Record )
   }
 }
 
+/** 
+ * ValidSyncTypes are the Event Types used by the simulator to synchronize in runtimes like
+ * CUDA and OpenMP.
+ * This function checks for unmatched closing events to be skipped.
+ * First occurrences are accepted.
+ * This is common in cutted traces. 
+ */
+bool TaskTranslationInfo::checkClosingValidSyncTypes( INT32 whichType, INT64 whichValue )
+{
+  if( getValidSyncTypes().find( whichType ) != getValidSyncTypes().end() )
+  {
+    if( whichValue > 0 )
+      validSyncTypesStack.push_back( whichType );
+    else
+    {
+      vector<INT32>::iterator it;
+      if( ( it = std::find( validSyncTypesStack.begin(), validSyncTypesStack.end(), whichType ) ) != validSyncTypesStack.end() )
+      {
+        validSyncTypesStack.erase( it );
+      }
+      else
+      {
+        if( validSyncTypesFirstZeroArrived.find( whichType ) != validSyncTypesFirstZeroArrived.end() )
+        {
+          return false;
+        }
+      }
+      validSyncTypesFirstZeroArrived.insert( whichType );
+    }
+  }
+
+  return true;
+}
+
 
 bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 {
@@ -578,6 +613,12 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   if ( PendingGlobalOp )
   {
     Event2GlobalOp( CurrentEvent );
+  }
+
+  if ( !checkClosingValidSyncTypes( Type, Value ) )
+  {
+    cout << "WARNING: ignoring exit event without previous entry:" << *CurrentEvent << "\n";
+    return true;
   }
 
   // If it is a beginning of a glop

@@ -32,6 +32,7 @@
 #include <csignal>
 #include <ctime>
 #include <iostream>
+#include "event_sync.h"
 
 extern "C"
 {
@@ -43,7 +44,6 @@ extern "C"
 #include "define.h"
 #include "dimemas_io.h"
 #include "eee_configuration.h"
-#include "event_sync.h"
 #include "events.h"
 #include "extern.h"
 #include "fs.h"

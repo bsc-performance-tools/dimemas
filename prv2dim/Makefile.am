@@ -8,15 +8,19 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = prv2dim
 
 prv2dim_CFLAGS = \
-	-DNEW_DIMEMAS_TRACE
+	-DNEW_DIMEMAS_TRACE \
+	-DPRV2DIM
 
 prv2dim_CXXFLAGS = \
-	-DNEW_DIMEMAS_TRACE
+	-DNEW_DIMEMAS_TRACE \
+	-DPRV2DIM
 
 prv2dim_LDFLAGS = \
 	$(BOOST_LDFLAGS)
 
 prv2dim_SOURCES = \
+	$(top_srcdir)/Simulator/sched/event_sync.cc \
+	$(top_srcdir)/Simulator/sched/event_sync.h \
 	ParaverApplicationDescription.cpp\
 	ParaverApplicationDescription.hpp\
 	ParaverCommunicator.cpp\
