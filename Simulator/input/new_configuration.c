@@ -23,7 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-#include <check.h>
 #include <configuration.h>
 #include <ctype.h>
 #include <dimemas_io.h>

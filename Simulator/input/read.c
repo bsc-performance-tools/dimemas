@@ -41,7 +41,6 @@
 #include <subr.h>
 #include <task.h>
 #include <types.h>
-#include <yacc.h>
 
 pthread_t reader_thread;
 

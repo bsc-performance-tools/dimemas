@@ -138,32 +138,6 @@ dnl Look for the install program
 dnl ========================================================================
 AC_PROG_INSTALL
 
-
-dnl ========================================================================
-dnl Look for yacc (bison) program
-dnl ========================================================================
-dnl AC_PROG_YACC
-AC_CHECK_PROGS(YACC, 'bison -y' byacc yacc)
-AM_PROG_LEX
-
-ac_cv_errcount=0; 
-if test -z "$YACC"; then 
-  AC_MSG_WARN(bison or yacc not found. Please install bison before continuing) 
-  ac_cv_errcount=$((ac_cv_errcount + 1)) 
-fi 
-
-if test -z "$LEXLIB"; then 
-  AC_MSG_WARN(flex or lex not found. Please install flex before continuing) 
-  ac_cv_errcount=$((ac_cv_errcount + 1)) 
-fi 
-	 
-if test $ac_cv_errcount -gt 0; then 
-  AC_MSG_ERROR("Critical packages are missing and compilation will fail. Please 
-               install the packages listed above and rerun ./configure")
-fi 
-
-LIBS="$LIBS $LEXLIB"
-
 dnl ========================================================================
 dnl If the package is not flat
 dnl ========================================================================
