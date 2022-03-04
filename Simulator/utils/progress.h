@@ -29,7 +29,9 @@
 
 extern "C"
 {
+#endif
   void updateProgress( double newProgress );
-}
 
+#ifdef __cplusplus
+}
 #endif
