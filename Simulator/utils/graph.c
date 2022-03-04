@@ -8,6 +8,9 @@ FILE *log_file;
 int file_index;
 char * log_file_name;
 
+struct dependency_queue * _graph_map;
+int _nodes;
+
 /*
  * Initialize the graph
  */

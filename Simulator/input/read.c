@@ -44,6 +44,14 @@
 #include <file_data_access.h>
 #include <schedule.h>
 
+pthread_t reader_thread;
+
+volatile struct t_action ***action_buffer;
+volatile int *buffer_heads;
+volatile int *buffer_tails;
+
+int bsize_per_thread;
+
 struct t_Ptask *Ptask_current;
 int stop_restarts;
 extern t_boolean reload_while_longest_running;

@@ -59,19 +59,19 @@ typedef enum { WAN_INFORMATION = 0,
 #define FS_PARAMETERS    6
 #define DED_CONNECTION   7
 
-extern t_boolean CONFIGURATION_parse(FILE  *configuration_file,
-                                     char  *input_tracefile,
-                                     double parameter_bw,
-                                     double parameter_lat,
-                                     int    parameter_predefined_map,
-                                     int    parameter_tasks_per_node);
+// extern t_boolean CONFIGURATION_parse( FILE *configuration_file,
+//                                       char *input_tracefile,
+//                                       double parameter_bw,
+//                                       double parameter_lat,
+//                                       int parameter_predefined_map,
+//                                       int parameter_tasks_per_node );
 
 extern void  CONFIGURATION_Set_Scheduling_Configuration_File(const char *sch_filename);
 extern void  CONFIGURATION_Set_FileSystem_Configuration_File(const char *fs_filename);
 extern void  CONFIGURATION_Set_Communications_Configuration_File(const char* comm_filename);
 extern void  CONFIGURATION_Set_RandomValues_Configuration_File(const char* rand_filename);
 
-extern char* CONFIGURATION_Get_Configuration_FileName(void);
+// extern char *CONFIGURATION_Get_Configuration_FileName( void );
 
 extern void  CONFIGURATION_New_Definition(struct t_queue *definition_fields,
                                           struct t_entry *definition_structure);

@@ -6,16 +6,6 @@ You can find the old Dimemas trace format (.trf) to new format (.dim) translator
 
 ## Dependencies
 
-You will need Lex and Yacc compatible packages installed on your system.
-Free source versions of this tools can be obtained at:
-
-   * Flex (open source Lex implementation)
-        http://flex.sourceforge.net/
-        
-   * Bison (open source Yacc implementation)
-        http://www.gnu.org/software/bison/
-
-   
 To compile the you will also need the Boost libraries. Version 1.36 or later
 are required. You can obtain this set of libraries at:
    * Boost C++ Libraries 

@@ -12,16 +12,8 @@ AM_CPPFLAGS = \
 	-I$(simulator_dir)/utils \
 	-I$(simulator_dir)/venusclient
 
-# Special definition of the yacc header
-
-AM_YFLAGS=-d
-BUILT_SOURCES = yacc.h  
 
 libDimemasInput_la_SOURCES = \
-	yacc.y \
-	lex.l \
-	check.c \
-	check.h \
 	comm_configuration.c \
 	comm_configuration.h \
 	configuration.c \
