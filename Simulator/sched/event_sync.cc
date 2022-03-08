@@ -446,4 +446,24 @@ t_boolean event_sync_add( struct t_task *whichTask,
   return TRUE;
 }
 
+void print_pending_syncs( struct t_task *whichTask )
+{
+  for ( set<EventTrait>::iterator tmpIt = whichTask->event_sync_queue->insertedTraits.begin();
+        tmpIt != whichTask->event_sync_queue->insertedTraits.end(); ++tmpIt )
+  {
+    if ( tmpIt->partnerThreadID == PARTNER_ID_BARRIER )
+    {
+      int num_remaining = tmpIt->numParticipants- tmpIt->numArrived;
+      printf( "[Task %d] blocked on event %llu:%llu waiting for %d threads to arrive\n", 
+              whichTask->taskid, tmpIt->eventHost.type, tmpIt->eventHost.value, num_remaining );
+    }
+    else
+    {
+      printf( "[Task %d] blocked on event %llu:%llu waiting for thread %d to arrive\n", 
+              whichTask->taskid, tmpIt->eventHost.type, tmpIt->eventHost.value, tmpIt->partnerThreadID );
+    }
+  }
+}
+
+
 #endif // PRV2DIM

@@ -47,6 +47,8 @@
 #  include "venusclient.h"
 #endif
 
+#include "event_sync.h"
+
 #ifdef USE_EQUEUE
 Equeue Event_queue;
 Equeue Interactive_event_queue;
@@ -189,10 +191,14 @@ void EVENT_Init()
 
 void EVENT_End()
 {
-  if ( debug & D_EV )
+  struct t_Ptask *Ptask;
+
+  for ( Ptask = (struct t_Ptask *)head_queue( &Ptask_queue ); Ptask != P_NIL; Ptask = (struct t_Ptask *)next_queue( &Ptask_queue ) )
   {
-    PRINT_TIMER( current_time );
-    printf( ": EVENT end routine called\n" );
+    for ( size_t i = 0; i < Ptask->tasks_count; i++ )
+    {
+      print_pending_syncs( &( Ptask->tasks[ i ] ) );
+    }
   }
 }
 

@@ -72,6 +72,8 @@ t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, i
 t_boolean capture_previous_events( struct t_thread *whichThread,
                                    struct t_even *whichEvent,
                                    int threadID );
+
+void print_pending_syncs( struct t_task *whichTask );
 #endif // PRV2DIM
 
 #ifdef __cplusplus
