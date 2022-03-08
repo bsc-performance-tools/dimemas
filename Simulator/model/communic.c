@@ -7144,6 +7144,8 @@ static void close_global_communication( struct t_thread *thread )
   int machines;
   int *tasks_per_node;
 
+  struct t_queue tmp_threads_queue;
+
   Ptask        = thread->task->Ptask;
   action       = thread->action;
   comm_id      = action->desc.global_op.comm_id;
@@ -7189,10 +7191,18 @@ static void close_global_communication( struct t_thread *thread )
     printf( ": GLOBAL_operation P%02d T%02d (t%02d) ends '%s'\n", IDENTIFIERS( thread ), glop->name );
   }
 
+  create_queue( &tmp_threads_queue );
+
   /* Unblock all threads involved in communication */
   for ( others = (struct t_thread *)outFIFO_queue( &communicator->threads ); others != TH_NIL;
         others = (struct t_thread *)outFIFO_queue( &communicator->threads ) )
   {
+    if ( others->action->desc.global_op.glop_id != glop_id )
+    {
+      inFIFO_queue( &tmp_threads_queue, (char *)others );
+      continue;
+    }
+
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
@@ -7233,6 +7243,7 @@ static void close_global_communication( struct t_thread *thread )
       reload_done = TRUE;
     }
   }
+  communicator->threads = tmp_threads_queue;
 }
 
 static t_boolean thread_in_communicator( struct t_communicator *comm, struct t_thread *thread )

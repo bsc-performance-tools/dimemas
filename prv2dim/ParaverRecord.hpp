@@ -475,6 +475,8 @@ class GlobalOp : public virtual ParaverRecord
   void SetIsRoot( bool Root )
   {
     this->Root = Root;
+    if ( Root && GlobalOpId == GLOP_ID_MPI_Reduce )
+      Synchronize = 1;
   };
 
   bool GetIsRoot( void )

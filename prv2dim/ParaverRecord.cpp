@@ -430,7 +430,7 @@ GlobalOp::GlobalOp( UINT64 Timestamp,
   this->GlobalOpId     = GlobalOpId;
   this->Root           = Root;
 
-  if ( this->GlobalOpId < GLOP_ID_IMMEDIATE )
+  if ( this->GlobalOpId < GLOP_ID_IMMEDIATE && this->GlobalOpId != GLOP_ID_MPI_Reduce )
     this->Synchronize = 1;
   else
     this->Synchronize = 0;
