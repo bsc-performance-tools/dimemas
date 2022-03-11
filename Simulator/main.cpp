@@ -80,7 +80,6 @@ extern "C"
 // Not exposed functions
 static dimemas_timer read_timer( char *c );
 static long long int read_size( const char *c );
-double ddiff( struct timespec start, struct timespec end );
 
 int port_ids = MIN_PORT_NUMBER;
 
@@ -501,18 +500,11 @@ void parse_arguments( int argc, char *argv[] )
     is_ideal_openmp = TRUE;
 }
 
-
-double ddiff( struct timespec start, struct timespec end )
-{
-  return ( (double)( end.tv_sec - start.tv_sec ) + (double)1e-9 * ( end.tv_nsec - start.tv_nsec ) );
-}
-
 static dimemas_timer read_timer( char *c )
 {
   int h, u, i;
   float tmp_float;
   dimemas_timer tmp_timer;
-  ;
 
   i = sscanf( c, "%dH%du", &h, &u );
   if ( i == 2 )

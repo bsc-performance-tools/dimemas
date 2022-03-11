@@ -117,12 +117,6 @@ struct t_module
   char *activity_name;
 };
 
-struct t_filed
-{
-  int file_id;
-  char *location;
-};
-
 
 #define CP_WORK     0
 #define CP_BLOCK    1
@@ -686,7 +680,6 @@ struct t_Ptask
   struct t_queue MPI_IO_fh_to_commid;
   struct t_queue MPI_IO_request_thread;
   modules_map Modules;
-  struct t_queue Filesd;
   struct t_queue UserEventsInfo; /* Cua amb les informacions dels possibles
                                   * events d'usuari */
   int *acc_tasks;                /* Extra info for accelerator mapping */
@@ -1165,7 +1158,6 @@ struct t_copyseg
 #define B_NIL    (struct t_both *)0
 #define BU_NIL   (struct t_bus_utilization *)0
 #define M_NIL    (struct t_module *)0
-#define F_NIL    (struct t_filed *)0
 
 #define CO_NIL (struct t_copyseg *)0
 #define PO_NIL (struct t_port *)0

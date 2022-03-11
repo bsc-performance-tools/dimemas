@@ -23,14 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef __fs_h
 #define __fs_h
@@ -42,7 +34,5 @@ extern void FS_End( void );
 extern void FS_Parameters( double, double, double, int, double );
 
 extern void FS_general( int value, struct t_thread *thread );
-extern void FS_show_version( void );
-extern void FS_new_io_operation( int, char * );
 
 #endif

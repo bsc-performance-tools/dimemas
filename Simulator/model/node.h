@@ -134,5 +134,5 @@ void NODE_Fill_Node_Fields( struct t_node *node,
 void NODE_set_acc( int node_id, int num_gpu_in_node, double latency, double memory_latency, double bandwith, int num_acc_buses, double relative );
 
 t_boolean NODE_get_acc( struct t_node *node );
-int NODE_get_acc_node( struct t_node *node );
+
 #endif

@@ -97,7 +97,6 @@ void SIMULATOR_Init( const char *simulator_configuration_filename,
                      int parameter_tasks_per_node );
 
 void SIMULATOR_Generate_row( const char *row_filename );
-char *SIMULATOR_get_configuration_filename( void );
 int SIMULATOR_get_number_of_nodes( void );
 int *SIMULATOR_get_cpus_per_node( void );
 
@@ -107,7 +106,6 @@ void SIMULATOR_set_wan_traffic_function( int traffic_function );
 void SIMULATOR_set_wan_max_traffic_value( double max_traffic_value );
 void SIMULATOR_set_wan_bandwidth( double bandwidth );
 void SIMULATOR_set_wan_global_op_model( int global_op_model );
-void SIMULATOR_set_wan_flight_times( double **flight_times );
 void SIMULATOR_set_number_of_dedicated_connections( int dedicated_connections_count );
 
 t_boolean SIMULATOR_set_wan_definition( char *wan_name,
@@ -149,8 +147,8 @@ t_boolean SIMULATOR_set_node_definition( int node_id,
                                          double local_memory_startup,
                                          double remote_memory_startup );
 
-t_boolean SIMULATOR_set_multiple_node_definition( int node_count,
-                                                  int machine_id,
+t_boolean SIMULATOR_set_multiple_node_definition( int machine_id,
+                                                  int node_count,
                                                   char *node_name,
                                                   int no_processors,
                                                   int no_mem_buses,
@@ -199,5 +197,4 @@ void SIMULATOR_set_acc_nodes( int node_id,
 
 void SIMULATOR_reset_state();
 
-char *SIMULATOR_Get_Configuration_FileName( void );
 #endif

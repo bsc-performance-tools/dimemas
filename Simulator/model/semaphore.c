@@ -34,15 +34,6 @@
 #include <subr.h>
 #include <types.h>
 
-void SEMAPHORE_general( int value, struct t_thread *thread )
-{
-  if ( debug )
-  {
-    PRINT_TIMER( current_time );
-    printf( ": SEMAPHORE General %d, P%d T%d t%d\n", value, IDENTIFIERS( thread ) );
-  }
-}
-
 void SEMAPHORE_Init()
 {
   struct t_Ptask *Ptask;

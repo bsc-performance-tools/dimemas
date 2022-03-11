@@ -1098,24 +1098,3 @@ void FS_Parameters( double disk_latency, double disk_bandwidth, double block_siz
   file_system_parameters.concurrent_requests = concurrent_requests;
   file_system_parameters.hit_ratio           = hit_ratio;
 }
-
-void FS_show_version( void )
-{
-  printf( "Implemented File Server policies:\n" );
-  printf( "    NONE\n" );
-}
-
-void FS_new_io_operation( int operation_id, char *operation_name )
-{
-  if ( ( operation_id >= 0 ) && ( operation_id <= MAX_IO_OPERATIONS ) )
-  {
-    if ( strcmp( Operation_Name[ operation_id ], operation_name ) != 0 )
-    {
-      die( "Incorrect IO operation name %s for operation %d\nIt must be %s", operation_name, operation_id, Operation_Name[ operation_id ] );
-    }
-  }
-  else
-  {
-    die( "Invalid operation identicator %d for %s\n", operation_id, operation_name );
-  }
-}

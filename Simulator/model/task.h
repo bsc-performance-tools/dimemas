@@ -100,8 +100,6 @@ struct t_thread *locate_thread( struct t_Ptask *Ptask, int taskid, int thid );
 
 struct t_thread *locate_thread_of_task( struct t_task *task, int thid );
 
-void new_action_to_thread( struct t_Ptask *Ptask, int taskid, int thid, struct t_action *action );
-
 struct t_account *current_account( struct t_thread *thread );
 
 struct t_task *locate_task( struct t_Ptask *Ptask, int taskid );
@@ -117,8 +115,6 @@ void delete_duplicate_thread( struct t_thread *thread );
 t_boolean more_actions_on_Ptask( struct t_Ptask *Ptask );
 
 void clear_last_actions( struct t_Ptask *Ptask );
-
-void get_operation( struct t_thread *thread, struct t_fs_op *fs_op );
 
 
 t_nano work_time_for_sintetic( void );
@@ -160,8 +156,6 @@ void recompute_work_upon_modules( struct t_thread *thread, struct t_action *acti
 void new_window_definition( struct t_Ptask *Ptask, int window_id );
 
 void add_identificator_to_window( struct t_Ptask *Ptask, int window_id, int taskid );
-
-void no_more_identificator_to_window( struct t_Ptask *Ptask, int window_id );
 
 t_nano PREEMP_overhead( struct t_task *task );
 

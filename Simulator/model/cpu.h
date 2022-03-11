@@ -48,8 +48,6 @@ struct t_node *get_node_of_task( struct t_task *task );
 
 struct t_node *get_node_by_id( int nodeid );
 
-void check_full_nodes( void );
-
 int num_free_cpu( struct t_node *node );
 
 t_boolean is_thread_running( struct t_thread *thread );

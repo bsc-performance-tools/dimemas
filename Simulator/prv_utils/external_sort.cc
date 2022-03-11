@@ -23,14 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/DIMEMAS/trunk/s#$:  File
-  $Rev:: 35                                       $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2012-01-11 19:45:04 +0100 (Wed, 11 Jan #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,10 +55,12 @@ using std::stable_sort;
 
 #include "external_sort.h"
 
+
 string ExternalSort::TmpDir                 = "/tmp";
 string ExternalSort::TmpFilesPrefix         = "prv_states_comms_tmp";
 string ExternalSort::EventsFileName         = "";
 string ExternalSort::StatesAndCommsFileName = "";
+
 
 void ExternalSort::Init()
 {
@@ -112,10 +106,12 @@ void ExternalSort::Init()
 
 }
 
+
 void ExternalSort::End()
 {
   Records.clear();
 }
+
 
 void ExternalSort::NewRecord(int        TYPE,
                              int        CPU,
@@ -159,6 +155,7 @@ void ExternalSort::NewRecord(int        TYPE,
   TotalRecords++;
 }
 
+
 void ExternalSort::GenerateFinalTrace(FILE* DefinitiveTrace)
 {
   // First, close current open files
@@ -175,9 +172,8 @@ void ExternalSort::GenerateFinalTrace(FILE* DefinitiveTrace)
   // Delete temporal files
   unlink(ExternalSort::StatesAndCommsFileName.c_str());
   unlink(ExternalSort::EventsFileName.c_str());
-
-  return;
 }
+
 
 void ExternalSort::SortStatesAndComms(void)
 {
@@ -393,9 +389,8 @@ void ExternalSort::SortStatesAndComms(void)
       }
     }
   }
-
-  return;
 }
+
 
 void ExternalSort::FlushRecords(void)
 {
@@ -425,6 +420,7 @@ void ExternalSort::FlushRecords(void)
 
   CurrentRecord = 0;
 }
+
 
 void ExternalSort::Merge(string InFileName1,
                          string InFileName2,
@@ -464,9 +460,8 @@ void ExternalSort::Merge(string InFileName1,
   IO_fclose(InFile1);
   IO_fclose(InFile2);
   IO_fclose(OutFile);
-
-  return;
 }
+
 
 void ExternalSort::Merge(string InFileName1,
                          string InFileName2,
@@ -501,9 +496,8 @@ void ExternalSort::Merge(string InFileName1,
   IO_fclose(InFile1);
   IO_fclose(InFile2);
   // IO_fclose(OutFile);
-
-  return;
 }
+
 
 void ExternalSort::Merge(FILE *InFile1,
                          FILE *InFile2,
@@ -612,7 +606,6 @@ void ExternalSort::Merge(FILE *InFile1,
 
       if (NumRecords2 == 0)
       {
-
         break;   // We are out of data from InFile2.
       }
       else
@@ -662,8 +655,10 @@ size_t ExternalSort::FillBuffer(FILE                        *InFile,
 
     k++;
   }
+
   return k;
 }
+
 
 bool ExternalSort::LoadRecord(FILE*                InFile,
                               SimpleParaverRecord& Record)
@@ -695,13 +690,13 @@ bool ExternalSort::LoadRecord(FILE*                InFile,
   return true;
 }
 
+
 void ExternalSort::Copy(SimpleParaverRecord&         Record,
                         vector<SimpleParaverRecord>& Buffer,
                         size_t&                      Index,
                         FILE                        *OutFile,
                         bool                         DefinitiveTrace)
 {
-
   if (Index == MAX_IN_FLIGHT_RECORDS)
   {
     for (size_t i = 0; i < MAX_IN_FLIGHT_RECORDS; i++)

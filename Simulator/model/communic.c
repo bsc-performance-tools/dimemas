@@ -192,8 +192,6 @@ static int get_communication_type( struct t_task *task,
                                    int mess_size,
                                    struct t_dedicated_connection **connection );
 
-static int from_rank_to_taskid( struct t_communicator *comm, int root_rank );
-
 static t_bandwidth recompute_accelerator_bandwidth( struct t_thread *thread );
 
 static void COM_TIMER_OUT_free_accelerator_resources( struct t_thread *thread );
@@ -3203,7 +3201,6 @@ int COMMUNIC_debug_the_senders_list( struct t_thread *thread )
             partner_send->original_thread,
             ( partner_send->account ).first,
             ( partner_send->account ).last );
-    printf( "was is able to locate node in promote_to_original %d for P%d T%d t%d\n", account->nodeid, IDENTIFIERS( partner_send ) );
 
     struct t_node *node = &nodes[ account->nodeid ];
     printf( "yes it was able NODE %d  IDENTITY  for P%d T%d t%d\n", account->nodeid, IDENTIFIERS( partner_send ) );
@@ -7247,33 +7244,6 @@ static t_boolean thread_in_communicator( struct t_communicator *comm, struct t_t
     }
   }
   return ( FALSE );
-}
-
-int from_rank_to_taskid( struct t_communicator *comm, int root_rank )
-{
-  /* int *root_task;
-  int  i;
-
-     TEST: Root_Rank is the Root Task ID
-     root_task = (int *)head_queue(&comm->global_ranks);
-
-     i = 0;
-     while (i != root_rank)
-     {
-     root_task = (int *)next_queue(&comm->global_ranks);
-     if (root_task==(int *)0)
-     {
-     panic(
-     "Unable to localte root rank %d in communicator %d\n",
-     root_rank,
-     comm->communicator_id
-     );
-     }
-     i++;
-     }
-     return (*root_task);
-     */
-  return root_rank;
 }
 
 void GLOBAL_wait_operation( struct t_thread *thread )

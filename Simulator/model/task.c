@@ -60,10 +60,6 @@
  *****************************************************************************/
 
 /*
-        for (struct t_cpu* cpu = (struct t_cpu *)head_queue(&nodes[i].Cpus);
-            cpu != C_NIL;
-            cpu = (struct t_cpu *)next_queue(&nodes[i].Cpus)
-        )
  * Ptask queue
  */
 struct t_queue Ptask_queue;
@@ -77,7 +73,7 @@ int Ptask_ids = 0;
  * Preemption overhead variables
  */
 t_boolean PREEMP_initialized = FALSE;
-t_boolean PREEMP_enabled;
+t_boolean PREEMP_enabled = FALSE;
 int PREEMP_cycle;
 t_nano PREEMP_time;
 int *PREEMP_table; /* Array to manage preemption cycles for each task */
@@ -407,7 +403,6 @@ void TASK_New_Ptask( char *trace_name, int tasks_count, int *tasks_mapping )
   create_queue( &( Ptask->MPI_IO_request_thread ) );
   // create_queue (&(Ptask->Modules));
   create_modules_map( &( Ptask->Modules ) );
-  create_queue( &( Ptask->Filesd ) );
   create_queue( &( Ptask->UserEventsInfo ) );
 
   /* Task creation */
@@ -493,7 +488,6 @@ void TASK_New_Ptask_predefined_map( char *trace_name, int map_definition, int ta
   create_queue( &( Ptask->MPI_IO_fh_to_commid ) );
   create_queue( &( Ptask->MPI_IO_request_thread ) );
   create_modules_map( &( Ptask->Modules ) );
-  create_queue( &( Ptask->Filesd ) );
   create_queue( &( Ptask->UserEventsInfo ) );
 
   insert_queue( &Ptask_queue, (char *)Ptask, (t_priority)Ptask->Ptaskid );
@@ -753,16 +747,6 @@ void add_identificator_to_window( struct t_Ptask *Ptask, int window_id, int task
   inFIFO_queue( &win->global_ranks, (char *)mtaskid );
 }
 
-void no_more_identificator_to_window( struct t_Ptask *Ptask, int window_id )
-{
-  register struct t_window *win;
-  win = (struct t_window *)query_prio_queue( &Ptask->Window, (t_priority)window_id );
-
-  if ( win == (struct t_window *)0 )
-  {
-    panic( "Unable to locate window %d for P%d\n", window_id, Ptask->Ptaskid );
-  }
-}
 /*
  * Set to 0 an account entry
  */
@@ -1138,47 +1122,6 @@ struct t_thread *locate_thread( struct t_Ptask *Ptask, int taskid, int thid )
 
   return ( thread );
 }
-/*
- * Append an action to action list of specific thread.
- *
- * NOTE (2014/03/07): There are no references to this function around the source
- * code!
- *
- */
-void new_action_to_thread( struct t_Ptask *Ptask, int taskid, int thid, struct t_action *action )
-{
-  register struct t_thread *thread;
-  struct t_action *last_action;
-
-  thread = locate_thread( Ptask, taskid, thid );
-  if ( thread == TH_NIL )
-  {
-    panic( "Incorrect thread identifier %d in trace file %s for P%d T%d\n", thid, Ptask->tracefile, Ptask->Ptaskid, taskid );
-  }
-
-  last_action = thread->last_action;
-  if ( last_action == AC_NIL )
-  {
-    thread->action = action;
-  }
-  else
-  {
-    if ( action->action == WORK )
-    {
-      recompute_work_upon_modules( thread, action );
-    }
-
-    if ( ( action->action == WORK ) && ( last_action->action == WORK ) )
-    {
-      last_action->desc.compute.cpu_time += action->desc.compute.cpu_time;
-      READ_free_action( action );
-      return;
-    }
-    last_action->next = action;
-  }
-
-  thread->last_action = action;
-}
 
 struct t_account *current_account( struct t_thread *thread )
 {
@@ -1336,103 +1279,6 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   return copy_thread;
 }
 
-// this is used for making MPI_Isend
-struct t_thread *promote_to_original( struct t_thread *copy_thread, struct t_thread *thread )
-{
-  struct t_node *node;
-  struct t_machine *machine;
-
-  node    = get_node_of_thread( thread );
-  machine = node->machine;
-
-  copy_thread->original_thread = TRUE;
-  thread->original_thread      = FALSE;
-
-  copy_thread->twin_thread = NULL;
-  thread->twin_thread      = copy_thread;
-
-  copy_thread->doing_context_switch     = thread->doing_context_switch;
-  copy_thread->min_time_to_be_preempted = thread->min_time_to_be_preempted;
-  copy_thread->doing_busy_wait          = thread->doing_busy_wait;
-  copy_thread->threadid                 = thread->threadid;
-  copy_thread->task                     = thread->task;
-  copy_thread->put_into_ready           = thread->put_into_ready;
-  copy_thread->last_action              = thread->last_action;
-  copy_thread->account                  = thread->account;
-  copy_thread->local_link               = thread->local_link;
-  copy_thread->partner_link             = thread->partner_link;
-  copy_thread->local_hd_link            = thread->local_hd_link;
-  copy_thread->partner_hd_link          = thread->partner_hd_link;
-  copy_thread->last_paraver             = thread->last_paraver;
-  copy_thread->base_priority            = thread->base_priority;
-  copy_thread->sch_parameters           = thread->sch_parameters;
-  copy_thread->seek_position            = thread->seek_position;
-  copy_thread->last_cp_node             = thread->last_cp_node;
-
-  //   (*SCH[machine->scheduler.policy].init_scheduler_parameters) (copy_thread);
-  SCHEDULER_copy_parameters( thread, copy_thread );
-
-  copy_thread->action = thread->action;
-
-  /* Intent de crear un nou accounting pel thread nou, que al destruir-se
-   * s'afegira al thread original. */
-  return ( copy_thread );
-}
-
-
-struct t_thread *promote_to_original2( struct t_thread *copy_thread, struct t_thread *thread )
-{
-  //   struct t_thread *copy_thread;
-  printf( "\n copy_thread->action == %p and the next action is %p \n\n", copy_thread->action, copy_thread->action->next );
-
-  struct t_thread *temp_thread;
-  printf( "step 1\n" );
-  temp_thread = thread;
-  printf( "step 2\n" );
-  *thread = *copy_thread;
-  printf( "step 3\n" );
-  *copy_thread = *temp_thread;
-  printf( "step 4\n" );
-
-  struct t_action *action, *ac;
-  struct t_node *node;
-  struct t_machine *machine;
-
-  node    = get_node_of_thread( thread );
-  machine = node->machine;
-
-  printf( "\n copy_thread->action == %p and the next action is %p \n\n", thread->action, thread->action->next );
-
-  thread->logical_send  = copy_thread->logical_send;
-  thread->logical_recv  = copy_thread->logical_recv;
-  thread->physical_send = copy_thread->physical_send;
-  thread->physical_recv = copy_thread->physical_recv;
-
-
-  ac = copy_thread->action;
-
-  // action = (struct t_action *) malloc (sizeof (struct t_action));
-  READ_create_action( &action );
-
-  memcpy( action, ac, sizeof( struct t_action ) );
-  action->next   = thread->action;
-  thread->action = action;
-
-  register struct t_account *account;
-  account = current_account( thread );
-
-  account = current_account( thread );
-  printf( "Thread without account in promote to original P%d T%d t%d\n", IDENTIFIERS( thread ) );
-  node = &nodes[ account->nodeid ];
-  printf( "Unable to locate node in promote_to_original %d for P%d T%d t%d\n", account->nodeid, IDENTIFIERS( thread ) );
-
-  printf( "END PROMOTE_TO_ORIGINAL2 \n" );
-
-  /* Intent de crear un nou accounting pel thread nou, que al destruir-se
-   * s'afegira al thread original. */
-  return ( thread );
-}
-
 void delete_duplicate_thread( struct t_thread *thread )
 {
   struct t_thread *twin_thread;
@@ -1517,38 +1363,6 @@ void clear_last_actions( struct t_Ptask *Ptask )
   }
 }
 
-void get_operation( struct t_thread *thread, struct t_fs_op *fs_op )
-{
-  struct t_action *action;
-
-  action = thread->action;
-  if ( action != AC_NIL )
-  {
-    *fs_op         = action->desc.fs_op;
-    thread->action = action->next;
-    READ_free_action( action );
-  }
-}
-
-void file_name( struct t_Ptask *Ptask, int file_id, char *location )
-{
-  register struct t_filed *filed;
-
-  filed = (struct t_filed *)query_prio_queue( &Ptask->Filesd, (t_priority)file_id );
-
-  if ( filed == F_NIL )
-  {
-    filed           = (struct t_filed *)malloc( sizeof( struct t_filed ) );
-    filed->file_id  = file_id;
-    filed->location = location;
-    insert_queue( &Ptask->Filesd, (char *)filed, (t_priority)file_id );
-  }
-  else
-  {
-    printf( "Warning: redefinition of file %d\n", file_id );
-  }
-}
-
 t_nano work_time_for_sintetic()
 {
   t_nano f;
@@ -1597,6 +1411,7 @@ void create_sintetic_applications( int num )
     // inFIFO_queue (&Ptask_queue, (char *) Ptask);
   }
 }
+
 t_boolean more_actions_to_sintetic( struct t_thread *thread )
 {
   struct t_action *action;

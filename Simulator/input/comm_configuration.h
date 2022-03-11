@@ -41,6 +41,4 @@ extern void COMM_CONFIGURATION_Load_General_Comms_Definition( char* comm_conf_fi
 
 extern void COMM_CONFIGURATION_Load_External_Network_Parameters( void );
 
-extern void COMM_CONFIGURATION_Load_P2P_Fine_Tuning( void );
-
 #endif

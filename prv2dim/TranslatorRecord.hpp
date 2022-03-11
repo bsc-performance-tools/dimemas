@@ -109,8 +109,6 @@ class PartialCommunication : virtual public ParaverRecord
 
   void Write( ostream& os ) const;
 
-  void ToFile( FILE* OutputFile );
-
   bool ToDimemas( FILE* DimemasTrace )
   {
     return true;
@@ -457,8 +455,6 @@ class TranslationCommunicator : public Communicator
     PendingGlobalOp  = false;
     FinishedGlobalOp = false;
   };
-
-  bool AddGlobalOp( GlobalOp_t NewGlobalOp );
 
   void SetPendingGlobalOp( bool PendingGlobalOp )
   {

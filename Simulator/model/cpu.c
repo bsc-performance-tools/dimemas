@@ -80,21 +80,6 @@ struct t_node *get_node_by_id( int node_id )
   return &nodes[ node_id ];
 }
 
-void check_full_nodes()
-{
-  struct t_node *node;
-
-  int node_id;
-  for ( node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id )
-  {
-    struct t_node *node = &nodes[ node_id ];
-    if ( count_queue( &( node->Cpus ) ) == 0 )
-    {
-      panic( "Node %d non initialized\n", node->nodeid );
-    }
-  }
-}
-
 int num_free_cpu( struct t_node *node )
 {
   register struct t_cpu *cpu;
