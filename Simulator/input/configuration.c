@@ -36,7 +36,6 @@
 
 #include "dimemas_io.h"
 #include "file_data_access.h" /* risky, to read the number of tasks from the parameter trace */
-#include "sddf_records.h"
 
 #include <comm_configuration.h>
 #include <errno.h>

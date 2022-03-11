@@ -36,7 +36,6 @@
 #include <math.h>
 #include <random.h>
 #include <sched_vars.h>
-#include <sddf_records.h>
 #include <simulator.h>
 #include <stdio.h>
 #include <stdlib.h>
