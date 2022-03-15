@@ -1143,12 +1143,8 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
     if( node->used_node == TRUE )
     {
       ++nodes_used_i;
-      unsigned int ncpus = 0;
-      for ( struct t_cpu *cpu = (struct t_cpu *)head_queue( &node->Cpus ); cpu != C_NIL;
-            cpu               = (struct t_cpu *)next_queue( &node->Cpus ) )
-        if( cpu->cpu_is_used ) ++ncpus;
 
-      Header << ncpus;
+      Header << (unsigned int) count_queue( &( node->Cpus ) );
 
       if ( nodes_used_i < nodes_used )
       {
