@@ -580,7 +580,7 @@ struct t_communicator
   struct t_queue *nodes_per_machine; /* Nodes involved on each machine */
   struct t_queue tasks_per_node;
 
-  struct t_thread *current_root; /* Root thread of the 'in-flight'
+  struct t_thread *current_root_thread; /* Root thread of the 'in-flight'
                                     operation */
   t_boolean in_flight_op;        /* True when simulating an operation */
 
@@ -590,7 +590,7 @@ struct t_communicator
 
   struct t_queue nonblock_global_op_threads;
   struct t_queue nonblock_global_op_machine_threads;
-  struct t_queue nonblock_current_root;
+  struct t_queue nonblock_current_root_thread;
   struct t_queue nonblock_m_threads_with_links;
 
   int same_machine;

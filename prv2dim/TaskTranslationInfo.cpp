@@ -820,7 +820,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                       0,
                                       0,
                                       0,
-                                      1 ) < 0 )
+                                      GLOBAL_OP_SYNC ) < 0 )
               {
                 SetError( true );
                 SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -838,7 +838,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                       0,
                                       0,
                                       0,
-                                      1 ) < 0 )
+                                      GLOBAL_OP_SYNC ) < 0 )
               {
                 SetError( true );
                 SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -857,7 +857,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                     0,
                                     0,
                                     0,
-                                    1 ) < 0 )
+                                    GLOBAL_OP_SYNC ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -1184,7 +1184,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                      0, // RootRank | RootThread = 0
                                      0,
                                      0,
-                                     1 ); // No send/recv sizes
+                                     GLOBAL_OP_SYNC ); // No send/recv sizes
 
         if ( err < 0 )
         {

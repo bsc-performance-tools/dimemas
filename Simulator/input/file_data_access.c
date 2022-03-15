@@ -1106,7 +1106,7 @@ t_boolean DAP_read_communicator( app_struct *app, const char *comm_fields )
   }
 
   new_communicator->communicator_id = comm_id;
-  new_communicator->current_root    = NULL;
+  new_communicator->current_root_thread    = NULL;
 
   new_communicator->size         = comm_tasks_count;
   new_communicator->global_ranks = malloc( comm_tasks_count * sizeof( int ) );
@@ -1117,7 +1117,7 @@ t_boolean DAP_read_communicator( app_struct *app, const char *comm_fields )
   create_queue( &new_communicator->nonblock_global_op_machine_threads );
   create_queue( &new_communicator->m_threads_with_links );
   create_queue( &new_communicator->nonblock_m_threads_with_links );
-  create_queue( &new_communicator->nonblock_current_root );
+  create_queue( &new_communicator->nonblock_current_root_thread );
 
   new_communicator->nodes_per_machine = (struct t_queue *)malloc( Simulator.number_machines * sizeof( struct t_queue ) );
 
@@ -1151,7 +1151,7 @@ t_boolean DAP_read_communicator( app_struct *app, const char *comm_fields )
     return FALSE;
   }
 
-  new_communicator->current_root = TH_NIL;
+  new_communicator->current_root_thread = TH_NIL;
   new_communicator->in_flight_op = FALSE;
   insert_queue( &( app->comms ), (char *)new_communicator, (t_priority)comm_id );
 
@@ -2081,7 +2081,7 @@ t_boolean DAP_read_global_op( const char *global_op_str, struct t_action *action
     action->desc.global_op.root_thid   = root_thread_id;
     action->desc.global_op.bytes_send  = bytes_sent;
     action->desc.global_op.bytes_recvd = bytes_recv;
-    action->desc.global_op.synch_type  = 1;
+    action->desc.global_op.synch_type  = GLOBAL_OP_SYNC;
   }
   else
   {

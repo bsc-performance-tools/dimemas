@@ -154,15 +154,15 @@
 #define GPU_BURST     18
 
 /*
- * FRAN
  * Types of global ops. With the introduction of the non-blocking global ops
- * we need a way to determine if the glop is blocking or not. The last filed
+ * we need a way to determine if the glop is blocking or not. The last field
  * of the record is saying it to us
  */
 
-#define GLOBAL_OP_ASYN 0
-#define GLOBAL_OP_SYNC 1
-#define GLOBAL_OP_WAIT 2
+#define GLOBAL_OP_ASYNC     0
+#define GLOBAL_OP_SYNC      1
+#define GLOBAL_OP_WAIT      2
+#define GLOBAL_OP_ROOT_SYNC 3
 
 
 /*#define FS               32

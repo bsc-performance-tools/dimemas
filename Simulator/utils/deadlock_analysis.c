@@ -513,7 +513,7 @@ int create_communicator( int *tasks_involved, int size )
   new_c->communicator_id       = my_ptask->Communicator.count + 1; // Starts to enumerate with 1?
   new_c->size                  = size - 1;
   new_c->global_ranks          = (int *)malloc( sizeof( int ) * size );
-  new_c->current_root          = NULL;
+  new_c->current_root_thread   = NULL;
 
   create_queue( &new_c->threads );
   create_queue( &new_c->machines_threads );

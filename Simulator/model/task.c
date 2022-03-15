@@ -669,9 +669,9 @@ t_nano PREEMP_overhead( struct t_task *task )
   create_queue (&comm->nonblock_global_op_threads);
   create_queue (&comm->nonblock_global_op_machine_threads);
   create_queue (&comm->nonblock_m_threads_with_links);
-  create_queue (&comm->nonblock_current_root);
+  create_queue (&comm->nonblock_current_root_thread);
 
-  comm->current_root = TH_NIL;
+  comm->current_root_thread = TH_NIL;
   comm->in_flight_op = FALSE;
 
   insert_queue (&Ptask->Communicator, (char *)comm, (t_priority)communicator_id);

@@ -430,10 +430,12 @@ GlobalOp::GlobalOp( UINT64 Timestamp,
   this->GlobalOpId     = GlobalOpId;
   this->Root           = Root;
 
-  if ( this->GlobalOpId < GLOP_ID_IMMEDIATE )
-    this->Synchronize = 1;
+  /*if ( this->GlobalOpId == GLOP_ID_MPI_Reduce )
+    this->Synchronize = GLOBAL_OP_ROOT_SYNC;
+  else */if ( this->GlobalOpId < GLOP_ID_IMMEDIATE )
+    this->Synchronize = GLOBAL_OP_SYNC;
   else
-    this->Synchronize = 0;
+    this->Synchronize = GLOBAL_OP_ASYNC;
 
   if ( this->Root )
     this->RootTaskId = 1;
