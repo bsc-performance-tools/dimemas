@@ -1941,7 +1941,6 @@ int *TASK_Map_Filling_Nodes( int task_count )
         task_mapping[ last_task_assigned ] = i_node;
         ++last_task_assigned;
         node->used_node  = TRUE;
-        cpu->cpu_is_used = TRUE;
       }
     }
   }
@@ -2049,7 +2048,6 @@ int *TASK_Map_N_Tasks_Per_Node( int n_tasks_per_node )
     for ( struct t_cpu *cpu = (struct t_cpu *)head_queue( &nodes[ i_node ].Cpus ); cpu != C_NIL;
           cpu               = (struct t_cpu *)next_queue( &nodes[ i_node ].Cpus ) )
     {
-      //  printf("number of cpus %d\n", count_queue(&nodes[i_node].Cpus));
       int i_task;
       for ( i_task = 0; i_task < total_task_count; ++i_task )
       {
@@ -2061,8 +2059,6 @@ int *TASK_Map_N_Tasks_Per_Node( int n_tasks_per_node )
           if ( tasks_in_node[ i_node ] == n_tasks_per_node )
             break;
         }
-        // printf("cpu is %d and cpu id == %d in node id %d\n",
-        //      cpu->cpu_is_used, cpu->cpuid, node->nodeid);
       }
       if ( tasks_in_node[ i_node ] == n_tasks_per_node )
         break;
@@ -2147,6 +2143,7 @@ int *TASK_Map_Interleaved( int task_count )
   }
   return task_mapping;
 }
+
 // Added to update the acc node info after the fill/n-task-per-node/task-interleaved nodes
 void Update_Node_Info( struct t_task *tasks, /* vector of tasks */
                        int tasks_count,

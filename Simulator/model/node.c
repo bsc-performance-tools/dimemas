@@ -102,7 +102,6 @@ void NODE_Fill_Node_Fields( struct t_node *node,
     cpu->current_load           = (double)0;
     cpu->io                     = QU_NIL;
     cpu->is_gpu                 = FALSE;
-    cpu->cpu_is_used            = FALSE;
     insert_queue( &( node->Cpus ), (char *)cpu, ( t_priority )( j + 1 ) );
   }
 
@@ -206,7 +205,6 @@ void NODE_set_acc( int node_id, int num_gpu_in_node, double latency, double memo
     cpu->current_load           = (double)0;
     cpu->io                     = QU_NIL;
     cpu->is_gpu                 = TRUE;
-    cpu->cpu_is_used            = FALSE;
     insert_queue( &( node->Cpus ), (char *)cpu, (t_priority)gpu_id );
   }
 }

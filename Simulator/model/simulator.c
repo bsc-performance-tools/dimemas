@@ -197,45 +197,53 @@ void SIMULATOR_Generate_row( const char *row_filename )
   fprintf( row_file, "\n" );
 
   fprintf( row_file, "\n" );
+
   // Node information
-  fprintf( row_file, "LEVEL NODE SIZE %d\n", nodes_size );
+  int nodes_used = 0;
+  for ( unsigned int i = 0; i < SIMULATOR_get_number_of_nodes(); ++i )
+    if( nodes[i].used_node == TRUE ) ++nodes_used;
+
+  fprintf( row_file, "LEVEL NODE SIZE %d\n", nodes_used );
   for ( unsigned int i = 0; i < SIMULATOR_get_number_of_nodes(); ++i )
   {
-    char machine_name[ 50 ];
-    if ( strlen( nodes[ i ].machine->name ) == 0 )
-      sprintf( machine_name, "unnamed_%d", nodes[ i ].machine->id + 1 );
-    else
-      memcpy( machine_name, nodes[ i ].machine->name, strlen( nodes[ i ].machine->name ) + 1 );
-    struct t_node *node;
-    // if(nodes[i].used_node == TRUE)
-    fprintf( row_file, "%s.%d (%s)\n", machine_name, nodes[ i ].nodeid + 1, nodes[ i ].arch );
+    if( nodes[i].used_node == TRUE )
+    {
+      char machine_name[ 50 ];
+      if ( strlen( nodes[ i ].machine->name ) == 0 )
+        sprintf( machine_name, "unnamed_%d", nodes[ i ].machine->id + 1 );
+      else
+        memcpy( machine_name, nodes[ i ].machine->name, strlen( nodes[ i ].machine->name ) + 1 );
+
+      fprintf( row_file, "%s.%d (%s)\n", machine_name, nodes[ i ].nodeid + 1, nodes[ i ].arch );
+    }
   }
   fprintf( row_file, "\n" );
 
   // CPU information
-  long unsigned int ncpus = 0;
-  for ( unsigned int i = 0; i < nodes_size; ++i )
-    ncpus += count_queue( &( nodes[ i ].Cpus ) );
+  unsigned long ncpus = 0;
+  for ( unsigned int i = 0; i < SIMULATOR_get_number_of_nodes(); ++i )
+    if( nodes[i].used_node == TRUE ) ncpus += count_queue( &( nodes[ i ].Cpus ) );
 
   fprintf( row_file, "LEVEL CPU SIZE %ld\n", ncpus );
   for ( unsigned int i = 0; i < SIMULATOR_get_number_of_nodes(); ++i )
   {
-    char machine_name[ 50 ];
-    if ( strlen( nodes[ i ].machine->name ) == 0 )
-      sprintf( machine_name, "unnamed_%d", nodes[ i ].machine->id + 1 );
-    else
-      memcpy( machine_name, nodes[ i ].machine->name, strlen( nodes[ i ].machine->name ) + 1 );
-    for ( struct t_cpu *cpu = (struct t_cpu *)head_queue( &nodes[ i ].Cpus ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &nodes[ i ].Cpus ) )
+    if( nodes[i].used_node == TRUE )
     {
-      char *name;
-      if ( cpu->is_gpu )
-        name = "GPU";
+      char machine_name[ 50 ];
+      if ( strlen( nodes[ i ].machine->name ) == 0 )
+        sprintf( machine_name, "unnamed_%d", nodes[ i ].machine->id + 1 );
       else
-        name = "CPU";
-      // if(cpu->cpu_is_used == TRUE)
-      fprintf( row_file, "%s %s.%d.%d\n", name, machine_name, nodes[ i ].nodeid + 1, cpu->cpuid );
-      // printf("cpuid %d and cpu is used %d with node id %d\n",
-      //      cpu->cpuid, cpu->cpu_is_used, nodes[i].nodeid+1);
+        memcpy( machine_name, nodes[ i ].machine->name, strlen( nodes[ i ].machine->name ) + 1 );
+      for ( struct t_cpu *cpu = (struct t_cpu *)head_queue( &nodes[ i ].Cpus ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &nodes[ i ].Cpus ) )
+      {
+        char *name;
+        if ( cpu->is_gpu )
+          name = "GPU";
+        else
+          name = "CPU";
+
+        fprintf( row_file, "%s %s.%d.%d\n", name, machine_name, nodes[ i ].nodeid + 1, cpu->cpuid );
+      }
     }
   }
   fprintf( row_file, "\n" );

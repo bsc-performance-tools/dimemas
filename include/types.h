@@ -1104,7 +1104,6 @@ struct t_cpu
   struct t_queue *io;
   int unique_number;
 
-  t_boolean cpu_is_used; // to identify the occupied cpu
   t_boolean is_gpu;      // to create GPU *C
 };
 

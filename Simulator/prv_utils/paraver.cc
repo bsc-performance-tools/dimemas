@@ -1131,16 +1131,25 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
   /*  
    * Iterate through nodes to print the number of CPUs
    */
-  Header << nodes_size << "(";
+  unsigned int nodes_used = 0;
+  for ( unsigned int i = 0; i < SIMULATOR_get_number_of_nodes(); ++i )
+    if( nodes[i].used_node == TRUE ) ++nodes_used;
+  Header << nodes_used << "(";
   
-  for ( int node_id = 0; node_id < nodes_size; ++node_id )
+  unsigned int nodes_used_i = 0;
+  for ( int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id )
   {
     node = &nodes[ node_id ];
-    Header << (unsigned int) count_queue( &( node->Cpus ) ); // Number of CPUs
-
-    if ( node_id < nodes_size - 1 )
+    if( node->used_node == TRUE )
     {
-      Header << ",";
+      ++nodes_used_i;
+
+      Header << (unsigned int) count_queue( &( node->Cpus ) );
+
+      if ( nodes_used_i < nodes_used )
+      {
+        Header << ",";
+      }
     }
   }
   Header << "):";
