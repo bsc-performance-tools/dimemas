@@ -210,19 +210,19 @@ int Dimemas_Global_OP( FILE *fd,
                        int thread,
                        int opid,
                        int commid,
-                       int root_rank,
+                       int is_root,
                        int root_thd,
                        long64_t sendsize,
                        long64_t recvsize,
                        int synchronize )
 {
-  return fprintf( fd, GLOBAL_OP_STRING, task, thread, opid, commid, root_rank, root_thd, sendsize, recvsize, synchronize );
+  return fprintf( fd, GLOBAL_OP_STRING, task, thread, opid, commid, is_root, root_thd, sendsize, recvsize, synchronize );
 }
 
 
-int Dimemas_Global_OP_Wait( FILE *fd, int task, int thread, int opid, int commid, int root_rank, int root_thd, long64_t sendsize, long64_t recvsize )
+int Dimemas_Global_OP_Wait( FILE *fd, int task, int thread, int opid, int commid, int is_root, int root_thd, long64_t sendsize, long64_t recvsize )
 {
-  return fprintf( fd, GLOBAL_OP_WAIT_STRING, task, thread, opid, commid, root_rank, root_thd, sendsize, recvsize );
+  return fprintf( fd, GLOBAL_OP_WAIT_STRING, task, thread, opid, commid, is_root, root_thd, sendsize, recvsize );
 }
 
 

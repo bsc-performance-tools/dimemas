@@ -137,7 +137,7 @@ int Dimemas_Block_Begin( FILE *fd, int task, int thread, long64_t block );
                          int thread,
                          int opid,
                          int commid,
-                         int root_rank,
+                         int is_root,
                          int root_thd,
                          long64_t sendsize,
                          long64_t recvsize,
@@ -148,7 +148,7 @@ int Dimemas_Block_Begin( FILE *fd, int task, int thread, long64_t block );
                               int thread,
                               int opid,
                               int commid,
-                              int root_rank,
+                              int is_root,
                               int root_thd,
                               long64_t sendsize,
                               long64_t recvsize );

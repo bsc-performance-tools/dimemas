@@ -439,10 +439,10 @@ struct t_global_op
 {
   int glop_id;               /* Global operation identificator */
   int comm_id;               /* Communicator identificator */
-  int root_rank;             /* Identificator of root task */
+  int is_root;
   int root_thid;             /* Identificator of thread root task */
-  long long int bytes_send;  /* Number of bytes send */
-  long long int bytes_recvd; /* Number of bytes received */
+  long long int bytes_send;
+  long long int bytes_recvd;
   int synch_type;            /* 0: Asynch glop, 1: Synch glop, 2: Wait glop */
 };
 
@@ -592,6 +592,9 @@ struct t_communicator
   struct t_queue nonblock_global_op_machine_threads;
   struct t_queue nonblock_current_root_thread;
   struct t_queue nonblock_m_threads_with_links;
+
+  struct t_queue root_sync_global_op_threads_arrived;
+  struct t_queue root_sync_root_thread;
 
   int same_machine;
   int same_node;

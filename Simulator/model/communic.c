@@ -181,6 +181,7 @@ static void start_global_op( struct t_thread *thread, int kind );
 
 static void free_global_communication_resources( struct t_thread *thread );
 
+static void close_global_root_sync_communication( struct t_thread *thread );
 static void close_global_communication( struct t_thread *thread );
 static void close_global_nonblock_communication( struct t_thread *thread );
 
@@ -3024,11 +3025,15 @@ void COMMUNIC_general( int value, struct t_thread *thread )
 
     case COM_TIMER_GROUP:
       /* The global operation is completed, restart blocked threads */
-      if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC )
+      if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ROOT_SYNC )
+      {
+        close_global_root_sync_communication( thread );
+      }
+      else if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC )
       {
         close_global_nonblock_communication( thread );
       }
-      else
+      else if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_SYNC )
       {
         close_global_communication( thread );
       }
@@ -6982,6 +6987,46 @@ static void free_global_communication_resources( struct t_thread *thread )
 }
 
 
+static void close_global_root_sync_communication( struct t_thread *thread )
+{
+  struct t_communicator *communicator;
+  struct t_Ptask *Ptask;
+  struct t_thread *root_thread;
+  int comm_id;
+  struct t_action *action;
+  int nb_glob_index = thread->nb_glob_index;
+
+  comm_id      = action->desc.global_op.comm_id;
+
+  communicator = locate_communicator( &Ptask->Communicator, comm_id );
+
+  int *threads_arrived = (int *)query_prio_queue( &communicator->root_sync_global_op_threads_arrived, nb_glob_index );
+
+  *threads_arrived = *threads_arrived + 1;
+  if( *threads_arrived == communicator->size )
+  {
+    root_thread = (struct t_thread *)query_prio_queue( &communicator->root_sync_root_thread, nb_glob_index );
+
+    action              = root_thread->action;
+    root_thread->action = action->next;
+    READ_free_action( action );
+
+    if ( more_actions( root_thread ) )
+    {
+      root_thread->loose_cpu = TRUE;
+      SCHEDULER_thread_to_ready( root_thread );
+      reload_done = TRUE;
+    }
+
+    extract_from_queue( &communicator->root_sync_root_thread, (void *)root_thread );
+    extract_from_queue( &communicator->root_sync_global_op_threads_arrived, (void *)threads_arrived );
+
+    free( threads_arrived );
+  }
+
+  // TODO: accounting
+}
+
 static void close_global_nonblock_communication( struct t_thread *thread )
 {
   struct t_action *action;
@@ -7327,13 +7372,15 @@ void GLOBAL_wait_operation( struct t_thread *thread )
   El resto de tareas no se bloquean pero tampoco siguen ejecutando las siguientes acciones.
   Deberan computar su operacion de comunicacion con el root completamente y entonces podran continuar.
   Esto ultimo se podria hacer programando un EVENT_Timer hacia el tiempo en el que finalizan la operacion.
-  El calculo del tiempo para cada tarea/thread se podria hacer como una p2p, en vez de como se hace para el resto
-  de colectivas en el que se suman los tiempos de las comunicaciones intra/inter nodo.
+  El calculo del tiempo para cada tarea/thread habra que pensar alguna alternativa a como lo hacen el resto de colectivas,
+  por ejemplo se puede empezar con una simple bytes*bandwidth.
+  De momento podemos empezar con la parte de sincronizacion para que el aspecto sea el mismo que la traza original, y
+  poner un tiempo fijo (1ms p.ej.) para la duracion, y luego ese tiempo ya se sustituira por un calculo.
 */
 void GLOBAL_operation( struct t_thread *thread,
                        int glop_id,
                        int comm_id,
-                       int root_rank,
+                       int is_root,
                        int root_thid,
                        int bytes_send,
                        int bytes_recv,
@@ -7395,12 +7442,12 @@ void GLOBAL_operation( struct t_thread *thread,
   if ( debug & D_COMM & synch_type != GLOBAL_OP_ASYNC )
   {
     PRINT_TIMER( current_time );
-    printf( ": GLOBAL_operation P%02d T%02d (t%02d) Starting %s (Root = %d)\n", IDENTIFIERS( thread ), glop->name, root_rank );
+    printf( ": GLOBAL_operation P%02d T%02d (t%02d) Starting %s (Root = %d)\n", IDENTIFIERS( thread ), glop->name, is_root );
   }
 
   // Pay the startup
   //
-  if ( synch_type == GLOBAL_OP_ASYNC || ( synch_type == GLOBAL_OP_ROOT_SYNC && thread->task->taskid != root_rank ) )
+  if ( synch_type == GLOBAL_OP_ASYNC || ( synch_type == GLOBAL_OP_ROOT_SYNC && is_root == FALSE ) )
   {
     if ( thread->startup_done == FALSE )
     {
@@ -7434,17 +7481,28 @@ void GLOBAL_operation( struct t_thread *thread,
         }
         return;
       }
-      else /* (startup == (t_nano) 0) */
-      {
-        thread->startup_done = TRUE;
-      }
     }
 
-    // Like this because if latency is 0 we want to perform this piece
-    // of code anyway
-    if ( thread->startup_done == TRUE )
+    thread->startup_done = FALSE;
+
+    if ( synch_type != GLOBAL_OP_ROOT_SYNC )
     {
-      thread->startup_done = FALSE;
+      thread->nb_glob_index = thread->nb_glob_index_master; // TODO: verify if nb_glob_index can be modified in thread directly, instead of in copy_thread
+      thread->nb_glob_index_master++;
+
+      nb_glob_index = thread->nb_glob_index;
+
+      char *existingQueue = query_prio_queue( &communicator->root_sync_global_op_threads_arrived, nb_glob_index );
+
+      if( existingQueue == A_NIL )
+      {
+        int *tmpNumThreads = malloc( sizeof( int ) );
+        *tmpNumThreads = 0;
+        insert_queue( &communicator->root_sync_global_op_threads_arrived, (char *)tmpNumThreads, nb_glob_index );
+      }
+    }
+    else if ( synch_type != GLOBAL_OP_ASYNC )
+    {
       // If startup done, then create a copy of thread for the non-blocking
       // collective, and schedule the original for continuing with the
       // simulation
@@ -7474,18 +7532,23 @@ void GLOBAL_operation( struct t_thread *thread,
       // It will be the index for the nonblock-glop structures
       nb_glob_index = copy_thread->nb_glob_index;
 
-      // Create the structures for the new non-block global operation
-      struct t_queue *new_global_op_threads             = malloc( sizeof( struct t_queue ) );
-      struct t_queue *new_global_op_machine_threads     = malloc( sizeof( struct t_queue ) );
-      struct t_queue *new_nonblock_m_threads_with_links = malloc( sizeof( struct t_queue ) );
+      char *existingQueue = query_prio_queue( &communicator->nonblock_global_op_threads, nb_glob_index );
 
-      create_queue( new_global_op_threads );
-      create_queue( new_global_op_machine_threads );
-      create_queue( new_nonblock_m_threads_with_links );
+      if( existingQueue == A_NIL )
+      {
+        // Create the structures for the new non-block global operation
+        struct t_queue *new_global_op_threads             = malloc( sizeof( struct t_queue ) );
+        struct t_queue *new_global_op_machine_threads     = malloc( sizeof( struct t_queue ) );
+        struct t_queue *new_nonblock_m_threads_with_links = malloc( sizeof( struct t_queue ) );
 
-      insert_queue( &communicator->nonblock_global_op_threads, (char *)new_global_op_threads, nb_glob_index );
-      insert_queue( &communicator->nonblock_global_op_machine_threads, (char *)new_global_op_machine_threads, nb_glob_index );
-      insert_queue( &communicator->nonblock_m_threads_with_links, (char *)new_nonblock_m_threads_with_links, nb_glob_index );
+        create_queue( new_global_op_threads );
+        create_queue( new_global_op_machine_threads );
+        create_queue( new_nonblock_m_threads_with_links );
+
+        insert_queue( &communicator->nonblock_global_op_threads, (char *)new_global_op_threads, nb_glob_index );
+        insert_queue( &communicator->nonblock_global_op_machine_threads, (char *)new_global_op_machine_threads, nb_glob_index );
+        insert_queue( &communicator->nonblock_m_threads_with_links, (char *)new_nonblock_m_threads_with_links, nb_glob_index );
+      }
 
       // communicator->nonblock_current_root_thread;
       // Manage the glop with the copy_thread
@@ -7534,12 +7597,11 @@ void GLOBAL_operation( struct t_thread *thread,
 
 
   /* JGG (07/07/2010): New way to choose the root */
-  if ( root_rank == 1 )
+  if ( is_root == TRUE )
   {
     if ( synch_type == GLOBAL_OP_ASYNC )
     {
       insert_queue( &communicator->nonblock_current_root_thread, (char *)thread, nb_glob_index );
-      // communicator->nonblock_current_root_thread[nb_glob_index] = thread;
     }
     else
     {
@@ -7562,51 +7624,82 @@ void GLOBAL_operation( struct t_thread *thread,
   // Deciding which queue we have to take
   //
   struct t_queue *threads_queue;
-  if ( synch_type == GLOBAL_OP_ASYNC )
+
+  if ( synch_type == GLOBAL_OP_ROOT_SYNC )
+  {
+    int *threads_arrived = (int *) query_prio_queue( &communicator->root_sync_global_op_threads_arrived, nb_glob_index );
+
+    if( is_root == TRUE )
+    {
+      insert_queue( &communicator->root_sync_root_thread, (char *)thread, nb_glob_index );
+
+      *threads_arrived = *threads_arrived + 1;
+      if( *threads_arrived == communicator->size )
+      {
+        struct t_action *action;
+        thread->last_paraver = current_time;
+        action               = thread->action;
+        thread->action       = action->next;
+        READ_free_action( action );
+
+        if ( more_actions( thread ) )
+        {
+          thread->loose_cpu = FALSE;
+          // SCHEDULER_thread_to_ready (thread);
+          SCHEDULER_general( SCH_TIMER_OUT, thread ); // TODO: not clear if needed to call SCHEDULER_general or just return
+        }
+      }
+
+      return;
+    }
+  }
+  else if ( synch_type == GLOBAL_OP_ASYNC )
   {
     threads_queue = (struct t_queue *)query_prio_queue( &communicator->nonblock_global_op_threads, nb_glob_index );
     // threads_queue = &communicator->nonblock_global_op_threads[nb_glob_index];
   }
-  else
+  else if( synch_type == GLOBAL_OP_SYNC )
   {
     threads_queue = &communicator->threads;
   }
 
-  // This is not the last thread arriving to the communication point,
-  // simply block
-  //
-  if ( communicator->size != count_queue( threads_queue ) + 1 )
+  if ( synch_type != GLOBAL_OP_ROOT_SYNC )
   {
-    cpu = get_cpu_of_thread( thread );
-    if ( synch_type != GLOBAL_OP_ASYNC )
-      thread->last_paraver = current_time; // TODO: Check if okay when non-block
-
-    inFIFO_queue( threads_queue, (char *)thread );
-
-    if ( debug & D_COMM )
+    // This is not the last thread arriving to the communication point,
+    // simply block
+    //
+    if ( communicator->size != count_queue( threads_queue ) + 1 )
     {
-      PRINT_TIMER( current_time );
-      if ( synch_type == GLOBAL_OP_ASYNC )
-        printf( ": non-block GLOBAL_operation (%d)  P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
-                synch_type,
-                IDENTIFIERS( thread ),
-                glop->name,
-                comm_id,
-                count_queue( threads_queue ),
-                communicator->size );
-      else
-        printf( ": GLOBAL_operation (%d)  P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
-                synch_type,
-                IDENTIFIERS( thread ),
-                glop->name,
-                comm_id,
-                count_queue( threads_queue ),
-                communicator->size );
+      cpu = get_cpu_of_thread( thread );
+      if ( synch_type != GLOBAL_OP_ASYNC )
+        thread->last_paraver = current_time; // TODO: Check if okay when non-block
+
+      inFIFO_queue( threads_queue, (char *)thread );
+
+      if ( debug & D_COMM )
+      {
+        PRINT_TIMER( current_time );
+        if ( synch_type == GLOBAL_OP_ASYNC )
+          printf( ": non-block GLOBAL_operation (%d)  P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
+                  synch_type,
+                  IDENTIFIERS( thread ),
+                  glop->name,
+                  comm_id,
+                  count_queue( threads_queue ),
+                  communicator->size );
+        else
+          printf( ": GLOBAL_operation (%d)  P%02d T%02d (t%02d) Blocked on '%s' (Comm.%d: %dw / %dT)\n",
+                  synch_type,
+                  IDENTIFIERS( thread ),
+                  glop->name,
+                  comm_id,
+                  count_queue( threads_queue ),
+                  communicator->size );
+      }
+
+      return;
     }
-
-    return;
   }
-
 
   if ( debug & D_COMM )
   {
@@ -7646,6 +7739,13 @@ void GLOBAL_operation( struct t_thread *thread,
   ////////// CONTENTION PART //////////
   /////////////////////////////////////
 
+  if ( synch_type == GLOBAL_OP_ROOT_SYNC )
+  {
+    ADD_TIMER( current_time, 0.000001, tmp_timer );
+    EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+
+    return;
+  }
 
   // Insert current thread to the communicator list
   //
@@ -8114,5 +8214,3 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
     task->StreamByComm = -1;
   }
 }
-
-//todo: hacer un programa sencillo mpi + cuda: con menos tareas y streams

@@ -390,22 +390,11 @@ class GlobalOp : public virtual ParaverRecord
   INT32 CommunicatorId;
   INT32 SendSize, RecvSize;
   INT32 GlobalOpId;
-  INT32 RootTaskId;
 
   INT32 Synchronize;
   bool Root;
 
  public:
-  GlobalOp( UINT64 Timestamp,
-            INT32 CPU,
-            INT32 AppId,
-            INT32 TaskId,
-            INT32 ThreadId,
-            INT32 CommunicatorId,
-            INT32 SendSize,
-            INT32 RecvSize,
-            INT32 GlobalOpId,
-            INT32 RootTaskId );
 
   GlobalOp( UINT64 Timestamp,
             INT32 CPU,
@@ -460,16 +449,6 @@ class GlobalOp : public virtual ParaverRecord
       return GlobalOpId - GLOP_ID_IMMEDIATE;
     else
       return GlobalOpId;
-  };
-
-  void SetRootTaskId( INT32 RootTaskId )
-  {
-    this->RootTaskId = RootTaskId;
-  };
-
-  INT32 GetRootTaksId( void )
-  {
-    return RootTaskId;
   };
 
   void SetIsRoot( bool Root )
