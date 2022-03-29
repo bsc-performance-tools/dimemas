@@ -6996,8 +6996,9 @@ static void close_global_root_sync_communication( struct t_thread *thread )
   struct t_action *action;
   int nb_glob_index = thread->nb_glob_index;
 
+  Ptask        = thread->task->Ptask;
+  action       = thread->action;
   comm_id      = action->desc.global_op.comm_id;
-
   communicator = locate_communicator( &Ptask->Communicator, comm_id );
 
   int *threads_arrived = (int *)query_prio_queue( &communicator->root_sync_global_op_threads_arrived, nb_glob_index );
@@ -7022,6 +7023,17 @@ static void close_global_root_sync_communication( struct t_thread *thread )
     extract_from_queue( &communicator->root_sync_global_op_threads_arrived, (void *)threads_arrived );
 
     free( threads_arrived );
+  }
+
+  action         = thread->action;
+  thread->action = action->next;
+  READ_free_action( action );
+
+  if ( more_actions( thread ) )
+  {
+    thread->loose_cpu = TRUE;
+    SCHEDULER_thread_to_ready( thread );
+    reload_done = TRUE;
   }
 
   // TODO: accounting
@@ -7447,7 +7459,7 @@ void GLOBAL_operation( struct t_thread *thread,
 
   // Pay the startup
   //
-  if ( synch_type == GLOBAL_OP_ASYNC || ( synch_type == GLOBAL_OP_ROOT_SYNC && is_root == FALSE ) )
+  if ( synch_type == GLOBAL_OP_ASYNC || synch_type == GLOBAL_OP_ROOT_SYNC )
   {
     if ( thread->startup_done == FALSE )
     {
@@ -7485,7 +7497,7 @@ void GLOBAL_operation( struct t_thread *thread,
 
     thread->startup_done = FALSE;
 
-    if ( synch_type != GLOBAL_OP_ROOT_SYNC )
+    if ( synch_type == GLOBAL_OP_ROOT_SYNC )
     {
       thread->nb_glob_index = thread->nb_glob_index_master; // TODO: verify if nb_glob_index can be modified in thread directly, instead of in copy_thread
       thread->nb_glob_index_master++;
@@ -7501,7 +7513,7 @@ void GLOBAL_operation( struct t_thread *thread,
         insert_queue( &communicator->root_sync_global_op_threads_arrived, (char *)tmpNumThreads, nb_glob_index );
       }
     }
-    else if ( synch_type != GLOBAL_OP_ASYNC )
+    else if ( synch_type == GLOBAL_OP_ASYNC )
     {
       // If startup done, then create a copy of thread for the non-blocking
       // collective, and schedule the original for continuing with the
@@ -7636,6 +7648,11 @@ void GLOBAL_operation( struct t_thread *thread,
       *threads_arrived = *threads_arrived + 1;
       if( *threads_arrived == communicator->size )
       {
+        extract_from_queue( &communicator->root_sync_root_thread, (void *)thread );
+        extract_from_queue( &communicator->root_sync_global_op_threads_arrived, (void *)threads_arrived );
+
+        free( threads_arrived );
+
         struct t_action *action;
         thread->last_paraver = current_time;
         action               = thread->action;
@@ -7648,6 +7665,7 @@ void GLOBAL_operation( struct t_thread *thread,
           // SCHEDULER_thread_to_ready (thread);
           SCHEDULER_general( SCH_TIMER_OUT, thread ); // TODO: not clear if needed to call SCHEDULER_general or just return
         }
+
       }
 
       return;
@@ -7725,13 +7743,16 @@ void GLOBAL_operation( struct t_thread *thread,
   thread->last_paraver = current_time;
 
   ASS_ALL_TIMER( thread->collective_timers.sync_time, current_time );
-  for ( others = (struct t_thread *)head_queue( threads_queue ); others != TH_NIL; others = (struct t_thread *)next_queue( threads_queue ) )
+  if ( synch_type != GLOBAL_OP_ROOT_SYNC )
   {
-    ASS_ALL_TIMER( others->collective_timers.sync_time, current_time );
-    if ( synch_type == GLOBAL_OP_SYNC )
+    for ( others = (struct t_thread *)head_queue( threads_queue ); others != TH_NIL; others = (struct t_thread *)next_queue( threads_queue ) )
     {
-      PARAVER_Wait( 0, IDENTIFIERS( others ), others->last_paraver, current_time, PRV_BLOCKED_ST );
-      others->last_paraver = current_time;
+      ASS_ALL_TIMER( others->collective_timers.sync_time, current_time );
+      if ( synch_type == GLOBAL_OP_SYNC )
+      {
+        PARAVER_Wait( 0, IDENTIFIERS( others ), others->last_paraver, current_time, PRV_BLOCKED_ST );
+        others->last_paraver = current_time;
+      }
     }
   }
 
@@ -7741,7 +7762,7 @@ void GLOBAL_operation( struct t_thread *thread,
 
   if ( synch_type == GLOBAL_OP_ROOT_SYNC )
   {
-    ADD_TIMER( current_time, 0.000001, tmp_timer );
+    ADD_TIMER( current_time, 1000, tmp_timer );
     EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
 
     return;
