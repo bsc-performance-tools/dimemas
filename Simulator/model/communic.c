@@ -6804,7 +6804,8 @@ static void start_global_op( struct t_thread *thread, int kind )
 
   // In this case we do not want to generate any state in the trace
   //
-  if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC )
+  if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC || 
+       thread->action->desc.global_op.synch_type == GLOBAL_OP_ROOT_SYNC )
     return;
 
   /* Per cada thread del comunicador, es guarden les estadistiques i es
@@ -7762,8 +7763,18 @@ void GLOBAL_operation( struct t_thread *thread,
 
   if ( synch_type == GLOBAL_OP_ROOT_SYNC )
   {
-    ADD_TIMER( current_time, 1000, tmp_timer );
-    EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+    if ( external_comm_library_loaded == TRUE )
+    {
+      kind = external_get_global_op_type( thread->action->desc.global_op.comm_id,
+                                          thread->action->desc.global_op.glop_id,
+                                          thread->action->desc.global_op.bytes_send,
+                                          thread->action->desc.global_op.bytes_recvd );
+
+      if ( kind == EXTERNAL_GLOBAL_OP_MODEL )
+        start_global_op( thread, EXTERNAL_GLOBAL_OP_MODEL );
+    }
+    else
+      start_global_op( thread, DIMEMAS_GLOBAL_OP_MODEL );
 
     return;
   }
