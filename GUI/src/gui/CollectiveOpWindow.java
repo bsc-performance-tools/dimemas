@@ -54,6 +54,7 @@ import java.awt.event.*;
 public class CollectiveOpWindow extends GUIWindow
 {
   public static final long serialVersionUID = 3L;
+  public static final int MPI_REDUCE_POS = 11;
   
   private JTextField tf_number = createTextField(2);
 
@@ -86,6 +87,8 @@ public class CollectiveOpWindow extends GUIWindow
   private JPanel MPI_panel;
   private JPanel items;
   private JPanel buttonPanelBottom;
+
+
 
   /*
   * El método createComboBox genera el número de selectores Swing indicado por
@@ -125,6 +128,9 @@ public class CollectiveOpWindow extends GUIWindow
         cb[i].addItem("2MAX");
         cb[i].addItem("S+R");
       }
+
+      if( i == MPI_REDUCE_POS )
+        cb[i].setEnabled( false );
     }
 
     if(elements == 1)
@@ -134,6 +140,7 @@ public class CollectiveOpWindow extends GUIWindow
 
     return cb;
   }
+
 private JCheckBox[] createCheckBox(boolean synch, int elements)
   {
       JCheckBox[] ckb = new JCheckBox[elements];
@@ -145,6 +152,9 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
         {
             ckb[i].setSelected(true);
         }
+
+        if( i == MPI_REDUCE_POS )
+          ckb[i].setEnabled( false );
       }
 
       if(elements == 1)
@@ -260,8 +270,10 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
     MPI_names.add(new JLabel("  MPI_Alltoall",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Alltoallv",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Alltoallw",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Reduce",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Allreduce",JLabel.LEFT));
+    JLabel tmpLabel = new JLabel("  MPI_Reduce",JLabel.LEFT);
+    tmpLabel.setEnabled( false );
+    MPI_names.add( tmpLabel );
+    MPI_names.add( new JLabel("  MPI_Allreduce",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Reduce_Scatter",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Scan",JLabel.LEFT));
     MPI_names.add(new JLabel("--------------------",JLabel.CENTER));
