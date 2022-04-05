@@ -6450,6 +6450,8 @@ void calcula_temps_operacio_global( struct t_thread *thread,
   t_nano bandw_externa;
   double suma_aux, suma_maxim;
 
+  int synch_type = thread->action->desc.global_op.synch_type;
+
   Ptask        = thread->task->Ptask;
   action       = thread->action;
   comm_id      = action->desc.global_op.comm_id;
@@ -6482,7 +6484,7 @@ void calcula_temps_operacio_global( struct t_thread *thread,
   suma_maxim                   = 0;
 
   struct t_queue *comm_machine_threads;
-  if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC )
+  if ( synch_type == GLOBAL_OP_ASYNC )
   {
     comm_machine_threads = (struct t_queue *)query_prio_queue( &communicator->nonblock_global_op_machine_threads, nb_glob_index );
     // comm_machine_threads=&communicator->nonblock_global_op_machine_threads[nb_glob_index];
@@ -6494,8 +6496,9 @@ void calcula_temps_operacio_global( struct t_thread *thread,
 
   /* For each machine used we compute the inter-node communication time and
      the intra-node communication time */
-  for ( others = (struct t_thread *)head_queue( comm_machine_threads ); others != TH_NIL;
-        others = (struct t_thread *)next_queue( comm_machine_threads ) )
+  for ( others = ( synch_type == GLOBAL_OP_ROOT_SYNC )? thread : (struct t_thread *)head_queue( comm_machine_threads );
+        others != TH_NIL;
+        others = ( synch_type == GLOBAL_OP_ROOT_SYNC )? TH_NIL :(struct t_thread *)next_queue( comm_machine_threads ) )
   {
     /* S'obte el node i la maquina corresponent al thread */
     node    = get_node_of_thread( others );
@@ -6715,6 +6718,61 @@ void calcula_temps_operacio_global( struct t_thread *thread,
   }
 }
 
+static void start_global_op_root_sync( struct t_thread *thread, int kind )
+{
+  dimemas_timer temps_latencia, temps_recursos, temps_final, temps_operacio;
+  dimemas_timer tmp_timer;
+  struct t_action *action;
+  int comm_id, glop_id;
+
+  action  = thread->action;
+  comm_id = action->desc.global_op.comm_id;
+  glop_id = action->desc.global_op.glop_id;
+
+  switch ( kind )
+  {
+    case DIMEMAS_GLOBAL_OP_MODEL:
+      calcula_temps_operacio_global( thread, &temps_latencia, &temps_recursos, &temps_final );
+
+      /* Es programa l'event de final de la reserva dels recursos */
+      ADD_TIMER( current_time, temps_recursos, tmp_timer );
+      EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP_RESOURCES );
+      break;
+
+    case EXTERNAL_GLOBAL_OP_MODEL:
+      if ( external_comm_library_loaded == FALSE )
+      {
+        panic( "Executing global operation through external model library not loaded\n" );
+      }
+
+      external_compute_global_operation_time( comm_id,
+                                              glop_id,
+                                              action->desc.global_op.bytes_send,
+                                              action->desc.global_op.bytes_recvd,
+                                              (t_nano *)&temps_latencia,
+                                              (t_nano *)&temps_operacio );
+
+      temps_final = temps_latencia + temps_operacio;
+
+      if ( debug & D_COMM )
+      {
+        PRINT_TIMER( current_time );
+        // printf( ": GLOBAL_operation P%02d T%02d (t%02d) '%s' USING EXTERNAL GLOBAL OPERATIONS MODEL\n", IDENTIFIERS( thread ), glop->name );
+      }
+
+      /* JGG: There is no need to free the resources, because we use an external
+       * model */
+      break;
+  }
+
+
+  /* Es programa l'event de final de l'operacio col.lectiva */
+  ADD_TIMER( current_time, temps_final, tmp_timer );
+
+  EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+
+}
+
 /**************************************************************************
  ** Aquesta funcio no reserva res. Dona per suposat que ja s'ha reservat
  ** tot el que calia. Simplement engega l'operacio col.lectiva.
@@ -6804,8 +6862,7 @@ static void start_global_op( struct t_thread *thread, int kind )
 
   // In this case we do not want to generate any state in the trace
   //
-  if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC || 
-       thread->action->desc.global_op.synch_type == GLOBAL_OP_ROOT_SYNC )
+  if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC )
     return;
 
   /* Per cada thread del comunicador, es guarden les estadistiques i es
@@ -7771,10 +7828,10 @@ void GLOBAL_operation( struct t_thread *thread,
                                           thread->action->desc.global_op.bytes_recvd );
 
       if ( kind == EXTERNAL_GLOBAL_OP_MODEL )
-        start_global_op( thread, EXTERNAL_GLOBAL_OP_MODEL );
+        start_global_op_root_sync( thread, EXTERNAL_GLOBAL_OP_MODEL );
     }
     else
-      start_global_op( thread, DIMEMAS_GLOBAL_OP_MODEL );
+      start_global_op_root_sync( thread, DIMEMAS_GLOBAL_OP_MODEL );
 
     return;
   }
