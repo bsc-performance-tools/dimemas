@@ -4720,14 +4720,14 @@ static void inicialitza_info_nova_globalop( int model, struct t_global_op_defini
   insert_queue( cua, (char *)glop_info, (t_priority)glop->identificator );
 }
 
-void new_global_op( int identificator, const char *name )
+void new_global_op( int globop_id, const char *name )
 {
   struct t_global_op_definition *glop;
   struct t_machine *machine;
   size_t machines_it;
 
   /* Es guarda la definicio d'aquesta operació col.lectiva */
-  glop = (struct t_global_op_definition *)query_prio_queue( &Global_op, (t_priority)identificator );
+  glop = (struct t_global_op_definition *)query_prio_queue( &Global_op, (t_priority)globop_id );
 
   if ( glop != GOPD_NIL )
   {
@@ -4741,26 +4741,25 @@ void new_global_op( int identificator, const char *name )
   glop = (struct t_global_op_definition *)malloc( sizeof( struct t_global_op_definition ) );
 
   glop->name          = strdup( name );
-  glop->identificator = identificator;
+  glop->identificator = globop_id;
 
-  insert_queue( &Global_op, (char *)glop, (t_priority)identificator );
+  insert_queue( &Global_op, (char *)glop, (t_priority)globop_id );
 
-  /* S'hauria de guardar informació d'aquesta operació per cada màquina */
-  /* JGG (2012/01/17): new ways to navigate through machines
-     for (machine  = (struct t_machine *) head_queue(&Machine_queue);
-     machine != MA_NIL;
-     machine  = (struct t_machine *) next_queue(&Machine_queue))
-     {
-     */
   for ( machines_it = 0; machines_it < Simulator.number_machines; machines_it++ )
   {
     machine = &Machines[ machines_it ];
 
-    inicialitza_info_nova_globalop( machine->communication.global_op_model, glop, &machine->communication.global_ops_info );
+    if( globop_id == GLOP_ID_MPI_Reduce )
+      inicialitza_info_nova_globalop( GOP_MODEL_CTE, glop, &machine->communication.global_ops_info );
+    else
+      inicialitza_info_nova_globalop( machine->communication.global_op_model, glop, &machine->communication.global_ops_info );
   }
 
   /* Es fa el mateix per la xarxa externa */
-  inicialitza_info_nova_globalop( Simulator.wan.global_op_model, glop, &Simulator.wan.global_ops_info );
+  if ( globop_id == GLOP_ID_MPI_Reduce )
+    inicialitza_info_nova_globalop( GOP_MODEL_CTE, glop, &Simulator.wan.global_ops_info );
+  else
+    inicialitza_info_nova_globalop( Simulator.wan.global_op_model, glop, &Simulator.wan.global_ops_info );
 }
 
 /*

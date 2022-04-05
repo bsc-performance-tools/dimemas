@@ -36,6 +36,7 @@
 #include <communic.h> // To configure the communications
 #include <dimemas_io.h>
 #include <errno.h>
+#include "EventEncoding.h"
 #include <list.h>
 #include <sched_vars.h> // To access to COMMUNIC table
 #include <simulator.h>
@@ -133,6 +134,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine policy on (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     matches = sscanf( current_line, "Policy: %s", mini_buffer );
@@ -145,6 +148,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine policy (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -163,6 +168,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       }
 
       expected_quantum_definition = FALSE;
+
+      continue;
     }
 
 
@@ -183,6 +190,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine flight times (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -191,6 +200,9 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
     matches = sscanf( current_line, "Machine globalop: %d %d %s %s %s %s", &machine_id, &global_OP, FIN_model, FIN_size, FOUT_model, FOUT_size );
     if ( matches == 6 )
     {
+      if( global_OP == GLOP_ID_MPI_Reduce )
+        continue;
+
       if ( ( machine_id < 0 ) || ( machine_id >= Simulator.number_machines ) )
       {
         die( "Invalid machine id %d (%s:%d)", machine_id, comm_conf_filename, line );
@@ -209,6 +221,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine %d global operation definition (%s:%d): %s", machine_id, comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -217,6 +231,9 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
     matches = sscanf( current_line, "External globalop: %d %s %s %s %s", &global_OP, FIN_model, FIN_size, FOUT_model, FOUT_size );
     if ( matches == 5 )
     {
+      if( global_OP == GLOP_ID_MPI_Reduce )
+        continue;
+
       /* Cal llegir els parametres de l'operació col.lectiva
        * global_OP per la xarxa externa. */
       if ( !load_global_op_parameters( TRUE, // External network
@@ -229,6 +246,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading external network global operation definition (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -252,6 +271,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
         }
       }
       /* El camp contention actualment s'ignora. */
+
+      continue;
     }
   }
 }
