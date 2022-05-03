@@ -21,15 +21,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-  $Rev:: 1044                                     $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-                printf("op_fiends:%s\n",op_fields);
-  $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 #include "TaskTranslationInfo.hpp"
 
 #include "Dimemas2Prv.h"
@@ -656,7 +647,8 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   //
   if ( !MPIEventEncoding_Is_MPIBlock( (INT64)Type ) && !MPIEventEncoding_Is_UserBlock( (INT64)Type ) &&
        !ClusterEventEncoding_Is_ClusterBlock( (INT64)Type ) && !CUDAEventEncoding_Is_CUDABlock( (INT64)Type ) &&
-       !OCLEventEncoding_Is_OCLBlock( (INT64)Type ) && !OMPEventEncoding_Is_OMPType( (INT64)Type ) )
+       !OCLEventEncoding_Is_OCLBlock( (INT64)Type ) && !OMPEventEncoding_Is_OMPType( (INT64)Type ) &&
+       !( CUDAEventEncoding_Is_Kernel( (INT64)Type ) && AcceleratorThread == ACCELERATOR_KERNEL ) )
   {
     if ( debug )
       cout << "Printing Generic Event: " << *CurrentEvent;
@@ -699,7 +691,9 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     }
   }
   /* It is a CUDA event*/
-  if ( CUDAEventEncoding_Is_CUDABlock( Type ) && AcceleratorThread != ACCELERATOR_NULL )
+  if ( AcceleratorThread != ACCELERATOR_NULL &&
+       ( CUDAEventEncoding_Is_Kernel( Type ) && AcceleratorThread == ACCELERATOR_KERNEL ||
+         CUDAEventEncoding_Is_CUDABlock( Type ) ) )
   {
     if ( CUDAEventEncoding_Is_BlockBegin( Value ) )
     {
@@ -716,13 +710,13 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         if ( AcceleratorThread == ACCELERATOR_HOST )
         {
           /* Burst are only generated in the Host thread,
-           * not in the device threads */
+          * not in the device threads */
           if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
             return false;
         }
       }
 
-      if ( Value == CUDA_THREADSYNCHRONIZE_VAL || Value == CUDA_STREAMSYNCHRONIZE_VAL )
+      if ( CUDAEventEncoding_Is_CUDABlock( Type ) && ( Value == CUDA_THREADSYNCHRONIZE_VAL || Value == CUDA_STREAMSYNCHRONIZE_VAL ) )
       {
         OngoingDeviceSync = true;
       }
@@ -767,13 +761,13 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 
       FirstCUDARead = true;
 
+      LastBlockEnd = Timestamp;
+
       /* Block management */
       CurrentBlock.first  = Type;
       CurrentBlock.second = Value;
 
       CUDABlockIdStack.push_back( CurrentBlock );
-
-      LastBlockEnd = Timestamp;
     }
     else
     {
@@ -781,8 +775,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
       {
         if ( FirstCUDARead )
         {
-          // There is a event closing without its opening in the middle of the
-          // trace
+          // There is a event closing without its opening in the middle of the trace
           cout << "WARNING: CUDA call exit without entry in original trace" << endl;
           cout << "Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " ";
           cout << "Time " << Timestamp << endl;
@@ -794,7 +787,9 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         CUDABlockIdStack.pop_back();
 
         /* A kernel execution in the device, characterized as a GPU burst */
-        if ( ( CurrentBlock.second == CUDA_LAUNCH_VAL || CurrentBlock.second == CUDA_CONFIGURECALL_VAL ) && AcceleratorThread == ACCELERATOR_KERNEL )
+        if ( AcceleratorThread == ACCELERATOR_KERNEL &&
+             ( ( CUDAEventEncoding_Is_Kernel( CurrentBlock.first ) ||
+                 CUDAEventEncoding_Is_CUDABlock( CurrentBlock.first ) && CurrentBlock.second == CUDA_CONFIGURECALL_VAL ) ) )
         {
           if ( !GenerateGPUBurst( TaskId, ThreadId, Timestamp, LastBlockEnd ) )
           {
@@ -805,7 +800,10 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
 
         // CUDA memcopy Host to Host is not simulated and requires the original duration
-        if ( AcceleratorThread == ACCELERATOR_HOST && CurrentBlock.second == CUDA_MEMCPY_VAL && InCUDAHostToHost)
+        if ( AcceleratorThread == ACCELERATOR_HOST &&
+             CUDAEventEncoding_Is_CUDABlock( CurrentBlock.first ) &&
+             CurrentBlock.second == CUDA_MEMCPY_VAL &&
+             InCUDAHostToHost)
         {
           if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
             return false;
@@ -813,8 +811,9 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
 
         /* Generation of pseudo-collectives to simulate the thread/stream
-           synchronizations */
-        if ( CurrentBlock.second == CUDA_THREADSYNCHRONIZE_VAL || CurrentBlock.second == CUDA_STREAMSYNCHRONIZE_VAL )
+          synchronizations */
+        if ( CUDAEventEncoding_Is_CUDABlock( CurrentBlock.first ) &&
+             ( CurrentBlock.second == CUDA_THREADSYNCHRONIZE_VAL || CurrentBlock.second == CUDA_STREAMSYNCHRONIZE_VAL ) )
         {
           if ( AcceleratorThread == ACCELERATOR_HOST )
           { /* Host thread */
@@ -877,19 +876,19 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
           OngoingDeviceSync = false;
           StreamIdToSync    = -1; // reset value to All threads
         }
+
+        if ( debug )
+          cout << "Printing CUDA Closing Event: " << *CurrentEvent;
+
+        if ( Dimemas_Block_End( TemporaryFile, TaskId, ThreadId, (INT64)Type ) < 0 )
+        {
+          SetError( true );
+          SetErrorMessage( "error writing output trace", strerror( errno ) );
+          return false;
+        }
+
+        LastBlockEnd = Timestamp;
       }
-
-      if ( debug )
-        cout << "Printing CUDA Closing Event: " << *CurrentEvent;
-
-      if ( Dimemas_Block_End( TemporaryFile, TaskId, ThreadId, (INT64)Type ) < 0 )
-      {
-        SetError( true );
-        SetErrorMessage( "error writing output trace", strerror( errno ) );
-        return false;
-      }
-
-      LastBlockEnd = Timestamp;
     }
   }
 
@@ -1968,86 +1967,32 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
   {
     CurrentBlock = CUDABlockIdStack.back();
 
-    switch ( CurrentBlock.second )
+    if( CUDAEventEncoding_Is_Kernel( CurrentBlock.first ) )
     {
-      case CUDA_MEMCPY_VAL:
+      if( CurrentComm->GetType() == LOGICAL_RECV )
       {
-        if ( CurrentComm->GetType() == LOGICAL_SEND )
+        /* Kernel side cudaLaunch (RECV) */
+        if ( debug )
+          cout << "Printing CUDA Kernel Launch: " << *CurrentComm;
+        if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, 0, (INT64)Tag ) < 0 )
         {
-          // Old versions of extrae generates communication lines for Host to Host cuda memcopy
-          // that should be ignored in dimemas simulation
-          if ( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId )
-            InCUDAHostToHost = true;
-          else
-          {
-            if ( debug )
-              cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;
-
-            if ( AcceleratorThread == ACCELERATOR_HOST )
-            {
-              /* In the Host thread, first a synchronization */
-              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
-              // CommId and Size are set to 0
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
-
-            if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
-            {
-              SetError( true );
-              SetErrorMessage( "error writing output trace", strerror( errno ) );
-              return false;
-            }
-          }
+          SetError( true );
+          SetErrorMessage( "error writing output trace", strerror( errno ) );
+          return false;
         }
-        else if ( CurrentComm->GetType() == LOGICAL_RECV )
-        {
-          // Old versions of extrae generates communication lines for Host to Host cuda memcopy
-          // that should be ignored in dimemas simulation
-          if ( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId )
-            InCUDAHostToHost = true;
-          else
-          {
-            if ( debug )
-              cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;
-
-            CommunicationPrimitivePrinted = true;
-            if ( AcceleratorThread == ACCELERATOR_HOST )
-            {
-              /* In the Host thread, first a synchronization */
-              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
-              // CommId and Size are set to 0
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
-
-            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
-            {
-              SetError( true );
-              SetErrorMessage( "error writing output trace", strerror( errno ) );
-              return false;
-            }
-          }
-        }
-
-        break;
       }
-      case CUDA_MEMCPY_ASYNC_VAL:
+    }
+    else
+    {
+      switch ( CurrentBlock.second )
       {
-        if ( CurrentComm->GetType() == LOGICAL_SEND )
-        {
-          if ( debug )
-            cout << "Printing CUDA Memory Transfer (Async): " << *CurrentComm;
-
-          if ( AcceleratorThread == ACCELERATOR_HOST )
+        case CUDA_LAUNCH_VAL:
+          if ( CurrentComm->GetType() == LOGICAL_SEND )
           {
-            /* In the Host thread, first a synchronization */
+            /* Host side cudaLaunch synchronization */
+            if ( debug )
+              cout << "Printing CUDA Host Launch: " << *CurrentComm;
+
             if ( Dimemas_NX_BlockingSend( TemporaryFile,
                                           TaskId,
                                           ThreadId,
@@ -2062,33 +2007,142 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               SetErrorMessage( "error writing output trace", strerror( errno ) );
               return false;
             }
-          }
 
-          /* The actual transfer */
-          if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
+            if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, RD_ASYNC ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
           }
-        }
-        else if ( CurrentComm->GetType() == LOGICAL_RECV )
+          break;
+        case CUDA_MEMCPY_VAL:
         {
-          if ( debug )
-            cout << "Printing CUDA Memory Transfer (Async): " << *CurrentComm;
+          if ( CurrentComm->GetType() == LOGICAL_SEND )
+          {
+            // Old versions of extrae generates communication lines for Host to Host cuda memcopy
+            // that should be ignored in dimemas simulation
+            if ( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId )
+              InCUDAHostToHost = true;
+            else
+            {
+              if ( debug )
+                cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;
 
-          CommunicationPrimitivePrinted = true;
+              if ( AcceleratorThread == ACCELERATOR_HOST )
+              {
+                /* In the Host thread, first a synchronization */
+                if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
+                // CommId and Size are set to 0
+                {
+                  SetError( true );
+                  SetErrorMessage( "error writing output trace", strerror( errno ) );
+                  return false;
+                }
+              }
 
-          if ( AcceleratorThread == ACCELERATOR_HOST )
-          { /* In the Host thread, first a synchronization */
-            if ( Dimemas_NX_BlockingSend( TemporaryFile,
-                                          TaskId,
-                                          ThreadId,
-                                          PartnerTaskId,
-                                          PartnerThreadId,
-                                          0,
-                                          0, // CommId and Size are set to 0
-                                          (INT64)CUDA_TAG ) < 0 )
+              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
+            }
+          }
+          else if ( CurrentComm->GetType() == LOGICAL_RECV )
+          {
+            // Old versions of extrae generates communication lines for Host to Host cuda memcopy
+            // that should be ignored in dimemas simulation
+            if ( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId )
+              InCUDAHostToHost = true;
+            else
+            {
+              if ( debug )
+                cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;
+
+              CommunicationPrimitivePrinted = true;
+              if ( AcceleratorThread == ACCELERATOR_HOST )
+              {
+                /* In the Host thread, first a synchronization */
+                if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
+                // CommId and Size are set to 0
+                {
+                  SetError( true );
+                  SetErrorMessage( "error writing output trace", strerror( errno ) );
+                  return false;
+                }
+              }
+
+              if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
+            }
+          }
+
+          break;
+        }
+        case CUDA_MEMCPY_ASYNC_VAL:
+        {
+          if ( CurrentComm->GetType() == LOGICAL_SEND )
+          {
+            if ( debug )
+              cout << "Printing CUDA Memory Transfer (Async): " << *CurrentComm;
+
+            if ( AcceleratorThread == ACCELERATOR_HOST )
+            {
+              /* In the Host thread, first a synchronization */
+              if ( Dimemas_NX_BlockingSend( TemporaryFile,
+                                            TaskId,
+                                            ThreadId,
+                                            PartnerTaskId,
+                                            PartnerThreadId,
+                                            0,
+                                            0,
+                                            // CommId and Size are set to 0
+                                            (INT64)CUDA_TAG ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
+            }
+
+            /* The actual transfer */
+            if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+          }
+          else if ( CurrentComm->GetType() == LOGICAL_RECV )
+          {
+            if ( debug )
+              cout << "Printing CUDA Memory Transfer (Async): " << *CurrentComm;
+
+            CommunicationPrimitivePrinted = true;
+
+            if ( AcceleratorThread == ACCELERATOR_HOST )
+            { /* In the Host thread, first a synchronization */
+              if ( Dimemas_NX_BlockingSend( TemporaryFile,
+                                            TaskId,
+                                            ThreadId,
+                                            PartnerTaskId,
+                                            PartnerThreadId,
+                                            0,
+                                            0, // CommId and Size are set to 0
+                                            (INT64)CUDA_TAG ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
+            }
+
+            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -2096,108 +2150,56 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             }
           }
 
-          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
-          }
+          break;
         }
 
-        break;
+        case CUDA_CONFIGURECALL_VAL:
+        {
+          if ( CurrentComm->GetType() == LOGICAL_SEND )
+          {
+            /* Host side cudaConfigureCall synchronization (SEND) */
+            if ( debug )
+              cout << "Printing CUDA Host configureCall: " << *CurrentComm;
+
+            if ( Dimemas_NX_BlockingSend( TemporaryFile,
+                                          TaskId,
+                                          ThreadId,
+                                          PartnerTaskId,
+                                          PartnerThreadId,
+                                          0,
+                                          0,
+                                          // CommId and Size are set to 0
+                                          (INT64)CUDA_TAG ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+            if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, RD_ASYNC ) < 0 ) 
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+          }
+          else if( CurrentComm->GetType() == LOGICAL_RECV )
+          {
+            if ( debug )
+              cout << "Printing CUDA Kernel configureCall: " << *CurrentComm;
+
+            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, 0, (INT64)Tag ) < 0 )
+            {
+              SetError( true );
+              SetErrorMessage( "error writing output trace", strerror( errno ) );
+              return false;
+            }
+          }
+
+          break;
+        }
+        default:
+          break;
       }
-
-      case CUDA_CONFIGURECALL_VAL:
-      {
-        if ( CurrentComm->GetType() == LOGICAL_SEND )
-        {
-          /* Host side cudaConfigureCall synchronization (SEND) */
-          if ( debug )
-            cout << "Printing CUDA Host configureCall: " << *CurrentComm;
-
-          if ( Dimemas_NX_BlockingSend( TemporaryFile,
-                                        TaskId,
-                                        ThreadId,
-                                        PartnerTaskId,
-                                        PartnerThreadId,
-                                        0,
-                                        0,
-                                        // CommId and Size are set to 0
-                                        (INT64)CUDA_TAG ) < 0 )
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
-          }
-          if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, RD_ASYNC ) < 0 ) 
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
-          }
-        }
-        else if( CurrentComm->GetType() == LOGICAL_RECV )
-        {
-          if ( debug )
-            cout << "Printing CUDA Kernel configureCall: " << *CurrentComm;
-
-          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, 0, (INT64)Tag ) < 0 )
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
-          }
-        }
-
-        break;
-      }
-      case CUDA_LAUNCH_VAL:
-      {
-        if ( CurrentComm->GetType() == LOGICAL_SEND )
-        {
-          /* Host side cudaLaunch synchronization */
-          if ( debug )
-            cout << "Printing CUDA Host Launch: " << *CurrentComm;
-
-          if ( Dimemas_NX_BlockingSend( TemporaryFile,
-                                        TaskId,
-                                        ThreadId,
-                                        PartnerTaskId,
-                                        PartnerThreadId,
-                                        0,
-                                        0,
-                                        // CommId and Size are set to 0
-                                        (INT64)CUDA_TAG ) < 0 )
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
-          }
-
-          if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, RD_ASYNC ) < 0 )
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
-          }
-        }
-        else if( CurrentComm->GetType() == LOGICAL_RECV )
-        {
-          /* Kernel side cudaLaunch (RECV) */
-          if ( debug )
-            cout << "Printing CUDA Kernel Launch: " << *CurrentComm;
-          if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, 0, (INT64)Tag ) < 0 )
-          {
-            SetError( true );
-            SetErrorMessage( "error writing output trace", strerror( errno ) );
-            return false;
-          }
-        }
-
-        break;
-      }
-      default:
-        break;
     }
   } // end CUDABlockIdStack if
   else if ( OCLBlockIdStack.size() > 0 && AcceleratorThread != ACCELERATOR_NULL )
