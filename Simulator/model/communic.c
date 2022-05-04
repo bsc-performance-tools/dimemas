@@ -3812,7 +3812,7 @@ void COMMUNIC_send( struct t_thread *thread_sender )
       }
       else /* hi_ha_irecv || partner != TH_NIL */
       {
-        if ( thread_sender->original_thread && ( CUDAEventEncoding_Is_CUDABlock( thread_sender->acc_in_block_event.type ) ||
+        if ( thread_sender->original_thread && ( ( CUDAEventEncoding_Is_CUDABlock( thread_sender->acc_in_block_event.type ) && thread_sender->acc_in_block_event.value != 0 ) ||
                                           OCLEventEncoding_Is_OCLTransferBlock( thread_sender->acc_in_block_event ) ) )
         {
           thread_sender->acc_sender_sync = TRUE;
