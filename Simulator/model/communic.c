@@ -5077,14 +5077,13 @@ int get_communication_type( struct t_task *task,
   return result_type;
 }
 
-void really_send_memory_message( struct t_thread *thread )
+void really_send_memory_message( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
 {
   struct t_node *node;
   struct t_machine *machine;
-  struct t_task *task, *task_partner;
+  struct t_task *task;
   struct t_action *action;
   struct t_account *account;
-  struct t_send *mess;
   struct t_bus_utilization *bus_utilization;
 
   t_nano ti, t_recursos;
@@ -5094,9 +5093,6 @@ void really_send_memory_message( struct t_thread *thread )
   machine = node->machine;
   task    = thread->task;
   action  = thread->action;
-  mess    = &( action->desc.send );
-
-  task_partner = locate_task( task->Ptask, mess->dest );
 
   if ( LINKS_get_mem_links( thread, task, task_partner ) )
   {
@@ -5136,7 +5132,7 @@ void really_send_memory_message( struct t_thread *thread )
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (MEMORY)\n", IDENTIFIERS( thread ), mess->dest, mess->mess_tag );
+      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (MEMORY)\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
     }
 
     account = current_account( thread );
@@ -5145,7 +5141,7 @@ void really_send_memory_message( struct t_thread *thread )
     thread->physical_send = current_time;
     thread->last_paraver  = current_time;
     /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
-    transferencia( mess->mess_size, MEMORY_COMMUNICATION_TYPE, thread, NULL, &ti, &t_recursos );
+    transferencia( mess_size, MEMORY_COMMUNICATION_TYPE, thread, NULL, &ti, &t_recursos );
 
     if ( t_recursos > ti )
     {
@@ -5169,25 +5165,21 @@ void really_send_memory_message( struct t_thread *thread )
   }
 }
 
-void really_send_internal_network( struct t_thread *thread )
+void really_send_internal_network( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
 {
   struct t_node *node, *node_partner;
-  struct t_task *task, *task_partner;
+  struct t_task *task;
   struct t_action *action;
   struct t_account *account;
-  struct t_send *mess;
   struct t_bus_utilization *bus_utilization;
   struct t_machine *machine;
   t_nano ti, t_recursos;
   dimemas_timer tmp_timer, tmp_timer2;
-  int comm_type;
 
   node   = get_node_of_thread( thread );
   task   = thread->task;
   action = thread->action;
-  mess   = &( action->desc.send );
 
-  task_partner = locate_task( task->Ptask, mess->dest );
   node_partner = get_node_of_task( task_partner );
 
   /* Tots dos nodes son de la mateixa maquina */
@@ -5195,11 +5187,6 @@ void really_send_internal_network( struct t_thread *thread )
 
   if ( LINKS_get_network_links( thread, node, node_partner ) )
   {
-    /* JGG (05/11/2004): El 'comm_type' lo cogemos del mensaje, es más rápido
-       comm_type =
-       (node == node_partner ? MEMORY_COMMUNICATION_TYPE : INTERNAL_NETWORK_COM_TYPE);
-       */
-
     if ( machine->communication.num_messages_on_network != 0 )
     {
       if ( machine->communication.policy == COMMUNIC_FIFO )
@@ -5237,7 +5224,7 @@ void really_send_internal_network( struct t_thread *thread )
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (INTERNAL)\n", IDENTIFIERS( thread ), mess->dest, mess->mess_tag );
+      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (INTERNAL)\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
     }
 
     //    printf("\n\n Now I will call the actual sending of the message\n");
@@ -5248,7 +5235,7 @@ void really_send_internal_network( struct t_thread *thread )
     thread->physical_send = current_time;
     thread->last_paraver  = current_time;
     /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
-    transferencia( mess->mess_size, INTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
+    transferencia( mess_size, INTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
     if ( t_recursos > ti )
     {
@@ -5265,9 +5252,10 @@ void really_send_internal_network( struct t_thread *thread )
     FLOAT_TO_TIMER( t_recursos, tmp_timer );
     ADD_TIMER( current_time, tmp_timer, tmp_timer );
 
+#if 0
     /* GRH (25/06/2008) RTT modification for rendez-vous protocol */
     /* Round Trip Time for receives - recvs*/
-    if ( RTT_enabled && mess->rendez_vous && ( comm_type == INTERNAL_NETWORK_COM_TYPE ) )
+    if ( RTT_enabled && mess->rendez_vous )
     {
       struct t_thread *partner;
       t_nano roundtriptime;
@@ -5293,6 +5281,7 @@ void really_send_internal_network( struct t_thread *thread )
          mess->communic_id);
          if (partner != TH_NIL) { } */
     }
+#endif
 
     /* tmp_timer has the time for COM_TIMER_OUT_RESOURCES */
     /* Es programa el final de la comunicació punt a punt. */
@@ -5300,7 +5289,7 @@ void really_send_internal_network( struct t_thread *thread )
     ADD_TIMER( current_time, tmp_timer2, tmp_timer2 );
 
 #ifdef VENUS_ENABLED
-    if ( ( !VC_is_enabled() ) || ( mess->comm_type != INTERNAL_NETWORK_COM_TYPE ) )
+    if ( !VC_is_enabled() )
     {
       EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_NET );
       thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
@@ -5315,13 +5304,13 @@ void really_send_internal_network( struct t_thread *thread )
 
       TIMER_TO_FLOAT( current_time, dtime );
       dtime = thread->physical_send;
-      if ( mess->rendez_vous )
+      if ( action->desc.send.rendez_vous )
       {
         VC_command_rdvz_ready( dtime,
                                node->nodeid,
                                node_partner->nodeid,
-                               mess->mess_tag,
-                               mess->mess_size,
+                               mess_tag,
+                               mess_size,
                                thread->event,
                                out_resources_ev,
                                task->Ptask->Ptaskid,
@@ -5332,8 +5321,8 @@ void really_send_internal_network( struct t_thread *thread )
         VC_command_send( dtime,
                          node->nodeid,
                          node_partner->nodeid,
-                         mess->mess_tag,
-                         mess->mess_size,
+                         mess_tag,
+                         mess_size,
                          thread->event,
                          out_resources_ev,
                          task->Ptask->Ptaskid,
@@ -5348,13 +5337,12 @@ void really_send_internal_network( struct t_thread *thread )
   }
 }
 
-void really_send_external_network( struct t_thread *thread )
+void really_send_external_network( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
 {
   struct t_node *node, *node_partner;
-  struct t_task *task, *task_partner;
+  struct t_task *task;
   struct t_action *action;
   struct t_account *account;
-  struct t_send *mess;
   t_nano ti, t_recursos;
   dimemas_timer tmp_timer;
 
@@ -5364,9 +5352,7 @@ void really_send_external_network( struct t_thread *thread )
   node   = get_node_of_thread( thread );
   task   = thread->task;
   action = thread->action;
-  mess   = &( action->desc.send );
 
-  task_partner = locate_task( task->Ptask, mess->dest );
   node_partner = get_node_of_task( task_partner );
 
   if ( LINKS_get_wan_links( thread, node->machine, node_partner->machine ) )
@@ -5393,7 +5379,7 @@ void really_send_external_network( struct t_thread *thread )
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (EXTERNAL) message\n", IDENTIFIERS( thread ), mess->dest, mess->mess_tag );
+      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (EXTERNAL) message\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
     }
     account = current_account( thread );
     SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
@@ -5408,7 +5394,7 @@ void really_send_external_network( struct t_thread *thread )
        &t_recursos
        ); */
 
-    transferencia( mess->mess_size, EXTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
+    transferencia( mess_size, EXTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
     if ( t_recursos > ti )
     {
@@ -5431,16 +5417,14 @@ void really_send_external_network( struct t_thread *thread )
   } /* endif (get_machine_links(...)) */
 }
 
-void really_send_dedicated_connection( struct t_thread *thread, struct t_dedicated_connection *connection )
+void really_send_dedicated_connection( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag, struct t_dedicated_connection *connection )
 {
   struct t_action *action;
   struct t_account *account;
-  struct t_send *mess;
   t_nano ti, t_recursos;
   dimemas_timer tmp_timer;
 
   action = thread->action;
-  mess   = &( action->desc.send );
 
   if ( LINKS_get_dedicated_connection_links( thread, connection ) )
   {
@@ -5450,7 +5434,7 @@ void really_send_dedicated_connection( struct t_thread *thread, struct t_dedicat
     thread->physical_send = current_time;
     thread->last_paraver  = current_time;
 
-    transferencia( mess->mess_size, DEDICATED_CONNECTION_COM_TYPE, thread, connection, &ti, &t_recursos );
+    transferencia( mess_size, DEDICATED_CONNECTION_COM_TYPE, thread, connection, &ti, &t_recursos );
 
     if ( t_recursos > ti )
     {
@@ -5478,22 +5462,20 @@ void really_send_dedicated_connection( struct t_thread *thread, struct t_dedicat
       printf( ": COMMUNIC\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND"
               "(DEDICATED) message\n",
               IDENTIFIERS( thread ),
-              mess->dest,
-              mess->mess_tag );
+              task_partner->taskid,
+              mess_tag );
     }
   }
 }
 
-void really_send_external_model_comm_type( struct t_thread *thread )
+void really_send_external_model_comm_type( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
 {
   struct t_action *action;
   struct t_account *account;
-  struct t_send *mess;
   t_nano ti, t_recursos;
   dimemas_timer tmp_timer;
 
   action = thread->action;
-  mess   = &( action->desc.send );
 
   account = current_account( thread );
   SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
@@ -5501,7 +5483,7 @@ void really_send_external_model_comm_type( struct t_thread *thread )
   thread->physical_send = current_time;
   thread->last_paraver  = current_time;
 
-  transferencia( mess->mess_size, EXTERNAL_MODEL_COM_TYPE, thread, NULL, &ti, &t_recursos );
+  transferencia( mess_size, EXTERNAL_MODEL_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
   if ( t_recursos > ti )
   {
@@ -5520,18 +5502,17 @@ void really_send_external_model_comm_type( struct t_thread *thread )
   if ( debug & D_COMM )
   {
     PRINT_TIMER( current_time );
-    printf( ": COMMUNIC_send P%02d T%02d (t%02d) -> T%d Tag(%d) SEND (OTHER) message\n", IDENTIFIERS( thread ), mess->dest, mess->mess_tag );
+    printf( ": COMMUNIC_send P%02d T%02d (t%02d) -> T%d Tag(%d) SEND (OTHER) message\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
   }
 }
 
-void really_send_acc_message( struct t_thread *thread )
+void really_send_acc_message( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
 {
   struct t_node *node;
   struct t_machine *machine;
-  struct t_task *task, *task_partner;
+  struct t_task *task;
   struct t_action *action;
   struct t_account *account;
-  struct t_send *mess;
   struct t_bus_utilization *bus_utilization;
   struct t_link *link;
 
@@ -5544,9 +5525,6 @@ void really_send_acc_message( struct t_thread *thread )
   machine = node->machine;
   task    = thread->task;
   action  = thread->action;
-  mess    = &( action->desc.send );
-
-  task_partner = locate_task( task->Ptask, mess->dest );
 
   if ( LINKS_get_acc_links( thread, task, task_partner ) )
   {
@@ -5592,7 +5570,7 @@ void really_send_acc_message( struct t_thread *thread )
     if ( debug & D_COMM )
     {
       PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (ACCELERATOR)\n", IDENTIFIERS( thread ), mess->dest, mess->mess_tag );
+      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (ACCELERATOR)\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
     }
 
     account = current_account( thread );
@@ -5601,7 +5579,7 @@ void really_send_acc_message( struct t_thread *thread )
     thread->physical_send = current_time;
     thread->last_paraver  = current_time;
 
-    transferencia( mess->mess_size, ACCELERATOR_COM_TYPE, thread, NULL, &ti, &t_recursos );
+    transferencia( mess_size, ACCELERATOR_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
     if ( t_recursos > ti )
     {
@@ -5625,60 +5603,105 @@ void really_send_acc_message( struct t_thread *thread )
   }
 }
 
-void really_send( struct t_thread *thread_sender )
+
+void get_communication_parameters( struct t_thread *thread_sender,
+                                   struct t_task   **task_partner,
+                                   struct t_thread **thread_partner,
+                                   int *mess_tag,
+                                   long long int *mess_size,
+                                   struct t_dedicated_connection **connection )
 {
-  struct t_task *task, *task_partner;
+  struct t_task *task_sender;
   struct t_action *action;
   struct t_send *mess;
+  struct t_global_op *mess_globop;
+
+  task_sender = thread_sender->task;
+
+  action      = thread_sender->action;
+  if( action->action == SEND ) 
+  {
+    mess = &( action->desc.send );
+
+    *task_partner = locate_task( task_sender->Ptask, mess->dest );
+    if ( *task_partner == T_NIL )
+    {
+      panic( "Task partner not found!\n" );
+    }
+
+    *thread_partner = locate_thread_of_task( *task_partner, mess->dest_thread );
+    *mess_tag = mess->mess_tag;
+    *mess_size = mess->mess_size;
+
+    if ( debug & D_COMM )
+    {
+      PRINT_TIMER( current_time );
+      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag: %d Type: %d (Really Send)\n",
+              IDENTIFIERS( thread_sender ),
+              mess->dest,
+              mess->mess_tag,
+              mess->comm_type );
+    }
+  }
+  else if( action->action == GLOBAL_OP )
+  {
+    // This piece of code is reached only by MPI_Reduce, 
+    // so partner is always the root Task/thread
+    mess_globop = &( action->desc.global_op ); 
+
+    // We assume the first position of global_ranks is the root
+    *task_partner = locate_task( task_sender->Ptask, 
+                                 locate_communicator( &task_sender->Ptask->Communicator,
+                                                      mess_globop->comm_id )->global_ranks[0] );
+    if ( *task_partner == T_NIL )
+    {
+      panic( "Task partner not found!\n" );
+    }
+
+    *thread_partner = locate_thread_of_task( *task_partner, mess_globop->root_thid );
+    *mess_tag = 0;
+    *mess_size = mess_globop->bytes_send;
+  }
+}
+
+
+void really_send( struct t_thread *thread_sender )
+{
+  struct t_task *task_sender, *task_partner;
+  struct t_action *action;
+  // struct t_send *mess;
+  struct t_thread *thread_partner;
   int kind;
+  int mess_tag;
+  long long int mess_size;
   struct t_dedicated_connection *connection;
 
-  task   = thread_sender->task;
-  action = thread_sender->action;
-  mess   = &( action->desc.send );
+  get_communication_parameters( thread_sender, &task_partner, &thread_partner, &mess_tag, &mess_size, &connection );
 
-  task_partner = locate_task( task->Ptask, mess->dest );
-  if ( task_partner == T_NIL )
-  {
-    panic( "Task partner not found!\n" );
-  }
-
-  get_communication_type( task, task_partner,
-                          thread_sender, locate_thread_of_task( task_partner, mess->dest_thread ),
-                          mess->mess_tag, mess->mess_size, &connection );
-
-  kind = mess->comm_type;
-
-  if ( debug & D_COMM )
-  {
-    PRINT_TIMER( current_time );
-    printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag: %d Type: %d (Really Send)\n",
-            IDENTIFIERS( thread_sender ),
-            mess->dest,
-            mess->mess_tag,
-            mess->comm_type );
-  }
+  kind = get_communication_type( task_sender, task_partner,
+                                 thread_sender, thread_partner,
+                                 mess_tag, mess_size, &connection );
 
   switch ( kind )
   {
     case MEMORY_COMMUNICATION_TYPE:
-      really_send_memory_message( thread_sender );
+      really_send_memory_message( thread_sender, task_partner, mess_size, mess_tag );
       break;
     case INTERNAL_NETWORK_COM_TYPE:
-      really_send_internal_network( thread_sender );
+      really_send_internal_network( thread_sender, task_partner, mess_size, mess_tag );
       break;
     case EXTERNAL_NETWORK_COM_TYPE:
-      really_send_external_network( thread_sender );
+      really_send_external_network( thread_sender, task_partner, mess_size, mess_tag );
       break;
     case DEDICATED_CONNECTION_COM_TYPE:
       // really_send_external_network (thread_sender);
-      really_send_dedicated_connection( thread_sender, connection );
+      really_send_dedicated_connection( thread_sender, task_partner, mess_size, mess_tag, connection );
       break;
     case EXTERNAL_MODEL_COM_TYPE:
-      really_send_external_model_comm_type( thread_sender );
+      really_send_external_model_comm_type( thread_sender, task_partner, mess_size, mess_tag );
       break;
     case ACCELERATOR_COM_TYPE:
-      really_send_acc_message( thread_sender );
+      really_send_acc_message( thread_sender, task_partner, mess_size, mess_tag );
       break;
     default:
       panic( "Incorrect communication type! kind = %d", kind );
@@ -6719,23 +6742,20 @@ void calcula_temps_operacio_global( struct t_thread *thread,
 
 static void start_global_op_root_sync( struct t_thread *thread, int kind )
 {
-  dimemas_timer temps_latencia, temps_recursos, temps_final, temps_operacio;
+  dimemas_timer temps_latencia, /* temps_recursos, */ temps_final, temps_operacio;
   dimemas_timer tmp_timer;
   struct t_action *action;
   int comm_id, glop_id;
 
-  action  = thread->action;
-  comm_id = action->desc.global_op.comm_id;
-  glop_id = action->desc.global_op.glop_id;
-
   switch ( kind )
   {
     case DIMEMAS_GLOBAL_OP_MODEL:
-      calcula_temps_operacio_global( thread, &temps_latencia, &temps_recursos, &temps_final );
+      really_send( thread );
+      // calcula_temps_operacio_global( thread, &temps_latencia, &temps_recursos, &temps_final );
 
-      /* Es programa l'event de final de la reserva dels recursos */
-      ADD_TIMER( current_time, temps_recursos, tmp_timer );
-      EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP_RESOURCES );
+      // /* Es programa l'event de final de la reserva dels recursos */
+      // ADD_TIMER( current_time, temps_recursos, tmp_timer );
+      // EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP_RESOURCES );
       break;
 
     case EXTERNAL_GLOBAL_OP_MODEL:
@@ -6743,6 +6763,10 @@ static void start_global_op_root_sync( struct t_thread *thread, int kind )
       {
         panic( "Executing global operation through external model library not loaded\n" );
       }
+
+      action  = thread->action;
+      comm_id = action->desc.global_op.comm_id;
+      glop_id = action->desc.global_op.glop_id;
 
       external_compute_global_operation_time( comm_id,
                                               glop_id,
@@ -6759,17 +6783,15 @@ static void start_global_op_root_sync( struct t_thread *thread, int kind )
         // printf( ": GLOBAL_operation P%02d T%02d (t%02d) '%s' USING EXTERNAL GLOBAL OPERATIONS MODEL\n", IDENTIFIERS( thread ), glop->name );
       }
 
+      /* Es programa l'event de final de l'operacio col.lectiva */
+      ADD_TIMER( current_time, temps_final, tmp_timer );
+
+      EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+
       /* JGG: There is no need to free the resources, because we use an external
        * model */
       break;
   }
-
-
-  /* Es programa l'event de final de l'operacio col.lectiva */
-  ADD_TIMER( current_time, temps_final, tmp_timer );
-
-  EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
-
 }
 
 /**************************************************************************
