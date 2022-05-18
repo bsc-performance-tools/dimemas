@@ -774,9 +774,14 @@ typedef struct
 
 } CUDATypeInfo;
 
+Boolean CUDAEventEconding_Is_OldLibType( long64_t type )
+{
+  return ( ( type == OLD_CUDA_LIB_CALL_EV || type == OLDEST_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
+}
+
 Boolean CUDAEventEncoding_Is_CUDABlock( long64_t type )
 {
-  return ( ( type == CUDA_LIB_CALL_EV || type == NEW_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
+  return ( type == CUDA_LIB_CALL_EV ? TRUE : FALSE );
 }
 
 Boolean CUDAEventEncoding_Is_Kernel( long64_t type )

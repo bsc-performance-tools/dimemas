@@ -597,6 +597,10 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   Value     = CurrentEvent->GetFirstValue();
   Timestamp = CurrentEvent->GetTimestamp();
 
+  // CUDA Launch must be removed from streams due to new Extrae >4.0 behaviour
+  if( Type == CUDA_LIB_CALL_EV && Value == CUDA_LAUNCH_VAL && AcceleratorThread == ACCELERATOR_KERNEL )
+    return true;
+
   // While we are in a Global operation block, we must fill all the
   // fields. This call ensure that the GlobalOp fields must be filled
   // and when it is done, the global op will be flush

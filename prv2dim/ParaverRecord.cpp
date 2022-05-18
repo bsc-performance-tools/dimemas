@@ -153,25 +153,23 @@ INT64 EventTypeValue::NewTraceOrder( void )
  * class Event
  ****************************************************************************/
 
-Event::Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId ) : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
-{
-  ContentPresent = false;
-}
+Event::Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId ) 
+  : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
+{}
 
 Event::~Event( void )
 {
-  if ( ContentPresent )
-  {
-    for ( unsigned int i = 0; i < Content.size(); i++ )
-      delete Content[ i ];
-  }
+  for ( unsigned int i = 0; i < Content.size(); i++ )
+    delete Content[ i ];
 }
 
 void Event::AddTypeValue( INT32 Type, INT64 Value )
 {
+  if( CUDAEventEconding_Is_OldLibType( Type ) )
+    Type = CUDA_LIB_CALL_EV;
+
   EventTypeValue_t newTypeValue = new EventTypeValue( Type, Value );
   Content.push_back( newTypeValue );
-  ContentPresent = true;
 };
 
 UINT32

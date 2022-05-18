@@ -239,13 +239,10 @@ class Event : public virtual ParaverRecord
 {
  private:
   vector<EventTypeValue_t> Content;
-  bool ContentPresent;
 
  public:
   Event()
-  {
-    ContentPresent = false;
-  };
+  {}
   ~Event();
 
   Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId );

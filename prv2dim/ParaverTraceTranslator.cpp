@@ -230,10 +230,6 @@ bool ParaverTraceTranslator::SplitCommunications( void )
 
   CommunicationsFile = fopen( CommunicationsFileName, "w+" );
 
-  /* Uncomment this section when testing finishes
-    CommunicationsFile = tmpfile();
-    */
-
   if ( CommunicationsFile == NULL )
   {
     ostringstream ErrorMessage;

@@ -123,7 +123,6 @@ void event_sync_init( void )
 
   validSyncTypes.insert( CUDA_KERNEL_EV );
   validSyncTypes.insert( CUDA_LIB_CALL_EV );
-  validSyncTypes.insert( NEW_CUDA_LIB_CALL_EV );
   validSyncTypes.insert( OMP_BARRIER );
   validSyncTypes.insert( OMP_EXECUTED_PARALLEL_FXN );
   validSyncTypes.insert( OMP_PARALLEL_EV );
@@ -146,18 +145,6 @@ void event_sync_init( void )
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-
-  // NEW_CUDA_LIB_CALL_EV
-  tmpEventIndex.event.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventIndex.isHost = true;
-
-  tmpEventTrait.eventHost.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventTrait.eventRest.type = NEW_CUDA_LIB_CALL_EV;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
-  tmpEventIndex.isHost = false;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
   // ------- CUDA_LAUNCH + CUDA_KERNEL_EV -------
   tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
   tmpEventIndex.event.value = CUDA_LAUNCH_VAL;
@@ -170,18 +157,6 @@ void event_sync_init( void )
   tmpEventTrait.restThreadsCanResume = false;
   tmpEventTrait.capturePreviousEvents = true;
   tmpEventTrait.rewriteLogicalReceive = TRUE;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
-  tmpEventIndex.event.type = CUDA_KERNEL_EV;
-  tmpEventIndex.isHost = false;
-  // syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
-  // NEW_CUDA_LIB_CALL_EV
-  tmpEventIndex.event.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventIndex.isHost = true;
-
-  tmpEventTrait.eventHost.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventTrait.eventRest.type = CUDA_KERNEL_EV;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   tmpEventIndex.event.type = CUDA_KERNEL_EV;
