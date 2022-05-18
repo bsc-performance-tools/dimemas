@@ -108,6 +108,7 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
   FirstClusterRead        = false;
   FirstCUDARead           = false;
   FirstOCLRead            = false;
+  commInCudaLaunch        = false;
   this->AcceleratorThread = AcceleratorThread;
   this->OpenMP_thread     = OpenMP_thread;
   OpenMP_nesting_level    = 0;
@@ -802,6 +803,16 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
             return false;
           }
         }
+
+        if ( !commInCudaLaunch && 
+             ( CUDAEventEncoding_Is_CUDABlock(CurrentBlock.first) && CurrentBlock.second == CUDA_LAUNCH_VAL ||
+               AcceleratorThread == ACCELERATOR_KERNEL && CUDAEventEncoding_Is_Kernel( CurrentBlock.first ) ) )
+        {
+          cout << "WARNING: CUDA LAUNCH exit without communication in original trace" << endl;
+          cout << "Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " ";
+          cout << "Time " << Timestamp << endl;
+        }
+        commInCudaLaunch = false;
 
         // CUDA memcopy Host to Host is not simulated and requires the original duration
         if ( AcceleratorThread == ACCELERATOR_HOST &&
@@ -1975,6 +1986,9 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
     {
       if( CurrentComm->GetType() == LOGICAL_RECV )
       {
+
+        commInCudaLaunch = true;
+
         /* Kernel side cudaLaunch (RECV) */
         if ( debug )
           cout << "Printing CUDA Kernel Launch: " << *CurrentComm;
@@ -1996,6 +2010,8 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             /* Host side cudaLaunch synchronization */
             if ( debug )
               cout << "Printing CUDA Host Launch: " << *CurrentComm;
+
+            commInCudaLaunch = true;
 
             if ( Dimemas_NX_BlockingSend( TemporaryFile,
                                           TaskId,

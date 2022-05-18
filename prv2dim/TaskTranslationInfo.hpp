@@ -78,6 +78,7 @@ class TaskTranslationInfo : public Error
   vector<Block_t> CUDABlockIdStack;
   vector<Block_t> OCLBlockIdStack;
   bool OCLFinishComm;
+  bool commInCudaLaunch;
 
   /* For OMP version */
   INT32 OpenMP_thread;
