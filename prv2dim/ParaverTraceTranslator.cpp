@@ -21,14 +21,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-   $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-   $Rev:: 1044                                     $:  Revision of last commit
-   $Author:: jgonzale                              $:  Author of last commit
-   $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-   \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 #include "ParaverTraceTranslator.hpp"
 
 #include "Dimemas_Generation.h"
@@ -53,6 +45,9 @@ using std::sort;
 
 #include <sstream>
 using std::ostringstream;
+
+#include <map>
+#include <tuple>
 
 /*****************************************************************************
  * Public functions
@@ -172,17 +167,6 @@ bool ParaverTraceTranslator::EndTranslator( void )
     }
   }
 
-  if ( this->CommunicationsFile != NULL )
-  {
-    if ( fclose( this->CommunicationsFile ) != 0 )
-    {
-      SetErrorMessage( "Error closing communications temporal file", strerror( errno ) );
-      return false;
-    }
-
-    unlink( this->CommunicationsFileName );
-  }
-
   for ( unsigned int i = 0; i < TranslationInfo.size(); i++ )
   {
     for ( unsigned int j = 0; j < TranslationInfo[ i ].size(); j++ )
@@ -192,59 +176,119 @@ bool ParaverTraceTranslator::EndTranslator( void )
   return true;
 }
 
+void ParaverTraceTranslator::createPartialCommunication( const Event_t& CurrentEvent,
+                                                         INT32 Type,
+                                                         INT32 PartnerTaskId,
+                                                         INT32 PartnerThreadId,
+                                                         INT32 Size,
+                                                         INT32 Tag,
+                                                         INT32 CommId )
+{
+  PartialCommunication_t SplittedCommunication;
+  INT32 SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
+  INT32 DstCPU, DstAppId, DstTaskId, DstThreadId;
+
+  SrcCPU      = 0;
+  SrcAppId    = CurrentEvent->GetAppId();
+  DstCPU      = 0;
+  DstAppId    = CurrentEvent->GetAppId();
+  if ( Type == PHYSICAL_RECV || Type == LOGICAL_RECV )
+  {
+    SrcTaskId   = PartnerTaskId;
+    SrcThreadId = PartnerThreadId;
+    DstTaskId   = CurrentEvent->GetTaskId();
+    DstThreadId = CurrentEvent->GetThreadId();
+  }
+  else if ( Type == PHYSICAL_SEND || Type == LOGICAL_SEND )
+  {
+    SrcTaskId   = CurrentEvent->GetTaskId();
+    SrcThreadId = CurrentEvent->GetThreadId();
+    DstTaskId   = PartnerTaskId;
+    DstThreadId = PartnerThreadId;
+  }
+
+  PreviouslySimulatedTrace = true;
+  SplittedCommunication = new PartialCommunication( Type,
+                                                    CurrentEvent->GetTimestamp(),
+                                                    SrcCPU,
+                                                    SrcAppId,
+                                                    SrcTaskId,
+                                                    SrcThreadId,
+                                                    DstCPU,
+                                                    DstAppId,
+                                                    DstTaskId,
+                                                    DstThreadId,
+                                                    Size,
+                                                    Tag,
+                                                    CommId,
+                                                    CurrentEvent->GetRecordCount() );
+  Communications.push_back( SplittedCommunication );
+}
+
+void ParaverTraceTranslator::treatMultiEvent( const Event_t& CurrentEvent )
+{
+  INT32 Type, PartnerTaskId, PartnerThreadId, Size, Tag, CommId, CommunicatorId = -1;
+  bool isRoot = false;
+
+  for ( unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++ )
+  {
+    switch ( CurrentEvent->GetType( i ) )
+    {
+      case 9:
+        Type = CurrentEvent->GetValue( i );
+        break;
+      case 10:
+        PartnerTaskId = CurrentEvent->GetValue( i );
+        break;
+      case 11:
+        PartnerThreadId = CurrentEvent->GetValue( i );
+        break;
+      case 12:
+        Size = CurrentEvent->GetValue( i );
+        break;
+      case 13:
+        Tag = CurrentEvent->GetValue( i );
+        break;
+      case 14:
+        CommId = CurrentEvent->GetValue( i );
+        break;
+      case MPI_GLOBAL_OP_ROOT:
+        isRoot = true;
+        break;
+      case MPI_GLOBAL_OP_COMM:
+        CommunicatorId = CurrentEvent->GetValue( i );
+        break;
+    }
+  }
+
+  if( isRoot && CommunicatorId != -1 )
+    createMPICollectiveRoots(CurrentEvent, CommunicatorId);
+  
+  if ( Type != -1 && PartnerTaskId != -1 && Size != -1 && Tag != -1 && CommId != -1 )
+    createPartialCommunication( CurrentEvent, Type, PartnerTaskId, PartnerThreadId, Size, Tag, CommId );
+}
+
+void ParaverTraceTranslator::createMPICollectiveRoots( const Event_t& CurrentEvent,
+                                                       INT32 CommunicatorId )
+{
+  static std::map< INT32, UINT32 > MPICollectivesCount; // Number of collectives per communicator: index->CommunicatorId, data->count
+
+  if( MPICollectivesCount.find( CommunicatorId ) == MPICollectivesCount.end() )
+    MPICollectivesCount[ CommunicatorId ] = 0;
+
+  MPICollectiveRoots[ std::make_tuple( CommunicatorId, ++MPICollectivesCount[ CommunicatorId ] ) ] = CurrentEvent->GetTaskId();
+}
+
 bool ParaverTraceTranslator::SplitCommunications( void )
 {
-  // vector<PartialCommunication_t> CommunicationVector;
-  vector<ApplicationDescription_t> AppDescription;
   ParaverRecord_t CurrentRecord;
   Event_t CurrentEvent;
   Communication_t CurrentCommunication;
   PartialCommunication_t SplittedCommunication;
-  UINT64 i;
-  INT32 COMM_WORLD_Id;
-  INT32 PseudoCommId;
 
+  INT32 PseudoCommId = 0;
   INT32 CurrentPercentage = 0;
-  INT32 PercentageRead    = 0;
-
-  const char* tmp_dir_default = "/tmp";
-  char* tmp_dir;
-
-  if ( ( tmp_dir = getenv( "TMPDIR" ) ) == NULL )
-  {
-    tmp_dir = strdup( tmp_dir_default );
-  }
-
-  CommunicationsFileName = (char*)malloc( strlen( tmp_dir ) + 1 + 50 );
-
-  if ( CommunicationsFileName == NULL )
-  {
-    SetErrorMessage( "unable to allocate memory to communications filename", strerror( errno ) );
-    return false;
-  }
-
-  srand( time( NULL ) );
-  sprintf( CommunicationsFileName, "%s/ParaverComms_%06d", tmp_dir, rand() % 999999 );
-  AppDescription = Parser->GetApplicationsDescription();
-  COMM_WORLD_Id  = AppDescription[ 0 ]->GetCOMM_WORLD_Id();
-
-  CommunicationsFile = fopen( CommunicationsFileName, "w+" );
-
-  /* Uncomment this section when testing finishes
-    CommunicationsFile = tmpfile();
-    */
-
-  if ( CommunicationsFile == NULL )
-  {
-    ostringstream ErrorMessage;
-
-    ErrorMessage << "Unable to create temporal communications file : ";
-    ErrorMessage << strerror( errno ) << endl;
-    ErrorMessage << "Please, check permissions on '/tmp' or update 'TMPDIR' environment variable";
-
-    SetErrorMessage( ErrorMessage.str() );
-    return false;
-  }
+  INT32 PercentageRead = 0;
 
   if ( !Parser->Reload() )
   {
@@ -252,113 +296,23 @@ bool ParaverTraceTranslator::SplitCommunications( void )
     return false;
   }
 
-  i = 0;
-
   SHOW_PERCENTAGE_PROGRESS( stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage );
 
-  PseudoCommId = 0;
-  // CurrentCommunication = Parser->GetNextCommunication();
   CurrentRecord = Parser->GetNextRecord( EVENT_REC | COMM_REC );
   while ( CurrentRecord != NULL )
   {
     PseudoCommId++;
-
-    // Current Record is an event. We split it, if needed
-    //
+    // Current Record is an event. We split it, if needed.
     if ( ( CurrentEvent = dynamic_cast<Event_t>( CurrentRecord ) ) != NULL )
     {
-      INT32 Type;
-      INT32 PartnerTaskId, PartnerThreadId;
-      INT32 Size, Tag, CommId;
-
-      Type          = -1;
-      PartnerTaskId = PartnerThreadId = -1;
-      Size = Tag = CommId = -1;
-
       if ( CurrentEvent->GetTypeValueCount() > 1 )
       {
-        /* Capture the 'pseudo-physical receive' events generated by Dimemas */
-
-        for ( unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++ )
-        {
-          switch ( CurrentEvent->GetType( i ) )
-          {
-            case 9:
-              Type = CurrentEvent->GetValue( i );
-              break;
-            case 10:
-              PartnerTaskId = CurrentEvent->GetValue( i );
-              break;
-            case 11:
-              PartnerThreadId = CurrentEvent->GetValue( i );
-              break;
-            case 12:
-              Size = CurrentEvent->GetValue( i );
-              break;
-            case 13:
-              Tag = CurrentEvent->GetValue( i );
-              break;
-            case 14:
-              CommId = CurrentEvent->GetValue( i );
-              break;
-          }
-        }
-
-        /* If all events are available, generate the the PartialCommunication record */
-        // if (SrcCPU != -1 && SrcAppId != -1 && SrcTaskId != -1 && SrcThreadId != -1 &&
-        if ( Type != -1 && PartnerTaskId != -1 && Size != -1 && Tag != -1 && CommId != -1 )
-        {
-          INT32 SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
-          INT32 DstCPU, DstAppId, DstTaskId, DstThreadId;
-
-          if ( Type == PHYSICAL_RECV || Type == LOGICAL_RECV )
-          {
-            SrcCPU      = 0;
-            SrcAppId    = CurrentEvent->GetAppId();
-            SrcTaskId   = PartnerTaskId;
-            SrcThreadId = PartnerThreadId;
-            DstCPU      = 0;
-            DstAppId    = CurrentEvent->GetAppId();
-            DstTaskId   = CurrentEvent->GetTaskId();
-            DstThreadId = CurrentEvent->GetThreadId();
-          }
-          else if ( Type == PHYSICAL_SEND || Type == LOGICAL_SEND )
-          {
-            SrcCPU      = 0;
-            SrcAppId    = CurrentEvent->GetAppId();
-            SrcTaskId   = CurrentEvent->GetTaskId();
-            SrcThreadId = CurrentEvent->GetThreadId();
-            DstCPU      = 0;
-            DstAppId    = CurrentEvent->GetAppId();
-            DstTaskId   = PartnerTaskId;
-            DstThreadId = PartnerThreadId;
-          }
-
-          PreviouslySimulatedTrace = true;
-          SplittedCommunication    = new PartialCommunication( Type,
-                                                            CurrentEvent->GetTimestamp(),
-                                                            SrcCPU,
-                                                            SrcAppId,
-                                                            SrcTaskId,
-                                                            SrcThreadId,
-                                                            DstCPU,
-                                                            DstAppId,
-                                                            DstTaskId,
-                                                            DstThreadId,
-                                                            Size,
-                                                            Tag,
-                                                            CommId,
-                                                            CurrentEvent->GetRecordCount() );
-          Communications.push_back( SplittedCommunication );
-        }
+        treatMultiEvent( CurrentEvent );
       }
     }
     else
     {
-      /**
-       * JGG (2014/12/17): PseudoCommId is now the CommID of the original
-       * execution!
-       */
+      // JGG (2014/12/17): PseudoCommId is now the CommID of the original execution!
       CurrentCommunication = dynamic_cast<Communication_t>( CurrentRecord );
 
       SplittedCommunication = new PartialCommunication( LOGICAL_SEND, CurrentCommunication, PseudoCommId );
@@ -385,8 +339,6 @@ bool ParaverTraceTranslator::SplitCommunications( void )
       CurrentRecord = Parser->GetNextRecord( COMM_REC | EVENT_REC );
     }
 
-    i++;
-
     PercentageRead = Parser->GetFilePercentage();
 
     if ( PercentageRead > CurrentPercentage )
@@ -399,10 +351,8 @@ bool ParaverTraceTranslator::SplitCommunications( void )
 
   cout << endl;
   cout << "-> Trace first pass finished (communications split)" << endl;
-  cout << "   * Records parsed:          " << i << endl;
-  ;
-  cout << "   * Splitted communications " << Communications.size();
-  cout << endl;
+  cout << "   * Records parsed:          " << PseudoCommId << endl;
+  cout << "   * Splitted communications " << Communications.size() << endl;
 
   if ( Parser->GetError() )
   {
@@ -1426,6 +1376,7 @@ bool ParaverTraceTranslator::InitTranslationStructures( ApplicationDescription_t
                                                       &TranslationInfo,
                                                       AcceleratorThread,
                                                       OpenMP_thread,
+                                                      MPICollectiveRoots,
                                                       TemporaryFileName );
       }
       else if ( TemporaryFile == NULL )
@@ -1453,6 +1404,7 @@ bool ParaverTraceTranslator::InitTranslationStructures( ApplicationDescription_t
                                                       &TranslationInfo,
                                                       AcceleratorThread,
                                                       OpenMP_thread,
+                                                      MPICollectiveRoots,
                                                       TemporaryFileName,
                                                       TemporaryFile );
       }

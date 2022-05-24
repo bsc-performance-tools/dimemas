@@ -65,8 +65,10 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
                                           vector<vector<TaskTranslationInfo *> > *AllTranslationInfo,
                                           INT32 AcceleratorThread,
                                           INT32 OpenMP_thread,
+                                          const std::map< std::tuple<INT32, UINT32>, INT32>& whichMPICollectiveRoots,
                                           char *TemporaryFileName,
                                           FILE *TemporaryFile )
+  : MPICollectiveRoots( whichMPICollectiveRoots )
 {
   this->AllTranslationInfo = AllTranslationInfo;
 
@@ -2368,6 +2370,8 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
 
 bool TaskTranslationInfo::ToDimemas( GlobalOp_t CurrentGlobOp )
 {
+  INT32 RootTaskId;
+
   if ( CurrentGlobOp->GetSynch() == 0 )
   {
     // Must be matched with MPI_waits
@@ -2377,17 +2381,17 @@ bool TaskTranslationInfo::ToDimemas( GlobalOp_t CurrentGlobOp )
   if ( debug )
     cout << "Printing GlobalOP " << *CurrentGlobOp;
 
-  INT32 RootTaskId;
-  if ( CurrentGlobOp->GetIsRoot() )
-    RootTaskId = 1;
-  else
-    RootTaskId = 0;
+  if( MPICollectivesCount.find( CurrentGlobOp->GetCommunicatorId() ) == MPICollectivesCount.end() )
+    MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] = 0;
+ 
+  RootTaskId = MPICollectiveRoots.find( std::make_tuple( CurrentGlobOp->GetCommunicatorId(),
+                                                         ++MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] ) )->second;
   int err = Dimemas_Global_OP( TemporaryFile,
                                CurrentGlobOp->GetTaskId() - 1,
                                CurrentGlobOp->GetThreadId() - 1,
                                CurrentGlobOp->GetGlobalOpId(),
                                CurrentGlobOp->GetCommunicatorId(),
-                               RootTaskId,
+                               RootTaskId - 1,
                                0,
                                CurrentGlobOp->GetSendSize(),
                                CurrentGlobOp->GetRecvSize(),

@@ -21,15 +21,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-  $Rev:: 1044                                     $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #ifndef _PARAVERTRACETRANSLATOR_H
 #define _PARAVERTRACETRANSLATOR_H
 
@@ -44,6 +35,8 @@ using std::endl;
 
 #include <string>
 using std::string;
+
+#include <map>
 
 #include "ParaverTraceParser.hpp"
 #include "TaskTranslationInfo.hpp"
@@ -65,12 +58,10 @@ class ParaverTraceTranslator : public Error
   bool withExtraStats;
   bool DescriptorShared;
 
-  char* CommunicationsFileName;
-  FILE* CommunicationsFile;
-
   vector<PartialCommunication_t> Communications;
   vector<TranslationCommunicator_t> Communicators;
   vector<vector<TaskTranslationInfo_t> > TranslationInfo;
+  std::map< std::tuple<INT32, UINT32>, INT32> MPICollectiveRoots; // index->CommunicatorId,CollectiveCount data->RootTaskId
 
   ParaverTraceParser_t Parser;
 
@@ -87,7 +78,6 @@ class ParaverTraceTranslator : public Error
   INT32 AcceleratorType;
   vector<bool> acc_tasks;
   INT32 acc_tasks_count;
-
 
  public:
   ParaverTraceTranslator( void ){};
@@ -117,6 +107,18 @@ class ParaverTraceTranslator : public Error
                                   INT32 BurstCounterType,
                                   double BurstCounterFactor,
                                   bool GenerateMPIInitBarrier );
+
+  void treatMultiEvent( const Event_t& CurrentEvent );
+  void createPartialCommunication( const Event_t& CurrentEvent,
+                                   INT32 Type,
+                                   INT32 PartnerTaskId,
+                                   INT32 PartnerThreadId,
+                                   INT32 Size,
+                                   INT32 Tag,
+                                   INT32 CommId );
+
+  void createMPICollectiveRoots( const Event_t& CurrentEvent,
+                                 INT32 CommunicatorId );
 
   bool TranslateCommunicators( ApplicationDescription_t AppDescription );
   bool IsDimemasBlockBegin( Event_t EventRecord );
