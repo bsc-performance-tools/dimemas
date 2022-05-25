@@ -227,8 +227,11 @@ void ParaverTraceTranslator::createPartialCommunication( const Event_t& CurrentE
 
 void ParaverTraceTranslator::treatMultiEvent( const Event_t& CurrentEvent )
 {
-  INT32 Type, PartnerTaskId, PartnerThreadId, Size, Tag, CommId, CommunicatorId = -1;
+  INT32 Type, PartnerTaskId, PartnerThreadId, Size, Tag, CommId, CommunicatorId;
   bool isRoot = false;
+  bool isCollectiveWithRoot = false;
+
+  Type = PartnerTaskId = PartnerThreadId = Size = Tag = CommId = CommunicatorId = -1;
 
   for ( unsigned int i = 0; i < CurrentEvent->GetTypeValueCount(); i++ )
   {
@@ -252,6 +255,10 @@ void ParaverTraceTranslator::treatMultiEvent( const Event_t& CurrentEvent )
       case 14:
         CommId = CurrentEvent->GetValue( i );
         break;
+      case MPITYPE_COLLECTIVE:
+        if( CurrentEvent->GetValue( i ) == MPI_REDUCE_VAL )
+          isCollectiveWithRoot = true;
+        break;
       case MPI_GLOBAL_OP_ROOT:
         isRoot = true;
         break;
@@ -261,9 +268,9 @@ void ParaverTraceTranslator::treatMultiEvent( const Event_t& CurrentEvent )
     }
   }
 
-  if( isRoot && CommunicatorId != -1 )
+  if( isCollectiveWithRoot && isRoot && CommunicatorId != -1 )
     createMPICollectiveRoots(CurrentEvent, CommunicatorId);
-  
+
   if ( Type != -1 && PartnerTaskId != -1 && Size != -1 && Tag != -1 && CommId != -1 )
     createPartialCommunication( CurrentEvent, Type, PartnerTaskId, PartnerThreadId, Size, Tag, CommId );
 }

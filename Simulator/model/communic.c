@@ -2596,18 +2596,26 @@ static void COMMUNIC_mem_resources_COM_TIMER_OUT( struct t_thread *thread )
         really_RMA( wait_thread );
         break;
       case GLOBAL_OP:
-        /* aux sempre hauria de ser 1 */
-        aux = node->max_memory_messages - node->cur_memory_messages;
-        wait_thread->number_buses += aux;
-        node->cur_memory_messages += aux;
-
-        if ( wait_thread->number_buses == node->max_memory_messages )
+        if ( wait_thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce ) //TODO: ADD GLOPID IN THE OTHER RESOURCES COM TIMER OUTS CASES
         {
-          /* FEC: S'acumula el temps que ha estat esperant busos */
-          ACCUMULATE_BUS_WAIT_TIME( wait_thread );
-
           extract_from_queue( &node->wait_for_mem_bus, (char *)wait_thread );
-          global_op_get_all_buses( wait_thread );
+          really_send( wait_thread );
+        }
+        else
+        {
+          /* aux sempre hauria de ser 1 */
+          aux = node->max_memory_messages - node->cur_memory_messages;
+          wait_thread->number_buses += aux;
+          node->cur_memory_messages += aux;
+
+          if ( wait_thread->number_buses == node->max_memory_messages )
+          {
+            /* FEC: S'acumula el temps que ha estat esperant busos */
+            ACCUMULATE_BUS_WAIT_TIME( wait_thread );
+
+            extract_from_queue( &node->wait_for_mem_bus, (char *)wait_thread );
+            global_op_get_all_buses( wait_thread );
+          }
         }
         break;
     }
@@ -5161,7 +5169,10 @@ void really_send_memory_message( struct t_thread *thread, struct t_task *task_pa
     ADD_TIMER( current_time, tmp_timer2, tmp_timer2 );
 
     EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_MEM );
-    thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
+    if( action->action == GLOBAL_OP ) // For MPI Reduce
+      thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+    else
+      thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
   }
 }
 
@@ -5332,7 +5343,11 @@ void really_send_internal_network( struct t_thread *thread, struct t_task *task_
 #else
     //      printf("\n\n And to put the event stating when the communication finishes\n");
     EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_NET );
-    thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
+
+    if( action->action == GLOBAL_OP ) // For MPI Reduce
+      thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+    else
+      thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
 #endif
   }
 }
@@ -5413,7 +5428,12 @@ void really_send_external_network( struct t_thread *thread, struct t_task *task_
     /* Es programa el final de la comunicació punt a punt. */
     FLOAT_TO_TIMER( ti, tmp_timer );
     ADD_TIMER( current_time, tmp_timer, tmp_timer );
-    thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
+
+    if( action->action == GLOBAL_OP ) // For MPI Reduce
+      thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+    else
+      thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
+
   } /* endif (get_machine_links(...)) */
 }
 
@@ -5454,7 +5474,10 @@ void really_send_dedicated_connection( struct t_thread *thread, struct t_task *t
     /* Es programa el final de la comunicació punt a punt. */
     FLOAT_TO_TIMER( ti, tmp_timer );
     ADD_TIMER( current_time, tmp_timer, tmp_timer );
-    thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
+    if( action->action == GLOBAL_OP ) // For MPI Reduce
+      thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+    else
+      thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
 
     if ( debug & D_COMM )
     {
@@ -5497,7 +5520,10 @@ void really_send_external_model_comm_type( struct t_thread *thread, struct t_tas
   /* Es programa el final de la comunicació punt a punt. */
   FLOAT_TO_TIMER( ti, tmp_timer );
   ADD_TIMER( current_time, tmp_timer, tmp_timer );
-  thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
+  if( action->action == GLOBAL_OP ) // For MPI Reduce
+    thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
+  else
+    thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
 
   if ( debug & D_COMM )
   {
@@ -5651,8 +5677,8 @@ void get_communication_parameters( struct t_thread *thread_sender,
 
     // We assume the first position of global_ranks is the root
     *task_partner = locate_task( task_sender->Ptask, 
-                                 locate_communicator( &task_sender->Ptask->Communicator,
-                                                      mess_globop->comm_id )->global_ranks[0] );
+                                 mess_globop->is_root );
+
     if ( *task_partner == T_NIL )
     {
       panic( "Task partner not found!\n" );
@@ -5675,6 +5701,8 @@ void really_send( struct t_thread *thread_sender )
   int mess_tag;
   long long int mess_size;
   struct t_dedicated_connection *connection;
+
+  task_sender = thread_sender->task;
 
   get_communication_parameters( thread_sender, &task_partner, &thread_partner, &mess_tag, &mess_size, &connection );
 
@@ -7457,17 +7485,6 @@ void GLOBAL_wait_operation( struct t_thread *thread )
   }
 }
 
-/*
-  TODO: para el reduce vamos a necesitar un comportamiento distinto a las colectivas sync o async.
-  El root sera la unica task que quedará bloqueada hasta que terminen el resto.
-  El resto de tareas no se bloquean pero tampoco siguen ejecutando las siguientes acciones.
-  Deberan computar su operacion de comunicacion con el root completamente y entonces podran continuar.
-  Esto ultimo se podria hacer programando un EVENT_Timer hacia el tiempo en el que finalizan la operacion.
-  El calculo del tiempo para cada tarea/thread habra que pensar alguna alternativa a como lo hacen el resto de colectivas,
-  por ejemplo se puede empezar con una simple bytes*bandwidth.
-  De momento podemos empezar con la parte de sincronizacion para que el aspecto sea el mismo que la traza original, y
-  poner un tiempo fijo (1ms p.ej.) para la duracion, y luego ese tiempo ya se sustituira por un calculo.
-*/
 void GLOBAL_operation( struct t_thread *thread,
                        int glop_id,
                        int comm_id,
@@ -7494,11 +7511,12 @@ void GLOBAL_operation( struct t_thread *thread,
 
   int nb_glob_index;
 
-  if ( with_deadlock_analysis )
-  {
-    if ( DEADLOCK_new_communic_event( thread ) )
-      return;
-  }
+  // In .dim trace is_root field is the root task id for MPI_Reduce
+  if ( glop_id == GLOP_ID_MPI_Reduce )
+    is_root = is_root == thread->task->taskid;
+
+  if ( with_deadlock_analysis && DEADLOCK_new_communic_event( thread ) )
+    return;
 
   /* not very clever mostly to eliminate warnings */
   assert( root_thid >= 0 );

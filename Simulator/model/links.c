@@ -342,7 +342,7 @@ void LINKS_free_mem_link( struct t_link *link, struct t_thread *thread )
           printf( ": free memory writing permissions (OUT) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
         }
 
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         {
           really_send( first );
         }
@@ -371,7 +371,7 @@ void LINKS_free_mem_link( struct t_link *link, struct t_thread *thread )
         PRINT_TIMER( current_time );
         printf( ": Free memory writing permissions (IN) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
       }
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
       {
         really_send( first );
       }
@@ -452,7 +452,7 @@ void LINKS_free_mem_link( struct t_link *link, struct t_thread *thread )
           PRINT_TIMER( current_time );
           printf( ": free memory writing permissions (IN) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
         }
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP ) //TODO: ADD GLOBAL OP TO THE OTHER FREE LINKS CASES
           really_send( first );
         else if ( first->action->action == MPI_OS )
           really_RMA( first );
@@ -476,7 +476,7 @@ void LINKS_free_mem_link( struct t_link *link, struct t_thread *thread )
         PRINT_TIMER( current_time );
         printf( ": free memory writing permissions (OUT) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
       }
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         really_send( first );
       else if ( first->action->action == MPI_OS )
         really_RMA( first );
@@ -1306,7 +1306,7 @@ void LINKS_free_network_link( struct t_link *link, struct t_thread *thread )
         PRINT_TIMER( current_time );
         printf( ": free out link wakeup P%02d T%02d (t%02d) node %d\n", IDENTIFIERS( first ), node->nodeid );
       }
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND ) 
         really_send( first );
       else if ( first->action->action == MPI_OS )
         really_RMA( first );

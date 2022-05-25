@@ -2384,14 +2384,23 @@ bool TaskTranslationInfo::ToDimemas( GlobalOp_t CurrentGlobOp )
   if( MPICollectivesCount.find( CurrentGlobOp->GetCommunicatorId() ) == MPICollectivesCount.end() )
     MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] = 0;
  
-  RootTaskId = MPICollectiveRoots.find( std::make_tuple( CurrentGlobOp->GetCommunicatorId(),
-                                                         ++MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] ) )->second;
+  if( CurrentGlobOp->GetGlobalOpId() == GLOP_ID_MPI_Reduce )
+    RootTaskId = MPICollectiveRoots.find( std::make_tuple( CurrentGlobOp->GetCommunicatorId(),
+                                                           ++MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] ) )->second - 1;
+  else
+  {
+    if ( CurrentGlobOp->GetIsRoot() )
+      RootTaskId = 1;
+    else
+      RootTaskId = 0;
+  }
+
   int err = Dimemas_Global_OP( TemporaryFile,
                                CurrentGlobOp->GetTaskId() - 1,
                                CurrentGlobOp->GetThreadId() - 1,
                                CurrentGlobOp->GetGlobalOpId(),
                                CurrentGlobOp->GetCommunicatorId(),
-                               RootTaskId - 1,
+                               RootTaskId,
                                0,
                                CurrentGlobOp->GetSendSize(),
                                CurrentGlobOp->GetRecvSize(),
