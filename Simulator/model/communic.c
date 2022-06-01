@@ -2606,7 +2606,7 @@ static void COMMUNIC_mem_resources_COM_TIMER_OUT( struct t_thread *thread )
         really_RMA( wait_thread );
         break;
       case GLOBAL_OP:
-        if ( wait_thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce ) //TODO: ADD GLOPID IN THE OTHER RESOURCES COM TIMER OUTS CASES
+        if ( wait_thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce )
         {
           extract_from_queue( &node->wait_for_mem_bus, (char *)wait_thread );
           really_send( wait_thread );
@@ -5191,7 +5191,8 @@ void really_send_memory_message( struct t_thread *thread, struct t_task *task_pa
     SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
     ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
     thread->physical_send = current_time;
-    thread->last_paraver  = current_time;
+    if( thread->action->action != GLOBAL_OP )
+      thread->last_paraver  = current_time;
     /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
     transferencia( mess_size, MEMORY_COMMUNICATION_TYPE, thread, NULL, &ti, &t_recursos );
 
@@ -5288,7 +5289,8 @@ void really_send_internal_network( struct t_thread *thread, struct t_task *task_
     SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
     ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
     thread->physical_send = current_time;
-    thread->last_paraver  = current_time;
+    if( thread->action->action != GLOBAL_OP )
+      thread->last_paraver  = current_time;
     /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
     transferencia( mess_size, INTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
@@ -5444,7 +5446,8 @@ void really_send_external_network( struct t_thread *thread, struct t_task *task_
     SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
     ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
     thread->physical_send = current_time;
-    thread->last_paraver  = current_time;
+    if( thread->action->action != GLOBAL_OP )
+      thread->last_paraver  = current_time;
     /* ti = transferencia(
        mess->mess_size,
        EXTERNAL_NETWORK_COM_TYPE,
@@ -5496,7 +5499,8 @@ void really_send_dedicated_connection( struct t_thread *thread, struct t_task *t
     SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
     ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
     thread->physical_send = current_time;
-    thread->last_paraver  = current_time;
+    if( thread->action->action != GLOBAL_OP )
+      thread->last_paraver  = current_time;
 
     transferencia( mess_size, DEDICATED_CONNECTION_COM_TYPE, thread, connection, &ti, &t_recursos );
 
@@ -5548,7 +5552,8 @@ void really_send_external_model_comm_type( struct t_thread *thread, struct t_tas
   SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
   ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
   thread->physical_send = current_time;
-  thread->last_paraver  = current_time;
+  if( thread->action->action != GLOBAL_OP )
+    thread->last_paraver  = current_time;
 
   transferencia( mess_size, EXTERNAL_MODEL_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
@@ -7640,7 +7645,7 @@ void GLOBAL_operation( struct t_thread *thread,
 
     if ( synch_type == GLOBAL_OP_ROOT_SYNC )
     {
-      thread->nb_glob_index = thread->nb_glob_index_master; // TODO: verify if nb_glob_index can be modified in thread directly, instead of in copy_thread
+      thread->nb_glob_index = thread->nb_glob_index_master;
       thread->nb_glob_index_master++;
 
       nb_glob_index = thread->nb_glob_index;
