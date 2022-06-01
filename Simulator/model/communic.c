@@ -2556,6 +2556,16 @@ static void COMMUNIC_mem_resources_COM_TIMER_OUT( struct t_thread *thread )
     LINKS_free_mem_link( thread->partner_link, thread );
   }
 
+  if( thread->original_thread == 1 &&
+      thread->action->action == GLOBAL_OP &&
+      thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce )
+  {
+    thread->local_link = L_NIL;
+    thread->local_hd_link = L_NIL;
+    thread->partner_link = L_NIL;
+    thread->partner_hd_link = L_NIL;
+  }
+
   if ( node->cur_memory_messages > 0 )
   {
     node->cur_memory_messages--;
