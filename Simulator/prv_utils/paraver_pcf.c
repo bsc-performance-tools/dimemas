@@ -23,21 +23,13 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
 
-   $URL::                  $:  File
-   $Rev::                  $:  Revision of last commit
-   $Author::               $:  Author of last commit
-   $Date::                 $:  Date of last commit
-
-   \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 #define _GNU_SOURCE
 
 #include "extern.h"
 #include "list.h"
 #include "pcf_defines.h"
 
-#include <Dimemas2Prv.h>
 #include <EventEncoding.h>
 #include <define.h>
 #include <dimemas_io.h>
@@ -56,10 +48,6 @@
  ****************************************************************************/
 
 static t_boolean PCF_copy_existing( FILE* input_pcf, FILE* output_pcf, FILE* pcf_insert );
-
-static t_boolean ROW_copy_existing( FILE* input_pcf, FILE* output_pcf );
-
-static t_boolean PCF_generate_default( FILE* output_pcf, FILE* pcf_insert );
 
 static t_boolean PCF_write_header_and_states( FILE* output_pcf );
 /* JGG: La generación de los colores asociados a los estados debería ser más
@@ -262,101 +250,6 @@ static t_boolean PCF_copy_existing( FILE* input_pcf, FILE* output_pcf, FILE* pcf
 
   IO_fclose( output_pcf );
 
-  return TRUE;
-}
-
-static t_boolean ROW_copy_existing( FILE* input_row, FILE* output_row )
-{
-  char* line                 = NULL;
-  size_t current_line_length = 0;
-  ssize_t bytes_read;
-
-  t_boolean error = FALSE;
-
-  while ( ( bytes_read = getline( &line, &current_line_length, input_row ) ) != -1 )
-  {
-    if ( fprintf( output_row, "%s", line ) < 0 )
-    {
-      warning( "Error writing output ROW file: %s\n", strerror( errno ) );
-      error = TRUE;
-      break;
-    }
-  }
-
-  if ( !error && !feof( input_row ) )
-  {
-    warning( "Error reading input ROW file: %s\n", strerror( errno ) );
-    error = TRUE;
-  }
-
-  IO_fclose( input_row );
-  IO_fclose( output_row );
-
-  return !error;
-}
-
-static t_boolean PCF_generate_default( FILE* output_pcf, FILE* pcf_insert )
-{
-  int i;
-  PCF_write_header_and_states( output_pcf );
-
-  /* JGG: Escritura de la parte central estática */
-  for ( i = 0; i < PCF_MIDDLE_LINES; i++ )
-  {
-    fprintf( output_pcf, "%s\n", pcf_middle[ i ] );
-  }
-
-  //#ifdef PUT_ALL_VALUES
-  /* JGG: That should be changed at certain point... */
-  for ( i = 0; i < NUM_MPICALLS; i++ )
-  {
-    MPIEventEncoding_EnableOperation( (MPI_Event_Values)i );
-  }
-  MPIEventEncoding_WriteEnabledOperations( output_pcf );
-
-  /* Copy the PCF insert supplied */
-  if ( pcf_insert != NULL )
-  {
-    char ch;
-
-    while ( !feof( pcf_insert ) )
-    {
-      ch = fgetc( pcf_insert );
-
-      if ( ferror( pcf_insert ) )
-      {
-        die( "Error reading source cfg file to be included: %s\n", strerror( errno ) );
-      }
-
-      if ( !feof( pcf_insert ) )
-      {
-        fputc( ch, output_pcf );
-      }
-
-      if ( ferror( output_pcf ) )
-      {
-        printf( "Error writing destination file when including the cfg file\n" );
-        exit( EXIT_FAILURE );
-      }
-    }
-    fprintf( output_pcf, "\n\n" );
-
-    IO_fclose( pcf_insert );
-  }
-
-
-  /* JGG: Parte final del PCF, también estática */
-  for ( i = 0; i < PCF_TAIL_LINES; i++ )
-  {
-    fprintf( output_pcf, "%s\n", pcf_tail[ i ] );
-  }
-
-  /* Es tanca el fitxer i es retorna que ha anat bé */
-  fflush( output_pcf );
-  IO_fclose( output_pcf );
-
-  // chmod (pcf_name, 0600);
-  // free(pcf_name);
   return TRUE;
 }
 

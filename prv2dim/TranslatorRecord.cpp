@@ -177,12 +177,6 @@ void PartialCommunication::Write( ostream& os ) const
   os << "Size: " << Size << " Tag: " << Tag << " CommId: " << CommId << endl;
 }
 
-void PartialCommunication::ToFile( FILE* OutputFile )
-{
-  fprintf( OutputFile, "%d:%lu:%d,%d:%d,%d:%d:%d\n", Type, Timestamp, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, Size, Tag );
-  return;
-}
-
 ostream& operator<<( ostream& os, const PartialCommunication& Comm )
 {
   Comm.Write( os );
@@ -226,70 +220,4 @@ void PartialCommunication::InitFields( INT32 SrcCPU,
       PartnerTaskId   = SrcTaskId;
       PartnerThreadId = SrcThreadId;
   }
-}
-
-/*****************************************************************************
- * class TranslationCommunicator
- ****************************************************************************/
-/*****************************************************************************
- * Public functions
- ****************************************************************************/
-
-bool TranslationCommunicator::AddGlobalOp( GlobalOp_t NewGlobalOp )
-{
-  if ( !PendingGlobalOp )
-  {
-    FinishedGlobalOp = false;
-    PendingGlobalOp  = true;
-  }
-
-  if ( CommunicatorTasks.count( NewGlobalOp->GetTaskId() ) != 1 )
-  {
-    char CurrentError[ 128 ];
-
-    sprintf( CurrentError, "Adding operation from task %02d not associated with communicator %02d", NewGlobalOp->GetTaskId(), CommunicatorId );
-
-    LastError = CurrentError;
-    return false;
-  }
-
-  /*
-  if (TaskIdArrived.count(NewGlobalOp->GetTaskId()) == 1)
-  {
-    char CurrentError[128];
-
-    sprintf(CurrentError,
-      "Arrived two global op operations from task %02d on communicator %02d",
-      NewGlobalOp->GetTaskId(),
-      CommunicatorId);
-
-    LastError = CurrentError;
-    return false;
-  }
-  */
-
-  TaskIdArrived.insert( NewGlobalOp->GetTaskId() );
-  GlobalOpsArrived.push_back( NewGlobalOp );
-
-  if ( NewGlobalOp->GetIsRoot() )
-  {
-    RootTaskId = NewGlobalOp->GetTaskId();
-  }
-
-  if ( TaskIdArrived.size() == CommunicatorTasks.size() )
-  { /* Global Op finished!! */
-    for ( UINT32 i = 0; i < GlobalOpsArrived.size(); i++ )
-    { /* Root TaskId distribution */
-      GlobalOpsArrived[ i ]->SetRootTaskId( RootTaskId );
-    }
-
-    /* Clear all containers */
-    GlobalOpsArrived.clear();
-    TaskIdArrived.clear();
-
-    PendingGlobalOp  = false;
-    FinishedGlobalOp = true;
-  }
-
-  return true;
 }

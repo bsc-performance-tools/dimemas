@@ -114,7 +114,6 @@ class ParaverTraceParser : public Error
   State_t ParseState( char* ASCIIState );
   Event_t ParseEvent( char* ASCIIEvent );
   Communication_t ParseCommunication( char* ASCIICommunication );
-  GlobalOp_t ParseGlobalOp( char* ASCIIGlobalOp );
 };
 typedef ParaverTraceParser* ParaverTraceParser_t;
 extern int debug;

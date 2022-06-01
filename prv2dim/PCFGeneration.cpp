@@ -44,7 +44,6 @@ using std::endl;
 
 #include "PCFGeneration.hpp"
 
-#include <Dimemas2Prv.h>
 #include <EventEncoding.h>
 
 PCFGeneration::PCFGeneration( string InputTraceName, string OutputTraceName )

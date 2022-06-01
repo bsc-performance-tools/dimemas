@@ -450,9 +450,6 @@ ParaverRecord_t ParaverTraceParser::NextTraceRecord( UINT32 RecordTypeMask )
         case PARAVER_COMMUNICATION:
           Result = (ParaverRecord_t)ParseCommunication( &Line[ 2 ] );
           break;
-        case PARAVER_GLOBALOP:
-          Result = (ParaverRecord_t)ParseGlobalOp( &Line[ 2 ] );
-          break;
         default:
           char CurrentError[ 128 ];
 
@@ -613,44 +610,4 @@ Communication_t ParaverTraceParser::ParseCommunication( char* ASCIICommunication
   }
 
   return NewCommunication;
-}
-
-/* Record type 4: DEPRECATED */
-GlobalOp_t ParaverTraceParser::ParseGlobalOp( char* ASCIIGlobalOp )
-{
-  GlobalOp_t NewGlobalOp;
-
-  long long unsigned int Timestamp;
-  INT32 CPU, AppId, TaskId, ThreadId;
-  INT32 CommunicatorId;
-  INT32 SendSize, RecvSize;
-  INT32 GlobalOpId;
-  INT32 RootTaskId;
-
-  if ( sscanf( ASCIIGlobalOp,
-               "%d:%d:%d:%d:%llu:%d:%d:%d:%d:%d",
-               &CPU,
-               &AppId,
-               &TaskId,
-               &ThreadId,
-               &Timestamp,
-               &CommunicatorId,
-               &SendSize,
-               &RecvSize,
-               &GlobalOpId,
-               &RootTaskId ) == 10 )
-  {
-    NewGlobalOp = new GlobalOp( (UINT64)Timestamp, CPU, AppId, TaskId, ThreadId, CommunicatorId, SendSize, RecvSize, GlobalOpId, RootTaskId );
-  }
-  else
-  {
-    char CurrentError[ 128 ];
-
-    SetError( true );
-    sprintf( CurrentError, "Wrong global operation record on line %d", CurrentLine );
-    LastError   = CurrentError;
-    NewGlobalOp = NULL;
-  }
-
-  return NewGlobalOp;
 }

@@ -100,13 +100,6 @@ extern "C"
 #define MPITYPE_TEST_SOFTCOUNTER_LABEL  "MPI Test/Testsome software counter"
 
 #define FLUSHING_EV 40000003
-#define IO_READ_EV  40000016
-#define IO_WRITE_EV 40000017
-#define IO_EV       40000018
-
-#define IO_READ_LABEL  "I/O Read"
-#define IO_WRITE_LABEL "I/O Write"
-#define IO_LABEL       "I/O Call"
 
   /* ==========================================================================
      ==== MISC Event Types
@@ -1025,11 +1018,6 @@ extern "C"
   long64_t MPIEventEncoding_UserBlockId( long64_t Type, long64_t Value );
   char *MPIEventEncoding_GetBlockLabel( MPI_Event_Values Op );
 
-  /*OtherEventEncoding functions*/
-  int EventEncoding_Is_IO( long64_t Type );
-  long64_t EventEncoding_DimemasIO_Block( long64_t Type );
-  int EventEncoding_Is_Flushing( long64_t Type );
-
   /* Clustering Eventencoding functions */
   int ClusterEventEncoding_Is_ClusterBlock( long64_t type );
   int ClusterEventEncoding_Is_BlockBegin( long64_t Op );
@@ -1042,13 +1030,10 @@ extern "C"
   int OMPEventEncoding_Is_OMPSync( struct t_event_block event );
   int OMPEventEncoding_Is_OMPSched( struct t_event_block event );
   int OMPEventEncoding_Is_OMP_fork_begin( struct t_event_block event );
-  int OMPEventEncoding_Is_Outside_OMP( struct t_event_block event );
   int OMPEventEncoding_Is_OMP_Running( struct t_event_block event );
   int OMPEventEncoding_Is_OMPWorker_Running( struct t_event_block event );
   int OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event );
-  int OMPEventEncoding_Is_OMPWorker_After_Synchro( struct t_event_block event );
   int OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event );
-  int OMPEventEncoding_Is_Parallel_Begin( struct t_even *event );
 
   /* CUDA EventEncoding calls	*/
   int CUDAEventEncoding_Is_CUDABlock( long64_t type );

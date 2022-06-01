@@ -66,8 +66,6 @@ void show_statistics();
 
 void calculate_execution_end_time();
 
-long READ_get_living_actions();
-
 void reload_new_Ptask( struct t_Ptask *Ptask );
 
 void READ_get_next_action( struct t_thread *thread );

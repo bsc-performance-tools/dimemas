@@ -764,9 +764,6 @@ void show_statistics()
   }
 }
 
-
-static long living_actions = 0;
-
 void *READ_fill_buffer_asynch( void *vptask )
 {
   // TODO: Could be a good idea if instead of read just one action per thread
@@ -918,9 +915,6 @@ struct t_action *_get_next_action( struct t_thread *thread )
     panic( DATA_ACCESS_get_error() );
   }
 
-  living_actions++;
-
-
   if ( new_action->action == WORK )
   {
     struct t_node *node;
@@ -972,7 +966,6 @@ struct t_action *_get_next_action( struct t_thread *thread )
            panic(DATA_ACCESS_get_error());
        }
 
-       living_actions++;
        new_action->next = thread->action;
        thread->action = new_action_aux;
    }
@@ -995,8 +988,6 @@ void READ_create_action( struct t_action **action )
     panic( "Unable to get memory for new actions!" );
   }
 
-  living_actions++;
-
   return;
 }
 
@@ -1012,11 +1003,6 @@ void READ_free_action( struct t_action *action )
   if ( action != NULL )
   {
     free( action );
-    living_actions--;
   }
 }
 
-long READ_get_living_actions( void )
-{
-  return living_actions;
-}

@@ -37,7 +37,6 @@
 /**
  * Routines defined in file semaphore.c
  **/
-void SEMAPHORE_general( int value, struct t_thread *thread );
 
 void SEMAPHORE_Init( void );
 void SEMAPHORE_End( void );

@@ -23,14 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-  $Rev:: 563                                      $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2011-03-22 16:27:21 +0100 (Tue, 22 Mar #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef _DIMEMAS_IO_H_
 #define _DIMEMAS_IO_H_
@@ -40,8 +32,6 @@
 #include <types.h>
 
 void IO_Init( void );
-
-void IO_End( void );
 
 size_t IO_available_streams( void );
 

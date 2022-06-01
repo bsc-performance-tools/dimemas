@@ -35,10 +35,6 @@ extern "C"
 #endif
 
   /* ---------------------------------------------------- Function Prototypes -*/
-  int DimemasHeader_WriteHeader( FILE *fd );
-
-  int DimemasHeader_WriteHeader_withAdditionalBlocks( FILE *fd, char **labels, int *values, int size );
-
   int Dimemas_NX_Generic_Send( FILE *fd,
                                int task,
                                int thread,
@@ -128,9 +124,6 @@ extern "C"
 
   int Dimemas_User_Event( FILE *fd, int task, int thread, long64_t type, long64_t value );
 
-  int Dimemas_Block_Definition( FILE *fd, long64_t block, const char *Label );
-
-
 #ifdef NEW_DIMEMAS_TRACE
   int Dimemas_Block_Begin( FILE *fd, int task, int thread, long64_t Type, long64_t Value );
 #else
@@ -144,7 +137,7 @@ int Dimemas_Block_Begin( FILE *fd, int task, int thread, long64_t block );
                          int thread,
                          int opid,
                          int commid,
-                         int root_rank,
+                         int is_root,
                          int root_thd,
                          long64_t sendsize,
                          long64_t recvsize,
@@ -155,14 +148,10 @@ int Dimemas_Block_Begin( FILE *fd, int task, int thread, long64_t block );
                               int thread,
                               int opid,
                               int commid,
-                              int root_rank,
+                              int is_root,
                               int root_thd,
                               long64_t sendsize,
                               long64_t recvsize );
-
-  int Dimemas_User_EventType_Definition( FILE *fd, long64_t type, char *Label, int color );
-
-  int Dimemas_User_EventValue_Definition( FILE *fd, long64_t type, long64_t value, char *Label );
 
   int Dimemas_NOOP( FILE *fd, int task, int thread );
 

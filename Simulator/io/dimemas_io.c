@@ -23,14 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-  $Rev:: 563                                      $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2011-03-22 16:27:21 +0100 (Tue, 22 Mar #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #include "dimemas_io.h"
 
@@ -89,11 +81,6 @@ void IO_Init( void )
 
   IO_error_state = FALSE;
   sprintf( IO_error_string, "no I/O error" );
-}
-
-void IO_End( void )
-{
-  return;
 }
 
 size_t IO_available_streams( void )

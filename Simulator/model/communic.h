@@ -96,7 +96,7 @@ void GLOBAL_wait_operation( struct t_thread *thread );
 void GLOBAL_operation( struct t_thread *thread,
                        int glop_id,
                        int comm_id,
-                       int root_rank,
+                       int is_root,
                        int root_thid,
                        int bytes_send,
                        int bytes_recv,

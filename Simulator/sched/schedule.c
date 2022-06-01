@@ -958,7 +958,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
                 GLOBAL_operation( thread,
                                   action->desc.global_op.glop_id,
                                   action->desc.global_op.comm_id,
-                                  action->desc.global_op.root_rank,
+                                  action->desc.global_op.is_root,
                                   action->desc.global_op.root_thid,
                                   action->desc.global_op.bytes_send,
                                   action->desc.global_op.bytes_recvd,

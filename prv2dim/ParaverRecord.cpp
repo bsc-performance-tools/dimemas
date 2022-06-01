@@ -397,30 +397,6 @@ GlobalOp::GlobalOp( UINT64 Timestamp,
                     INT32 SendSize,
                     INT32 RecvSize,
                     INT32 GlobalOpId,
-                    INT32 RootTaskId )
-  : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
-{
-  this->CommunicatorId = CommunicatorId;
-  this->SendSize       = SendSize;
-  this->RecvSize       = RecvSize;
-  this->GlobalOpId     = GlobalOpId;
-  this->RootTaskId     = RootTaskId + 1; /* RootTaskIds are in range 0..(n-1) */
-
-  if ( this->RootTaskId == this->TaskId )
-    this->Root = true;
-  else
-    this->Root = false;
-}
-
-GlobalOp::GlobalOp( UINT64 Timestamp,
-                    INT32 CPU,
-                    INT32 AppId,
-                    INT32 TaskId,
-                    INT32 ThreadId,
-                    INT32 CommunicatorId,
-                    INT32 SendSize,
-                    INT32 RecvSize,
-                    INT32 GlobalOpId,
                     bool Root )
   : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
 {
@@ -430,15 +406,12 @@ GlobalOp::GlobalOp( UINT64 Timestamp,
   this->GlobalOpId     = GlobalOpId;
   this->Root           = Root;
 
-  if ( this->GlobalOpId < GLOP_ID_IMMEDIATE )
-    this->Synchronize = 1;
+  if ( this->GlobalOpId == GLOP_ID_MPI_Reduce )
+    this->Synchronize = GLOBAL_OP_ROOT_SYNC;
+  else if ( this->GlobalOpId < GLOP_ID_IMMEDIATE )
+    this->Synchronize = GLOBAL_OP_SYNC;
   else
-    this->Synchronize = 0;
-
-  if ( this->Root )
-    this->RootTaskId = 1;
-  else
-    this->RootTaskId = UNKNOWN_ROOT;
+    this->Synchronize = GLOBAL_OP_ASYNC;
 }
 
 void GlobalOp::Write( ostream& os ) const
@@ -454,7 +427,7 @@ void GlobalOp::Write( ostream& os ) const
   os << ThreadId << "] ";
 
   os << "T: " << Timestamp << " CommId " << CommunicatorId;
-  os << " GlobOpId: " << GlobalOpId << " RootTask: " << RootTaskId;
+  os << " GlobOpId: " << GlobalOpId << " RootTask: " << Root;
   os << " Synchronize: " << Synchronize << endl;
 }
 

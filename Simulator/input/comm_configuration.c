@@ -36,6 +36,7 @@
 #include <communic.h> // To configure the communications
 #include <dimemas_io.h>
 #include <errno.h>
+#include "EventEncoding.h"
 #include <list.h>
 #include <sched_vars.h> // To access to COMMUNIC table
 #include <simulator.h>
@@ -133,6 +134,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine policy on (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     matches = sscanf( current_line, "Policy: %s", mini_buffer );
@@ -145,6 +148,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine policy (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -163,6 +168,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       }
 
       expected_quantum_definition = FALSE;
+
+      continue;
     }
 
 
@@ -183,6 +190,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine flight times (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -191,6 +200,9 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
     matches = sscanf( current_line, "Machine globalop: %d %d %s %s %s %s", &machine_id, &global_OP, FIN_model, FIN_size, FOUT_model, FOUT_size );
     if ( matches == 6 )
     {
+      if( global_OP == GLOP_ID_MPI_Reduce )
+        continue;
+
       if ( ( machine_id < 0 ) || ( machine_id >= Simulator.number_machines ) )
       {
         die( "Invalid machine id %d (%s:%d)", machine_id, comm_conf_filename, line );
@@ -209,6 +221,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading machine %d global operation definition (%s:%d): %s", machine_id, comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -217,6 +231,9 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
     matches = sscanf( current_line, "External globalop: %d %s %s %s %s", &global_OP, FIN_model, FIN_size, FOUT_model, FOUT_size );
     if ( matches == 5 )
     {
+      if( global_OP == GLOP_ID_MPI_Reduce )
+        continue;
+
       /* Cal llegir els parametres de l'operació col.lectiva
        * global_OP per la xarxa externa. */
       if ( !load_global_op_parameters( TRUE, // External network
@@ -229,6 +246,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
       {
         die( "Error loading external network global operation definition (%s:%d): %s", comm_conf_filename, line, comm_conf_error_message );
       }
+
+      continue;
     }
 
     /*
@@ -252,6 +271,8 @@ void COMM_CONFIGURATION_Load_General_Comms_Definition( char *comm_conf_filename,
         }
       }
       /* El camp contention actualment s'ignora. */
+
+      continue;
     }
   }
 }
@@ -334,107 +355,6 @@ void COMM_CONFIGURATION_Load_External_Network_Parameters( void )
         param_external_net_periode,
         param_external_net_beta,
         param_external_net_gamma );
-}
-
-/* JGG (06/02/2006): Function to parse special configuration file, used to fine
- * tuning p2p communications */
-
-void COMM_CONFIGURATION_Load_P2P_Fine_Tuning( void )
-{
-  FILE *special_cfg;
-  int i, size, cycle, time;
-  char units;
-
-  /* S'obre el fitxer dels parametres */
-  if ( !IO_file_exists( "p2p_tuning.cfg" ) )
-  {
-    return;
-  }
-
-  if ( ( special_cfg = IO_fopen( "traffic_parameters.cfg", "r" ) ) == NULL )
-  {
-    die( "Unable to open 'p2p_tuning.cfg' file: %s\n", IO_get_error() );
-  }
-
-  info( "-> Loading P2P fine tuning file (p2p_tuning.cfg)\n" );
-
-  { /* LIBRARY COPY LATENCY */
-    i = fscanf( special_cfg, "copy:%d%c\n", &size, &units );
-
-    if ( i == -1 )
-    {
-      info( "   * Warning: copy latency not present\n" );
-    }
-
-    if ( i == 1 )
-    {
-      if ( size != 0 )
-      {
-        DATA_COPY_enabled      = TRUE;
-        DATA_COPY_message_size = size;
-      }
-    }
-    else /* S'ha indicat les unitats */
-    {
-      if ( size != 0 )
-      {
-        DATA_COPY_enabled = TRUE;
-        switch ( units )
-        {
-          case 'k': /* La mida es en Kb */
-            DATA_COPY_message_size = size << 10;
-            break;
-
-          case 'm': /* La mida es en Mb */
-            DATA_COPY_message_size = size << 20;
-            break;
-
-          case 'g': /* La mida es en Gb */
-            DATA_COPY_message_size = size << 30;
-            break;
-
-          case 'b':
-          default: /* La mida es en bytes */
-            DATA_COPY_message_size = size;
-            break;
-        }
-      }
-    }
-  }
-  { /* ROUND TRIP TIME LATENCY */
-    i = fscanf( special_cfg, "rtt:%d\n", &time );
-    if ( i <= 0 || i > 1 )
-    {
-      info( "  * Warning: round trip time not present\n" );
-    }
-    else /* i == 1 */
-    {
-      if ( time != 0 )
-      {
-        RTT_enabled = TRUE;
-        RTT_time    = ( t_nano )( time * 1.0 );
-      }
-    }
-  }
-  { /* PREEMPTIONS */
-    i = fscanf( special_cfg, "preemp:%d:%d\n", &cycle, &time );
-
-    if ( i != 2 )
-    {
-      info( "   * Warning: preemptions info not present\n" );
-    }
-    else
-    {
-      if ( cycle != 0 )
-      {
-        PREEMP_enabled = TRUE;
-        PREEMP_cycle   = cycle;
-        PREEMP_time    = ( t_nano )( time * 1.0 );
-      }
-    }
-  }
-
-  IO_fclose( special_cfg );
 }
 
 /******************************************************************************

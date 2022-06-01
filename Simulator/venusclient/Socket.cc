@@ -23,14 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 // Implementation of the Socket class.
 

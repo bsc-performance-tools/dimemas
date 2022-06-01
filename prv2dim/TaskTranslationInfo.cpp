@@ -21,18 +21,8 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-  $Rev:: 1044                                     $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-                printf("op_fiends:%s\n",op_fields);
-  $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 #include "TaskTranslationInfo.hpp"
 
-#include "Dimemas2Prv.h"
 #include "Dimemas_Generation.h"
 #include "EventEncoding.h"
 #include "ParaverTraceParser.hpp"
@@ -75,8 +65,10 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
                                           vector<vector<TaskTranslationInfo *> > *AllTranslationInfo,
                                           INT32 AcceleratorThread,
                                           INT32 OpenMP_thread,
+                                          const std::map< std::tuple<INT32, UINT32>, INT32>& whichMPICollectiveRoots,
                                           char *TemporaryFileName,
                                           FILE *TemporaryFile )
+  : MPICollectiveRoots( whichMPICollectiveRoots )
 {
   this->AllTranslationInfo = AllTranslationInfo;
 
@@ -274,14 +266,13 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
   MPIWaitWithCommunication = false;
 }
 
+
 TaskTranslationInfo::~TaskTranslationInfo( void )
 {
-  {
-    unlink( TemporaryFileName );
-    free( TemporaryFileName );
-  }
-  return;
+  unlink( TemporaryFileName );
+  free( TemporaryFileName );
 }
+
 
 bool TaskTranslationInfo::PushRecord( ParaverRecord_t Record )
 {
@@ -360,6 +351,7 @@ bool TaskTranslationInfo::LastFlush( void )
   return true;
 }
 
+
 bool TaskTranslationInfo::Merge( FILE *DimemasFile )
 {
   struct stat FileStat;
@@ -430,6 +422,7 @@ bool TaskTranslationInfo::Merge( FILE *DimemasFile )
 
   return true;
 }
+
 
 /*****************************************************************************
  * Private functions
@@ -829,7 +822,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                       0,
                                       0,
                                       0,
-                                      1 ) < 0 )
+                                      GLOBAL_OP_SYNC ) < 0 )
               {
                 SetError( true );
                 SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -847,7 +840,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                       0,
                                       0,
                                       0,
-                                      1 ) < 0 )
+                                      GLOBAL_OP_SYNC ) < 0 )
               {
                 SetError( true );
                 SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -866,7 +859,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                     0,
                                     0,
                                     0,
-                                    1 ) < 0 )
+                                    GLOBAL_OP_SYNC ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
@@ -1193,7 +1186,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                                      0, // RootRank | RootThread = 0
                                      0,
                                      0,
-                                     1 ); // No send/recv sizes
+                                     GLOBAL_OP_SYNC ); // No send/recv sizes
 
         if ( err < 0 )
         {
@@ -1414,6 +1407,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   }
   return true;
 }
+
 
 /* ToDimemas (COMMUNICATION) **************************************************/
 bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
@@ -2376,6 +2370,8 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
 
 bool TaskTranslationInfo::ToDimemas( GlobalOp_t CurrentGlobOp )
 {
+  INT32 RootTaskId;
+
   if ( CurrentGlobOp->GetSynch() == 0 )
   {
     // Must be matched with MPI_waits
@@ -2385,11 +2381,20 @@ bool TaskTranslationInfo::ToDimemas( GlobalOp_t CurrentGlobOp )
   if ( debug )
     cout << "Printing GlobalOP " << *CurrentGlobOp;
 
-  INT32 RootTaskId;
-  if ( CurrentGlobOp->GetIsRoot() )
-    RootTaskId = 1;
+  if( MPICollectivesCount.find( CurrentGlobOp->GetCommunicatorId() ) == MPICollectivesCount.end() )
+    MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] = 0;
+ 
+  if( CurrentGlobOp->GetGlobalOpId() == GLOP_ID_MPI_Reduce )
+    RootTaskId = MPICollectiveRoots.find( std::make_tuple( CurrentGlobOp->GetCommunicatorId(),
+                                                           ++MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] ) )->second - 1;
   else
-    RootTaskId = 0;
+  {
+    if ( CurrentGlobOp->GetIsRoot() )
+      RootTaskId = 1;
+    else
+      RootTaskId = 0;
+  }
+
   int err = Dimemas_Global_OP( TemporaryFile,
                                CurrentGlobOp->GetTaskId() - 1,
                                CurrentGlobOp->GetThreadId() - 1,
@@ -2518,6 +2523,7 @@ void TaskTranslationInfo::FinalizeGlobalOp( void )
   }
 }
 
+
 bool TaskTranslationInfo::CheckTestCounters( Event_t CurrentEvent )
 {
   INT32 TaskId, ThreadId;
@@ -2601,7 +2607,7 @@ bool TaskTranslationInfo::CheckTestCounters( Event_t CurrentEvent )
   return true;
 }
 
-/* CheckIprobeCounters ********************************************************/
+
 bool TaskTranslationInfo::CheckIprobeCounters( Event_t CurrentEvent )
 {
   INT32 TaskId, ThreadId;
@@ -2715,7 +2721,7 @@ bool TaskTranslationInfo::CheckIprobeCounters( Event_t CurrentEvent )
   return true;
 }
 
-/* GenerateBurst **************************************************************/
+
 bool TaskTranslationInfo::GenerateBurst( INT32 TaskId, INT32 ThreadId, UINT64 Timestamp )
 {
   double OnTraceTime = 0.0;
@@ -2790,6 +2796,7 @@ bool TaskTranslationInfo::GenerateBurst( INT32 TaskId, INT32 ThreadId, UINT64 Ti
   return true;
 }
 
+
 bool TaskTranslationInfo::PrintPseudoCommunicationEndpoint( INT32 CommType,
                                                             INT32 TaskId,
                                                             INT32 ThreadId,
@@ -2850,6 +2857,7 @@ bool TaskTranslationInfo::PrintPseudoCommunicationEndpoint( INT32 CommType,
   return true;
 }
 
+
 void TaskTranslationInfo::PrintStack( void )
 {
   cout << "Record Stack for Task " << TaskId << endl;
@@ -2857,10 +2865,9 @@ void TaskTranslationInfo::PrintStack( void )
   {
     cout << *( RecordStack[ i ] );
   }
-  return;
 }
 
-/* GenerateBurst **************************************************************/
+
 bool TaskTranslationInfo::GenerateGPUBurst( INT32 TaskId, INT32 ThreadId, UINT64 Timestamp, UINT64 LastBlock )
 {
   double OnTraceTime = 0.0;

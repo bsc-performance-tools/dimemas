@@ -117,12 +117,6 @@ struct t_module
   char *activity_name;
 };
 
-struct t_filed
-{
-  int file_id;
-  char *location;
-};
-
 
 #define CP_WORK     0
 #define CP_BLOCK    1
@@ -445,10 +439,10 @@ struct t_global_op
 {
   int glop_id;               /* Global operation identificator */
   int comm_id;               /* Communicator identificator */
-  int root_rank;             /* Identificator of root task */
+  int is_root;
   int root_thid;             /* Identificator of thread root task */
-  long long int bytes_send;  /* Number of bytes send */
-  long long int bytes_recvd; /* Number of bytes received */
+  long long int bytes_send;
+  long long int bytes_recvd;
   int synch_type;            /* 0: Asynch glop, 1: Synch glop, 2: Wait glop */
 };
 
@@ -586,7 +580,7 @@ struct t_communicator
   struct t_queue *nodes_per_machine; /* Nodes involved on each machine */
   struct t_queue tasks_per_node;
 
-  struct t_thread *current_root; /* Root thread of the 'in-flight'
+  struct t_thread *current_root_thread; /* Root thread of the 'in-flight'
                                     operation */
   t_boolean in_flight_op;        /* True when simulating an operation */
 
@@ -596,8 +590,11 @@ struct t_communicator
 
   struct t_queue nonblock_global_op_threads;
   struct t_queue nonblock_global_op_machine_threads;
-  struct t_queue nonblock_current_root;
+  struct t_queue nonblock_current_root_thread;
   struct t_queue nonblock_m_threads_with_links;
+
+  struct t_queue root_sync_global_op_threads_arrived;
+  struct t_queue root_sync_root_thread;
 
   int same_machine;
   int same_node;
@@ -686,7 +683,6 @@ struct t_Ptask
   struct t_queue MPI_IO_fh_to_commid;
   struct t_queue MPI_IO_request_thread;
   modules_map Modules;
-  struct t_queue Filesd;
   struct t_queue UserEventsInfo; /* Cua amb les informacions dels possibles
                                   * events d'usuari */
   int *acc_tasks;                /* Extra info for accelerator mapping */
@@ -1164,7 +1160,6 @@ struct t_copyseg
 #define B_NIL    (struct t_both *)0
 #define BU_NIL   (struct t_bus_utilization *)0
 #define M_NIL    (struct t_module *)0
-#define F_NIL    (struct t_filed *)0
 
 #define CO_NIL (struct t_copyseg *)0
 #define PO_NIL (struct t_port *)0

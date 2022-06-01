@@ -300,11 +300,6 @@ void SIMULATOR_Generate_row( const char *row_filename )
   IO_fclose( row_file );
 }
 
-char *SIMULATOR_Get_Configuration_FileName( void )
-{
-  return configuration_filename;
-}
-
 int SIMULATOR_get_number_of_nodes( void )
 {
   return nodes_size;
@@ -458,10 +453,6 @@ t_boolean SIMULATOR_set_wan_definition( char *wan_name,
   SIMULATOR_set_wan_global_op_model( communication_group_model );
 
   return TRUE;
-}
-
-void SIMULATOR_set_wan_flight_times( double **flight_times )
-{
 }
 
 t_boolean SIMULATOR_machine_exists( int machine_id )
@@ -1082,20 +1073,6 @@ char *SIMULATOR_get_last_error( void )
  * Private functions implementation
  ****************************************************************************/
 
-void Initialize_Empty_Machines( void )
-{
-  int i;
-  struct t_machine *machine;
-  struct t_link *link;
-
-  Machines = (struct t_machine *)malloc( Simulator.number_machines * sizeof( struct t_machine ) );
-
-  /* Initialize all machine structures with default values */
-  for ( i = 0; i < Simulator.number_machines; i++ )
-  {
-    MACHINE_Init_Empty_Machine( &Machines[ i ], i );
-  }
-}
 /*
  * That shouldn't be here. A new file to manage dedicated connections should
  * be included

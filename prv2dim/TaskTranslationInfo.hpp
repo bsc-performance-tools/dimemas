@@ -21,19 +21,12 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-   $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-   $Rev:: 1044                                     $:  Revision of last commit
-   $Author:: jgonzale                              $:  Author of last commit
-   $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-   \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef _TASKTRANSLATIONINFO_H
 #define _TASKTRANSLATIONINFO_H
 
 #include <unordered_set>
+#include <map>
 
 #include <Error.hpp>
 using cepba_tools::Error;
@@ -67,6 +60,9 @@ class TaskTranslationInfo : public Error
   // For matching non-block collectives with its MPI_Wait
   vector<GlobalOp_t> NonBlockingGlopsInFlight;
   bool MPIWaitWithCommunication;
+
+  std::map< INT32, UINT32 > MPICollectivesCount; // number of MPI Collectives per communicator
+  const std::map< std::tuple<INT32, UINT32>, INT32>& MPICollectiveRoots;
 
   /* For CUDA / OpenCL version */
   UINT64 LastGPUBurstBlock;
@@ -143,6 +139,7 @@ class TaskTranslationInfo : public Error
                        vector<vector<TaskTranslationInfo*> >* AllTranslationInfo,
                        INT32 AcceleratorThread,
                        INT32 OpenMP_thread,
+                       const std::map< std::tuple<INT32, UINT32>, INT32>& whichMPICollectiveRoots,
                        char* TemporaryFileName = NULL,
                        FILE* TemporaryFile     = NULL );
 

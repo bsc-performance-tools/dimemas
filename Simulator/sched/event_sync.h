@@ -64,9 +64,6 @@ void event_sync_init( void );
 struct TEventSyncQueue *createEventSyncQueue();
 struct TCapturedEvents *createCapturedEvents();
 
-t_boolean requires_rewrite_logical_receive( struct t_even *whichEvent,
-                                            int threadID );
-
 t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
 
 t_boolean capture_previous_events( struct t_thread *whichThread,

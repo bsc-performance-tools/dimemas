@@ -303,21 +303,6 @@ t_boolean capture_previous_events( struct t_thread *whichThread,
   return TRUE;
 }
 
-
-t_boolean requires_rewrite_logical_receive( struct t_even *whichEvent,
-                                            int threadID )
-{
-  if( validSyncTypes.find( whichEvent->type ) == validSyncTypes.end() )
-    return FALSE;
-
-  auto tmpItTrait = find_event_trait( whichEvent, threadID );
-  if ( tmpItTrait == syncEvents.end() )
-    return FALSE;
-  
-  return tmpItTrait->second.rewriteLogicalReceive;
-}
-
-
 void resumeCapturedEvents( struct t_thread *thread )
 {
   thread->captured_events->captureEvents = false;

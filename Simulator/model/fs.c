@@ -114,7 +114,7 @@ static struct t_action *create_barrier( struct t_thread *thread )
   /* The communicator identificator is specified in the MPI IO operation */
   action->desc.global_op.comm_id = cur->desc.mpi_io.commid;
   /* There is no information who is acting as root processor, we decide it is rank 0*/
-  action->desc.global_op.root_rank = 0;
+  action->desc.global_op.is_root = 0;
   action->desc.global_op.root_thid = 1;
   /* We have no information about the size, but we fix it to  4 bytes */
   action->desc.global_op.bytes_send  = 4;
@@ -145,7 +145,7 @@ static struct t_action *create_scatter( struct t_thread *thread, t_boolean twin 
   fh_commid                      = get_fh_commid( thread, cur->desc.mpi_io.fh );
   action->desc.global_op.comm_id = fh_commid->communicator->communicator_id;
   /* There is no information who is acting as root processor, we decide it is rank 0*/
-  action->desc.global_op.root_rank   = 0;
+  action->desc.global_op.is_root   = 0;
   action->desc.global_op.root_thid   = 1;
   action->desc.global_op.bytes_send  = cur->desc.mpi_io.size;
   action->desc.global_op.bytes_recvd = cur->desc.mpi_io.size;
@@ -322,7 +322,7 @@ void FS_general( int value, struct t_thread *thread )
           GLOBAL_operation( copy,
                             action->desc.global_op.glop_id,
                             action->desc.global_op.comm_id,
-                            action->desc.global_op.root_rank,
+                            action->desc.global_op.is_root,
                             action->desc.global_op.root_thid,
                             action->desc.global_op.bytes_send,
                             action->desc.global_op.bytes_recvd,
@@ -415,7 +415,7 @@ void FS_general( int value, struct t_thread *thread )
           GLOBAL_operation( copy,
                             action->desc.global_op.glop_id,
                             action->desc.global_op.comm_id,
-                            action->desc.global_op.root_rank,
+                            action->desc.global_op.is_root,
                             action->desc.global_op.root_thid,
                             action->desc.global_op.bytes_send,
                             action->desc.global_op.bytes_recvd,
@@ -577,7 +577,7 @@ void FS_general( int value, struct t_thread *thread )
           GLOBAL_operation( copy,
                             action->desc.global_op.glop_id,
                             action->desc.global_op.comm_id,
-                            action->desc.global_op.root_rank,
+                            action->desc.global_op.is_root,
                             action->desc.global_op.root_thid,
                             action->desc.global_op.bytes_send,
                             action->desc.global_op.bytes_recvd,
@@ -670,7 +670,7 @@ void FS_general( int value, struct t_thread *thread )
           GLOBAL_operation( copy,
                             action->desc.global_op.glop_id,
                             action->desc.global_op.comm_id,
-                            action->desc.global_op.root_rank,
+                            action->desc.global_op.is_root,
                             action->desc.global_op.root_thid,
                             action->desc.global_op.bytes_send,
                             action->desc.global_op.bytes_recvd,
@@ -841,7 +841,7 @@ void FS_general( int value, struct t_thread *thread )
           GLOBAL_operation( copy,
                             action->desc.global_op.glop_id,
                             action->desc.global_op.comm_id,
-                            action->desc.global_op.root_rank,
+                            action->desc.global_op.is_root,
                             action->desc.global_op.root_thid,
                             action->desc.global_op.bytes_send,
                             action->desc.global_op.bytes_recvd,
@@ -1097,25 +1097,4 @@ void FS_Parameters( double disk_latency, double disk_bandwidth, double block_siz
   file_system_parameters.block_size          = block_size;
   file_system_parameters.concurrent_requests = concurrent_requests;
   file_system_parameters.hit_ratio           = hit_ratio;
-}
-
-void FS_show_version( void )
-{
-  printf( "Implemented File Server policies:\n" );
-  printf( "    NONE\n" );
-}
-
-void FS_new_io_operation( int operation_id, char *operation_name )
-{
-  if ( ( operation_id >= 0 ) && ( operation_id <= MAX_IO_OPERATIONS ) )
-  {
-    if ( strcmp( Operation_Name[ operation_id ], operation_name ) != 0 )
-    {
-      die( "Incorrect IO operation name %s for operation %d\nIt must be %s", operation_name, operation_id, Operation_Name[ operation_id ] );
-    }
-  }
-  else
-  {
-    die( "Invalid operation identicator %d for %s\n", operation_id, operation_name );
-  }
 }

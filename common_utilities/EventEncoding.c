@@ -469,12 +469,6 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
 };
 
 
-/******************************************************************************
- **      Function name : MPIEventEncoding_EnableOperation
- **
- **      Description :
- ******************************************************************************/
-
 void MPIEventEncoding_EnableOperation( MPI_Event_Values Op )
 {
   /*
@@ -487,11 +481,6 @@ void MPIEventEncoding_EnableOperation( MPI_Event_Values Op )
   MPI_Table[ Op ].Enabled = TRUE;
 }
 
-/******************************************************************************
- **      Function name : MPIEventEncoding_DimemasBlockId
- **
- **      Description :
- ******************************************************************************/
 
 DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op )
 {
@@ -505,11 +494,6 @@ DimBlock MPIEventEncoding_DimemasBlockId( MPI_Event_Values Op )
   return ( MPI_Table[ Op ].Block );
 }
 
-/******************************************************************************
- **      Function name : MPIEventEncoding_GlobalOpId
- **
- **      Description :
- ******************************************************************************/
 
 DimCollectiveOp MPIEventEncoding_GlobalOpId( MPI_Event_Values Op )
 {
@@ -519,11 +503,6 @@ DimCollectiveOp MPIEventEncoding_GlobalOpId( MPI_Event_Values Op )
   return ( MPI_Table[ Op ].GlobalOpId );
 }
 
-/******************************************************************************
- **      Function name : MPIEventEncoding_Is_MPIBlock
- **
- **      Description :
- ******************************************************************************/
 
 int MPIEventEncoding_Is_MPIBlock( long64_t Type )
 {
@@ -536,11 +515,6 @@ int MPIEventEncoding_Is_MPIBlock( long64_t Type )
   return ( FALSE );
 }
 
-/******************************************************************************
- **      Function name : MPIEventEncoding_Is_UserBlock
- **
- **      Description :
- ******************************************************************************/
 
 int MPIEventEncoding_Is_UserBlock( long64_t Type )
 {
@@ -550,54 +524,6 @@ int MPIEventEncoding_Is_UserBlock( long64_t Type )
   return ( FALSE );
 }
 
-/******************************************************************************
- **      Function name : EventEncoding_Is_IO
- **
- **      Description :
- ******************************************************************************/
-
-int EventEncoding_Is_IO( long64_t Type )
-{
-  if ( Type == (long64_t)IO_READ_EV || Type == (long64_t)IO_WRITE_EV || Type == (long64_t)IO_EV )
-    return ( TRUE );
-
-  return ( FALSE );
-}
-
-
-long64_t EventEncoding_DimemasIO_Block( long64_t Type )
-{
-  if ( Type == (long64_t)IO_READ_EV )
-    return ( BLOCK_ID_IO_Read );
-
-  if ( Type == (long64_t)IO_WRITE_EV )
-    return ( BLOCK_ID_IO_Write );
-
-  if ( Type == (long64_t)IO_EV )
-    return ( BLOCK_ID_IO );
-
-  abort();
-}
-
-/******************************************************************************
- **      Function name : EventEncoding_Is_Flushing
- **
- **      Description :
- ******************************************************************************/
-
-int EventEncoding_Is_Flushing( long64_t Type )
-{
-  if ( Type == (long64_t)IO_READ_EV || Type == (long64_t)IO_WRITE_EV || Type == (long64_t)IO_EV )
-    return ( TRUE );
-
-  return ( FALSE );
-}
-
-/******************************************************************************
- **      Function name : MPIEventEncoding_UserBlockId
- **
- **      Description :
- ******************************************************************************/
 
 long64_t MPIEventEncoding_UserBlockId( long64_t Type, long64_t Value )
 {
@@ -724,11 +650,6 @@ void MPIEventEncoding_WriteEnabledOperations( FILE *fd )
   MPIEventEncoding_WriteCollectiveInfo( fd );
 }
 
-/******************************************************************************
- **      Function name : MPIEventEncoding_GetBlockLabel
- **
- **      Description :
- ******************************************************************************/
 
 char *MPIEventEncoding_GetBlockLabel( MPI_Event_Values Op )
 {
@@ -738,22 +659,12 @@ char *MPIEventEncoding_GetBlockLabel( MPI_Event_Values Op )
 }
 
 
-/******************************************************************************
- **      Function name : ClusterEventEncoding_Is_ClusterBlock
- **
- **      Description :
- ******************************************************************************/
-
 int ClusterEventEncoding_Is_ClusterBlock( long64_t type )
 {
   return ( ( type == (long64_t)CLUSTER_ID_EV ) ? TRUE : FALSE );
 }
 
-/******************************************************************************
- **      Function name : ClusterEventEncoding_Is_ClusterBlock
- **
- **      Description :
- ******************************************************************************/
+
 int ClusterEventEncoding_Is_BlockBegin( long64_t Op )
 {
   return ( ( Op == (long64_t)CLUSTEREND_VAL ) ? FALSE : TRUE );
@@ -1077,21 +988,6 @@ Boolean OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event )
   return FALSE;
 }
 
-Boolean OMPEventEncoding_Is_Parallel_Begin( struct t_even *event )
-{
-  if ( event->type == OMP_EXECUTED_PARALLEL_FXN && event->value > OMP_END_VAL )
-    return TRUE;
-  return FALSE;
-}
-
-Boolean OMPEventEncoding_Is_Outside_OMP( struct t_event_block event )
-{
-  if ( ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) || ( event.type == OMP_PARALLEL_EV && event.value == OMP_END_VAL ) )
-    return TRUE;
-  return FALSE;
-}
-
-
 Boolean OMPEventEncoding_Is_OMP_Running( struct t_event_block event )
 {
   if ( ( event.type == OMP_EXECUTED_PARALLEL_FXN && event.value > OMP_END_VAL ) ||
@@ -1116,15 +1012,6 @@ Boolean OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event )
     return TRUE;
   return FALSE;
 }
-
-
-Boolean OMPEventEncoding_Is_OMPWorker_After_Synchro( struct t_event_block event )
-{
-  if ( event.type == OMP_BARRIER && event.value == OMP_END_VAL )
-    return TRUE;
-  return FALSE;
-}
-
 
 /**
  * OMP synchronization

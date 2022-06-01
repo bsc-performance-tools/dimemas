@@ -109,8 +109,6 @@ class PartialCommunication : virtual public ParaverRecord
 
   void Write( ostream& os ) const;
 
-  void ToFile( FILE* OutputFile );
-
   bool ToDimemas( FILE* DimemasTrace )
   {
     return true;
@@ -458,8 +456,6 @@ class TranslationCommunicator : public Communicator
     FinishedGlobalOp = false;
   };
 
-  bool AddGlobalOp( GlobalOp_t NewGlobalOp );
-
   void SetPendingGlobalOp( bool PendingGlobalOp )
   {
     this->PendingGlobalOp = PendingGlobalOp;
@@ -478,34 +474,5 @@ class TranslationCommunicator : public Communicator
   };
 };
 typedef TranslationCommunicator* TranslationCommunicator_t;
-
-
-/* Deprecated, now communication represents a full ASCII trace communication
-   * record
-  switch(Type)
-  {
-    case LOGICAL_SEND:
-    case PHYSICAL_SEND:
-      CPU             = SrcCPU;
-      AppId           = SrcAppId;
-      TaskId          = SrcTaskId;
-      ThreadId        = SrcThreadId;
-      PartnerCPU      = DstCPU;
-      PartnerAppId    = DstAppId
-      PartnerTaskId   = DstTaskId;
-      PartnerThreadId = DstThreadId;
-      break;
-    case LOGICAL_RECV:
-    case PHYSICAL_RECV:
-      CPU             = DstCPU;
-      AppId           = DstAppId;
-      TaskId          = DstTaskId;
-      ThreadId        = DstThreadId;
-      PartnerCPU      = SrcCPU;
-      PartnerAppId    = SrcAppId;
-      PartnerTaskId   = SrcTaskId;
-      PartnerThreadId = SrcThreadId;
-  }
-  */
 
 #endif /* _TRANSLATORRECORD_H */

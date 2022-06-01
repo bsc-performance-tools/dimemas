@@ -151,6 +151,7 @@ void NODE_Fill_Node_Fields( struct t_node *node,
     inFIFO_queue( &( node->free_out_links ), (char *)link );
   }
 
+  node->cur_memory_messages = 0;
   node->max_memory_messages = no_mem_buses;
   node->in_mem_links        = no_mem_in_links;
   node->out_mem_links       = no_mem_out_links;
@@ -207,25 +208,4 @@ void NODE_set_acc( int node_id, int num_gpu_in_node, double latency, double memo
     cpu->is_gpu                 = TRUE;
     insert_queue( &( node->Cpus ), (char *)cpu, (t_priority)gpu_id );
   }
-}
-
-int NODE_get_acc_node( struct t_node *node )
-{
-  int n_nodes              = SIMULATOR_get_number_of_nodes();
-  int acc_nodes_count      = 0;
-  int total_number_of_gpus = 0;
-  int i_node;
-
-  for ( i_node = 0; i_node < n_nodes; i_node++ )
-  {
-    node = get_node_by_id( i_node );
-    // if (node->accelerator){
-    for ( int i = 0; i < node->acc.num_gpu_in_node; i++ )
-    {
-      total_number_of_gpus++;
-    }
-    acc_nodes_count++;
-  }
-  // return acc_nodes_count;
-  return total_number_of_gpus;
 }

@@ -23,14 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/DIMEMAS/trunk/s#$:  File
-  $Rev:: 35                                       $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2012-01-11 19:45:04 +0100 (Wed, 11 Jan #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef _PARAVER_RECORDS_H_
 #define _PARAVER_RECORDS_H_
