@@ -170,10 +170,14 @@ extern "C"
      ==== CUDA Event Types
      ========================================================================== */
 
-#define NEW_CUDA_LIB_CALL_EV  63100000
-#define CUDA_LIB_CALL_EV      63000001
+#define OLDEST_CUDA_LIB_CALL_EV 63000001
+#define OLD_CUDA_LIB_CALL_EV    63100000
+#define OLD_CUDA_KERNEL_EV      63000019
+
+
+#define CUDA_LIB_CALL_EV      63000000
 #define CUDA_MEMCPY_SIZE_EV   63000002
-#define CUDA_KERNEL_EV        63000019
+#define CUDA_KERNEL_EV        63000006
 #define CUDA_KERNEL_SOURCE_EV 63000119
 #define CUDA_SYNCH_STREAM_EV  63300000
 #define CUDA_TAG              49370
@@ -1037,6 +1041,8 @@ extern "C"
 
   /* CUDA EventEncoding calls	*/
   int CUDAEventEncoding_Is_CUDABlock( long64_t type );
+  int CUDAEventEncoding_Is_Kernel( long64_t type );
+  int CUDAEventEncoding_Is_Kernel_Block( struct t_event_block event );
   int CUDAEventEncoding_Is_BlockBegin( long64_t Op );
   int CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver );
   int CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event );
@@ -1046,6 +1052,8 @@ extern "C"
   int CUDAEventEconding_Is_CUDASync( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event );
+  int CUDAEventEconding_Is_OldLibType( long64_t type );
+  int CUDAEventEconding_Is_OldKernelType( long64_t type );
 
 
   /* OpenCL EventEncoding calls	*/

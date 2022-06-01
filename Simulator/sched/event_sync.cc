@@ -121,8 +121,8 @@ void event_sync_init( void )
   EventTrait tmpEventTrait;
 #endif // PRV2DIM
 
+  validSyncTypes.insert( CUDA_KERNEL_EV );
   validSyncTypes.insert( CUDA_LIB_CALL_EV );
-  validSyncTypes.insert( NEW_CUDA_LIB_CALL_EV );
   validSyncTypes.insert( OMP_BARRIER );
   validSyncTypes.insert( OMP_EXECUTED_PARALLEL_FXN );
   validSyncTypes.insert( OMP_PARALLEL_EV );
@@ -145,46 +145,23 @@ void event_sync_init( void )
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-
-  // NEW_CUDA_LIB_CALL_EV
-  tmpEventIndex.event.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventIndex.isHost = true;
-
-  tmpEventTrait.eventHost.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventTrait.eventRest.type = NEW_CUDA_LIB_CALL_EV;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
-  tmpEventIndex.isHost = false;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
-  // ------- CUDA_LIB_CALL_EV + CUDA_LAUNCH_VAL -------
+  // ------- CUDA_LAUNCH + CUDA_KERNEL_EV -------
   tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
   tmpEventIndex.event.value = CUDA_LAUNCH_VAL;
   tmpEventIndex.isHost = true;
 
   tmpEventTrait.eventHost.type = CUDA_LIB_CALL_EV;
   tmpEventTrait.eventHost.value = CUDA_LAUNCH_VAL;
-  tmpEventTrait.eventRest.type = CUDA_LIB_CALL_EV;
-  tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL;
+  tmpEventTrait.eventRest.type = CUDA_KERNEL_EV;
+  tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL; //DUMMY VALUE
   tmpEventTrait.restThreadsCanResume = false;
   tmpEventTrait.capturePreviousEvents = true;
   tmpEventTrait.rewriteLogicalReceive = TRUE;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
+  tmpEventIndex.event.type = CUDA_KERNEL_EV;
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
-  // NEW_CUDA_LIB_CALL_EV
-  tmpEventIndex.event.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventIndex.isHost = true;
-
-  tmpEventTrait.eventHost.type = NEW_CUDA_LIB_CALL_EV;
-  tmpEventTrait.eventRest.type = NEW_CUDA_LIB_CALL_EV;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
-
-  tmpEventIndex.isHost = false;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
-  
 
   // ------- OMP_BARRIER + OMP_END_VAL -------
   tmpEventIndex.event.type = OMP_BARRIER;
@@ -251,6 +228,8 @@ map<EventTraitIndex, EventTrait>::iterator find_event_trait(struct t_even *which
   tmpEventTraitIndex.event.value = whichEvent->value;
   if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
     tmpEventTraitIndex.event.value = OMP_BEGIN_VAL;
+  else if( whichEvent->type == CUDA_KERNEL_EV && whichEvent->value != 0 )
+    tmpEventTraitIndex.event.value = CUDA_LAUNCH_VAL;
   tmpEventTraitIndex.isHost = ( threadID == 0 );
 
   return syncEvents.find( tmpEventTraitIndex );
@@ -373,6 +352,7 @@ t_boolean event_sync_add( struct t_task *whichTask,
     tmpEventTrait.eventHost.value = whichEvent->value;
     tmpEventTrait.eventRest.value = whichEvent->value;
   }
+
   tmpEventTrait.partnerThreadID = partnerThreadID;
 
   set<EventTrait>::iterator tmpIt = whichTask->event_sync_queue->insertedTraits.find( tmpEventTrait );
@@ -391,6 +371,8 @@ t_boolean event_sync_add( struct t_task *whichTask,
   ++tmpIt->numArrived;
   if( debug )
     printf( "\tevent sync add: num threads arrived to sync %d of %d participants.\n", tmpIt->numArrived, tmpIt->numParticipants );
+
+  bool tmpRestThreadsCanResume = tmpIt->restThreadsCanResume;
 
   if( tmpIt->numArrived == tmpIt->numParticipants )
   {
@@ -423,7 +405,7 @@ t_boolean event_sync_add( struct t_task *whichTask,
     whichTask->event_sync_queue->insertedTraits.erase( tmpIt );
   }
 
-  if( threadID != 0 && tmpIt->restThreadsCanResume )
+  if( threadID != 0 && tmpRestThreadsCanResume )
   {
     return FALSE;
   }

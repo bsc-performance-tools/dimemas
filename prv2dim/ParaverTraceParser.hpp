@@ -74,14 +74,14 @@ class ParaverTraceParser : public Error
   ParaverTraceParser()
   {
     ParsingInitialized = false;
-  };
+  }
 
   ParaverTraceParser( string ParaverTraceName, FILE* ParaverTraceFile = NULL );
 
   UINT32 GetCurrentLine( void )
   {
     return CurrentLine;
-  };
+  }
 
   bool InitTraceParsing( void );
 

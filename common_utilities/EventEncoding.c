@@ -685,9 +685,31 @@ typedef struct
 
 } CUDATypeInfo;
 
+Boolean CUDAEventEconding_Is_OldLibType( long64_t type )
+{
+  return ( ( type == OLD_CUDA_LIB_CALL_EV || type == OLDEST_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
+}
+
+Boolean CUDAEventEconding_Is_OldKernelType( long64_t type )
+{
+  return ( ( type == OLD_CUDA_KERNEL_EV ) ? TRUE : FALSE );
+}
+
 Boolean CUDAEventEncoding_Is_CUDABlock( long64_t type )
 {
-  return ( ( type == CUDA_LIB_CALL_EV || type == NEW_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
+  return ( type == CUDA_LIB_CALL_EV ? TRUE : FALSE );
+}
+
+Boolean CUDAEventEncoding_Is_Kernel( long64_t type )
+{
+  return ( ( type == CUDA_KERNEL_EV ) ? TRUE : FALSE );
+}
+
+Boolean CUDAEventEncoding_Is_Kernel_Block( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_Kernel( event.type ) == TRUE && event.value != CUDA_END_VAL )
+    return TRUE;
+  return FALSE;
 }
 
 Boolean CUDAEventEncoding_Is_BlockBegin( long64_t Op )
@@ -702,6 +724,7 @@ Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread 
     return TRUE;
   return FALSE;
 }
+
 Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
