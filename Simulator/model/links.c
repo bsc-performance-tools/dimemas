@@ -1178,7 +1178,7 @@ void LINKS_free_network_link( struct t_link *link, struct t_thread *thread )
           printf( ": free out link full duplex wakeup P%02d T%02d (t%02d) node %d\n", IDENTIFIERS( first ), node->nodeid );
         }
 
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         {
           really_send( first );
         }
@@ -1207,7 +1207,7 @@ void LINKS_free_network_link( struct t_link *link, struct t_thread *thread )
         PRINT_TIMER( current_time );
         printf( ": free in link wakeup P%02d T%02d (t%02d) node %d\n", IDENTIFIERS( first ), node->nodeid );
       }
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
       {
         really_send( first );
       }
@@ -1282,7 +1282,7 @@ void LINKS_free_network_link( struct t_link *link, struct t_thread *thread )
           PRINT_TIMER( current_time );
           printf( ": free in link full duplex wakeup P%02d T%02d (t%02d) node %d\n", IDENTIFIERS( first ), node->nodeid );
         }
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
           really_send( first );
         else if ( first->action->action == MPI_OS )
           really_RMA( first );
@@ -1306,7 +1306,7 @@ void LINKS_free_network_link( struct t_link *link, struct t_thread *thread )
         PRINT_TIMER( current_time );
         printf( ": free out link wakeup P%02d T%02d (t%02d) node %d\n", IDENTIFIERS( first ), node->nodeid );
       }
-      if ( first->action->action == SEND ) 
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         really_send( first );
       else if ( first->action->action == MPI_OS )
         really_RMA( first );
@@ -1671,7 +1671,7 @@ void LINKS_free_wan_link( struct t_link *link, struct t_thread *thread )
           printf( ": free out link full duplex wakeup P%02d T%02d (t%02d) machine %d\n", IDENTIFIERS( first ), machine->id );
         }
 
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         {
           really_send( first );
         }
@@ -1705,7 +1705,7 @@ void LINKS_free_wan_link( struct t_link *link, struct t_thread *thread )
         printf( ": free in link wakeup P%02d T%02d (t%02d) machine %d\n", IDENTIFIERS( first ), machine->id );
       }
 
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
       {
         really_send( first );
       }
@@ -1763,7 +1763,7 @@ void LINKS_free_wan_link( struct t_link *link, struct t_thread *thread )
           printf( ": free in link full duplex wakeup P%02d T%02d (t%02d) machine %d\n", IDENTIFIERS( first ), machine->id );
         }
 
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         {
           really_send( first );
         }
@@ -1798,7 +1798,7 @@ void LINKS_free_wan_link( struct t_link *link, struct t_thread *thread )
         printf( ": free out link wakeup P%02d T%02d (t%02d) machine %d\n", IDENTIFIERS( first ), machine->id );
       }
 
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
       {
         really_send( first );
       }
@@ -2034,7 +2034,7 @@ void LINKS_free_dedicated_connection_link( struct t_link *link, struct t_thread 
           printf( ": (DEDICATED) free out link full duplex wakeup P%02d T%02d (t%02d) connection %d\n", IDENTIFIERS( first ), connection->id );
         }
 
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         {
           really_send( first );
         }
@@ -2065,7 +2065,7 @@ void LINKS_free_dedicated_connection_link( struct t_link *link, struct t_thread 
         printf( ": (DEDICATED) free in link wakeup P%02d T%02d (t%02d) connection %d\n", IDENTIFIERS( first ), connection->id );
       }
 
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
       {
         really_send( first );
       }
@@ -2116,7 +2116,7 @@ void LINKS_free_dedicated_connection_link( struct t_link *link, struct t_thread 
           printf( ": (DEDICATED) free in link full duplex wakeup P%02d T%02d (t%02d) connection %d\n", IDENTIFIERS( first ), connection->id );
         }
 
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         {
           really_send( first );
         }
@@ -2146,7 +2146,7 @@ void LINKS_free_dedicated_connection_link( struct t_link *link, struct t_thread 
         printf( ": (DEDICATED) free out link wakeup P%02d T%02d (t%02d) connection %d\n", IDENTIFIERS( first ), connection->id );
       }
 
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
       {
         really_send( first );
       }
@@ -2221,133 +2221,6 @@ t_boolean LINKS_get_acc_links( struct t_thread *thread, struct t_task *task_snd,
     return TRUE;
   }
   return FALSE;
-  /*if ((task_snd->half_duplex_links) || (task_rcv->half_duplex_links))
-  {
-    if (task_snd->taskid > task_rcv->taskid)
-    {
-      goto first_dest;
-    }
-  }
-
-second_src_link:
-
-  link = thread->local_link;
-
-  if (link == L_NIL)
-  {
-    link = (struct t_link *) outFIFO_queue (&(task_snd->free_out_links));
-  }
-
-  if (link == L_NIL)
-  {
-    acc_link_busy (thread, task_snd, OUT_LINK);
-
-    if (debug&D_LINKS)
-    {
-      PRINT_TIMER (current_time);
-      printf (": P%02d T%02d (t%02d) no local (OUT) write permissions to task %d\n",
-              IDENTIFIERS (thread),
-              task_rcv->taskid);
-    }
-    return FALSE;
-  }
-  else
-  {
-    if (thread->local_link == L_NIL)
-    {
-      if (task_snd->half_duplex_links)
-      {
-        /* If the output has been obtained, it MUST be an input free */
-  /*thread->local_hd_link =
-    (struct t_link*) outFIFO_queue(&(task_snd->free_in_links));
-
-  if (thread->local_hd_link==L_NIL)
-  {
-    panic ("P%02d T%02d (t%02d) unable to obtain destination accelerator process\n",
-           IDENTIFIERS(thread));
-  }
-
-  inFIFO_queue (&(task_snd->busy_in_links), (char*) thread->local_hd_link);
-}
-link->assigned_on = current_time;
-
-inFIFO_queue (&(task_snd->busy_out_links), (char*)link);
-}
-}
-
-thread->local_link = link;
-
-if ((task_snd->half_duplex_links) || (task_rcv->half_duplex_links))
-{
-if (task_snd->taskid > task_rcv->taskid)
-{
-goto end_get_links;
-}
-}
-
-first_dest:
-
-link = thread->partner_link;
-if (link == L_NIL)
-{
-link = (struct t_link *) outFIFO_queue (&(task_rcv->free_in_links));
-}
-
-if (link == L_NIL)
-{
-acc_link_busy (thread, task_rcv, IN_LINK);
-if (debug&D_LINKS)
-{
-PRINT_TIMER (current_time);
-printf (": P%02d T%02d (t%02d) no local (IN) write permissions to %d\n",
-        IDENTIFIERS (thread),
-        task_rcv->taskid);
-}
-return (FALSE);
-}
-else
-{
-if (thread->partner_link == L_NIL)
-{
-if (task_rcv->half_duplex_links)
-{
-  /* If the input has been obtained, it MUST be an output free */
-  /*thread->partner_hd_link = (struct t_link *) outFIFO_queue (&(task_rcv->free_out_links));
-
-  if (thread->partner_hd_link==L_NIL)
-  {
-    panic ("P%02d T%02d (t%02d) unable to obtain destination  accelerator process\n",
-           IDENTIFIERS(thread));
-  }
-  inFIFO_queue (&(task_rcv->busy_out_links), (char*)thread->partner_hd_link);
-}
-
-link->assigned_on = current_time;
-inFIFO_queue (&(task_rcv->busy_in_links), (char*)link);
-}
-}
-
-thread->partner_link = link;
-
-if ((task_snd->half_duplex_links) || (task_rcv->half_duplex_links))
-{
-if (task_snd->taskid > task_rcv->taskid)
-{
-goto second_src_link;
-}
-}
-
-end_get_links:
-
-if (debug&D_LINKS)
-{
-PRINT_TIMER (current_time);
-printf (": P%02d T%02d (t%02d)  Accelerator process communication available to task %d\n",
-      IDENTIFIERS (thread),
-      task_rcv->taskid);
-}
-
-return TRUE;*/
 }
 
 void LINKS_free_acc_link( struct t_link *link, struct t_thread *thread )
@@ -2404,7 +2277,7 @@ void LINKS_free_acc_link( struct t_link *link, struct t_thread *thread )
           printf( ": free memory writing permissions (OUT) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
         }
 
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         {
           really_send( first );
         }
@@ -2433,7 +2306,7 @@ void LINKS_free_acc_link( struct t_link *link, struct t_thread *thread )
         PRINT_TIMER( current_time );
         printf( ": Free memory writing permissions (IN) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
       }
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
       {
         really_send( first );
       }
@@ -2483,7 +2356,7 @@ void LINKS_free_acc_link( struct t_link *link, struct t_thread *thread )
           PRINT_TIMER( current_time );
           printf( ": free memory writing permissions (IN) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
         }
-        if ( first->action->action == SEND )
+        if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
           really_send( first );
         else if ( first->action->action == MPI_OS )
           really_RMA( first );
@@ -2507,7 +2380,7 @@ void LINKS_free_acc_link( struct t_link *link, struct t_thread *thread )
         PRINT_TIMER( current_time );
         printf( ": free memory writing permissions (OUT) to task %d wakes-up P%02d T%02d (t%02d)\n", task->taskid, IDENTIFIERS( first ) );
       }
-      if ( first->action->action == SEND )
+      if ( first->action->action == SEND || first->action->action == GLOBAL_OP )
         really_send( first );
       else if ( first->action->action == MPI_OS )
         really_RMA( first );

@@ -2694,6 +2694,16 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT( struct t_thread *thread )
     LINKS_free_network_link( thread->partner_link, thread );
   }
 
+  if( thread->original_thread == 1 &&
+      thread->action->action == GLOBAL_OP &&
+      thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce )
+  {
+    thread->local_link = L_NIL;
+    thread->local_hd_link = L_NIL;
+    thread->partner_link = L_NIL;
+    thread->partner_hd_link = L_NIL;
+  }
+
   if ( machine->network.curr_on_network > 0 )
   {
     machine->network.curr_on_network--;
@@ -2711,9 +2721,6 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT( struct t_thread *thread )
       printf( ": COMMUNIC\tP%02d T%02d (t%02d) Obtain Bus\n", IDENTIFIERS( wait_thread ) );
     }
 
-    //    printf("\nResources are freed and now I should take the network for the pending transfer P%d, T%d t%d  action == %d\n\n", IDENTIFIERS
-    //    (wait_thread), wait_thread->action->action);
-
     switch ( wait_thread->action->action )
     {
       case SEND:
@@ -2722,7 +2729,6 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT( struct t_thread *thread )
         ACCUMULATE_BUS_WAIT_TIME( wait_thread );
 
         extract_from_queue( &machine->network.queue, (char *)wait_thread );
-        //        printf("\nAGAIN THE REALLY_SEND FOR THE WAIT_THREAD   P%d, T%d t%d\n\n", IDENTIFIERS (wait_thread));
         really_send( wait_thread );
         break;
 
@@ -2734,18 +2740,26 @@ static void COMMUNIC_internal_resources_COM_TIMER_OUT( struct t_thread *thread )
         really_RMA( wait_thread );
         break;
       case GLOBAL_OP:
-        /* aux sempre hauria de ser 1 */
-        aux = machine->communication.num_messages_on_network - machine->network.curr_on_network;
-        wait_thread->number_buses += aux;
-        machine->network.curr_on_network += aux;
-
-        if ( wait_thread->number_buses == machine->communication.num_messages_on_network )
+        if ( wait_thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce )
         {
-          /* FEC: S'acumula el temps que ha estat esperant busos */
-          ACCUMULATE_BUS_WAIT_TIME( wait_thread );
+          extract_from_queue( &node->wait_for_mem_bus, (char *)wait_thread );
+          really_send( wait_thread );
+        }
+        else
+        {
+          /* aux sempre hauria de ser 1 */
+          aux = machine->communication.num_messages_on_network - machine->network.curr_on_network;
+          wait_thread->number_buses += aux;
+          machine->network.curr_on_network += aux;
 
-          extract_from_queue( &machine->network.queue, (char *)wait_thread );
-          global_op_get_all_buses( wait_thread );
+          if ( wait_thread->number_buses == machine->communication.num_messages_on_network )
+          {
+            /* FEC: S'acumula el temps que ha estat esperant busos */
+            ACCUMULATE_BUS_WAIT_TIME( wait_thread );
+
+            extract_from_queue( &machine->network.queue, (char *)wait_thread );
+            global_op_get_all_buses( wait_thread );
+          }
         }
         break;
     }
@@ -2807,6 +2821,16 @@ static void COMMUNIC_external_resources_COM_TIMER_OUT( struct t_thread *thread )
     printf( ": COMMUNIC\tP%02d T%02d (t%02d) Free Remote Machine Link\n", IDENTIFIERS( thread ) );
   }
 
+  if( thread->original_thread == 1 &&
+      thread->action->action == GLOBAL_OP &&
+      thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce )
+  {
+    thread->local_link = L_NIL;
+    thread->local_hd_link = L_NIL;
+    thread->partner_link = L_NIL;
+    thread->partner_hd_link = L_NIL;
+  }
+
   recompute_external_network_bandwidth( thread );
 }
 
@@ -2829,6 +2853,16 @@ static void COMMUNIC_dedicated_resources_COM_TIMER_OUT( struct t_thread *thread 
   {
     PRINT_TIMER( current_time );
     printf( ": COMMUNIC\tP%02d T%02d (t%02d) Free Remote Connection Link\n", IDENTIFIERS( thread ) );
+  }
+
+  if( thread->original_thread == 1 &&
+      thread->action->action == GLOBAL_OP &&
+      thread->action->desc.global_op.glop_id == GLOP_ID_MPI_Reduce )
+  {
+    thread->local_link = L_NIL;
+    thread->local_hd_link = L_NIL;
+    thread->partner_link = L_NIL;
+    thread->partner_hd_link = L_NIL;
   }
 }
 
