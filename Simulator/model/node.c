@@ -152,6 +152,7 @@ void NODE_Fill_Node_Fields( struct t_node *node,
     inFIFO_queue( &( node->free_out_links ), (char *)link );
   }
 
+  node->cur_memory_messages = 0;
   node->max_memory_messages = no_mem_buses;
   node->in_mem_links        = no_mem_in_links;
   node->out_mem_links       = no_mem_out_links;
