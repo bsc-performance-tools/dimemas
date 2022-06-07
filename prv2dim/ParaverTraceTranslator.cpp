@@ -351,8 +351,7 @@ bool ParaverTraceTranslator::SplitCommunications( void )
     if ( PercentageRead > CurrentPercentage )
     {
       CurrentPercentage = PercentageRead;
-      if ( debug )
-        SHOW_PERCENTAGE_PROGRESS( stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage );
+      SHOW_PERCENTAGE_PROGRESS( stdout, "SPLITTING COMMUNICATIONS", CurrentPercentage );
     }
   }
 
@@ -803,8 +802,7 @@ bool ParaverTraceTranslator::Translate( bool GenerateFirstIdle,
 
   printf( "RECORD TRANSLATION\n" );
 
-  if ( debug )
-    SHOW_PERCENTAGE_PROGRESS( stdout, "TRANSLATING RECORDS", CurrentPercentage );
+  SHOW_PERCENTAGE_PROGRESS( stdout, "TRANSLATING RECORDS", CurrentPercentage );
 
   Parser->Reload();
 
