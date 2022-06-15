@@ -70,13 +70,13 @@ public class CollectiveOpWindow extends GUIWindow
   private JComboBox[] col2 = createComboBox(false,data.DEFAULT_MPI_ITEMS);
   private JComboBox[] col3 = createComboBox(true,data.DEFAULT_MPI_ITEMS);
   private JComboBox[] col4 = createComboBox(false,data.DEFAULT_MPI_ITEMS);
-  private JCheckBox[] col5 = createCheckBox(true,data.DEFAULT_MPI_ITEMS);
+  // private JCheckBox[] col5 = createCheckBox(true,data.DEFAULT_MPI_ITEMS);
 
   private JComboBox[] cb_equals1 = createComboBox(true,1);
   private JComboBox[] cb_equals2 = createComboBox(false,1);
   private JComboBox[] cb_equals3 = createComboBox(true,1);
   private JComboBox[] cb_equals4 = createComboBox(false,1);
-  private JCheckBox[] cb_equals5 = createCheckBox(true,1);
+  // private JCheckBox[] cb_equals5 = createCheckBox(true,1);
 
   private JPanel colModelIn;
   private JPanel colSizeIn;
@@ -191,7 +191,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
     JPanel fan_in;
     JPanel fan_out;
     JPanel MPI_names;
-    JPanel Synchronize;
+    // JPanel Synchronize;
 
     buttonPanelTop = new JPanel(new FlowLayout());
     buttonPanelTop.add(new JLabel("Machine number"));
@@ -214,7 +214,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
 
     fan_in = new JPanel(new GridLayout(1,2));
     fan_out = new JPanel(new GridLayout(1,2));
-    Synchronize = new JPanel(new GridLayout(1,2));
+    // Synchronize = new JPanel(new GridLayout(1,2));
 
     colModelIn = new JPanel(new GridLayout(17,1));
     colSizeIn = new JPanel(new GridLayout(17,1));
@@ -224,7 +224,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
 
     fan_in.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"FAN IN"));
     fan_out.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"FAN OUT"));
-    Synchronize.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"SYNCHRONIZE"));
+    // Synchronize.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"SYNCHRONIZE"));
 
     colModelIn.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"Model"));
     colSizeIn.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"Size"));
@@ -238,7 +238,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
       colSizeIn.add(col2[i]);
       colModelOut.add(col3[i]);
       colSizeOut.add(col4[i]);
-      colSync.add(col5[i]);
+      // colSync.add(col5[i]);
     }
 
     colModelIn.add(new JLabel("-------",JLabel.CENTER));
@@ -251,13 +251,13 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
     colSizeIn.add(cb_equals2[0]);
     colModelOut.add(cb_equals3[0]);
     colSizeOut.add(cb_equals4[0]);
-    colSync.add(cb_equals5[0]);
+    // colSync.add(cb_equals5[0]);
     
     fan_in.add(colModelIn);
     fan_in.add(colSizeIn);
     fan_out.add(colModelOut);
     fan_out.add(colSizeOut);
-    Synchronize.add(colSync);
+    // Synchronize.add(colSync);
     
     MPI_names.add(new JLabel("  MPI_Barrier",JLabel.LEFT));
     MPI_names.add(new JLabel("  MPI_Bcast",JLabel.LEFT));
@@ -287,7 +287,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
 
     items.add(fan_in,BorderLayout.CENTER);
     items.add(fan_out,BorderLayout.CENTER);
-    items.add(Synchronize,BorderLayout.CENTER);
+    // items.add(Synchronize,BorderLayout.CENTER);
   }
 
   // Constructor de la clase CollectiveOpWindow.
@@ -384,7 +384,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
     cb_equals2[0].setSelectedIndex(0);
     cb_equals3[0].setSelectedIndex(0);
     cb_equals4[0].setSelectedIndex(0);
-    cb_equals5[0].setSelected(true);
+    // cb_equals5[0].setSelected(true);
     
     for(int i = Data.DEFAULT_MPI_ITEMS-1; i >= 0; i--)
     {
@@ -396,7 +396,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
           col2[i].setSelectedIndex(data.environment.machine[index].mpiGetValue(2,i));
           col3[i].setSelectedIndex(data.environment.machine[index].mpiGetValue(3,i));
           col4[i].setSelectedIndex(data.environment.machine[index].mpiGetValue(4,i));
-          col5[i].setSelected(data.environment.machine[index].mpiGetValue(5,i)==1);
+          // col5[i].setSelected(data.environment.machine[index].mpiGetValue(5,i)==1);
         }
         else // Op. colectivas no configuradas -> obtener info de la máquina.
         {
@@ -416,7 +416,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
           col2[i].setSelectedIndex(Tools.mpiValue(1,"MAX"));
           col3[i].setSelectedIndex(Tools.mpiValue(2,"0"));
           col4[i].setSelectedIndex(Tools.mpiValue(3,"MAX"));
-          col5[i].setSelected(true);
+          // col5[i].setSelected(true);
         }
       }
       else                   // Operaciones colectivas externas.
@@ -427,7 +427,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
           col2[i].setSelectedIndex(data.wan.mpiGetValue(2,i));
           col3[i].setSelectedIndex(data.wan.mpiGetValue(3,i));
           col4[i].setSelectedIndex(data.wan.mpiGetValue(4,i));
-          col5[i].setSelected(data.wan.mpiGetValue(5,i)==1);
+          // col5[i].setSelected(data.wan.mpiGetValue(5,i)==1);
         }
         else // Op. colectivas no configuradas -> obtener info de la red WAN.
         {
@@ -447,7 +447,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
           col2[i].setSelectedIndex(Tools.mpiValue(1,"MAX"));
           col3[i].setSelectedIndex(Tools.mpiValue(2,"0"));
           col4[i].setSelectedIndex(Tools.mpiValue(3,"MAX"));
-          col5[i].setSelected(true);
+          // col5[i].setSelected(true);
         }
       }
     }
@@ -484,7 +484,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
           data.environment.machine[index].mpiSetValue(2,i,col2[i].getSelectedIndex());
           data.environment.machine[index].mpiSetValue(3,i,col3[i].getSelectedIndex());
           data.environment.machine[index].mpiSetValue(4,i,col4[i].getSelectedIndex());
-          data.environment.machine[index].mpiSetValue(5,i,col5[i].isSelected()?1:0);
+          // data.environment.machine[index].mpiSetValue(5,i,col5[i].isSelected()?1:0);
         }
         else
         {
@@ -492,7 +492,7 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
           data.wan.mpiSetValue(2,i,col2[i].getSelectedIndex());
           data.wan.mpiSetValue(3,i,col3[i].getSelectedIndex());
           data.wan.mpiSetValue(4,i,col4[i].getSelectedIndex());
-          data.wan.mpiSetValue(5,i,col5[i].isSelected()? 1:0);
+          // data.wan.mpiSetValue(5,i,col5[i].isSelected()? 1:0);
         }
       }
     }
@@ -570,12 +570,12 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
         col4[i].setSelectedIndex(cb_equals4[0].getSelectedIndex());
       }
     }
-    else if(e.getSource() == cb_equals5[0])
-    {
-        for(int i = Data.DEFAULT_MPI_ITEMS-1; i >=0; i--)
-        {
-            col5[i].setSelected(cb_equals5[0].isSelected());
-        }
-    }
+    // else if(e.getSource() == cb_equals5[0])
+    // {
+    //     for(int i = Data.DEFAULT_MPI_ITEMS-1; i >=0; i--)
+    //     {
+    //         col5[i].setSelected(cb_equals5[0].isSelected());
+    //     }
+    // }
   }
 }

@@ -265,8 +265,8 @@ public class WideAreaNetworkData
       Tools.mpiString(0,mpi[0][i]) + " " +
       Tools.mpiString(1,mpi[1][i]) + " " +
       Tools.mpiString(2,mpi[2][i]) + " " +
-      Tools.mpiString(3,mpi[3][i]) + " " +
-      String.valueOf(mpi[4][i]) + " " + "\n");
+      Tools.mpiString(3,mpi[3][i]) + " " +"\n");
+      // String.valueOf(mpi[4][i]) + " " + 
     }
   }
 
