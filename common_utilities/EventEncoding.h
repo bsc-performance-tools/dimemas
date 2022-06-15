@@ -763,7 +763,7 @@ extern "C"
     GLOP_ID_MPI_Ibcast                = 17,
     GLOP_ID_MPI_Igather               = 18,
     GLOP_ID_MPI_Igatherv              = 19,
-    GLOP_ID_MPI_Iscatter              = 12,
+    GLOP_ID_MPI_Iscatter              = 20,
     GLOP_ID_MPI_Iscatterv             = 21,
     GLOP_ID_MPI_Iallgather            = 22,
     GLOP_ID_MPI_Iallgatherv           = 23,
