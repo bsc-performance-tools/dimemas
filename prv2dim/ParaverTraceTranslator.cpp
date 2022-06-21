@@ -29,7 +29,7 @@
 
 #include <limits.h>
 // #include "UIParaverTraceConfig.h"
-
+#include <assert.h>
 #include <Macros.h>
 #include <iostream>
 #include <stdio.h>

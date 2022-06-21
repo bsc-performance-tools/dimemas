@@ -22,11 +22,10 @@
 \*****************************************************************************/
 
 /* ---------------------------------------------------- Include Files -------*/
-#include <CommonMacros.h>
 #include <EventEncoding.h>
 #include <Macros.h>
 #include <errno.h>
-
+#include <assert.h>
 /* ---------------------------------------------------- Constants -----------*/
 #define TYPE_LABEL   "EVENT_TYPE"
 #define VALUES_LABEL "VALUES"

@@ -24,6 +24,7 @@
  \*****************************************************************************/
 
 #include <EventEncoding.h>
+#include "Macros.h"
 #include <assert.h>
 #include <communic.h>
 #include <configuration.h>
@@ -5154,25 +5155,19 @@ void really_send_memory_message( struct t_thread *thread, struct t_task *task_pa
       {
         if ( node->cur_memory_messages >= node->max_memory_messages )
         {
-          if ( debug & D_COMM )
-          {
-            PRINT_TIMER( current_time );
-            printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Blocked (Waiting intra-node)\n", IDENTIFIERS( thread ) );
-          }
-          inFIFO_queue( &node->wait_for_mem_bus, (char *)thread );
-          /* FEC: Comenc,a el temps que el thread passa esperant un bus */
-          START_BUS_WAIT_TIME( thread );
-          /**************************************************************/
+          if( thread->action->action != GLOBAL_OP )
+            MSG_DEBUG( D_COMM, thread, "COMMUNIC_send Blocked (Waiting intra-node)" )
+          else
+            MSG_DEBUG( D_COMM, thread, "Blocked (Waiting intra-node)" )
 
+          inFIFO_queue( &node->wait_for_mem_bus, (char *)thread );
+          START_BUS_WAIT_TIME( thread );
           return;
         }
-
-        if ( debug & D_COMM )
-        {
-          PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Obtains bus\n", IDENTIFIERS( thread ) );
-          // printf ("\n\nNow I should proceed to transfering the message\n");
-        }
+        if( thread->action->action != GLOBAL_OP )
+          MSG_DEBUG( D_COMM, thread, "COMMUNIC_send Obtains bus" )
+        else
+          MSG_DEBUG( D_COMM, thread, "MPI_Reduce Obtains bus" )
       }
       node->cur_memory_messages++;
       bus_utilization         = (struct t_bus_utilization *)malloc( sizeof( struct t_bus_utilization ) );
@@ -5181,39 +5176,35 @@ void really_send_memory_message( struct t_thread *thread, struct t_task *task_pa
       inFIFO_queue( &node->threads_in_memory, (char *)bus_utilization );
     }
 
-    if ( debug & D_COMM )
+    if( thread->action->action != GLOBAL_OP )
     {
-      PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (MEMORY)\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
+      MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Sending intra-node) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
+      account = current_account( thread );
+      SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
+      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
+      thread->physical_send = current_time;
+      thread->last_paraver  = current_time;
+    }
+    else
+    {
+      MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Sending intra-node) to T%02d", task_partner->taskid );
     }
 
-    account = current_account( thread );
-    SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
-    thread->physical_send = current_time;
-    if( thread->action->action != GLOBAL_OP )
-      thread->last_paraver  = current_time;
-    /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
     transferencia( mess_size, MEMORY_COMMUNICATION_TYPE, thread, NULL, &ti, &t_recursos );
 
     if ( t_recursos > ti )
-    {
-      /* DEBUG */
-      printf( "Memory communication. Resources time = %f - Transfer Time = %f\n", t_recursos, ti );
+      panic( "Memory communication. Resources time = %f - Transfer Time = %f \n resources > transmission time!\n", t_recursos, ti );
 
-      panic( "resources > transmission time!\n" );
-    }
     /* Abans de programar la fi de la comunicacio, es programa la fi de la
      * utilització dels recursos reservats. */
     FLOAT_TO_TIMER( t_recursos, tmp_timer );
     ADD_TIMER( current_time, tmp_timer, tmp_timer );
+    EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_MEM );
 
     /* tmp_timer has the time for COM_TIMER_OUT_RESOURCES */
     /* Es programa el final de la comunicació punt a punt. */
     FLOAT_TO_TIMER( ti, tmp_timer2 );
     ADD_TIMER( current_time, tmp_timer2, tmp_timer2 );
-
-    EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_MEM );
     if( action->action == GLOBAL_OP ) // For MPI Reduce
       thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
     else
@@ -5249,25 +5240,21 @@ void really_send_internal_network( struct t_thread *thread, struct t_task *task_
       {
         if ( machine->network.curr_on_network >= machine->communication.num_messages_on_network )
         {
-          if ( debug & D_COMM )
-          {
-            PRINT_TIMER( current_time );
-            printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Blocked (Bus Waiting)\n", IDENTIFIERS( thread ) );
-          }
+          if( thread->action->action != GLOBAL_OP )
+            MSG_DEBUG( D_COMM, thread, "COMMUNIC_send Blocked (Waiting inter-node)" )
+          else
+            MSG_DEBUG( D_COMM, thread, "MPI_Reduce Blocked (Waiting inter-node)" )
+
           inFIFO_queue( &machine->network.queue, (char *)thread );
-          /* FEC: Comenc,a el temps que el thread passa esperant un bus */
           START_BUS_WAIT_TIME( thread );
-          /**************************************************************/
 
           return;
         }
 
-        if ( debug & D_COMM )
-        {
-          PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Obtains bus\n", IDENTIFIERS( thread ) );
-          // printf ("\n\nNow I should proceed to transfering the message\n");
-        }
+        if( thread->action->action != GLOBAL_OP )
+          MSG_DEBUG( D_COMM, thread, "COMMUNIC_send Obtains bus" )
+        else
+          MSG_DEBUG( D_COMM, thread, "MPI_Reduce Obtains bus" )
       }
       machine->network.curr_on_network++;
       bus_utilization         = (struct t_bus_utilization *)malloc( sizeof( struct t_bus_utilization ) );
@@ -5276,38 +5263,24 @@ void really_send_internal_network( struct t_thread *thread, struct t_task *task_
       inFIFO_queue( &machine->network.threads_on_network, (char *)bus_utilization );
     }
 
-
-    if ( debug & D_COMM )
+    if( thread->action->action != GLOBAL_OP )
     {
-      PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (INTERNAL)\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
+      MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Sending inter-node) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
+      account = current_account( thread );
+      SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
+      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
+      thread->physical_send = current_time;
+      thread->last_paraver  = current_time;
+    }
+    else
+    {
+      MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Sending inter-node) to T%02d", task_partner->taskid );
     }
 
-    //    printf("\n\n Now I will call the actual sending of the message\n");
-
-    account = current_account( thread );
-    SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
-    thread->physical_send = current_time;
-    if( thread->action->action != GLOBAL_OP )
-      thread->last_paraver  = current_time;
-    /* ti = transferencia(mess->mess_size, comm_type, thread,NULL, &t_recursos); */
     transferencia( mess_size, INTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
     if ( t_recursos > ti )
-    {
-      /* DEBUG
-         printf ("Internal Network. Resources time = %f - Transfer Time = %f\n",
-         t_recursos,
-         ti);
-         */
-
       panic( "resources > transmission time!\n" );
-    }
-    /* Abans de programar la fi de la comunicacio, es programa la fi de la
-     * utilització dels recursos reservats. */
-    FLOAT_TO_TIMER( t_recursos, tmp_timer );
-    ADD_TIMER( current_time, tmp_timer, tmp_timer );
 
 #if 0
     /* GRH (25/06/2008) RTT modification for rendez-vous protocol */
@@ -5340,10 +5313,6 @@ void really_send_internal_network( struct t_thread *thread, struct t_task *task_
     }
 #endif
 
-    /* tmp_timer has the time for COM_TIMER_OUT_RESOURCES */
-    /* Es programa el final de la comunicació punt a punt. */
-    FLOAT_TO_TIMER( ti, tmp_timer2 );
-    ADD_TIMER( current_time, tmp_timer2, tmp_timer2 );
 
 #ifdef VENUS_ENABLED
     if ( !VC_is_enabled() )
@@ -5387,8 +5356,17 @@ void really_send_internal_network( struct t_thread *thread, struct t_task *task_
       }
     }
 #else
-    //      printf("\n\n And to put the event stating when the communication finishes\n");
+
+    /* Abans de programar la fi de la comunicacio, es programa la fi de la
+     * utilització dels recursos reservats. */
+    FLOAT_TO_TIMER( t_recursos, tmp_timer );
+    ADD_TIMER( current_time, tmp_timer, tmp_timer );
     EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_NET );
+
+    /* tmp_timer has the time for COM_TIMER_OUT_RESOURCES */
+    /* Es programa el final de la comunicació punt a punt. */
+    FLOAT_TO_TIMER( ti, tmp_timer2 );
+    ADD_TIMER( current_time, tmp_timer2, tmp_timer2 );
 
     if( action->action == GLOBAL_OP ) // For MPI Reduce
       thread->event = EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
@@ -5437,34 +5415,25 @@ void really_send_external_network( struct t_thread *thread, struct t_task *task_
        (char *)bus_utilization
        );
        */
-    if ( debug & D_COMM )
-    {
-      PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (EXTERNAL) message\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
-    }
-    account = current_account( thread );
-    SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
-    thread->physical_send = current_time;
     if( thread->action->action != GLOBAL_OP )
+    {
+      MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Sending EXTERNAL) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
+      account = current_account( thread );
+      SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
+      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
+      thread->physical_send = current_time;
       thread->last_paraver  = current_time;
-    /* ti = transferencia(
-       mess->mess_size,
-       EXTERNAL_NETWORK_COM_TYPE,
-       thread,
-       NULL,
-       &t_recursos
-       ); */
+    }
+    else
+    {
+      MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Sending EXTERNAL) to T%02d", task_partner->taskid );
+    }
 
     transferencia( mess_size, EXTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
     if ( t_recursos > ti )
-    {
-      /* DEBUG */
-      printf( "Resources time = %.20f - Transfer Time = %.20f\n", t_recursos, ti );
+      panic( "Resources time = %.20f - Transfer Time = %.20f\nresources > transmission time!\n", t_recursos, ti );
 
-      panic( "resources > transmission time!\n" );
-    }
     /* Abans de programar la fi de la comunicacio, es programa la fi de la
        utilització dels recursos reservats. Però, de moment, ho deixo al
        mateix instant de temps. */
@@ -5495,21 +5464,25 @@ void really_send_dedicated_connection( struct t_thread *thread, struct t_task *t
 
   if ( LINKS_get_dedicated_connection_links( thread, connection ) )
   {
-    account = current_account( thread );
-    SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
-    thread->physical_send = current_time;
     if( thread->action->action != GLOBAL_OP )
+    {
+      MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Dedicated) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
+      account = current_account( thread );
+      SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
+      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
+      thread->physical_send = current_time;
       thread->last_paraver  = current_time;
+    }
+    else
+    {
+      MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Dedicated) to T%02d", task_partner->taskid );
+    }
 
     transferencia( mess_size, DEDICATED_CONNECTION_COM_TYPE, thread, connection, &ti, &t_recursos );
 
     if ( t_recursos > ti )
     {
-      /* DEBUG */
-      printf( "Resources time = %.20f - Transfer Time = %.20f\n", t_recursos, ti );
-
-      panic( "resources > transmission time!\n" );
+      panic( "Resources time = %.20f - Transfer Time = %.20f\nresources > transmission time!\n", t_recursos, ti );
     }
 
     /* Abans de programar la fi de la comunicacio, es programa la fi de la
@@ -5526,16 +5499,6 @@ void really_send_dedicated_connection( struct t_thread *thread, struct t_task *t
       thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_GROUP );
     else
       thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
-
-    if ( debug & D_COMM )
-    {
-      PRINT_TIMER( current_time );
-      printf( ": COMMUNIC\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND"
-              "(DEDICATED) message\n",
-              IDENTIFIERS( thread ),
-              task_partner->taskid,
-              mess_tag );
-    }
   }
 }
 
@@ -5562,7 +5525,6 @@ void really_send_external_model_comm_type( struct t_thread *thread, struct t_tas
     panic( "resources > transmission time!\n" );
   }
 
-
   FLOAT_TO_TIMER( t_recursos, tmp_timer );
   ADD_TIMER( current_time, tmp_timer, tmp_timer );
   EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_EXT_MODEL );
@@ -5574,11 +5536,10 @@ void really_send_external_model_comm_type( struct t_thread *thread, struct t_tas
   else
     thread->event = EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
 
-  if ( debug & D_COMM )
-  {
-    PRINT_TIMER( current_time );
-    printf( ": COMMUNIC_send P%02d T%02d (t%02d) -> T%d Tag(%d) SEND (OTHER) message\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
-  }
+  if( thread->action->action != GLOBAL_OP )
+    MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (External model) to T%02d Tag(%d)", task_partner->taskid, mess_tag )
+  else
+    MSG_DEBUG( D_COMM, thread, "MPI_Reduce (External model) to T%02d", task_partner->taskid )
 }
 
 void really_send_acc_message( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
@@ -5609,23 +5570,14 @@ void really_send_acc_message( struct t_thread *thread, struct t_task *task_partn
       {
         if ( node->acc.cur_messages >= node->acc.max_messages )
         {
-          if ( debug & D_COMM )
-          {
-            PRINT_TIMER( current_time );
-            printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Blocked (Waiting acc node)\n", IDENTIFIERS( thread ) );
-          }
+          MSG_DEBUG( D_COMM, thread, "COMMUNIC_send Blocked (Waiting accelerator)" )
           inFIFO_queue( &node->acc.wait_for_link, (char *)thread );
-          /* FEC: Comenc,a el temps que el thread passa esperant un bus */
           START_BUS_WAIT_TIME( thread );
-          /**************************************************************/
+
           return;
         }
 
-        if ( debug & D_COMM )
-        {
-          PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) Obtains bus\n", IDENTIFIERS( thread ) );
-        }
+        MSG_DEBUG( D_COMM, thread, "COMMUNIC_send Obtains bus" )
       }
       node->acc.cur_messages++;
       bus_utilization               = (struct t_bus_utilization *)malloc( sizeof( struct t_bus_utilization ) );
@@ -5642,11 +5594,7 @@ void really_send_acc_message( struct t_thread *thread, struct t_task *task_partn
       thread->accelerator_link = link;
     }
 
-    if ( debug & D_COMM )
-    {
-      PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_send\tP%02d T%02d (t%02d) -> T%02d Tag(%d) SEND (ACCELERATOR)\n", IDENTIFIERS( thread ), task_partner->taskid, mess_tag );
-    }
+    MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Sending accelerator) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
 
     account = current_account( thread );
     SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
@@ -5658,10 +5606,7 @@ void really_send_acc_message( struct t_thread *thread, struct t_task *task_partn
 
     if ( t_recursos > ti )
     {
-      /* DEBUG */
-      printf( "Accelerator communication. Resources time = %f - Transfer Time = %f\n", t_recursos, ti );
-
-      panic( "resources > transmission time!\n" );
+      panic( "Accelerator communication. Resources time = %f - Transfer Time = %f\n resources > transmission time!\n", t_recursos, ti );
     }
     /* Abans de programar la fi de la comunicacio, es programa la fi de la
      * utilització dels recursos reservats. */
@@ -7393,11 +7338,7 @@ static void close_global_communication( struct t_thread *thread )
   for ( others = (struct t_thread *)outFIFO_queue( &communicator->threads ); others != TH_NIL;
         others = (struct t_thread *)outFIFO_queue( &communicator->threads ) )
   {
-    if ( debug & D_COMM )
-    {
-      PRINT_TIMER( current_time );
-      printf( ": GLOBAL_operation P%02d T%02d (t%02d) ends '%s'\n", IDENTIFIERS( others ), glop->name );
-    }
+    MSG_DEBUG( D_COMM, others, " GLOBAL_operation ends '%s'", glop->name );
 
     node = get_node_of_thread( others );
     new_cp_node( others, CP_BLOCK );
@@ -7467,11 +7408,8 @@ void GLOBAL_wait_operation( struct t_thread *thread )
 
     if ( startup != (t_nano)0 )
     {
-      if ( debug & D_COMM )
-      {
-        PRINT_TIMER( current_time );
-        printf( ": GLOBAL_wait \tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
-      }
+      MSG_DEBUG( D_COMM, thread, " GLOBAL_wait Initiate startup (%f)\n", (double)startup / 1e9 );
+
       thread->loose_cpu     = FALSE;
       thread->doing_startup = TRUE;
 
@@ -7501,11 +7439,8 @@ void GLOBAL_wait_operation( struct t_thread *thread )
   if ( thread->n_nonblock_glob_done == 0 )
   {
     thread->n_nonblock_glob_waiting += 1;
-    if ( debug & D_COMM )
-    {
-      PRINT_TIMER( current_time );
-      printf( ": non-block GLOBAL_wait waiting \tP%02d T%02d (t%02d)\n", IDENTIFIERS( thread ) );
-    }
+    
+    MSG_DEBUG( D_COMM, thread, "non-block GLOBAL_wait waiting" );
   }
   else
   {
@@ -7516,11 +7451,7 @@ void GLOBAL_wait_operation( struct t_thread *thread )
     struct t_thread *copy_thread = (struct t_thread *)outFIFO_queue( &thread->nonblock_glop_done_threads );
     delete_duplicate_thread( copy_thread );
 
-    if ( debug & D_COMM )
-    {
-      PRINT_TIMER( current_time );
-      printf( ": non-block GLOBAL_wait done \tP%02d T%02d (t%02d)\n", IDENTIFIERS( thread ) );
-    }
+    MSG_DEBUG( D_COMM, thread, "non-block GLOBAL_wait done" );
 
     // Then we must continue with this rank execution
     //
@@ -7632,11 +7563,8 @@ void GLOBAL_operation( struct t_thread *thread,
 
         SCHEDULER_thread_to_ready_return( M_COM, thread, tmp_timer, 0 );
 
-        if ( debug & D_COMM )
-        {
-          PRINT_TIMER( current_time );
-          printf( ": non-block GLOBAL_operation \tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
-        }
+        MSG_DEBUG( D_COMM, thread, "non-block GLOBAL_operation Initiate startup (%f)", (double)startup / 1e9 );
+
         return;
       }
     }
@@ -7712,11 +7640,7 @@ void GLOBAL_operation( struct t_thread *thread,
       // Manage the glop with the copy_thread
       thread = copy_thread;
 
-      if ( debug & D_COMM )
-      {
-        PRINT_TIMER( current_time );
-        printf( ": non-block GLOBAL_operation \tP%02d T%02d (t%02d) startup done.\n", IDENTIFIERS( thread ) );
-      }
+      MSG_DEBUG( D_COMM, thread, "non-block GLOBAL_operation - Startup done." );
     }
   }
 
@@ -8298,11 +8222,8 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
 
         SCHEDULER_thread_to_ready_return( M_COM, host_th, startup, 0 );
 
-        if ( debug & D_COMM )
-        {
-          PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( host_th ), (double)startup / 1e9 );
-        }
+        MSG_DEBUG( D_COMM, host_th, "ACCELERATOR_synchronization  Initiate startup (%f)", (double)startup / 1e9 );
+
         return;
       }
     }
@@ -8359,11 +8280,8 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
 
         SCHEDULER_thread_to_ready_return( M_COM, thread, startup, 0 );
 
-        if ( debug & D_COMM )
-        {
-          PRINT_TIMER( current_time );
-          printf( ": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate startup (%f)\n", IDENTIFIERS( thread ), (double)startup / 1e9 );
-        }
+        MSG_DEBUG( D_COMM, thread, "ACCELERATOR_synchronization  Initiate startup (%f)", (double)startup / 1e9 );
+
         return;
       }
     }
@@ -8378,11 +8296,7 @@ void ACCELERATOR_check_sync_status( struct t_thread *thread, t_boolean host, int
 
     host_th->event = (struct t_event *)EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, host_th, COM_TIMER_OUT );
 
-    if ( debug & D_COMM )
-    {
-      PRINT_TIMER( current_time );
-      printf( ": COMMUNIC_COLLECTIVE\tP%02d T%02d (t%02d) Initiate final startup (%f)\n", IDENTIFIERS( host_th ), (double)startup / 1e9 );
-    }
+    MSG_DEBUG( D_COMM, host_th, "ACCELERATOR_synchronization  Initiate final startup (%f)", (double)startup / 1e9 );
 
     host_th->blocked_in_global_op = FALSE;
     resumeThreadsInStreamSync( task );

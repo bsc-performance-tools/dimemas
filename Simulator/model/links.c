@@ -23,7 +23,7 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-#include "Macros.h" /* Per l'ASSERT */
+#include "Macros.h"
 
 #include <communic.h>
 #include <cpu.h>

@@ -10,7 +10,6 @@ libCommonUtilities_la_CFLAGS=-DNEW_DIMEMAS_TRACE -DNANOSECOND_TRACE
 libCommonUtilities_la_CXXFLAGS=-DNEW_DIMEMAS_TRACE -DNANOSECOND_TRACE
 
 libCommonUtilities_la_SOURCES = \
-	CommonMacros.h \
 	Dimemas_Generation.c \
 	Dimemas_Generation.h \
 	Error.cpp \
