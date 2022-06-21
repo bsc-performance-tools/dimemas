@@ -5176,19 +5176,21 @@ void really_send_memory_message( struct t_thread *thread, struct t_task *task_pa
       inFIFO_queue( &node->threads_in_memory, (char *)bus_utilization );
     }
 
+    account = current_account( thread );
     if( thread->action->action != GLOBAL_OP )
     {
       MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Sending intra-node) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
-      account = current_account( thread );
       SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
       thread->physical_send = current_time;
       thread->last_paraver  = current_time;
     }
     else
     {
       MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Sending intra-node) to T%02d", task_partner->taskid );
+      SUB_TIMER( current_time, thread->collective_timers.arrive_to_collective, tmp_timer );
+      ASS_ALL_TIMER( thread->collective_timers.with_resources, current_time );
     }
+    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
 
     transferencia( mess_size, MEMORY_COMMUNICATION_TYPE, thread, NULL, &ti, &t_recursos );
 
@@ -5263,19 +5265,21 @@ void really_send_internal_network( struct t_thread *thread, struct t_task *task_
       inFIFO_queue( &machine->network.threads_on_network, (char *)bus_utilization );
     }
 
+    account = current_account( thread );
     if( thread->action->action != GLOBAL_OP )
     {
       MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Sending inter-node) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
-      account = current_account( thread );
       SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
       thread->physical_send = current_time;
       thread->last_paraver  = current_time;
     }
     else
     {
       MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Sending inter-node) to T%02d", task_partner->taskid );
+      SUB_TIMER( current_time, thread->collective_timers.arrive_to_collective, tmp_timer );
+      ASS_ALL_TIMER( thread->collective_timers.with_resources, current_time );
     }
+    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
 
     transferencia( mess_size, INTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
@@ -5415,19 +5419,21 @@ void really_send_external_network( struct t_thread *thread, struct t_task *task_
        (char *)bus_utilization
        );
        */
+    account = current_account( thread );
     if( thread->action->action != GLOBAL_OP )
     {
       MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Sending EXTERNAL) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
-      account = current_account( thread );
       SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
       thread->physical_send = current_time;
       thread->last_paraver  = current_time;
     }
     else
     {
       MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Sending EXTERNAL) to T%02d", task_partner->taskid );
+      SUB_TIMER( current_time, thread->collective_timers.arrive_to_collective, tmp_timer );
+      ASS_ALL_TIMER( thread->collective_timers.with_resources, current_time );
     }
+    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
 
     transferencia( mess_size, EXTERNAL_NETWORK_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
@@ -5464,19 +5470,21 @@ void really_send_dedicated_connection( struct t_thread *thread, struct t_task *t
 
   if ( LINKS_get_dedicated_connection_links( thread, connection ) )
   {
+    account = current_account( thread );
     if( thread->action->action != GLOBAL_OP )
     {
       MSG_DEBUG( D_COMM, thread, "COMMUNIC_send (Dedicated) to T%02d Tag(%d)", task_partner->taskid, mess_tag );
-      account = current_account( thread );
       SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-      ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
       thread->physical_send = current_time;
       thread->last_paraver  = current_time;
     }
     else
     {
       MSG_DEBUG( D_COMM, thread, "MPI_Reduce (Dedicated) to T%02d", task_partner->taskid );
+      SUB_TIMER( current_time, thread->collective_timers.arrive_to_collective, tmp_timer );
+      ASS_ALL_TIMER( thread->collective_timers.with_resources, current_time );
     }
+    ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
 
     transferencia( mess_size, DEDICATED_CONNECTION_COM_TYPE, thread, connection, &ti, &t_recursos );
 
@@ -5512,11 +5520,18 @@ void really_send_external_model_comm_type( struct t_thread *thread, struct t_tas
   action = thread->action;
 
   account = current_account( thread );
-  SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
-  ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
-  thread->physical_send = current_time;
   if( thread->action->action != GLOBAL_OP )
+  {
+    SUB_TIMER( current_time, thread->initial_communication_time, tmp_timer );
+    thread->physical_send = current_time;
     thread->last_paraver  = current_time;
+  }
+  else
+  {
+    SUB_TIMER( current_time, thread->collective_timers.arrive_to_collective, tmp_timer );
+    ASS_ALL_TIMER( thread->collective_timers.with_resources, current_time );
+  }
+  ADD_TIMER( tmp_timer, account->block_due_resources, account->block_due_resources );
 
   transferencia( mess_size, EXTERNAL_MODEL_COM_TYPE, thread, NULL, &ti, &t_recursos );
 
@@ -7102,12 +7117,27 @@ static void close_global_root_sync_communication( struct t_thread *thread )
   comm_id      = action->desc.global_op.comm_id;
   communicator = locate_communicator( &Ptask->Communicator, comm_id );
 
+  if( !action->desc.global_op.is_root )
+  {
+    struct t_account *account;
+    account = current_account( thread );
+    dimemas_timer tmp_timer;
+    SUB_TIMER( current_time, thread->collective_timers.with_resources, tmp_timer );
+    ADD_TIMER( tmp_timer, account->group_operations_time, account->group_operations_time );
+  }
+
   int *threads_arrived = (int *)query_prio_queue( &communicator->root_sync_global_op_threads_arrived, nb_glob_index );
 
   *threads_arrived = *threads_arrived + 1;
   if( *threads_arrived == communicator->size )
   {
     root_thread = (struct t_thread *)query_prio_queue( &communicator->root_sync_root_thread, nb_glob_index );
+
+    struct t_account *account;
+    account = current_account( root_thread );
+    dimemas_timer tmp_timer;
+    SUB_TIMER( current_time, root_thread->collective_timers.arrive_to_collective, tmp_timer );
+    ADD_TIMER( tmp_timer, account->group_operations_time, account->group_operations_time );
 
     action              = root_thread->action;
     root_thread->action = action->next;
@@ -7136,8 +7166,6 @@ static void close_global_root_sync_communication( struct t_thread *thread )
     SCHEDULER_thread_to_ready( thread );
     reload_done = TRUE;
   }
-
-  // TODO: accounting
 }
 
 static void close_global_nonblock_communication( struct t_thread *thread )
