@@ -8161,7 +8161,9 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
 t_boolean haveAllStreamsArrived( struct t_thread *thread, int comm_id )
 {
   t_boolean return_val = FALSE;
-  if ( comm_id == -1 )
+  if( comm_id == 0 )
+    return TRUE; /* At this point HOST have arrived for sure. Checked before this function. */
+  else if ( comm_id == -1 )
   {
     return_val = thread->task->StreamSync_n_elems == thread->task->totalCreatedStreams;
   }

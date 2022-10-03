@@ -947,7 +947,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           }
           case GLOBAL_OP:
           {
-            if ( action->desc.global_op.comm_id >= 0 )
+            if ( action->desc.global_op.comm_id > 0 )
             { /* Regular execution of a global operation */
 
 

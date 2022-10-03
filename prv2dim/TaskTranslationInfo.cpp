@@ -684,7 +684,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
 
     if ( OngoingDeviceSync && AcceleratorThread != ACCELERATOR_NULL )
     {
-      if ( Type == CUDA_SYNCH_STREAM_EV ) // || Type == OCL_SYNCH_STREAM_EV)
+      if ( Type == CUDA_SYNCH_STREAM_EV || Type == OLD_CUDA_SYNCH_STREAM_EV ) // || Type == OCL_SYNCH_STREAM_EV)
       {
         StreamIdToSync = (INT32)Value;
       }
@@ -873,20 +873,41 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
           }
           else if ( AcceleratorThread == ACCELERATOR_KERNEL )
           { /* Device threads */
-            if ( Dimemas_Global_OP( TemporaryFile,
-                                    TaskId,
-                                    ThreadId,
-                                    0,  /* MPI_BARRIER  */
-                                    -1, /* All threads! */
-                                    TaskId,
-                                    0,
-                                    0,
-                                    0,
-                                    GLOBAL_OP_SYNC ) < 0 )
+            if( CurrentBlock.second == CUDA_STREAMSYNCHRONIZE_VAL )
             {
-              SetError( true );
-              SetErrorMessage( "error writing output trace", strerror( errno ) );
-              return false;
+              if ( Dimemas_Global_OP( TemporaryFile,
+                                      TaskId,
+                                      ThreadId,
+                                      0, /* MPI_BARRIER  */
+                                      0, /* Always host */
+                                      TaskId,
+                                      0,
+                                      0,
+                                      0,
+                                      GLOBAL_OP_SYNC ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
+            }
+            else
+            {
+              if ( Dimemas_Global_OP( TemporaryFile,
+                                      TaskId,
+                                      ThreadId,
+                                      0,  /* MPI_BARRIER  */
+                                      -1, /* All threads! */
+                                      TaskId,
+                                      0,
+                                      0,
+                                      0,
+                                      GLOBAL_OP_SYNC ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
             }
           }
 
