@@ -36,7 +36,7 @@
     if ( debug & D_MASK )                                \
     {                                                    \
       PRINT_TIMER( current_time );                       \
-      printf( ": [P:%d T:%d THD:%d] " format "\n", IDENTIFIERS( thread ) __VA_OPT__(,) __VA_ARGS__ );\
+      printf( ": [P:%d T:%d THD:%d] " format "\n", IDENTIFIERS( thread ), ##__VA_ARGS__ );\
     }                                                    \
   } \
 }
