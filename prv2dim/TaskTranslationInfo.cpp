@@ -135,29 +135,10 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
     cout << endl;
   }
 
-  if ( ThreadId == 1 )
-  { /* First CPU Burst only appears in the Host (main) thread */
-    if ( Dimemas_CPU_Burst( TemporaryFile, TaskId - 1, ThreadId - 1, 0.0 ) < 0 )
-    {
-      SetError( true );
-      SetErrorMessage( "error writing output trace", strerror( errno ) );
-    }
-  }
-  else if ( AcceleratorThread == ACCELERATOR_KERNEL )
-  { /*GPU thread case, needs CPU burst in first record */
-    if ( Dimemas_CPU_Burst( TemporaryFile, TaskId - 1, ThreadId - 1, 0.0 ) < 0 )
-    {
-      SetError( true );
-      SetErrorMessage( "error writing output trace", strerror( errno ) );
-    }
-  }
-  else if ( OpenMP_thread == MASTER )
-  { /*OMP thread case, needs CPU burst in first record */
-    if ( Dimemas_CPU_Burst( TemporaryFile, TaskId - 1, ThreadId - 1, 0.0 ) < 0 )
-    {
-      SetError( true );
-      SetErrorMessage( "error writing output trace", strerror( errno ) );
-    }
+  if ( Dimemas_CPU_Burst( TemporaryFile, TaskId - 1, ThreadId - 1, 0.0 ) < 0 )
+  {
+    SetError( true );
+    SetErrorMessage( "error writing output trace", strerror( errno ) );
   }
 
   this->GenerateFirstIdle = GenerateFirstIdle;
