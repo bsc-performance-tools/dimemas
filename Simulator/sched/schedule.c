@@ -65,8 +65,10 @@ static int SCH_prio          = 0;
 t_boolean monitorize_event = FALSE;
 int event_to_monitorize    = 0;
 
-
 extern t_boolean is_ideal_openmp;
+extern t_boolean simulate_openmp;
+extern t_boolean simulate_cuda;
+
 // void SCHEDULER_thread_to_gpu(struct t_node *node, struct t_thread *kernel_thread);
 
 void SCHEDULER_Init()
@@ -849,13 +851,19 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           }
           case EVENT:
           {
-            if( capture_previous_events( thread, &action->desc.even, thread->threadid) == FALSE )
+            if( simulate_openmp && is_openmp_treated_event( action->desc.even.type ) == TRUE ||
+                simulate_cuda   && is_cuda_treated_event( action->desc.even.type ) == TRUE )
             {
-              if( event_sync_add( thread->task, &action->desc.even, thread->threadid, PARTNER_ID_BARRIER, FALSE ) )
-                return;
+              if( capture_previous_events( thread, &action->desc.even, thread->threadid) == FALSE )
+              {
+                if( event_sync_add( thread->task, &action->desc.even, thread->threadid, PARTNER_ID_BARRIER, FALSE ) )
+                  return;
 
-              scheduler_treat_event( thread, &action->desc.even );
+                scheduler_treat_event( thread, &action->desc.even );
+              }
             }
+            else
+              scheduler_treat_event( thread, &action->desc.even );
 
             thread->action = action->next;
             READ_free_action( action );
@@ -977,7 +985,26 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             else
             { /* Pseudo global operation to implement accelerator
                * synchronizations */
-              ACCELERATOR_synchronization( thread, action->desc.global_op.comm_id );
+              if( simulate_cuda )
+                ACCELERATOR_synchronization( thread, action->desc.global_op.comm_id );
+              else
+              {
+                thread->action = action->next;
+                READ_free_action( action );
+
+                if ( more_actions( thread ) )
+                {
+                  action = thread->action;
+                  if ( action->action != WORK && action->action != GPU_BURST )
+                    goto next_op;
+
+                  if ( thread->stream == TRUE )
+                    thread->loose_cpu = FALSE;
+                  else
+                    thread->loose_cpu = TRUE;
+                  SCHEDULER_thread_to_ready( thread );
+                }
+              }
             }
             break;
           }

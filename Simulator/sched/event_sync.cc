@@ -114,6 +114,25 @@ const unordered_set<unsigned long long>& getValidSyncTypes()
   return validSyncTypes;
 }
 
+t_boolean is_openmp_treated_event( unsigned long long type )
+{
+  if( type == OMP_BARRIER ||
+      type == OMP_EXECUTED_PARALLEL_FXN ||
+      type == OMP_PARALLEL_EV )
+    return TRUE;
+
+  return FALSE;
+}
+
+t_boolean is_cuda_treated_event( unsigned long long type )
+{
+  if( type == CUDA_KERNEL_EV ||
+      type == CUDA_LIB_CALL_EV )
+    return TRUE;
+
+  return FALSE;
+}
+
 void event_sync_init( void )
 {
 #ifndef PRV2DIM

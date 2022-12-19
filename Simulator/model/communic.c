@@ -73,6 +73,8 @@
  * Global variables                                                           *
  *****************************************************************************/
 
+extern t_boolean simulate_cuda;
+
 t_boolean DATA_COPY_enabled; /* True if data copy latency is enabled */
 int DATA_COPY_message_size;  /* Maximun message size to compute data copy
                               * latency */
@@ -3632,13 +3634,16 @@ void COMMUNIC_send( struct t_thread *thread_sender )
     }
   } /* thread->startup_done == TRUE */
 
-  struct t_even tmpEvent;
-  tmpEvent.type = thread_sender->acc_in_block_event.type;
-  tmpEvent.value = thread_sender->acc_in_block_event.value;
+  if ( simulate_cuda && is_cuda_treated_event( thread_sender->acc_in_block_event.type ) == TRUE )
+  {
+    struct t_even tmpEvent;
+    tmpEvent.type = thread_sender->acc_in_block_event.type;
+    tmpEvent.value = thread_sender->acc_in_block_event.value;
 
-  if( thread_sender->host && mess->communic_id != 0 && thread_partner != NULL &&
-      event_sync_add( thread_sender->task, &tmpEvent, thread_sender->threadid, thread_partner->threadid, TRUE ) )
-    return;
+    if( thread_sender->host && mess->communic_id != 0 && thread_partner != NULL &&
+        event_sync_add( thread_sender->task, &tmpEvent, thread_sender->threadid, thread_partner->threadid, TRUE ) )
+      return;
+  }
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )
@@ -4040,15 +4045,18 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
       thread_receiver->startup_done = TRUE;
     }
   }
+  
   /* Startup has finished */
+  if ( simulate_cuda && is_cuda_treated_event( thread_receiver->acc_in_block_event.type ) == TRUE )
+  {
+    struct t_even tmpEvent;
+    tmpEvent.type = thread_receiver->acc_in_block_event.type;
+    tmpEvent.value = thread_receiver->acc_in_block_event.value;
 
-  struct t_even tmpEvent;
-  tmpEvent.type = thread_receiver->acc_in_block_event.type;
-  tmpEvent.value = thread_receiver->acc_in_block_event.value;
-
-  if( !thread_receiver->host && mess->communic_id != 0 &&
-      event_sync_add( thread_receiver->task, &tmpEvent, thread_receiver->threadid, thread_receiver->threadid, TRUE ) )
-    return;
+    if( !thread_receiver->host && mess->communic_id != 0 &&
+        event_sync_add( thread_receiver->task, &tmpEvent, thread_receiver->threadid, thread_receiver->threadid, TRUE ) )
+      return;
+  }
 
   /* Copy latency operations */
   if ( DATA_COPY_enabled && mess->mess_size <= DATA_COPY_message_size )

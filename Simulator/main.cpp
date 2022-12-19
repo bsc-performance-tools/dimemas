@@ -139,6 +139,9 @@ t_boolean Critical_Path_Analysis = FALSE;
 t_boolean all_CUDA_streams_created = FALSE;
 t_boolean is_ideal_openmp = FALSE;
 
+t_boolean simulate_openmp = TRUE;
+t_boolean simulate_cuda = TRUE;
+
 using namespace std;
 
 void print_dimemas_header()
@@ -226,6 +229,8 @@ void parse_arguments( int argc, char *argv[] )
   bool wait_logical_recv_enabled;
   bool b_eee_enabled;
   bool asynch_read_bool;
+  bool tmp_disable_openmp;
+  bool tmp_disable_cuda;
 
   int sintetic_io_applications;
   
@@ -282,6 +287,8 @@ void parse_arguments( int argc, char *argv[] )
     ( "asynch-max-buffer",        po::value<int>( &asynch_buffer_size_mb ),            "Max size of the asynch read buffer in MB (default: 10MB)" )
     ( "create-cuda-streams",      po::bool_switch( &all_streams_created ),             "Force all CUDA streams to be created from the beginning." )
     ( "ideal-openmp",             po::bool_switch( &ideal_openmp ),                    "Ignores the duration of openmp runtime events. Any remaining duration is due to implicit synchronization" )
+    ( "disable-openmp",           po::bool_switch( &tmp_disable_openmp ),              "OpenMP events will not be simulated." )
+    ( "disable-cuda",             po::bool_switch( &tmp_disable_cuda ),                "CUDA events will not be simulated." )
   ;
 
   po::options_description mandatory( "Mandatory options" );
@@ -498,6 +505,12 @@ void parse_arguments( int argc, char *argv[] )
 
   if ( ideal_openmp )
     is_ideal_openmp = TRUE;
+
+  if( tmp_disable_openmp )
+    simulate_openmp = FALSE;
+
+  if( tmp_disable_cuda )
+    simulate_cuda = FALSE;
 }
 
 static dimemas_timer read_timer( char *c )

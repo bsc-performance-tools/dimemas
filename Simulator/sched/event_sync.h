@@ -71,6 +71,11 @@ t_boolean capture_previous_events( struct t_thread *whichThread,
                                    int threadID );
 
 void print_pending_syncs( struct t_task *whichTask );
+
+t_boolean is_openmp_treated_event( unsigned long long type );
+
+t_boolean is_cuda_treated_event( unsigned long long type );
+
 #endif // PRV2DIM
 
 #ifdef __cplusplus
