@@ -265,6 +265,12 @@ bool TaskTranslationInfo::PushRecord( ParaverRecord_t Record )
   {
     LastRecord = RecordStack.back();
 
+    if( Record->GetTimestamp() < LastRecord->GetTimestamp() )
+    {
+      cout << "WARNING: disordered records in Task " << Record->GetTaskId() << " Thread " << Record->GetThreadId() << endl;
+      cout << "Simulation of this trace could be inconsistent." << endl;
+    }
+
     // This stack is trying to aggregate all the records that happens in
     // a block. Then a flush will be done when we are on an end of a block
     // or when the next record is after the last record and not at same
