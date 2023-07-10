@@ -1509,7 +1509,7 @@ static void message_received( struct t_thread *thread_sender )
       extract_from_queue( &( thread_partner->recv ), (char *)partner );
     }
 
-    if ( !thread_sender->host && !thread_sender->stream )
+    if ( !thread_sender->stream && mess->mess_tag < CUDA_TAG )
     {
       PARAVER_Wait( 0, IDENTIFIERS( partner ), partner->last_paraver, current_time, PRV_WAITING_MESG_ST );
     }
@@ -2086,7 +2086,7 @@ static void Start_communication_if_partner_ready_for_rendez_vous_dependency_sync
 
   /*  Si el thread és una copia és que s'està fent el rendez vous en
       un altre thread, per tant, no s'ha de generar res a la traça. */
-  if ( sender->original_thread && ( !sender->host && !sender->stream ) )
+  if ( sender->original_thread && ( !thread_sender->stream && mess->mess_tag < CUDA_TAG ) )
   {
     PARAVER_Wait( 0, IDENTIFIERS( sender ), sender->last_paraver, current_time, PRV_WAITING_MESG_ST );
     sender->last_paraver = current_time;
