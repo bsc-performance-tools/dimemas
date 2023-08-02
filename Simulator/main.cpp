@@ -417,8 +417,11 @@ void parse_arguments( int argc, char *argv[] )
 
   config_file = (char *)malloc( str_config_file.size() + 1 );
   memcpy( (void *)config_file, (const void *)str_config_file.c_str(), str_config_file.size() + 1 );
-  paraver_file = (char *)malloc( str_paraver_file.size() + 1 );
-  memcpy( (void *)paraver_file, (const void *)str_paraver_file.c_str(), str_paraver_file.size() + 1 );
+  if ( !str_paraver_file.empty() )
+  {
+    paraver_file = (char *)malloc( str_paraver_file.size() + 1 );
+    memcpy( (void *)paraver_file, (const void *)str_paraver_file.c_str(), str_paraver_file.size() + 1 );
+  }
 
   if ( debug_enabled )
     debug = D_LINKS | D_COMM;
@@ -697,10 +700,13 @@ REBOOT:
 
   PARAVER_End( TRUE );
 
+  if ( paraver_file != NULL)
+  {
+    std::string row_file( paraver_file );
+    row_file.replace( row_file.end() - 4, row_file.end(), ".row" );
+    SIMULATOR_Generate_row( row_file.c_str() );
+  }
 
-  std::string row_file( paraver_file );
-  row_file.replace( row_file.end() - 4, row_file.end(), ".row" );
-  SIMULATOR_Generate_row( row_file.c_str() );
   TASK_End();
 
   struct rusage usage;
