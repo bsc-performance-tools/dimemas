@@ -19,8 +19,8 @@ prv2dim_LDFLAGS = \
 	$(BOOST_LDFLAGS)
 
 prv2dim_SOURCES = \
-	$(top_srcdir)/Simulator/sched/event_sync.cc \
-	$(top_srcdir)/Simulator/sched/event_sync.h \
+	../Simulator/sched/event_sync.cc \
+	../Simulator/sched/event_sync.h \
 	ParaverApplicationDescription.cpp\
 	ParaverApplicationDescription.hpp\
 	ParaverCommunicator.cpp\
