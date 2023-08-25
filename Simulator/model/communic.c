@@ -5990,7 +5990,6 @@ void global_op_reserva_links( struct t_thread *thread )
   if ( thread->action->desc.global_op.synch_type == GLOBAL_OP_ASYNC )
   {
     comm_machine_threads = (struct t_queue *)query_prio_queue( &communicator->nonblock_global_op_machine_threads, nb_glob_index );
-    // comm_machine_threads=&communicator->nonblock_global_op_machine_threads[thread->n_nonblock_glob_in_flight];
   }
   else
   {
@@ -7298,8 +7297,6 @@ static void close_global_nonblock_communication( struct t_thread *thread )
       parent_thread->n_nonblock_glob_done += 1;
       inFIFO_queue( &parent_thread->nonblock_glop_done_threads, (char *)others );
     }
-
-    parent_thread->n_nonblock_glob_in_flight -= 1;
   }
   extract_from_queue( &communicator->nonblock_global_op_threads, (char *)nb_glob_threads );
 }
@@ -7609,13 +7606,23 @@ void GLOBAL_operation( struct t_thread *thread,
 
     if ( synch_type == GLOBAL_OP_ROOT_SYNC )
     {
-      thread->nb_glob_index = thread->nb_glob_index_master;
-      thread->nb_glob_index_master++;
-
-      nb_glob_index = thread->nb_glob_index;
+      char *number_glob_index = query_prio_queue( &thread->nb_glob_index_per_communicator, communicator->communicator_id );
+      if (number_glob_index == A_NIL)
+      {
+        int *tmpNumCollectives = malloc( sizeof( int ) );
+        *tmpNumCollectives = 1;
+        insert_queue( &thread->nb_glob_index_per_communicator,  (char *)tmpNumCollectives, communicator->communicator_id );
+        nb_glob_index = 0;
+        thread->nb_glob_index = 0;
+      }
+      else
+      {
+        nb_glob_index = *number_glob_index;
+        thread->nb_glob_index = *number_glob_index;
+        *number_glob_index += 1;
+      }
 
       char *existingQueue = query_prio_queue( &communicator->root_sync_global_op_threads_arrived, nb_glob_index );
-
       if( existingQueue == A_NIL )
       {
         int *tmpNumThreads = malloc( sizeof( int ) );
@@ -7646,13 +7653,23 @@ void GLOBAL_operation( struct t_thread *thread,
         SCHEDULER_general( SCH_TIMER_OUT, thread );
       }
 
-      // One more non-block glop in flight
-      thread->n_nonblock_glob_in_flight += 1;
-      copy_thread->nb_glob_index = thread->nb_glob_index_master;
-      thread->nb_glob_index_master++;
-
       // It will be the index for the nonblock-glop structures
-      nb_glob_index = copy_thread->nb_glob_index;
+
+      char *number_glob_index = query_prio_queue( &thread->nb_glob_index_per_communicator, communicator->communicator_id );
+      if (number_glob_index == A_NIL)
+      {
+        int *tmpNumCollectives = malloc( sizeof( int ) );
+        *tmpNumCollectives = 1;
+        insert_queue( &thread->nb_glob_index_per_communicator,  (char *)tmpNumCollectives, communicator->communicator_id );
+        nb_glob_index = 0;
+        copy_thread->nb_glob_index = 0;
+      }
+      else
+      {
+        nb_glob_index = *number_glob_index;
+        copy_thread->nb_glob_index = *number_glob_index;
+        *number_glob_index += 1;
+      }
 
       char *existingQueue = query_prio_queue( &communicator->nonblock_global_op_threads, nb_glob_index );
 

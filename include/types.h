@@ -982,15 +982,13 @@ struct t_thread
 
 
   // Non-blocking GLOP variables
-  // in_flight: Indicates how many non-block glops are already executing.
   // done: Indicates how many non-block glops are already done waiting for the MPI_Wait.
   // waiting: Indicates how many waits are waiting for an in flight non-global op. (max 1)
   //
   int nb_glob_index;
-  int nb_glob_index_master;
-  int n_nonblock_glob_in_flight;
   int n_nonblock_glob_waiting;
   int n_nonblock_glob_done;
+  struct t_queue nb_glob_index_per_communicator;
 
   struct t_queue nonblock_glop_done_threads;
 

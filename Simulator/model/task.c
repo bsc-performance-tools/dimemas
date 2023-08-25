@@ -1066,13 +1066,13 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->omp_nesting_level               = 0;
 
   /* NON-Block global operations variables */
-  thread->n_nonblock_glob_in_flight = 0;
   thread->n_nonblock_glob_waiting   = 0;
   thread->n_nonblock_glob_done      = 0;
   thread->nb_glob_index             = 0;
-  thread->nb_glob_index_master      = 0;
 
   create_queue( &thread->nonblock_glop_done_threads );
+  create_queue( &thread->nb_glob_index_per_communicator );
+
   thread->eof_reached = FALSE;
 
   thread->event_sync_reentry = FALSE;
@@ -1272,7 +1272,6 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   copy_thread->blocked_in_global_op      = thread->blocked_in_global_op;
   copy_thread->blocked_in_host_sync      = thread->blocked_in_host_sync;
   copy_thread->blocked_sync_threadid     = thread->blocked_sync_threadid;
-  copy_thread->n_nonblock_glob_in_flight = thread->n_nonblock_glob_in_flight;
 
   copy_thread->omp_in_block_event = thread->omp_in_block_event;
 
