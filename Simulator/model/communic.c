@@ -5831,8 +5831,6 @@ static int compute_contention_stage( int ntasks, int num_busos )
 #endif /* DEBUG */
   }
 
-  printf( "Contention stages = %d\n", total );
-
   return ( total );
 }
 
