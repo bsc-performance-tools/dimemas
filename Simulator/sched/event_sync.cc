@@ -133,6 +133,13 @@ t_boolean is_cuda_treated_event( unsigned long long type )
   return FALSE;
 }
 
+t_boolean is_cuda_comm ( unsigned long long commTag )
+{
+  if ( commTag >= CUDA_TAG )
+    return TRUE;
+  return FALSE;
+}
+
 void event_sync_init( void )
 {
 #ifndef PRV2DIM

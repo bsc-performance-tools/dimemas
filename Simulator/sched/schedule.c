@@ -123,7 +123,7 @@ void SCHEDULER_Init()
         }
 
         ( *SCH[ machine->scheduler.policy ].init_scheduler_parameters )( thread );
-        if ( thread->stream == FALSE || thread->stream_created == TRUE )
+        if ( thread->stream == FALSE || thread->stream_created == TRUE /* || simulate_cuda == FALSE */) 
         {
           SCHEDULER_thread_to_ready( thread );
         }
@@ -609,7 +609,8 @@ void scheduler_treat_event(struct t_thread *thread, struct t_even *event )
   }
 
   /* treat acc events */
-  treat_acc_event( thread, event );
+  if(simulate_cuda)
+    treat_acc_event( thread, event );
   /* treating OMP events */
   treat_omp_events( thread, event, current_time );
 
@@ -698,7 +699,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             if ( thread->stream && !thread->first_acc_event_read )
             {
               /* Previous at accelerator events in stream thread must be NOT_CREATED state in CPU	*/
-              PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
+              PARAVER_Not_Created( cpu == C_NIL ? 0: cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
             }
             else if ( thread->idle_block )
             {
@@ -800,16 +801,51 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           }
           case SEND:
           {
-            PARAVER_Start_Op( cpu->unique_number, IDENTIFIERS( thread ), current_time );
+            if( simulate_cuda || is_cuda_comm( action->desc.send.mess_tag ) == FALSE )
+            {
+              PARAVER_Start_Op( cpu->unique_number, IDENTIFIERS( thread ), current_time );
 
-            COMMUNIC_send( thread );
+              COMMUNIC_send( thread );
+            }
+            else
+            {
+              thread->action = action->next;
+              READ_free_action( action );
+              if ( more_actions( thread ) )
+              {
+
+                action = thread->action;
+                if ( action->action != WORK && action->action != GPU_BURST )
+                  goto next_op;
+
+                thread->loose_cpu = FALSE;
+                SCHEDULER_thread_to_ready( thread );
+              }
+            }
             break;
           }
           case RECV:
           {
-            PARAVER_Start_Op( cpu->unique_number, IDENTIFIERS( thread ), current_time );
+            if( simulate_cuda || is_cuda_comm( action->desc.recv.mess_tag ) == FALSE )
+            {
+              PARAVER_Start_Op( cpu->unique_number, IDENTIFIERS( thread ), current_time );
 
-            COMMUNIC_recv( thread );
+              COMMUNIC_recv( thread );
+            }
+            else
+            {
+              thread->action = action->next;
+              READ_free_action( action );
+              if ( more_actions( thread ) )
+              {
+                action = thread->action;
+                if ( action->action != WORK && action->action != GPU_BURST )
+                  goto next_op;
+
+                thread->loose_cpu = FALSE;
+                SCHEDULER_thread_to_ready( thread );
+              }
+            }
             break;
           }
           case IRECV:
@@ -1399,7 +1435,7 @@ t_boolean more_actions( struct t_thread *thread )
           tmp_thread = task->threads[ threads_it ];
           if ( tmp_thread->stream )
           {
-            PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( tmp_thread ), tmp_thread->last_paraver, current_time );
+            PARAVER_Not_Created( cpu == C_NIL ? 0: cpu->unique_number, IDENTIFIERS( tmp_thread ), tmp_thread->last_paraver, current_time );
           }
         }
       }

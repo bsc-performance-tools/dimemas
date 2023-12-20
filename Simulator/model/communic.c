@@ -73,8 +73,6 @@
  * Global variables                                                           *
  *****************************************************************************/
 
-extern t_boolean simulate_cuda;
-
 t_boolean DATA_COPY_enabled; /* True if data copy latency is enabled */
 int DATA_COPY_message_size;  /* Maximun message size to compute data copy
                               * latency */
@@ -3634,7 +3632,7 @@ void COMMUNIC_send( struct t_thread *thread_sender )
     }
   } /* thread->startup_done == TRUE */
 
-  if ( simulate_cuda && is_cuda_treated_event( thread_sender->acc_in_block_event.type ) == TRUE )
+  if ( is_cuda_treated_event( thread_sender->acc_in_block_event.type ) == TRUE )
   {
     struct t_even tmpEvent;
     tmpEvent.type = thread_sender->acc_in_block_event.type;
@@ -4047,7 +4045,7 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
   }
   
   /* Startup has finished */
-  if ( simulate_cuda && is_cuda_treated_event( thread_receiver->acc_in_block_event.type ) == TRUE )
+  if ( is_cuda_treated_event( thread_receiver->acc_in_block_event.type ) == TRUE )
   {
     struct t_even tmpEvent;
     tmpEvent.type = thread_receiver->acc_in_block_event.type;

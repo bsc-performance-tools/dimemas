@@ -76,6 +76,8 @@ t_boolean is_openmp_treated_event( unsigned long long type );
 
 t_boolean is_cuda_treated_event( unsigned long long type );
 
+t_boolean is_cuda_comm ( unsigned long long commTag );
+
 #endif // PRV2DIM
 
 #ifdef __cplusplus
