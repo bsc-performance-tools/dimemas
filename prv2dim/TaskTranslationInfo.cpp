@@ -113,7 +113,6 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
   this->AcceleratorThread = AcceleratorThread;
   this->OpenMP_thread     = OpenMP_thread;
   OpenMP_nesting_level    = 0;
-  InCUDAHostToHost        = false;
 
   if ( !FilePointerAvailable )
   {
@@ -803,16 +802,8 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
         commInCudaLaunch = false;
 
-        // CUDA memcopy Host to Host is not simulated and requires the original duration
-        if ( AcceleratorThread == ACCELERATOR_HOST &&
-             CUDAEventEncoding_Is_CUDABlock( CurrentBlock.first ) &&
-             CurrentBlock.second == CUDA_MEMCPY_VAL &&
-             InCUDAHostToHost)
-        {
-          if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
-            return false;
-          InCUDAHostToHost = false;
-        }
+        if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+          return false;
 
         /* Generation of pseudo-collectives to simulate the thread/stream
           synchronizations */
@@ -2053,9 +2044,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
           {
             // Old versions of extrae generates communication lines for Host to Host cuda memcopy
             // that should be ignored in dimemas simulation
-            if ( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId )
-              InCUDAHostToHost = true;
-            else
+            if ( !(AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId) )
             {
               if ( debug )
                 cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;
@@ -2084,9 +2073,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
           {
             // Old versions of extrae generates communication lines for Host to Host cuda memcopy
             // that should be ignored in dimemas simulation
-            if ( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId )
-              InCUDAHostToHost = true;
-            else
+            if ( !(AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId) )
             {
               if ( debug )
                 cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;

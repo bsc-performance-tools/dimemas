@@ -123,7 +123,7 @@ void SCHEDULER_Init()
         }
 
         ( *SCH[ machine->scheduler.policy ].init_scheduler_parameters )( thread );
-        if ( thread->stream == FALSE || thread->stream_created == TRUE /* || simulate_cuda == FALSE */) 
+        if ( thread->stream == FALSE || thread->stream_created == TRUE || simulate_cuda == FALSE ) 
         {
           SCHEDULER_thread_to_ready( thread );
         }
@@ -609,7 +609,7 @@ void scheduler_treat_event(struct t_thread *thread, struct t_even *event )
   }
 
   /* treat acc events */
-  if(simulate_cuda)
+  // if(simulate_cuda)
     treat_acc_event( thread, event );
   /* treating OMP events */
   treat_omp_events( thread, event, current_time );
@@ -699,7 +699,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             if ( thread->stream && !thread->first_acc_event_read )
             {
               /* Previous at accelerator events in stream thread must be NOT_CREATED state in CPU	*/
-              PARAVER_Not_Created( cpu == C_NIL ? 0: cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
+              PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
             }
             else if ( thread->idle_block )
             {
@@ -1435,7 +1435,7 @@ t_boolean more_actions( struct t_thread *thread )
           tmp_thread = task->threads[ threads_it ];
           if ( tmp_thread->stream )
           {
-            PARAVER_Not_Created( cpu == C_NIL ? 0: cpu->unique_number, IDENTIFIERS( tmp_thread ), tmp_thread->last_paraver, current_time );
+            PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( tmp_thread ), tmp_thread->last_paraver, current_time );
           }
         }
       }

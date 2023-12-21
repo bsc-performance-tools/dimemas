@@ -89,6 +89,10 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     {
       PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
+    else if ( !block_begin && CUDAEventEncoding_Is_CUDAMemset( thread->acc_in_block_event ) )
+    {
+      PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
+    }
     else if ( thread->stream && ( CUDAEventEncoding_Is_Kernel_Block( thread->acc_in_block_event ) ||
                                   OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
     {

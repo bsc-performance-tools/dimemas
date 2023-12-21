@@ -766,6 +766,13 @@ Boolean CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event )
   return FALSE;
 }
 
+Boolean CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_MEMSET_VAL )
+    return TRUE;
+  return FALSE;
+}
+
 Boolean CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event->type ) == TRUE && event->value == CUDA_STREAM_CREATE_VAL )
