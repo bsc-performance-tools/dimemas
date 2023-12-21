@@ -791,6 +791,11 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
             return false;
           }
         }
+        else
+        {
+          if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+            return false;
+        }
 
         if ( !commInCudaLaunch && 
              ( CUDAEventEncoding_Is_CUDABlock(CurrentBlock.first) && CurrentBlock.second == CUDA_LAUNCH_VAL ||
@@ -802,8 +807,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
         commInCudaLaunch = false;
 
-        if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
-          return false;
+
 
         /* Generation of pseudo-collectives to simulate the thread/stream
           synchronizations */
