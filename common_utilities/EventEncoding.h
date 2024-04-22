@@ -1053,6 +1053,7 @@ extern "C"
   int CUDAEventEconding_Is_CUDASync( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event );
+  int CUDAEventEconding_Is_CUDAStreamCreateBlock( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event );
 
   int CUDAEventEconding_Is_OldLibType( long64_t type );

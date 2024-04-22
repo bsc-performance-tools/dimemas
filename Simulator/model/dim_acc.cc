@@ -30,6 +30,8 @@ extern "C" {
   #include "EventEncoding.h"
   #include "paraver.h"
   #include "schedule.h"
+
+  extern t_boolean simulate_cuda;
 }
 
 #include "event_sync.h"
@@ -62,7 +64,7 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     struct t_cpu *cpu = get_cpu_of_thread( thread );
 
 
-    if ( CUDAEventEconding_Is_CUDAStreamCreate( event ) )
+    if ( CUDAEventEconding_Is_CUDAStreamCreate( event ) && simulate_cuda == TRUE )
     {
       struct t_thread * created_stream = thread->task->threads[ ++thread->task->totalCreatedStreams ];
       created_stream->stream_created = TRUE;
@@ -70,8 +72,9 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     }
 
     /* CUDA cpu states */
-    if ( !block_begin && CUDAEventEconding_Is_CUDAConfigCall( thread->acc_in_block_event ) )
-    { /* If ending a Config Call event, cpu state is Others	*/
+    if ( !block_begin && 
+         ( CUDAEventEconding_Is_CUDAConfigCall( thread->acc_in_block_event ) || CUDAEventEconding_Is_CUDAStreamCreateBlock( thread->acc_in_block_event ) ) )
+    { /* If ending a Config Call or Stream Create event, cpu state is Others	*/
       PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
