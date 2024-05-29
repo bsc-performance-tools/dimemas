@@ -39,7 +39,6 @@
 #include <task.h>
 #include <communic.h>
 #include <fs.h>
-#include <yacc.h>
 #include <paraver.h>
 #include <file_data_access.h>
 #include <schedule.h>
