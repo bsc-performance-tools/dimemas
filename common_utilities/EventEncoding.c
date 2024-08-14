@@ -704,6 +704,11 @@ Boolean CUDAEventEncoding_Is_Kernel( long64_t type )
   return ( ( type == CUDA_KERNEL_EV ) ? TRUE : FALSE );
 }
 
+Boolean CUDAEventEncoding_Is_StreamSyncId_EV( struct t_even *event )
+{
+  return ( ( event->type == CUDA_SYNCH_STREAM_EV ) ? TRUE : FALSE );
+}
+
 Boolean CUDAEventEncoding_Is_Kernel_Block( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_Kernel( event.type ) == TRUE && event.value != CUDA_END_VAL )
@@ -731,6 +736,13 @@ Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
   return FALSE;
 }
 
+Boolean CUDAEventEncoding_Is_CUDAMalloc( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDAMALLOC_VAL )
+    return TRUE;
+  return FALSE;
+}
+
 Boolean CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_MEMCPY_VAL )
@@ -754,7 +766,7 @@ Boolean CUDAEventEconding_Is_CUDALaunch( struct t_event_block event )
 
 Boolean CUDAEventEconding_Is_CUDASync( struct t_event_block event )
 {
-  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_THREADSYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_DEVICESYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
     return TRUE;
   return FALSE;
 }
@@ -765,6 +777,21 @@ Boolean CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event )
     return TRUE;
   return FALSE;
 }
+
+Boolean CUDAEventEncoding_Is_CUDADeviceSync( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_DEVICESYNCHRONIZE_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean CUDAEventEncoding_Is_CUDADeviceReset( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_DEVICE_RESET_VAL )
+    return TRUE;
+  return FALSE;
+}
+
 
 Boolean CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event )
 {

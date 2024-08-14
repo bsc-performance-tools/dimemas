@@ -194,12 +194,14 @@ extern "C"
     CUDA_LAUNCH_VAL,
     CUDA_CONFIGURECALL_VAL,
     CUDA_MEMCPY_VAL,
-    CUDA_THREADSYNCHRONIZE_VAL,
+    CUDA_DEVICESYNCHRONIZE_VAL,
     CUDA_STREAMSYNCHRONIZE_VAL,
     CUDA_STREAM_CREATE_VAL,
     CUDA_MEMCPY_ASYNC_VAL,
     CUDA_DEVICE_RESET_VAL,
     CUDA_THREADEXIT_VAL,
+    CUDASTREAMDESTROY_VAL,
+    CUDAMALLOC_VAL,
     CUDA_MEMSET_VAL = 34
   } CUDA_Event_Values;
 
@@ -1043,15 +1045,19 @@ extern "C"
   /* CUDA EventEncoding calls	*/
   int CUDAEventEncoding_Is_CUDABlock( long64_t type );
   int CUDAEventEncoding_Is_Kernel( long64_t type );
+  int CUDAEventEncoding_Is_StreamSyncId_EV( struct t_even *event );
   int CUDAEventEncoding_Is_Kernel_Block( struct t_event_block event );
   int CUDAEventEncoding_Is_BlockBegin( long64_t Op );
   int CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver );
   int CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAMalloc( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event );
   int CUDAEventEconding_Is_CUDALaunch( struct t_event_block event );
   int CUDAEventEconding_Is_CUDASync( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDADeviceSync( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDADeviceReset( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAStreamCreateBlock( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event );
