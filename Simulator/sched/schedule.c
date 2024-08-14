@@ -526,7 +526,7 @@ void SCHEDULER_next_thread_to_run( struct t_node *node )
   put_thread_on_run( thread, node );
 }
 
-void scheduler_treat_event(struct t_thread *thread, struct t_even *event )
+scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct t_even *event )
 {
   if ( debug & D_SCH )
   {
@@ -609,8 +609,9 @@ void scheduler_treat_event(struct t_thread *thread, struct t_even *event )
   }
 
   /* treat acc events */
-  // if(simulate_cuda)
-    treat_acc_event( thread, event );
+  if ( treat_acc_event( thread, event ) == WAIT_FOR_SYNC )
+    return WAIT_FOR_SYNC;
+
   /* treating OMP events */
   treat_omp_events( thread, event, current_time );
 
@@ -628,6 +629,7 @@ void scheduler_treat_event(struct t_thread *thread, struct t_even *event )
     cpu = get_cpu_of_thread( thread );
     PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, event->type, event->value );
   }
+  return CONTINUE;
 }
 
 void SCHEDULER_general( int value, struct t_thread *thread )
@@ -895,7 +897,8 @@ void SCHEDULER_general( int value, struct t_thread *thread )
                 if( event_sync_add( thread->task, &action->desc.even, thread->threadid, PARTNER_ID_BARRIER, FALSE ) )
                   return;
 
-                scheduler_treat_event( thread, &action->desc.even );
+                if ( scheduler_treat_event( thread, &action->desc.even ) == WAIT_FOR_SYNC )
+                  return;
               }
             }
             else

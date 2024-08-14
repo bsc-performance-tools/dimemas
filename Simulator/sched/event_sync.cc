@@ -127,7 +127,8 @@ t_boolean is_openmp_treated_event( unsigned long long type )
 t_boolean is_cuda_treated_event( unsigned long long type )
 {
   if( type == CUDA_KERNEL_EV ||
-      type == CUDA_LIB_CALL_EV )
+      type == CUDA_LIB_CALL_EV ||
+      type == CUDA_SYNCH_STREAM_EV )
     return TRUE;
 
   return FALSE;

@@ -5563,7 +5563,7 @@ void really_send_external_model_comm_type( struct t_thread *thread, struct t_tas
     MSG_DEBUG( D_COMM, thread, "MPI_Reduce (External model) to T%02d", task_partner->taskid )
 }
 
-void really_send_acc_message( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
+t_boolean really_send_acc_message( struct t_thread *thread, struct t_task *task_partner, long long int mess_size, int mess_tag )
 {
   struct t_node *node;
   struct t_machine *machine;
@@ -5595,7 +5595,7 @@ void really_send_acc_message( struct t_thread *thread, struct t_task *task_partn
           inFIFO_queue( &node->acc.wait_for_link, (char *)thread );
           START_BUS_WAIT_TIME( thread );
 
-          return;
+          return FALSE;
         }
 
         MSG_DEBUG( D_COMM, thread, "COMMUNIC_send Obtains bus" )
@@ -5642,6 +5642,7 @@ void really_send_acc_message( struct t_thread *thread, struct t_task *task_partn
     EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_ACC );
     thread->event = (struct t_event *)EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );
   }
+  return TRUE;
 }
 
 
@@ -5744,7 +5745,14 @@ void really_send( struct t_thread *thread_sender )
       really_send_external_model_comm_type( thread_sender, task_partner, mess_size, mess_tag );
       break;
     case ACCELERATOR_COM_TYPE:
-      really_send_acc_message( thread_sender, task_partner, mess_size, mess_tag );
+      if ( really_send_acc_message( thread_sender, task_partner, mess_size, mess_tag ) && mess_tag > CUDA_TAG)
+      {
+        ++thread_sender->task->gpu_requests[0];
+        if( thread_sender->host )
+          ++thread_sender->task->gpu_requests[thread_partner->threadid];
+        else
+          ++thread_sender->task->gpu_requests[thread_sender->threadid];
+      }
       break;
     default:
       panic( "Incorrect communication type! kind = %d", kind );

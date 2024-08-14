@@ -65,6 +65,11 @@ typedef double t_nano;
 
 typedef int modules_map; /* see 'modules_map.h' */
 
+typedef enum {
+  WAIT_FOR_SYNC,
+  CONTINUE
+} scheduler_synchronization;
+
 #ifdef PACA
 
 typedef struct
@@ -768,6 +773,12 @@ struct t_task
   struct t_thread *HostSync;    /* Host thread of sync */
   int StreamByComm;             /* Stream_id indicated in comm_id for global_op */
   int threads_in_accelerator;   /* Number of threads (e.g. CUDA streams) executed in gpu */
+
+  // gpu_requests stores the number of memory copies and kernel excutions on each stream of the task.
+  // The first position (0) stores the total number of device operations performed. Used in cudaDeviceSynchronize
+  size_t *gpu_requests;
+  size_t streamid_to_synchronize;
+  struct t_thread *hostThreadWaiting;    /* Host thread waiting a streamsync or devicesync */
 
   // event synchronization
   struct TEventSyncQueue *event_sync_queue;

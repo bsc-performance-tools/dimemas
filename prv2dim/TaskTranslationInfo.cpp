@@ -239,8 +239,6 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
   pendent_i_Recv_counter = 0;
   pendent_Glop_counter   = 0;
 
-  OngoingDeviceSync = false;
-  StreamIdToSync    = -1;
   LastGPUBurstBlock = InitialTime;
   OCLFinishComm     = false;
 
@@ -668,14 +666,6 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
       }
     }
 
-    if ( OngoingDeviceSync && AcceleratorThread != ACCELERATOR_NULL )
-    {
-      if ( Type == CUDA_SYNCH_STREAM_EV || Type == OLD_CUDA_SYNCH_STREAM_EV ) // || Type == OCL_SYNCH_STREAM_EV)
-      {
-        StreamIdToSync = (INT32)Value;
-      }
-    }
-
     if ( Dimemas_User_Event( TemporaryFile, TaskId, ThreadId, (INT64)Type, Value ) < 0 )
     {
       SetError( true );
@@ -709,15 +699,10 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
       }
 
-      if ( CUDAEventEncoding_Is_CUDABlock( Type ) && ( Value == CUDA_THREADSYNCHRONIZE_VAL || Value == CUDA_STREAMSYNCHRONIZE_VAL ) )
-      {
-        OngoingDeviceSync = true;
-      }
-
       if ( debug )
         cout << "Printing CUDA Opening Event: " << *CurrentEvent;
 
-      if ( AcceleratorThread == ACCELERATOR_KERNEL && !OngoingDeviceSync )
+      if ( AcceleratorThread == ACCELERATOR_KERNEL )
       {
         // Device threads must include a synchronization before they start
         // Idle block start
@@ -793,8 +778,12 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
         else
         {
-          if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
-            return false;
+          /* the value type should not be unsigned. But changing it in t_event_block would cause problems for the simulator */
+          if ( !CUDAEventEconding_Is_CUDASync( { CurrentBlock.first, (unsigned long int)CurrentBlock.second } ) )
+          {
+            if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+              return false;
+          }
         }
 
         if ( !commInCudaLaunch && 
@@ -806,96 +795,6 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
           cout << "Time " << Timestamp << endl;
         }
         commInCudaLaunch = false;
-
-
-
-        /* Generation of pseudo-collectives to simulate the thread/stream
-          synchronizations */
-        if ( CUDAEventEncoding_Is_CUDABlock( CurrentBlock.first ) &&
-             ( CurrentBlock.second == CUDA_THREADSYNCHRONIZE_VAL || CurrentBlock.second == CUDA_STREAMSYNCHRONIZE_VAL ) )
-        {
-          if ( AcceleratorThread == ACCELERATOR_HOST )
-          { /* Host thread */
-            if ( StreamIdToSync != -1 )
-            { /* Synchronization to a given stream */
-              if ( Dimemas_Global_OP( TemporaryFile,
-                                      TaskId,
-                                      ThreadId,
-                                      0, /* MPI_BARRIER  */
-                                      ( StreamIdToSync * ( -1 ) ) - 1,
-                                      TaskId,
-                                      0,
-                                      0,
-                                      0,
-                                      GLOBAL_OP_SYNC ) < 0 )
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
-            else
-            { /* Synchronization to all threads */
-              if ( Dimemas_Global_OP( TemporaryFile,
-                                      TaskId,
-                                      ThreadId,
-                                      0,  /* MPI_BARRIER  */
-                                      -1, /* All threads! */
-                                      TaskId,
-                                      0,
-                                      0,
-                                      0,
-                                      GLOBAL_OP_SYNC ) < 0 )
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
-          }
-          else if ( AcceleratorThread == ACCELERATOR_KERNEL )
-          { /* Device threads */
-            if( CurrentBlock.second == CUDA_STREAMSYNCHRONIZE_VAL )
-            {
-              if ( Dimemas_Global_OP( TemporaryFile,
-                                      TaskId,
-                                      ThreadId,
-                                      0, /* MPI_BARRIER  */
-                                      0, /* Always host */
-                                      TaskId,
-                                      0,
-                                      0,
-                                      0,
-                                      GLOBAL_OP_SYNC ) < 0 )
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
-            else
-            {
-              if ( Dimemas_Global_OP( TemporaryFile,
-                                      TaskId,
-                                      ThreadId,
-                                      0,  /* MPI_BARRIER  */
-                                      -1, /* All threads! */
-                                      TaskId,
-                                      0,
-                                      0,
-                                      0,
-                                      GLOBAL_OP_SYNC ) < 0 )
-              {
-                SetError( true );
-                SetErrorMessage( "error writing output trace", strerror( errno ) );
-                return false;
-              }
-            }
-          }
-
-          OngoingDeviceSync = false;
-          StreamIdToSync    = -1; // reset value to All threads
-        }
 
         if ( debug )
           cout << "Printing CUDA Closing Event: " << *CurrentEvent;
@@ -929,10 +828,6 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
       }
 
-      if ( Value == OCL_FINISH_VAL )
-      {
-        OngoingDeviceSync = true;
-      }
       if ( debug )
         cout << "Printing OCL Opening Event: " << *CurrentEvent;
 

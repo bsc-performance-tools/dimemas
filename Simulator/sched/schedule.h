@@ -25,6 +25,9 @@
 
 #ifndef __schedule_h
 #define __schedule_h
+
+#include "types.h"
+
 /**
  * External routines defined in file schedule.c
  **/
@@ -64,8 +67,8 @@ t_boolean more_actions( struct t_thread *thread );
 /* JGG: Intenta replanificar el thread que le pasamos por parámetro */
 void SCHEDULER_reschedule( struct t_thread *thread );
 
-void treat_acc_event( struct t_thread *thread, struct t_even *event );
+scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_even *event );
 
-void scheduler_treat_event(struct t_thread *thread, struct t_even *event );
+scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct t_even *event );
 
 #endif

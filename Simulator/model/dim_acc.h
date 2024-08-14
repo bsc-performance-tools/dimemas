@@ -34,7 +34,7 @@ extern "C"
 {
 #endif
 
-  void treat_acc_event( struct t_thread *thread, struct t_even *event );
+  scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_even *event );
 
 #ifdef __cplusplus
 }

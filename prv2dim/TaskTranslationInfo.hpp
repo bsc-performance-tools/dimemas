@@ -37,7 +37,7 @@ using cepba_tools::Error;
 using std::pair;
 
 #ifdef NEW_DIMEMAS_TRACE
-typedef pair<INT32, INT64> Block_t;
+typedef pair<UINT32, INT64> Block_t;
 #else
 typedef DimBlock Block_t;
 #endif
@@ -68,8 +68,6 @@ class TaskTranslationInfo : public Error
   UINT64 LastGPUBurstBlock;
   bool FirstCUDARead;
   bool FirstOCLRead;
-  bool OngoingDeviceSync;
-  INT32 StreamIdToSync;
   INT32 AcceleratorThread;
   vector<Block_t> CUDABlockIdStack;
   vector<Block_t> OCLBlockIdStack;

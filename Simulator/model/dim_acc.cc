@@ -44,11 +44,16 @@ extern "C" {
  ** Updates acc_in_block_event
 
  ***************************************************************/
-void treat_acc_event( struct t_thread *thread, struct t_even *event )
+scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_even *event )
 {
+  if ( CUDAEventEncoding_Is_StreamSyncId_EV( event ) )
+  {
+    thread->task->streamid_to_synchronize = event->value-1;
+  }
+
   if ( !CUDAEventEncoding_Is_CUDABlock( event->type ) && !OCLEventEncoding_Is_OCLBlock( event->type ) &&
        !( CUDAEventEncoding_Is_Kernel( event->type ) && thread->stream ) )
-   return;
+    return CONTINUE;
 
   int block_begin = CUDAEventEncoding_Is_BlockBegin( event->value );
 
@@ -58,11 +63,26 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     thread->first_acc_event_read = TRUE;
   }
 
+  auto checkSyncAndSetHostToReady = []( auto thread )
+  {
+    if( thread->task->gpu_requests[thread->threadid] == 1 || thread->task->gpu_requests[0] == 1 )
+    {
+      struct t_thread * tmpThread = thread->task->hostThreadWaiting;
+      if ( tmpThread != TH_NIL )
+      {
+        tmpThread->event_sync_reentry = TRUE;
+        tmpThread->loose_cpu = TRUE;
+        SCHEDULER_thread_to_ready( tmpThread );
+      }
+    }
+    --thread->task->gpu_requests[thread->threadid];
+    --thread->task->gpu_requests[0];
+  };
+
   if( thread->captured_events->treatAccEventBehavior == t_treat_acc_events_behavior::STATES_AND_BLOCK ||
       thread->captured_events->treatAccEventBehavior == t_treat_acc_events_behavior::ALL )
   {
     struct t_cpu *cpu = get_cpu_of_thread( thread );
-
 
     if ( CUDAEventEconding_Is_CUDAStreamCreate( event ) && simulate_cuda == TRUE )
     {
@@ -90,6 +110,19 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
 
     else if ( !block_begin && CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) )
     {
+      size_t num_cuda_calls = 0;
+
+      if( CUDAEventEconding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
+        num_cuda_calls = thread->task->gpu_requests[ thread->task->streamid_to_synchronize ];
+      else
+        num_cuda_calls = thread->task->gpu_requests[0];
+
+      if ( num_cuda_calls > 0 )
+      {
+        thread->task->hostThreadWaiting = thread;
+        return WAIT_FOR_SYNC;
+      }
+
       PARAVER_Thread_Sync( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
@@ -100,6 +133,9 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
 
     else if ( !block_begin && CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) )
     {
+      if( !thread->host )
+        checkSyncAndSetHostToReady( thread );
+
       PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
     else if ( !block_begin && CUDAEventEncoding_Is_CUDAMemset( thread->acc_in_block_event ) )
@@ -109,6 +145,8 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     else if ( thread->stream && ( CUDAEventEncoding_Is_Kernel_Block( thread->acc_in_block_event ) ||
                                   OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
     {
+      checkSyncAndSetHostToReady( thread );
+
       PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
     /* CUDA cpu states */
@@ -147,4 +185,5 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
     // }
       thread->acc_in_block_event.paraver_time = current_time;
   }
+  return CONTINUE;
 }
