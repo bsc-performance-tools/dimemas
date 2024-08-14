@@ -211,6 +211,8 @@ extern "C"
 
   extern void PARAVER_Thread_Sync( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
 
+  extern void PARAVER_Mem_Alloc( int cpu, int ptask, int task, int thread, dimemas_timer init_time, dimemas_timer end_time );
+
 #ifdef __cplusplus
 }
 #endif

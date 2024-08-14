@@ -228,11 +228,19 @@ extern "C"
     52, 43, 0       \
   }
 
+#define PRV_MEM_ALLOC_ST  30
+#define PRV_MEM_ALLOC_LBL "Allocating memory"
+#define PRV_MEM_ALLOC_CLR \
+  {                 \
+    255, 46, 0       \
+  }
+
+
 #define PRV_NOT_USED_LBL "Not used"
 
 /* ---------------------------------------------------- Global Variables ----*/
 #define DEF_NB_COLOR_STATE     49
-#define PRV_DEFAULT_STATES_NUM 30
+#define PRV_DEFAULT_STATES_NUM 31
   static DefaultPalette_t ParaverDefaultPalette[ DEF_NB_COLOR_STATE ] = {
     /* 00 */ { PRV_IDLE_CLR, PRV_IDLE_LBL },
     /* 01 */ { PRV_RUNNING_CLR, PRV_RUNNING_LBL },
@@ -264,7 +272,7 @@ extern "C"
     /* 27 */ { PRV_WAITING_LNKS_CLR, PRV_WAITING_LNKS_LBL },
     /* 28 */ { PRV_DATA_COPY_CLR, PRV_DATA_COPY_LBL },
     /* 29 */ { PRV_RTT_CLR, PRV_RTT_LBL },
-    /* 30 */ { { 255, 46, 0 }, PRV_NOT_USED_LBL },
+    /* 30 */ { PRV_MEM_ALLOC_CLR, PRV_MEM_ALLOC_LBL },
     /* 31 */ { { 100, 216, 32 }, PRV_NOT_USED_LBL },
     /* 32 */ { { 0, 0, 112 }, PRV_NOT_USED_LBL },
     /* 33 */ { { 105, 105, 0 }, PRV_NOT_USED_LBL },

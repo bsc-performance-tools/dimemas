@@ -88,7 +88,7 @@ typedef struct paraver_state
 #define PRV_RTT_LBL             "Round Trip Time"
 #define PRV_RTT_CLR             {  55,  55,  55 }
 */
-#define LAST_STATE PRV_RTT_ST
+#define LAST_STATE PRV_MEM_ALLOC_ST
 
 /* 'global_paraver_states' DEFINITION *****************************************/
 
@@ -96,7 +96,7 @@ typedef struct paraver_state
 #define PRV_STATE_COUNT     PRV_DEFAULT_STATES_NUM
 #define DIMEMAS_STATE_COUNT ( LAST_STATE - PRV_STATE_COUNT ) + 1
 /* This define is used on PCF generation */
-#define PCF_COLOR_COUNT_LBL "NUM_OF_STATE_COLORS 30"
+#define PCF_COLOR_COUNT_LBL "NUM_OF_STATE_COLORS 31"
 /* This define must be number of states minus 1 */
 #define PCF_YMAX_LBL "YMAX_SCALE          20"
 

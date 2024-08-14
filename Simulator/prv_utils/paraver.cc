@@ -967,6 +967,31 @@ void PARAVER_Thread_Sync (int cpu, int ptask, int task, int thread,
 					 PRV_SYNC_ST);
 }
 
+void PARAVER_Mem_Alloc (int cpu, int ptask, int task, int thread,
+									 				dimemas_timer init_time,
+													dimemas_timer end_time)
+{
+	VERIFICA_GENERACIO_PARAVER;
+
+	if EQ_TIMER (init_time, end_time)
+		return;
+
+	if (debug&D_PRV)
+	{
+		PRINT_TIMER (current_time);
+		printf (": Paraver Thread Synchronization Printed\n\tOBJECT   "\
+						"CPU %d P%02d T%02d (t%02d)\n",
+						cpu, ptask, task, thread);
+	}
+
+	NewState(cpu, ptask, task, thread,
+					 init_time,
+					 end_time,
+					 PRV_MEM_ALLOC_ST);
+}
+
+
+
 /*****************************************************************************
  * Private functions implementation
  ****************************************************************************/

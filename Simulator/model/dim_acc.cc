@@ -48,7 +48,7 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
 {
   if ( !CUDAEventEncoding_Is_CUDABlock( event->type ) && !OCLEventEncoding_Is_OCLBlock( event->type ) &&
        !( CUDAEventEncoding_Is_Kernel( event->type ) && thread->stream ) )
-    return;
+   return;
 
   int block_begin = CUDAEventEncoding_Is_BlockBegin( event->value );
 
@@ -83,9 +83,19 @@ void treat_acc_event( struct t_thread *thread, struct t_even *event )
       PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
+    else if ( !block_begin && !thread->stream && CUDAEventEncoding_Is_CUDAMalloc( thread->acc_in_block_event ) )
+    { /* If ending a Launch event, cpu state is Thread Scheduling	*/
+      PARAVER_Mem_Alloc( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
+    }
+
     else if ( !block_begin && CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) )
     {
       PARAVER_Thread_Sync( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
+    }
+
+    else if ( !block_begin && CUDAEventEncoding_Is_CUDADeviceReset( thread->acc_in_block_event ) )
+    {
+      PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
     else if ( !block_begin && CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) )
