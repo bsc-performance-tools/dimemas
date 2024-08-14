@@ -93,7 +93,7 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
 
     /* CUDA cpu states */
     if ( !block_begin && 
-         ( CUDAEventEconding_Is_CUDAConfigCall( thread->acc_in_block_event ) || CUDAEventEconding_Is_CUDAStreamCreateBlock( thread->acc_in_block_event ) ) )
+         ( CUDAEventEconding_Is_CUDAConfigCall( thread->acc_in_block_event ) || CUDAEventEconding_Is_CUDAStreamCreateBlock( thread->acc_in_block_event ) || CUDAEventEncoding_Is_CUDAStreamDestroy( thread->acc_in_block_event ) ) )
     { /* If ending a Config Call or Stream Create event, cpu state is Others	*/
       PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
@@ -103,7 +103,7 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
       PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
-    else if ( !block_begin && !thread->stream && CUDAEventEncoding_Is_CUDAMalloc( thread->acc_in_block_event ) )
+    else if ( !block_begin && !thread->stream && ( CUDAEventEncoding_Is_CUDAMalloc( thread->acc_in_block_event ) || CUDAEventEncoding_Is_CUDAFree( thread->acc_in_block_event ) ) )
     { /* If ending a Launch event, cpu state is Thread Scheduling	*/
       PARAVER_Mem_Alloc( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }

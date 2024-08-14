@@ -202,6 +202,7 @@ extern "C"
     CUDA_THREADEXIT_VAL,
     CUDASTREAMDESTROY_VAL,
     CUDAMALLOC_VAL,
+    CUDAFREE_VAL = 13,
     CUDA_MEMSET_VAL = 34
   } CUDA_Event_Values;
 
@@ -1050,7 +1051,9 @@ extern "C"
   int CUDAEventEncoding_Is_BlockBegin( long64_t Op );
   int CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver );
   int CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAStreamDestroy( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMalloc( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAFree( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event );
   int CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event );
   int CUDAEventEconding_Is_CUDALaunch( struct t_event_block event );

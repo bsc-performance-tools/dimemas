@@ -736,9 +736,24 @@ Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
   return FALSE;
 }
 
+Boolean CUDAEventEncoding_Is_CUDAStreamDestroy( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDASTREAMDESTROY_VAL )
+    return TRUE;
+  return FALSE;
+}
+
 Boolean CUDAEventEncoding_Is_CUDAMalloc( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDAMALLOC_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+
+Boolean CUDAEventEncoding_Is_CUDAFree( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDAFREE_VAL )
     return TRUE;
   return FALSE;
 }
