@@ -133,7 +133,7 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
 
     else if ( !block_begin && CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) )
     {
-      if( !thread->host )
+      if( simulate_cuda && !thread->host )
         checkSyncAndSetHostToReady( thread );
 
       PARAVER_Mem_Transf( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
@@ -145,7 +145,8 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
     else if ( thread->stream && ( CUDAEventEncoding_Is_Kernel_Block( thread->acc_in_block_event ) ||
                                   OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) ) )
     {
-      checkSyncAndSetHostToReady( thread );
+      if ( simulate_cuda )
+        checkSyncAndSetHostToReady( thread );
 
       PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }

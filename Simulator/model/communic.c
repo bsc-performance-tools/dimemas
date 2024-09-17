@@ -73,6 +73,8 @@
  * Global variables                                                           *
  *****************************************************************************/
 
+extern t_boolean simulate_cuda;
+
 t_boolean DATA_COPY_enabled; /* True if data copy latency is enabled */
 int DATA_COPY_message_size;  /* Maximun message size to compute data copy
                               * latency */
@@ -5745,7 +5747,7 @@ void really_send( struct t_thread *thread_sender )
       really_send_external_model_comm_type( thread_sender, task_partner, mess_size, mess_tag );
       break;
     case ACCELERATOR_COM_TYPE:
-      if ( really_send_acc_message( thread_sender, task_partner, mess_size, mess_tag ) && mess_tag > CUDA_TAG)
+      if ( really_send_acc_message( thread_sender, task_partner, mess_size, mess_tag ) && mess_tag > CUDA_TAG && simulate_cuda )
       {
         ++thread_sender->task->gpu_requests[0];
         if( thread_sender->host )
