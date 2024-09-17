@@ -1014,11 +1014,13 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
     ++task->threads_in_accelerator;
     task->StreamSync = realloc( task->StreamSync, sizeof(struct t_thread *) * task->threads_in_accelerator );
     task->StreamSync[ task->threads_in_accelerator - 1 ] = TH_NIL;
-    task->gpu_requests = realloc( task->gpu_requests, sizeof(size_t) * task->threads_in_accelerator );
-    task->gpu_requests[ task->threads_in_accelerator - 1 ] = 0;
+    task->gpu_requests = realloc( task->gpu_requests, sizeof(size_t) * ( task->threads_in_accelerator + 1 ) );
+    task->gpu_requests[ task->threads_in_accelerator ] = 0;
   }
   else if ( task->accelerator && thread_id == 0 )
   {
+    task->gpu_requests = malloc( sizeof(size_t) );
+    task->gpu_requests[ 0 ] = 0;
     thread->stream = FALSE;
     thread->host   = TRUE;
   }
