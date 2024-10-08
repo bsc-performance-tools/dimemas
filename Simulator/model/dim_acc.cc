@@ -72,6 +72,7 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
       {
         tmpThread->event_sync_reentry = TRUE;
         tmpThread->loose_cpu = TRUE;
+        thread->task->hostThreadWaiting = NULL;
         SCHEDULER_thread_to_ready( tmpThread );
       }
     }
