@@ -172,23 +172,23 @@ void event_sync_init( void )
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-  // ------- CUDA_LAUNCH + CUDA_KERNEL_EV -------
-  tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
-  tmpEventIndex.event.value = CUDA_LAUNCH_VAL;
-  tmpEventIndex.isHost = true;
+  // // ------- CUDA_LAUNCH + CUDA_KERNEL_EV -------
+  // tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
+  // tmpEventIndex.event.value = CUDA_LAUNCH_VAL;
+  // tmpEventIndex.isHost = true;
 
-  tmpEventTrait.eventHost.type = CUDA_LIB_CALL_EV;
-  tmpEventTrait.eventHost.value = CUDA_LAUNCH_VAL;
-  tmpEventTrait.eventRest.type = CUDA_KERNEL_EV;
-  tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL; //DUMMY VALUE
-  tmpEventTrait.restThreadsCanResume = false;
-  tmpEventTrait.capturePreviousEvents = true;
-  tmpEventTrait.rewriteLogicalReceive = TRUE;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+  // tmpEventTrait.eventHost.type = CUDA_LIB_CALL_EV;
+  // tmpEventTrait.eventHost.value = CUDA_LAUNCH_VAL;
+  // tmpEventTrait.eventRest.type = CUDA_KERNEL_EV;
+  // tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL; //DUMMY VALUE
+  // tmpEventTrait.restThreadsCanResume = false;
+  // tmpEventTrait.capturePreviousEvents = true;
+  // tmpEventTrait.rewriteLogicalReceive = TRUE;
+  // syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-  tmpEventIndex.event.type = CUDA_KERNEL_EV;
-  tmpEventIndex.isHost = false;
-  syncEvents[ tmpEventIndex ] = tmpEventTrait;
+  // tmpEventIndex.event.type = CUDA_KERNEL_EV;
+  // tmpEventIndex.isHost = false;
+  // syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
   // ------- OMP_BARRIER + OMP_END_VAL -------
   tmpEventIndex.event.type = OMP_BARRIER;
