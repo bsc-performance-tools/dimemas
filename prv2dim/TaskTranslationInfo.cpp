@@ -1914,7 +1914,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
 
             commInCudaLaunch = true;
 
-            if ( Dimemas_NX_BlockingSend( TemporaryFile,
+            if ( Dimemas_NX_ImmediateSend( TemporaryFile,
                                           TaskId,
                                           ThreadId,
                                           PartnerTaskId,
@@ -1929,7 +1929,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               return false;
             }
 
-            if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, RD_ASYNC ) < 0 )
+            if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
