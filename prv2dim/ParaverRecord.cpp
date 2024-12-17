@@ -169,6 +169,8 @@ void Event::AddTypeValue( INT32 Type, INT64 Value )
     Type = CUDA_LIB_CALL_EV;
   else if(CUDAEventEconding_Is_OldKernelType( Type ) )
     Type = CUDA_KERNEL_EV;
+  else if( CUDAEventEconding_Is_OldSynchStream( Type ) )
+    Type = CUDA_SYNCH_STREAM_EV;
 
   EventTypeValue_t newTypeValue = new EventTypeValue( Type, Value );
   Content.push_back( newTypeValue );

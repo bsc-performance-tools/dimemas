@@ -1151,6 +1151,17 @@ bool ParaverTraceTranslator::Translate( bool GenerateFirstIdle,
     cout << endl;
   }
 
+  if ( Parser->getExistOldCUDAcalls() )
+  {
+    cout << "********************************************************************************" << endl;
+    cout << "*                               WARNING                                        *" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << "Deprecated extrae CUDA library calls found." << endl;
+    cout << "WARNING: The simulation of this trace could be inconsistent" << endl;
+    cout << "NOTE: Contact tools@bsc.es to check how to solve this problem" << endl;
+    cout << "********************************************************************************" << endl;
+    cout << endl;
+  }
 
 #ifdef NEW_DIMEMAS_TRACE
 

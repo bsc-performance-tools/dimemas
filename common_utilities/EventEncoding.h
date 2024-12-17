@@ -1067,7 +1067,7 @@ extern "C"
 
   int CUDAEventEconding_Is_OldLibType( long64_t type );
   int CUDAEventEconding_Is_OldKernelType( long64_t type );
-
+  int CUDAEventEconding_Is_OldSynchStream( long64_t type );
 
   /* OpenCL EventEncoding calls	*/
   int OCLEventEncoding_Is_OCLBlock( long64_t type );

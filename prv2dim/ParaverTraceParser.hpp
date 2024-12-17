@@ -70,6 +70,8 @@ class ParaverTraceParser : public Error
 
   ParaverHeader_t Header;
 
+  bool existOldCUDAcalls = false;
+
  public:
   ParaverTraceParser()
   {
@@ -101,6 +103,11 @@ class ParaverTraceParser : public Error
   INT32 GetFilePercentage( void );
 
   bool Reload( void );
+
+  bool getExistOldCUDAcalls() const
+  {
+    return existOldCUDAcalls;
+  }
 
  private:
   ParaverRecord_t NextTraceRecord( UINT32 RecordType );
