@@ -778,12 +778,8 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         }
         else
         {
-          /* the value type should not be unsigned. But changing it in t_event_block would cause problems for the simulator */
-          if ( !CUDAEventEconding_Is_CUDASync( { CurrentBlock.first, (unsigned long int)CurrentBlock.second } ) )
-          {
-            if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
-              return false;
-          }
+          if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
+            return false;
         }
 
         if ( !commInCudaLaunch && 

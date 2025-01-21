@@ -461,7 +461,7 @@ t_nano SCHEDULER_get_execution_time( struct t_thread *thread )
   
   /* for ideal configuration ignore the burst inside the configure call */
   if ( ( thread->stream && CUDAEventEconding_Is_CUDAConfigCall ( thread->acc_in_block_event ) && thread->task->node->acc.startup == 0 ) ||
-       ( CUDAEventEncoding_Is_CUDATransferBlock ( thread->acc_in_block_event ) && simulate_cuda) ||
+       ( simulate_cuda && CUDAEventEncoding_Is_CUDABlock ( thread->acc_in_block_event.type ) == TRUE ) ||
        ( is_ideal_openmp == TRUE &&
          !OMPEventEncoding_Is_OMPWorker_Running( thread->omp_in_block_event ) &&
          ( OMPEventEncoding_Is_OMPBlock( thread->omp_in_block_event.type ) && thread->omp_in_block_event.value > 0 ||
