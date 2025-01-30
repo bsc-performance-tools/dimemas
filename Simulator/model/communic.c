@@ -6942,9 +6942,7 @@ static void start_global_op( struct t_thread *thread, int kind )
         others = (struct t_thread *)next_queue( &communicator->threads ) )
   {
     ASS_ALL_TIMER( others->collective_timers.with_resources, current_time );
-    PARAVER_Wait( 0, IDENTIFIERS( others ), others->last_paraver, current_time, PRV_BLOCKED_ST
-                  // PRV_BLOCKING_SEND_ST
-    );
+    PARAVER_Wait( 0, IDENTIFIERS( others ), others->last_paraver, current_time, PRV_GLOBAL_OP_ST );
 
     others->last_paraver = current_time;
 
@@ -7879,7 +7877,7 @@ void GLOBAL_operation( struct t_thread *thread,
       ASS_ALL_TIMER( others->collective_timers.sync_time, current_time );
       if ( synch_type == GLOBAL_OP_SYNC )
       {
-        PARAVER_Wait( 0, IDENTIFIERS( others ), others->last_paraver, current_time, PRV_BLOCKED_ST );
+        PARAVER_Wait( 0, IDENTIFIERS( others ), others->last_paraver, current_time, PRV_GLOBAL_OP_ST );
         others->last_paraver = current_time;
       }
     }
