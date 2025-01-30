@@ -80,16 +80,6 @@ void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_ti
                             current_time );
     }
   }
-  else if( thread->omp_worker_thread ) 
-  {
-    if( thread->omp_in_block_event.type == 0 )
-    {
-      PARAVER_Not_Created( cpu->unique_number,
-                           IDENTIFIERS (thread),
-                           0,
-                           current_time );
-    }
-  }
 
   if( ( event->type == OMP_TASKWAIT && event->value == OMP_BEGIN_VAL ) ||
       ( event->type == OMP_BARRIER && event->value == OMP_BEGIN_VAL ) )
