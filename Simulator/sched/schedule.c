@@ -1423,11 +1423,7 @@ t_boolean more_actions( struct t_thread *thread )
     else
     {
       struct t_cpu *cpu;
-      if ( !thread->stream )
-      { /* In stream thread last cpu state is Not_Created thrown by host (above) */
-        cpu = get_cpu_of_thread( thread );
-        PARAVER_Dead( cpu->unique_number, IDENTIFIERS( thread ), current_time );
-      }
+      cpu = get_cpu_of_thread( thread );
 
       /* Not_created state in stream from last paraver event to end of trace */
       if ( thread->host )
