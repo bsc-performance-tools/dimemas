@@ -130,6 +130,7 @@ extern "C"
 #define OMP_WORK_EV                      60000011
 #define OMP_EXECUTED_PARALLEL_FXN        60000018
 #define OMP_PTHREAD_FXN                  60000020
+#define OMP_TASKWAIT                     60000022
 #define OMP_EXE_TASK_FXN                 60000023
 #define OMP_INIT_TASK_FXN                60000024
 #define OMP_SET_NUM_THREADS              60000030
@@ -146,6 +147,7 @@ extern "C"
 #define OMP_WORK_LABEL                         "OpenMP Worksharing work dispacher"
 #define OMP_EXECUTED_PARALLEL_FXN_LABEL        "Executed OpenMP parallel function"
 #define OMP_PTHREAD_FXN_LABEL                  "pthread function"
+#define OMP_TASKWAIT_LABEL                     "OMP taskwait"
 #define OMP_EXE_TASK_FXN_LABEL                 "Executed OpenMP task function"
 #define OMP_INIT_TASK_FXN_LABEL                "Instantiated OpenMP task function"
 #define OMP_SET_NUM_THREADS_LABEL              "OpenMP set num threads"

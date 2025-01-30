@@ -1061,6 +1061,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   }
   thread->omp_in_block_event.type         = 0;
   thread->omp_in_block_event.value        = 0;
+  thread->omp_in_block_event.inWaitBlock  = FALSE;
   thread->omp_in_block_event.paraver_time = (dimemas_timer)0;
   thread->omp_iteration_count             = 0;
   thread->omp_last_running_end            = 0;

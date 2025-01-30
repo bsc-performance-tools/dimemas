@@ -91,6 +91,13 @@ void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_ti
     }
   }
 
+  if( ( event->type == OMP_TASKWAIT && event->value == OMP_BEGIN_VAL ) ||
+      ( event->type == OMP_BARRIER && event->value == OMP_BEGIN_VAL ) )
+    thread->omp_in_block_event.inWaitBlock = TRUE;
+  else if( ( event->type == OMP_TASKWAIT && event->value == OMP_END_VAL ) ||
+           ( event->type == OMP_BARRIER && event->value == OMP_END_VAL ) )
+    thread->omp_in_block_event.inWaitBlock = FALSE;
+
   if( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL )
   {
     thread->omp_in_block_event.type = 0;

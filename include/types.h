@@ -659,6 +659,7 @@ struct t_event_block
 {
   unsigned long int type;
   unsigned long int value;
+  t_boolean inWaitBlock;
   dimemas_timer paraver_time;
 };
 

@@ -1012,9 +1012,9 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning( struct t_event_block event )
   return FALSE;
 }
 
-#define NUM_OMPTYPES   14
-#define NUM_OMP_BLOCKS 10
-CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
+#define NUM_OMPTYPES   15
+#define NUM_OMP_BLOCKS 11
+CUDATypeInfo OMPType_Table[] = {
 
   { OMP_PARALLEL_EV, OMP_PARALLEL_LABEL },
   { OMP_WORKSHARING_EV, OMP_WORKSHARING_LABEL },
@@ -1022,10 +1022,13 @@ CUDATypeInfo OMPType_Table[ NUM_OMPTYPES ] = {
   { OMP_WORK_EV, OMP_WORK_LABEL },
   { OMP_EXECUTED_PARALLEL_FXN, OMP_EXECUTED_PARALLEL_FXN_LABEL },
   { OMP_PTHREAD_FXN, OMP_PTHREAD_FXN_LABEL },
+  { OMP_TASKWAIT, OMP_TASKWAIT_LABEL },
   { OMP_EXE_TASK_FXN, OMP_EXE_TASK_FXN_LABEL },
   { OMP_INIT_TASK_FXN, OMP_INIT_TASK_FXN_LABEL },
   { OMP_SET_NUM_THREADS, OMP_SET_NUM_THREADS_LABEL },
   { OMP_GET_NUM_THREADS, OMP_GET_NUM_THREADS_LABEL },
+/* NUM_OMP_BLOCKS end  */
+
   { OMP_EXE_PARALLEL_FXN_LINE_N_FILE, OMP_EXE_PARALLEL_FXN_LINE_N_FILE_LABEL },
   { OMP_PTHREAD_FXN_LINE_N_FILE, OMP_PTHREAD_FXN_LINE_N_FILE_LABEL },
   { OMP_EXE_TASK_FXN_LINE_N_FILE, OMP_EXE_TASK_FXN_LINE_N_FILE_LABEL },
@@ -1074,8 +1077,12 @@ Boolean OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event )
 Boolean OMPEventEncoding_Is_OMP_Running( struct t_event_block event )
 {
   if ( ( event.type == OMP_EXECUTED_PARALLEL_FXN && event.value > OMP_END_VAL ) ||
+       ( event.type == OMP_EXE_TASK_FXN && event.value > OMP_END_VAL ) ||
        ( event.type == OMP_BARRIER && event.value == OMP_END_VAL ) ||
-       ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) )
+       ( event.type == OMP_WORK_EV && event.value == OMP_END_VAL ) ||
+       ( event.type == OMP_WORKSHARING_EV && event.value == OMP_END_VAL ) ||
+       ( event.type == OMP_INIT_TASK_FXN && event.value == OMP_END_VAL ) ||
+       ( event.type == OMP_TASKWAIT && event.value == OMP_END_VAL ) )
     return TRUE;
   return FALSE;
 }
@@ -1101,7 +1108,9 @@ Boolean OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event )
  */
 Boolean OMPEventEncoding_Is_OMPSync( struct t_event_block event )
 {
-  if ( event.type == OMP_BARRIER && event.value == OMP_BEGIN_VAL )
+  if ( ( event.type == OMP_BARRIER && event.value == OMP_BEGIN_VAL ) ||
+       ( event.type == OMP_TASKWAIT && event.value == OMP_BEGIN_VAL ) ||
+       ( event.type == OMP_EXE_TASK_FXN && event.value == OMP_END_VAL && event.inWaitBlock == TRUE ) )
     return TRUE;
   return FALSE;
 }
@@ -1124,7 +1133,9 @@ Boolean OMPEventEncoding_Is_OMP_fork_begin( struct t_event_block event )
 Boolean OMPEventEncoding_Is_OMPSched( struct t_event_block event )
 {
   if ( ( event.type == OMP_WORKSHARING_EV && ( event.value == DO_WORKSHARE || event.value == SINGLE_WORKSHARE ) ) ||
-       ( event.type == OMP_WORK_EV && event.value == OMP_BEGIN_VAL ) || ( event.type == OMP_SET_NUM_THREADS && event.value == OMP_BEGIN_VAL ) )
+       ( event.type == OMP_WORK_EV && event.value == OMP_BEGIN_VAL ) || 
+       ( event.type == OMP_SET_NUM_THREADS && event.value == OMP_BEGIN_VAL ) ||
+       ( event.type == OMP_INIT_TASK_FXN && event.value > OMP_END_VAL ) )
     return TRUE;
   return FALSE;
 }
