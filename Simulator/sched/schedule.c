@@ -616,6 +616,12 @@ scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct 
   /* treating OMP events */
   treat_omp_events( thread, event, current_time );
 
+  struct t_cpu *cpu;
+  cpu = get_cpu_of_thread( thread );
+
+  if( event->type == FLUSHING_EV && event->value == BLOCK_END_VAL )
+    PARAVER_Wait( cpu->unique_number, IDENTIFIERS( thread ), thread->last_generic_event_time, current_time, PRV_IO_ST );
+
   /* Not printing block end if it is a clEnqueueNDRangeKernel because
     * it has been printed yet in COMMUNIC_SEND
     * Not printing event if stream needs a previous sync (in barrier)
@@ -625,9 +631,6 @@ scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct 
     !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->stream && event->value == 0 );
   if ( printing_event )
   { /* If it is not an accelerator event that has to wait to be written */
-    struct t_cpu *cpu;
-    
-    cpu = get_cpu_of_thread( thread );
     PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, event->type, event->value );
   }
   return CONTINUE;
@@ -904,6 +907,8 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             }
             else
               scheduler_treat_event( thread, &action->desc.even );
+
+            thread->last_generic_event_time = current_time;
 
             thread->action = action->next;
             READ_free_action( action );

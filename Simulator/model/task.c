@@ -949,6 +949,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->loose_cpu                = TRUE;
   thread->idle_block               = FALSE;
   thread->last_paraver             = current_time;
+  thread->last_generic_event_time  = current_time;
   thread->size_port                = 0;
   thread->port_send_link           = L_NIL;
   thread->port_recv_link           = L_NIL;
@@ -1179,6 +1180,7 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
   copy_thread->local_hd_link            = thread->local_hd_link;
   copy_thread->partner_hd_link          = thread->partner_hd_link;
   copy_thread->last_paraver             = thread->last_paraver;
+  copy_thread->last_generic_event_time  = thread->last_generic_event_time;
   copy_thread->base_priority            = thread->base_priority;
   ( *SCH[ machine->scheduler.policy ].init_scheduler_parameters )( copy_thread );
   SCHEDULER_copy_parameters( thread, copy_thread );
@@ -1244,15 +1246,16 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   copy_thread->local_hd_link            = thread->local_hd_link;
   copy_thread->partner_hd_link          = thread->partner_hd_link;
 
-  copy_thread->last_paraver   = thread->last_paraver;
-  copy_thread->base_priority  = thread->base_priority;
-  copy_thread->sch_parameters = A_NIL;
-  copy_thread->seek_position  = SEEK_NIL;
-  copy_thread->logical_send   = thread->logical_send;
-  copy_thread->logical_recv   = thread->logical_recv;
-  copy_thread->physical_send  = thread->physical_send;
-  copy_thread->physical_recv  = thread->physical_recv;
-  copy_thread->last_cp_node   = thread->last_cp_node;
+  copy_thread->last_paraver            = thread->last_paraver;
+  copy_thread->last_generic_event_time = thread->last_generic_event_time;
+  copy_thread->base_priority           = thread->base_priority;
+  copy_thread->sch_parameters          = A_NIL;
+  copy_thread->seek_position           = SEEK_NIL;
+  copy_thread->logical_send            = thread->logical_send;
+  copy_thread->logical_recv            = thread->logical_recv;
+  copy_thread->physical_send           = thread->physical_send;
+  copy_thread->physical_recv           = thread->physical_recv;
+  copy_thread->last_cp_node            = thread->last_cp_node;
 
   copy_thread->sstask_id   = thread->sstask_id;
   copy_thread->sstask_type = thread->sstask_type;
@@ -1358,7 +1361,8 @@ void clear_last_actions( struct t_Ptask *Ptask )
       thread = task->threads[ thread_it ];
       assert( thread->last_action == AC_NIL );
       assert( thread->action == AC_NIL );
-      thread->last_paraver  = current_time;
+      thread->last_paraver            = current_time;
+      thread->last_generic_event_time = current_time;
       thread->last_action   = AC_NIL;
       thread->seek_position = thread->original_seek;
 

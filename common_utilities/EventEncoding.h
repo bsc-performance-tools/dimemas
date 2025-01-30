@@ -507,7 +507,7 @@ extern "C"
     NUM_MPICALLS // number of MPI calls is defined by this table.
   } MPI_Event_Values;
 
-#define BLOCK_END_VAL MPIEND_VAL /* End value of the block vale which is zero*/
+#define BLOCK_END_VAL MPIEND_VAL /* End value of the block value which is zero*/
 
   typedef enum
   {

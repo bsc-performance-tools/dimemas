@@ -649,7 +649,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     if ( ( LastBlockEnd != Timestamp || ( LastBlockEnd == 0 && Timestamp == 0 ) ) && MPIBlockIdStack.size() == 0 && CUDABlockIdStack.size() == 0 &&
          OCLBlockIdStack.size() == 0 )
     {
-      if ( Type != FLUSHING_EV && Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER && AcceleratorThread != ACCELERATOR_KERNEL )
+      if ( Type != MPITYPE_PROBE_SOFTCOUNTER && Type != MPITYPE_PROBE_TIMECOUNTER && AcceleratorThread != ACCELERATOR_KERNEL )
       {
         if ( LastBlockEnd == 0 && OpenMP_thread == WORKER )
         {

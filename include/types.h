@@ -874,6 +874,7 @@ struct t_thread
   struct t_node *partner_node;                    /* Cal guardar el node desti del missatge */
 
   dimemas_timer last_paraver;
+  dimemas_timer last_generic_event_time;
   t_boolean loose_cpu;
   int to_module;
   char *sch_parameters;
