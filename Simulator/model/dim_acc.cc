@@ -171,7 +171,11 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
 
 
     /* Update the current accelerator block	*/
-    thread->acc_in_block_event.type  = event->type;
+    if( event->value == CUDA_END_VAL ) 
+      thread->acc_in_block_event.type = 0;
+    else
+      thread->acc_in_block_event.type  = event->type;
+
     thread->acc_in_block_event.value = event->value;
   }
 
