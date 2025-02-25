@@ -29,23 +29,100 @@ extern "C" {
   #include "define.h"
   #include "EventEncoding.h"
   #include "paraver.h"
+  #include "schedule.h"
 }
 
+#include <map>
+#include <vector>
+
 using namespace std; 
+
+struct OMPTasks
+{
+  std::map< unsigned long long, struct t_thread * > waitingExeTasks;
+};
+
+struct OMPTasks_ThreadInfo
+{
+  bool keep_capturing_events = false;
+  std::vector< t_even > captured_events;
+};
+
+struct OMPTasks *createOpenMPTasks()
+{
+  return new struct OMPTasks;
+}
+
+struct OMPTasks_ThreadInfo *createOpenMPTasks_ThreadInfo()
+{
+  return new struct OMPTasks_ThreadInfo;
+}
+
+void dumpOMPTaskCapturedEvents( struct t_thread * thread )
+{
+  struct t_cpu *cpu;
+  cpu = get_cpu_of_thread( thread );
+  
+  for( auto ev: thread->omp_tasks_thread_info->captured_events )
+    PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, ev.type, ev.value );
+
+  thread->omp_tasks_thread_info->captured_events.clear();
+}
+
 
 /**
  * Treating the OpenMP events
  * If any OpenMP states exist we have to print as they were
  * else we will print the events as they were.
  */
-void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time )
+scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time )
 {
   struct t_cpu *cpu;
   cpu = get_cpu_of_thread( thread );
   
+  if( thread->omp_tasks_thread_info->keep_capturing_events && event->type != OMP_TASK_IDENTIFIER )
+  {
+    thread->omp_tasks_thread_info->captured_events.push_back( *event );
+    return NO_PRINT_EVENT;
+  }
+
+  if( OMPEventEncoding_Is_InitTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
+  {
+    auto tmpThread = thread->task->omp_tasks->waitingExeTasks.find( event->value );
+    if( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
+    {
+      tmpThread->second->event_sync_reentry = TRUE;
+      tmpThread->second->loose_cpu = TRUE;
+      SCHEDULER_thread_to_ready( tmpThread->second );
+    }
+    else
+      thread->task->omp_tasks->waitingExeTasks.insert( { event->value, nullptr } );
+
+    return CONTINUE;
+  }
+
+  if( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
+  {
+    auto tmpThread = thread->task->omp_tasks->waitingExeTasks.find( event->value );
+    if( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
+    {
+      thread->task->omp_tasks->waitingExeTasks.erase( tmpThread );
+      dumpOMPTaskCapturedEvents( thread );
+      thread->omp_tasks_thread_info->keep_capturing_events = false;
+      thread->omp_in_block_event.paraver_time = current_time;
+      return CONTINUE;
+    }
+    else
+    {
+      thread->task->omp_tasks->waitingExeTasks.insert( { event->value, thread } );
+      return WAIT_FOR_SYNC;
+    }
+  }
+
+
   if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
   {
-    return;
+    return CONTINUE;
   }
 
   if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
@@ -97,4 +174,13 @@ void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_ti
   
   thread->omp_in_block_event.value = event->value;
   thread->omp_in_block_event.paraver_time = current_time;
+
+  if( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
+  {
+    thread->omp_tasks_thread_info->keep_capturing_events = true;
+    thread->omp_tasks_thread_info->captured_events.push_back( *event );
+    return NO_PRINT_EVENT;
+  }
+
+  return CONTINUE;
 }

@@ -153,6 +153,8 @@ void event_sync_init( void )
   validSyncTypes.insert( OMP_BARRIER );
   validSyncTypes.insert( OMP_EXECUTED_PARALLEL_FXN );
   validSyncTypes.insert( OMP_PARALLEL_EV );
+  validSyncTypes.insert( OMP_INIT_TASK_FXN );
+  validSyncTypes.insert( OMP_EXE_TASK_FXN );
 
 #ifndef PRV2DIM
   // ------- CUDA_LIB_CALL_EV + CUDA_CONFIGURECALL_VAL -------

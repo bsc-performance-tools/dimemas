@@ -614,7 +614,9 @@ scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct 
     return WAIT_FOR_SYNC;
 
   /* treating OMP events */
-  treat_omp_events( thread, event, current_time );
+  scheduler_synchronization returned_sync = treat_omp_events( thread, event, current_time );
+  if ( returned_sync == WAIT_FOR_SYNC )
+    return WAIT_FOR_SYNC;
 
   struct t_cpu *cpu;
   cpu = get_cpu_of_thread( thread );
@@ -627,6 +629,7 @@ scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct 
     * Not printing event if stream needs a previous sync (in barrier)
     */
   int printing_event =
+    returned_sync != NO_PRINT_EVENT &&
     !thread->acc_recv_sync &&
     !( OCLEventEncoding_Is_OCLKernelRunning( thread->acc_in_block_event ) && thread->stream && event->value == 0 );
   if ( printing_event )
@@ -906,7 +909,10 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               }
             }
             else
-              scheduler_treat_event( thread, &action->desc.even );
+            {
+              if ( scheduler_treat_event( thread, &action->desc.even ) == WAIT_FOR_SYNC )
+                return;
+            }
 
             thread->last_generic_event_time = current_time;
 

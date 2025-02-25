@@ -67,7 +67,8 @@ typedef int modules_map; /* see 'modules_map.h' */
 
 typedef enum {
   WAIT_FOR_SYNC,
-  CONTINUE
+  CONTINUE,
+  NO_PRINT_EVENT
 } scheduler_synchronization;
 
 #ifdef PACA
@@ -762,6 +763,7 @@ struct t_task
 
   /* OMP variables */
   t_boolean openmp;
+  struct OMPTasks *omp_tasks;
 
   // CUDA variables
   t_boolean accelerator;
@@ -988,6 +990,7 @@ struct t_thread
   int omp_iteration_count;
   dimemas_timer omp_last_running_end;
   dimemas_timer omp_last_synchro_end;
+  struct OMPTasks_ThreadInfo *omp_tasks_thread_info;
 
   // This piece of code fixes a possible extrae bug (types.h, task.c and event_sync.cc):
   //   nested parallel function calls after worksharing single

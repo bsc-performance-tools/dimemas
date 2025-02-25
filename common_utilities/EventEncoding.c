@@ -1012,7 +1012,7 @@ Boolean OCLEventEncoding_Is_OCLKernelRunning( struct t_event_block event )
   return FALSE;
 }
 
-#define NUM_OMPTYPES   15
+#define NUM_OMPTYPES   16
 #define NUM_OMP_BLOCKS 11
 CUDATypeInfo OMPType_Table[] = {
 
@@ -1027,8 +1027,9 @@ CUDATypeInfo OMPType_Table[] = {
   { OMP_INIT_TASK_FXN, OMP_INIT_TASK_FXN_LABEL },
   { OMP_SET_NUM_THREADS, OMP_SET_NUM_THREADS_LABEL },
   { OMP_GET_NUM_THREADS, OMP_GET_NUM_THREADS_LABEL },
-/* NUM_OMP_BLOCKS end  */
-
+  /* NUM_OMP_BLOCKS end  */
+  
+  { OMP_TASK_IDENTIFIER, OMP_TASK_IDENTIFIER_LABEL },
   { OMP_EXE_PARALLEL_FXN_LINE_N_FILE, OMP_EXE_PARALLEL_FXN_LINE_N_FILE_LABEL },
   { OMP_PTHREAD_FXN_LINE_N_FILE, OMP_PTHREAD_FXN_LINE_N_FILE_LABEL },
   { OMP_EXE_TASK_FXN_LINE_N_FILE, OMP_EXE_TASK_FXN_LINE_N_FILE_LABEL },
@@ -1101,6 +1102,25 @@ Boolean OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event )
   if ( ( event.type == OMP_EXECUTED_PARALLEL_FXN ) && event.value == OMP_END_VAL )
     return TRUE;
   return FALSE;
+}
+
+Boolean OMPEventEncoding_Is_InitTask( struct t_event_block event )
+{
+  if ( ( event.type == OMP_INIT_TASK_FXN ) && event.value > OMP_END_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean OMPEventEncoding_Is_ExeTask( struct t_event_block event )
+{
+  if ( ( event.type == OMP_EXE_TASK_FXN ) && event.value > OMP_END_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean OMPEventEncoding_Is_ExeTask_Line_N_File( struct t_even *event )
+{
+  return ( ( event->type == OMP_EXE_TASK_FXN_LINE_N_FILE ) ? TRUE : FALSE );
 }
 
 /**

@@ -34,7 +34,12 @@ extern "C"
 {
 #endif
 
-  void treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time );
+  struct OMPTasks;
+  struct OMPTasks_ThreadInfo;
+  struct OMPTasks *createOpenMPTasks();
+  struct OMPTasks_ThreadInfo *createOpenMPTasks_ThreadInfo();
+
+  scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time );
 
 #ifdef __cplusplus
 }

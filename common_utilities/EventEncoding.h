@@ -133,6 +133,7 @@ extern "C"
 #define OMP_TASKWAIT                     60000022
 #define OMP_EXE_TASK_FXN                 60000023
 #define OMP_INIT_TASK_FXN                60000024
+#define OMP_TASK_IDENTIFIER              60000028
 #define OMP_SET_NUM_THREADS              60000030
 #define OMP_GET_NUM_THREADS              60000031
 #define OMP_EXE_PARALLEL_FXN_LINE_N_FILE 60000118
@@ -150,6 +151,7 @@ extern "C"
 #define OMP_TASKWAIT_LABEL                     "OMP taskwait"
 #define OMP_EXE_TASK_FXN_LABEL                 "Executed OpenMP task function"
 #define OMP_INIT_TASK_FXN_LABEL                "Instantiated OpenMP task function"
+#define OMP_TASK_IDENTIFIER_LABEL              "Task Identifier"
 #define OMP_SET_NUM_THREADS_LABEL              "OpenMP set num threads"
 #define OMP_GET_NUM_THREADS_LABEL              "OpenMP get num threads"
 #define OMP_EXE_PARALLEL_FXN_LINE_N_FILE_LABEL "Executed OpenMP  parallel function line and file"
@@ -1044,6 +1046,10 @@ extern "C"
   int OMPEventEncoding_Is_OMPWorker_Running( struct t_event_block event );
   int OMPEventEncoding_Is_OMPWorker_Running_End( struct t_event_block event );
   int OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event );
+  int OMPEventEncoding_Is_InitTask( struct t_event_block event );
+  int OMPEventEncoding_Is_ExeTask( struct t_event_block event );
+  int OMPEventEncoding_Is_ExeTask_Line_N_File( struct t_even *event );
+
 
   /* CUDA EventEncoding calls	*/
   int CUDAEventEncoding_Is_CUDABlock( long64_t type );

@@ -547,6 +547,8 @@ void TASK_OpenMP_Task( struct t_Ptask *Ptask, int taskid, t_boolean omp_task )
     printf( "WARNING: OpenMP tasks greater than number of nodes defined\n" );
 
   task->openmp = omp_task;
+
+  task->omp_tasks = createOpenMPTasks();
 }
 
 /*
@@ -1074,6 +1076,8 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   //   nested parallel function calls after worksharing single
   thread->omp_nesting_level               = 0;
 
+  thread->omp_tasks_thread_info = createOpenMPTasks_ThreadInfo(); 
+
   /* NON-Block global operations variables */
   thread->n_nonblock_glob_waiting   = 0;
   thread->n_nonblock_glob_done      = 0;
@@ -1207,7 +1211,8 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
   copy_thread->blocked_in_host_sync  = thread->blocked_in_host_sync;
   copy_thread->blocked_sync_threadid = thread->blocked_sync_threadid;
 
-  copy_thread->omp_in_block_event = thread->omp_in_block_event;
+  copy_thread->omp_in_block_event    = thread->omp_in_block_event;
+  copy_thread->omp_tasks_thread_info = thread->omp_tasks_thread_info;
 
   return ( copy_thread );
 }
@@ -1285,6 +1290,7 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   copy_thread->blocked_sync_threadid     = thread->blocked_sync_threadid;
 
   copy_thread->omp_in_block_event = thread->omp_in_block_event;
+  copy_thread->omp_tasks_thread_info = thread->omp_tasks_thread_info;
 
   return copy_thread;
 }
