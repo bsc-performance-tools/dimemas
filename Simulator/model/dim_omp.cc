@@ -42,7 +42,7 @@ struct OMPTasks
   std::vector< struct t_thread * > taskWaitThreads;
   unsigned int pendingExeTasks = 0;
 
-  #error con disable-openmp se vuelcan los tiempos de la traza original, en caso contrario se deberían ignorar para las syncs
+  // #error con disable-openmp se vuelcan los tiempos de la traza original, en caso contrario se deberían ignorar para las syncs
 
   std::map< unsigned long long, struct t_thread * > waitingExeTasks;
 };
@@ -142,6 +142,7 @@ scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_ev
         waitThread->loose_cpu = TRUE;
         SCHEDULER_thread_to_ready( waitThread );
       }
+      thread->task->omp_tasks->taskWaitThreads.clear();
     }
   }
 
