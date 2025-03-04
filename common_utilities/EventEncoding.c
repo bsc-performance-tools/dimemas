@@ -1118,9 +1118,23 @@ Boolean OMPEventEncoding_Is_ExeTask( struct t_event_block event )
   return FALSE;
 }
 
+Boolean OMPEventEncoding_Is_ExeTask_End( struct t_even *event )
+{
+  if ( event->type == OMP_EXE_TASK_FXN && event->value == OMP_END_VAL )
+    return TRUE;
+  return FALSE;
+}
+
 Boolean OMPEventEncoding_Is_ExeTask_Line_N_File( struct t_even *event )
 {
   return ( ( event->type == OMP_EXE_TASK_FXN_LINE_N_FILE ) ? TRUE : FALSE );
+}
+
+Boolean OMPEventEncoding_Is_TaskWait_End( struct t_even *event )
+{
+  if ( event->type == OMP_TASKWAIT && event->value == OMP_END_VAL )
+    return TRUE;
+  return FALSE;
 }
 
 /**
@@ -1134,7 +1148,6 @@ Boolean OMPEventEncoding_Is_OMPSync( struct t_event_block event )
     return TRUE;
   return FALSE;
 }
-
 
 /**
  * Scheduling and fork join

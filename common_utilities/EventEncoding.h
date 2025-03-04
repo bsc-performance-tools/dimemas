@@ -1048,6 +1048,8 @@ extern "C"
   int OMPEventEncoding_Is_OMP_fork_end( struct t_event_block event );
   int OMPEventEncoding_Is_InitTask( struct t_event_block event );
   int OMPEventEncoding_Is_ExeTask( struct t_event_block event );
+  int OMPEventEncoding_Is_ExeTask_End( struct t_even *event );
+  int OMPEventEncoding_Is_TaskWait_End( struct t_even *event );
   int OMPEventEncoding_Is_ExeTask_Line_N_File( struct t_even *event );
 
 

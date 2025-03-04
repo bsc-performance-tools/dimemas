@@ -39,6 +39,11 @@ using namespace std;
 
 struct OMPTasks
 {
+  std::vector< struct t_thread * > taskWaitThreads;
+  unsigned int pendingExeTasks = 0;
+
+  #error con disable-openmp se vuelcan los tiempos de la traza original, en caso contrario se deberían ignorar para las syncs
+
   std::map< unsigned long long, struct t_thread * > waitingExeTasks;
 };
 
@@ -98,6 +103,8 @@ scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_ev
     else
       thread->task->omp_tasks->waitingExeTasks.insert( { event->value, nullptr } );
 
+    ++thread->task->omp_tasks->pendingExeTasks;
+
     return CONTINUE;
   }
 
@@ -118,7 +125,31 @@ scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_ev
       return WAIT_FOR_SYNC;
     }
   }
+  
+  if( OMPEventEncoding_Is_ExeTask_End( event ) )
+  {
+    if( !OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
+    {
+      fprintf( stderr, "WARNING: OpenMP task execution end event without entry.\n" );
+      return CONTINUE;
+    }
 
+    if( --thread->task->omp_tasks->pendingExeTasks == 0 )
+    {
+      for( auto waitThread : thread->task->omp_tasks->taskWaitThreads )
+      {
+        waitThread->event_sync_reentry = TRUE;
+        waitThread->loose_cpu = TRUE;
+        SCHEDULER_thread_to_ready( waitThread );
+      }
+    }
+  }
+
+  if( OMPEventEncoding_Is_TaskWait_End( event ) && thread->task->omp_tasks->pendingExeTasks > 0 )
+  {
+    thread->task->omp_tasks->taskWaitThreads.push_back( thread );
+    return WAIT_FOR_SYNC;
+  }
 
   if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
   {
