@@ -37,6 +37,7 @@ extern "C" {
 
 using namespace std; 
 
+extern t_boolean simulate_openmp;
 struct OMPTasks
 {
   std::vector< struct t_thread * > taskWaitThreads;
@@ -74,6 +75,68 @@ void dumpOMPTaskCapturedEvents( struct t_thread * thread )
   thread->omp_tasks_thread_info->captured_events.clear();
 }
 
+bool treatOMPBlock( struct t_thread *thread, struct t_even *event )
+{
+  if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
+  {
+    return false;
+  }
+
+  struct t_cpu *cpu;
+  cpu = get_cpu_of_thread( thread );
+
+  if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
+  {
+    PARAVER_Running( cpu->unique_number,
+                     IDENTIFIERS( thread ),
+                     thread->omp_in_block_event.paraver_time,
+                     current_time );
+  }
+  else if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
+  {
+    PARAVER_Thread_Sync( cpu->unique_number,
+                         IDENTIFIERS( thread ),
+                         thread->omp_in_block_event.paraver_time,
+                         current_time );
+  }
+  else if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
+  {
+    PARAVER_Thread_Sched( cpu->unique_number,
+                          IDENTIFIERS(thread),
+                          thread->omp_in_block_event.paraver_time,
+                          current_time);
+  }
+  else if( thread->omp_master_thread )
+  {
+    if( OMPEventEncoding_Is_OMP_fork_begin( thread->omp_in_block_event ) || 
+        OMPEventEncoding_Is_OMP_fork_end( thread->omp_in_block_event ) )
+    {
+      PARAVER_Thread_Sched( cpu->unique_number,
+                            IDENTIFIERS( thread ),
+                            thread->omp_in_block_event.paraver_time,
+                            current_time );
+    }
+  }
+
+  if( ( event->type == OMP_TASKWAIT && event->value == OMP_BEGIN_VAL ) ||
+      ( event->type == OMP_BARRIER && event->value == OMP_BEGIN_VAL ) )
+    thread->omp_in_block_event.inWaitBlock = TRUE;
+  else if( ( event->type == OMP_TASKWAIT && event->value == OMP_END_VAL ) ||
+           ( event->type == OMP_BARRIER && event->value == OMP_END_VAL ) )
+    thread->omp_in_block_event.inWaitBlock = FALSE;
+
+  if( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL )
+  {
+    thread->omp_in_block_event.type = 0;
+  }
+  else
+    thread->omp_in_block_event.type = event->type;
+  
+  thread->omp_in_block_event.value = event->value;
+  thread->omp_in_block_event.paraver_time = current_time;
+
+  return TRUE;
+}
 
 /**
  * Treating the OpenMP events
@@ -82,9 +145,12 @@ void dumpOMPTaskCapturedEvents( struct t_thread * thread )
  */
 scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time )
 {
-  struct t_cpu *cpu;
-  cpu = get_cpu_of_thread( thread );
-  
+  if( !simulate_openmp )
+  {    
+    treatOMPBlock(thread, event);
+    return CONTINUE;
+  }
+
   if( thread->omp_tasks_thread_info->keep_capturing_events && event->type != OMP_TASK_IDENTIFIER )
   {
     thread->omp_tasks_thread_info->captured_events.push_back( *event );
@@ -152,60 +218,8 @@ scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_ev
     return WAIT_FOR_SYNC;
   }
 
-  if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
-  {
+  if ( !treatOMPBlock( thread, event ) ) 
     return CONTINUE;
-  }
-
-  if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
-  {
-    PARAVER_Running( cpu->unique_number,
-                     IDENTIFIERS( thread ),
-                     thread->omp_in_block_event.paraver_time,
-                     current_time );
-  }
-  else if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
-  {
-    PARAVER_Thread_Sync( cpu->unique_number,
-                         IDENTIFIERS( thread ),
-                         thread->omp_in_block_event.paraver_time,
-                         current_time );
-  }
-  else if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
-  {
-    PARAVER_Thread_Sched( cpu->unique_number,
-                          IDENTIFIERS(thread),
-                          thread->omp_in_block_event.paraver_time,
-                          current_time);
-  }
-  else if( thread->omp_master_thread )
-  {
-    if( OMPEventEncoding_Is_OMP_fork_begin( thread->omp_in_block_event ) || 
-        OMPEventEncoding_Is_OMP_fork_end( thread->omp_in_block_event ) )
-    {
-      PARAVER_Thread_Sched( cpu->unique_number,
-                            IDENTIFIERS( thread ),
-                            thread->omp_in_block_event.paraver_time,
-                            current_time );
-    }
-  }
-
-  if( ( event->type == OMP_TASKWAIT && event->value == OMP_BEGIN_VAL ) ||
-      ( event->type == OMP_BARRIER && event->value == OMP_BEGIN_VAL ) )
-    thread->omp_in_block_event.inWaitBlock = TRUE;
-  else if( ( event->type == OMP_TASKWAIT && event->value == OMP_END_VAL ) ||
-           ( event->type == OMP_BARRIER && event->value == OMP_END_VAL ) )
-    thread->omp_in_block_event.inWaitBlock = FALSE;
-
-  if( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL )
-  {
-    thread->omp_in_block_event.type = 0;
-  }
-  else
-    thread->omp_in_block_event.type = event->type;
-  
-  thread->omp_in_block_event.value = event->value;
-  thread->omp_in_block_event.paraver_time = current_time;
 
   if( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
   {
