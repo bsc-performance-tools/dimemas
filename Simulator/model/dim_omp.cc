@@ -37,6 +37,7 @@ extern "C" {
 
 using namespace std; 
 
+
 extern t_boolean simulate_openmp;
 struct OMPTasks
 {
@@ -123,7 +124,8 @@ bool treatOMPBlock( struct t_thread *thread, struct t_even *event )
            ( event->type == OMP_BARRIER && event->value == OMP_END_VAL ) )
     thread->omp_in_block_event.inWaitBlock = FALSE;
 
-  if( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL )
+  if( ( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL ) ||
+      ( event->type == OMP_EXE_TASK_FXN && event->value == OMP_END_VAL && thread->omp_in_block_event.inWaitBlock == FALSE ) )
   {
     thread->omp_in_block_event.type = 0;
   }
