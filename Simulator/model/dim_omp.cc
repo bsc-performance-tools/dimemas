@@ -146,8 +146,10 @@ bool treatOMPBlock( struct t_thread *thread, struct t_even *event )
 scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time )
 {
   if( !simulate_openmp )
-  {    
-    treatOMPBlock(thread, event);
+  {
+    if( treatOMPBlock(thread, event) && thread->threadid != 0 )
+      return NO_PRINT_EVENT;
+
     return CONTINUE;
   }
 

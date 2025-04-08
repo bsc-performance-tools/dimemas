@@ -465,7 +465,9 @@ t_nano SCHEDULER_get_execution_time( struct t_thread *thread )
        ( is_ideal_openmp == TRUE &&
          !OMPEventEncoding_Is_OMPWorker_Running( thread->omp_in_block_event ) &&
          ( OMPEventEncoding_Is_OMPBlock( thread->omp_in_block_event.type ) && thread->omp_in_block_event.value > 0 ||
-           OMPEventEncoding_Is_OMPWorker_Running_End( thread->omp_in_block_event ) ) 
+           OMPEventEncoding_Is_OMPWorker_Running_End( thread->omp_in_block_event ) ) ) ||
+       ( simulate_openmp == FALSE && thread->threadid != 0 &&
+         OMPEventEncoding_Is_OMPBlock( thread->omp_in_block_event.type )
        )
      )
     ti = 0;
