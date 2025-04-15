@@ -707,12 +707,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           {
             action = thread->action;
 
-            if ( thread->stream && !thread->first_acc_event_read )
-            {
-              /* Previous at accelerator events in stream thread must be NOT_CREATED state in CPU	*/
-              PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
-            }
-            else if ( thread->idle_block )
+            if ( thread->idle_block )
             {
               PARAVER_Idle( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
             }
@@ -733,7 +728,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               {
                 // Do not throw anything if it is inside ompblock
               }
-              else
+              else if ( !( thread->stream && !thread->first_acc_event_read ) )
               {
                 /*It's a CPU burst*/
                 PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
@@ -1438,20 +1433,6 @@ t_boolean more_actions( struct t_thread *thread )
       struct t_cpu *cpu;
       cpu = get_cpu_of_thread( thread );
 
-      /* Not_created state in stream from last paraver event to end of trace */
-      if ( thread->host )
-      {
-        int threads_it;
-        struct t_thread *tmp_thread;
-        for ( threads_it = 0; threads_it < task->threads_count; threads_it++ )
-        {
-          tmp_thread = task->threads[ threads_it ];
-          if ( tmp_thread->stream )
-          {
-            PARAVER_Not_Created( cpu->unique_number, IDENTIFIERS( tmp_thread ), tmp_thread->last_paraver, current_time );
-          }
-        }
-      }
       thread->last_paraver = current_time;
     }
 
