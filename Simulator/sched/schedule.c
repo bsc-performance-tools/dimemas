@@ -1085,7 +1085,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         // put_thread_on_run( thread, node );
         SCHEDULER_next_thread_to_run( node );
       }
-      else if ( ( count_queue( &( node->ready ) ) != 0 ) && ( num_free_cpu( node ) > 0 ) )
+      else if ( count_queue( &( node->ready ) ) != 0 && ( num_free_cpu( node ) > 0 || thread->stream == TRUE ) )
       {
         SCHEDULER_next_thread_to_run( node );
       }

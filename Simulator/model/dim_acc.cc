@@ -111,17 +111,20 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
 
     else if ( !block_begin && CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) )
     {
-      size_t num_cuda_calls = 0;
-
-      if( CUDAEventEconding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
-        num_cuda_calls = thread->task->gpu_requests[ thread->task->streamid_to_synchronize ];
-      else
-        num_cuda_calls = thread->task->gpu_requests[0];
-
-      if ( num_cuda_calls > 0 )
+      if( simulate_cuda )
       {
-        thread->task->hostThreadWaiting = thread;
-        return WAIT_FOR_SYNC;
+        size_t num_cuda_calls = 0;
+
+        if( CUDAEventEconding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
+          num_cuda_calls = thread->task->gpu_requests[ thread->task->streamid_to_synchronize ];
+        else
+          num_cuda_calls = thread->task->gpu_requests[0];
+  
+        if ( num_cuda_calls > 0 )
+        {
+          thread->task->hostThreadWaiting = thread;
+          return WAIT_FOR_SYNC;
+        }
       }
 
       PARAVER_Thread_Sync( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
