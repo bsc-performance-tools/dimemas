@@ -728,7 +728,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               {
                 // Do not throw anything if it is inside ompblock
               }
-              else if ( !( thread->stream && !thread->first_acc_event_read ) )
+              else if ( !thread->stream )
               {
                 /*It's a CPU burst*/
                 PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );

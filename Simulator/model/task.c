@@ -1034,7 +1034,6 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   }
 
   thread->accelerator_link                = L_NIL;
-  thread->first_acc_event_read            = FALSE;
   thread->acc_recv_sync                   = FALSE;
   thread->acc_sender_sync                 = FALSE;
   thread->doing_acc_comm                  = FALSE;
@@ -1202,7 +1201,6 @@ struct t_thread *duplicate_thread_fs( struct t_thread *thread )
   copy_thread->host                  = thread->host;
   copy_thread->stream                = thread->stream;
   copy_thread->accelerator_link      = thread->accelerator_link;
-  copy_thread->first_acc_event_read  = thread->first_acc_event_read;
   copy_thread->acc_in_block_event    = thread->acc_in_block_event;
   copy_thread->acc_recv_sync         = thread->acc_recv_sync;
   copy_thread->acc_sender_sync       = thread->acc_sender_sync;
@@ -1280,7 +1278,6 @@ struct t_thread *duplicate_thread( struct t_thread *thread )
   copy_thread->host                      = thread->host;
   copy_thread->stream                    = thread->stream;
   copy_thread->accelerator_link          = thread->accelerator_link;
-  copy_thread->first_acc_event_read      = thread->first_acc_event_read;
   copy_thread->acc_in_block_event        = thread->acc_in_block_event;
   copy_thread->acc_recv_sync             = thread->acc_recv_sync;
   copy_thread->acc_sender_sync           = thread->acc_sender_sync;

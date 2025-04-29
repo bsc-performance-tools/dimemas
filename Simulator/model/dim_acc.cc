@@ -57,12 +57,6 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
 
   int block_begin = CUDAEventEncoding_Is_BlockBegin( event->value );
 
-  if ( !thread->first_acc_event_read )
-  { /*	when in stream thread first CUDA/OpenCL event  occurred,
-        indicated to stop generating NOT_CREATED states in CPU	*/
-    thread->first_acc_event_read = TRUE;
-  }
-
   auto checkSyncAndSetHostToReady = []( auto thread )
   {
     if( thread->task->gpu_requests[thread->threadid] == 1 || thread->task->gpu_requests[0] == 1 )

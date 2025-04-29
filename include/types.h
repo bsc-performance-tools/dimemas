@@ -971,7 +971,6 @@ struct t_thread
   t_boolean stream;                /* Indicates if it's an accelerator stream thread	*/
   t_boolean stream_created;        /* Indicates if this stream has been created */
   struct t_link *accelerator_link; /* Accelerator link for communications	*/
-  t_boolean first_acc_event_read;  /* Throws a NOT_CREATED_ST before start if it's a stream thread	*/
   t_boolean acc_recv_sync;                   /* Indicates if receiver has to wait to comm to start block (Syncs in stream) */
   t_boolean acc_sender_sync;                 /* Indicates if sender has to wait to receiver receives	*/
   t_boolean doing_acc_comm;                  /* Do not print startup latencies	*/
