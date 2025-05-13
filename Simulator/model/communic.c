@@ -3482,6 +3482,15 @@ void COMMUNIC_send( struct t_thread *thread_sender )
   /* S'obte el tipus de communicació */
   kind = get_communication_type( task, task_partner, thread_sender, thread_partner, mess->mess_tag, mess->mess_size, &connection );
 
+  if ( kind == ACCELERATOR_COM_TYPE && simulate_cuda && mess->mess_tag > CUDA_TAG )
+  {
+    ++thread_sender->task->gpu_requests[0];
+    if( thread_sender->host )
+      ++thread_sender->task->gpu_requests[thread_partner->threadid];
+    else
+      ++thread_sender->task->gpu_requests[thread_sender->threadid];
+  }
+
   if ( kind == INTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
   {
     /* JGG (28/10/2004): if the communication occurs between nodes and
@@ -5747,17 +5756,8 @@ void really_send( struct t_thread *thread_sender )
       really_send_external_model_comm_type( thread_sender, task_partner, mess_size, mess_tag );
       break;
     case ACCELERATOR_COM_TYPE:
-      if( simulate_cuda )
-      {
-        if ( really_send_acc_message( thread_sender, task_partner, mess_size, mess_tag ) && mess_tag > CUDA_TAG )
-        {
-          ++thread_sender->task->gpu_requests[0];
-          if( thread_sender->host )
-            ++thread_sender->task->gpu_requests[thread_partner->threadid];
-          else
-            ++thread_sender->task->gpu_requests[thread_sender->threadid];
-        }
-      }
+      if ( simulate_cuda )
+        really_send_acc_message( thread_sender, task_partner, mess_size, mess_tag );
       break;
     default:
       panic( "Incorrect communication type! kind = %d", kind );
