@@ -625,6 +625,8 @@ scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct 
 
   if( event->type == FLUSHING_EV && event->value == BLOCK_END_VAL )
     PARAVER_Wait( cpu->unique_number, IDENTIFIERS( thread ), thread->last_generic_event_time, current_time, PRV_IO_ST );
+  else if ( event->type == TRACE_INIT_EV  && event->value == BLOCK_END_VAL )
+    PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->last_generic_event_time, current_time );
 
   /* Not printing block end if it is a clEnqueueNDRangeKernel because
     * it has been printed yet in COMMUNIC_SEND
@@ -715,7 +717,8 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             {
               if ( !thread->task->accelerator && !thread->task->openmp )
               { /*	It's a CPU burst	*/
-                PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
+                if( thread->first_event_arrived == TRUE )
+                  PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
               }
               else if ( ( thread->host || thread->stream ) &&
                         ( CUDAEventEncoding_Is_CUDABlock( thread->acc_in_block_event.type ) ||
@@ -731,7 +734,8 @@ void SCHEDULER_general( int value, struct t_thread *thread )
               else if ( !thread->stream )
               {
                 /*It's a CPU burst*/
-                PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
+                if( thread->first_event_arrived == TRUE )
+                  PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->last_paraver, current_time );
               }
             }
             new_cp_node( thread, CP_WORK );
@@ -893,6 +897,9 @@ void SCHEDULER_general( int value, struct t_thread *thread )
           }
           case EVENT:
           {
+            if( action->desc.even.type != 0 )
+              thread->first_event_arrived = TRUE;
+
             if( simulate_openmp && is_openmp_treated_event( action->desc.even.type ) == TRUE ||
                 simulate_cuda   && is_cuda_treated_event( action->desc.even.type ) == TRUE )
             {

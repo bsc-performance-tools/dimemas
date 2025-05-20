@@ -950,6 +950,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->roundtrip_done           = FALSE;
   thread->loose_cpu                = TRUE;
   thread->idle_block               = FALSE;
+  thread->first_event_arrived      = FALSE;
   thread->last_paraver             = current_time;
   thread->last_generic_event_time  = current_time;
   thread->size_port                = 0;

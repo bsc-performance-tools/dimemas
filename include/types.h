@@ -875,6 +875,7 @@ struct t_thread
   struct t_link *local_hd_link, *partner_hd_link; /* Pointers to non used links (HF-DPEX)*/
   struct t_node *partner_node;                    /* Cal guardar el node desti del missatge */
 
+  t_boolean first_event_arrived;
   dimemas_timer last_paraver;
   dimemas_timer last_generic_event_time;
   t_boolean loose_cpu;

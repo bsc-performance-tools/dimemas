@@ -99,7 +99,8 @@ extern "C"
 #define MPITYPE_PROBE_SOFTCOUNTER_LABEL "MPI Probe software counter"
 #define MPITYPE_TEST_SOFTCOUNTER_LABEL  "MPI Test/Testsome software counter"
 
-#define FLUSHING_EV 40000003
+#define TRACE_INIT_EV 40000002
+#define FLUSHING_EV   40000003
 
   /* ==========================================================================
      ==== MISC Event Types
