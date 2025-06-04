@@ -185,6 +185,7 @@ extern "C"
 #define CUDA_LIB_CALL_EV      63000000
 #define CUDA_MEMCPY_SIZE_EV   63000002
 #define CUDA_KERNEL_EV        63000006
+//#define CUDA_KERNEL_SRC_CODE_EV 63000007
 #define CUDA_SYNCH_STREAM_EV  63000008
 #define CUDA_TAG              49370 /*cuda communications tag start on this number*/
 
@@ -1067,19 +1068,19 @@ extern "C"
   int CUDAEventEncoding_Is_CUDAMalloc( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAFree( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event );
-  int CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event );
-  int CUDAEventEconding_Is_CUDALaunch( struct t_event_block event );
-  int CUDAEventEconding_Is_CUDASync( struct t_event_block event );
-  int CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAConfigCall( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDALaunch( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDASync( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAStreamSync( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDADeviceSync( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDADeviceReset( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event );
-  int CUDAEventEconding_Is_CUDAStreamCreateBlock( struct t_event_block event );
-  int CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event );
+  int CUDAEventEncoding_Is_CUDAStreamCreateBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAStreamCreate( struct t_even *event );
 
-  int CUDAEventEconding_Is_OldLibType( long64_t type );
-  int CUDAEventEconding_Is_OldKernelType( long64_t type );
-  int CUDAEventEconding_Is_OldSynchStream( long64_t type );
+  int CUDAEventEncoding_Is_OldLibType( long64_t type );
+  int CUDAEventEncoding_Is_OldKernelType( long64_t type );
+  int CUDAEventEncoding_Is_OldSynchStream( long64_t type );
 
   /* OpenCL EventEncoding calls	*/
   int OCLEventEncoding_Is_OCLBlock( long64_t type );

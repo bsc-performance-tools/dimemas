@@ -8168,7 +8168,7 @@ void ACCELERATOR_synchronization( struct t_thread *thread, int comm_id )
            "P%02d T%02d (t%02d)",
            IDENTIFIERS( thread ) );
     }
-    if ( CUDAEventEconding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
+    if ( CUDAEventEncoding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
     {
       thread->blocked_in_global_op = TRUE;
     }

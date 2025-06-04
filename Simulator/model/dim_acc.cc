@@ -79,7 +79,7 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
   {
     struct t_cpu *cpu = get_cpu_of_thread( thread );
 
-    if ( CUDAEventEconding_Is_CUDAStreamCreate( event ) && simulate_cuda == TRUE )
+    if ( CUDAEventEncoding_Is_CUDAStreamCreate( event ) && simulate_cuda == TRUE )
     {
       struct t_thread * created_stream = thread->task->threads[ ++thread->task->totalCreatedStreams ];
       created_stream->stream_created = TRUE;
@@ -88,12 +88,12 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
 
     /* CUDA cpu states */
     if ( !block_begin && 
-         ( CUDAEventEconding_Is_CUDAConfigCall( thread->acc_in_block_event ) || CUDAEventEconding_Is_CUDAStreamCreateBlock( thread->acc_in_block_event ) || CUDAEventEncoding_Is_CUDAStreamDestroy( thread->acc_in_block_event ) ) )
+         ( CUDAEventEncoding_Is_CUDAConfigCall( thread->acc_in_block_event ) || CUDAEventEncoding_Is_CUDAStreamCreateBlock( thread->acc_in_block_event ) || CUDAEventEncoding_Is_CUDAStreamDestroy( thread->acc_in_block_event ) ) )
     { /* If ending a Config Call or Stream Create event, cpu state is Others	*/
       PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
-    else if ( !block_begin && !thread->stream && CUDAEventEconding_Is_CUDALaunch( thread->acc_in_block_event ) )
+    else if ( !block_begin && !thread->stream && CUDAEventEncoding_Is_CUDALaunch( thread->acc_in_block_event ) )
     { /* If ending a Launch event, cpu state is Thread Scheduling	*/
       PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
@@ -103,13 +103,13 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
       PARAVER_Mem_Alloc( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
     }
 
-    else if ( !block_begin && CUDAEventEconding_Is_CUDASync( thread->acc_in_block_event ) )
+    else if ( !block_begin && CUDAEventEncoding_Is_CUDASync( thread->acc_in_block_event ) )
     {
       if( simulate_cuda )
       {
         size_t num_cuda_calls = 0;
 
-        if( CUDAEventEconding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
+        if( CUDAEventEncoding_Is_CUDAStreamSync( thread->acc_in_block_event ) )
           num_cuda_calls = thread->task->gpu_requests[ thread->task->streamid_to_synchronize ];
         else
           num_cuda_calls = thread->task->gpu_requests[0];

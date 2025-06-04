@@ -536,6 +536,8 @@ long64_t MPIEventEncoding_UserBlockId( long64_t Type, long64_t Value )
     return ( Value + BASE_CLUSTER_BLOCK );
 
   assert( "MPIEventEncoding_UserBlockId: Invalid Type" );
+
+  return 0;
 }
 
 /******************************************************************************
@@ -684,17 +686,17 @@ typedef struct
 
 } CUDATypeInfo;
 
-Boolean CUDAEventEconding_Is_OldLibType( long64_t type )
+Boolean CUDAEventEncoding_Is_OldLibType( long64_t type )
 {
   return ( ( type == OLD_CUDA_LIB_CALL_EV || type == OLDEST_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
 }
 
-Boolean CUDAEventEconding_Is_OldKernelType( long64_t type )
+Boolean CUDAEventEncoding_Is_OldKernelType( long64_t type )
 {
   return ( ( type == OLD_CUDA_KERNEL_EV ) ? TRUE : FALSE );
 }
 
-Boolean CUDAEventEconding_Is_OldSynchStream( long64_t type )
+Boolean CUDAEventEncoding_Is_OldSynchStream( long64_t type )
 {
   return ( ( type == OLD_CUDA_SYNCH_STREAM_EV ) ? TRUE : FALSE );
 }
@@ -770,28 +772,28 @@ Boolean CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event )
   return FALSE;
 }
 
-Boolean CUDAEventEconding_Is_CUDAConfigCall( struct t_event_block event )
+Boolean CUDAEventEncoding_Is_CUDAConfigCall( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_CONFIGURECALL_VAL )
     return TRUE;
   return FALSE;
 }
 
-Boolean CUDAEventEconding_Is_CUDALaunch( struct t_event_block event )
+Boolean CUDAEventEncoding_Is_CUDALaunch( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_LAUNCH_VAL )
     return TRUE;
   return FALSE;
 }
 
-Boolean CUDAEventEconding_Is_CUDASync( struct t_event_block event )
+Boolean CUDAEventEncoding_Is_CUDASync( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_DEVICESYNCHRONIZE_VAL || event.value == CUDA_STREAMSYNCHRONIZE_VAL ) )
     return TRUE;
   return FALSE;
 }
 
-Boolean CUDAEventEconding_Is_CUDAStreamSync( struct t_event_block event )
+Boolean CUDAEventEncoding_Is_CUDAStreamSync( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_STREAMSYNCHRONIZE_VAL )
     return TRUE;
@@ -820,14 +822,14 @@ Boolean CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event )
   return FALSE;
 }
 
-Boolean CUDAEventEconding_Is_CUDAStreamCreateBlock( struct t_event_block event )
+Boolean CUDAEventEncoding_Is_CUDAStreamCreateBlock( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_STREAM_CREATE_VAL )
     return TRUE;
   return FALSE;
 }
 
-Boolean CUDAEventEconding_Is_CUDAStreamCreate( struct t_even *event )
+Boolean CUDAEventEncoding_Is_CUDAStreamCreate( struct t_even *event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event->type ) == TRUE && event->value == CUDA_STREAM_CREATE_VAL )
     return TRUE;

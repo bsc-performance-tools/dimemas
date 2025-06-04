@@ -526,9 +526,9 @@ Event_t ParaverTraceParser::ParseEvent( char* ASCIIEvent )
       Value = atoll( CurrToken );
       PairsReaded++;
 
-      if( CUDAEventEconding_Is_OldLibType( Type ) || 
-          CUDAEventEconding_Is_OldKernelType( Type ) ||
-          CUDAEventEconding_Is_OldSynchStream( Type ) )
+      if( CUDAEventEncoding_Is_OldLibType( Type ) || 
+          CUDAEventEncoding_Is_OldKernelType( Type ) ||
+          CUDAEventEncoding_Is_OldSynchStream( Type ) )
         existOldCUDAcalls = true;
 
       NewEvent->AddTypeValue( Type, Value );
