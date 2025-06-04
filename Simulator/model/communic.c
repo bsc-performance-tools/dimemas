@@ -3482,7 +3482,7 @@ void COMMUNIC_send( struct t_thread *thread_sender )
   /* S'obte el tipus de communicació */
   kind = get_communication_type( task, task_partner, thread_sender, thread_partner, mess->mess_tag, mess->mess_size, &connection );
 
-  if ( kind == ACCELERATOR_COM_TYPE && simulate_cuda && mess->mess_tag > CUDA_TAG )
+  if ( kind == ACCELERATOR_COM_TYPE && simulate_cuda && mess->mess_tag > CUDA_TAG && thread_sender->startup_done == FALSE )
   {
     ++thread_sender->task->gpu_requests[0];
     if( thread_sender->host )
