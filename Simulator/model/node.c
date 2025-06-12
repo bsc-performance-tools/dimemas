@@ -189,6 +189,7 @@ void NODE_set_acc( int node_id, int num_gpu_in_node, double latency, double memo
   node->acc.startup         = (dimemas_timer)latency;
   node->acc.memory_startup  = (dimemas_timer)memory_latency;
   node->acc.max_messages    = num_acc_buses;
+  node->acc.cur_messages    = 0;
   node->acc_relative        = relative;
 
   create_queue( &( node->acc.threads_in_link ) );
