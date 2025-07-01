@@ -768,13 +768,6 @@ struct t_task
   // CUDA variables
   t_boolean accelerator;
 
-  int totalCreatedStreams;      /* number of streams already created */
-
-  struct t_thread **StreamSync; /* Kernel thread of sync */
-  int StreamSync_n_elems;
-  
-  struct t_thread *HostSync;    /* Host thread of sync */
-  int StreamByComm;             /* Stream_id indicated in comm_id for global_op */
   int threads_in_accelerator;   /* Number of threads (e.g. CUDA streams) executed in gpu */
 
   // gpu_requests stores the number of memory copies and kernel excutions on each stream of the task.
@@ -970,7 +963,6 @@ struct t_thread
   // Accelerator variables
   t_boolean host;                  /* Indicates if it's an accelerator host thread	*/
   t_boolean stream;                /* Indicates if it's an accelerator stream thread	*/
-  t_boolean stream_created;        /* Indicates if this stream has been created */
   struct t_link *accelerator_link; /* Accelerator link for communications	*/
   t_boolean acc_recv_sync;                   /* Indicates if receiver has to wait to comm to start block (Syncs in stream) */
   t_boolean acc_sender_sync;                 /* Indicates if sender has to wait to receiver receives	*/

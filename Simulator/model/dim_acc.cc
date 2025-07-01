@@ -79,13 +79,6 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
   {
     struct t_cpu *cpu = get_cpu_of_thread( thread );
 
-    if ( CUDAEventEncoding_Is_CUDAStreamCreate( event ) && simulate_cuda == TRUE )
-    {
-      struct t_thread * created_stream = thread->task->threads[ ++thread->task->totalCreatedStreams ];
-      created_stream->stream_created = TRUE;
-      SCHEDULER_thread_to_ready( created_stream );
-    }
-
     /* CUDA cpu states */
     if ( !block_begin && 
          ( CUDAEventEncoding_Is_CUDAConfigCall( thread->acc_in_block_event ) || CUDAEventEncoding_Is_CUDAStreamCreateBlock( thread->acc_in_block_event ) || CUDAEventEncoding_Is_CUDAStreamDestroy( thread->acc_in_block_event ) ) )

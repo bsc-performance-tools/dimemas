@@ -123,10 +123,7 @@ void SCHEDULER_Init()
         }
 
         ( *SCH[ machine->scheduler.policy ].init_scheduler_parameters )( thread );
-        if ( thread->stream == FALSE || thread->stream_created == TRUE || simulate_cuda == FALSE ) 
-        {
-          SCHEDULER_thread_to_ready( thread );
-        }
+        SCHEDULER_thread_to_ready( thread );
       }
     }
   }
@@ -1040,25 +1037,20 @@ void SCHEDULER_general( int value, struct t_thread *thread )
             else
             { /* Pseudo global operation to implement accelerator
                * synchronizations */
-              if( simulate_cuda )
-                ACCELERATOR_synchronization( thread, action->desc.global_op.comm_id );
-              else
+              thread->action = action->next;
+              READ_free_action( action );
+
+              if ( more_actions( thread ) )
               {
-                thread->action = action->next;
-                READ_free_action( action );
+                action = thread->action;
+                if ( action->action != WORK && action->action != GPU_BURST )
+                  goto next_op;
 
-                if ( more_actions( thread ) )
-                {
-                  action = thread->action;
-                  if ( action->action != WORK && action->action != GPU_BURST )
-                    goto next_op;
-
-                  if ( thread->stream == TRUE )
-                    thread->loose_cpu = FALSE;
-                  else
-                    thread->loose_cpu = TRUE;
-                  SCHEDULER_thread_to_ready( thread );
-                }
+                if ( thread->stream == TRUE )
+                  thread->loose_cpu = FALSE;
+                else
+                  thread->loose_cpu = TRUE;
+                SCHEDULER_thread_to_ready( thread );
               }
             }
             break;

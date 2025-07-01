@@ -84,8 +84,6 @@ int *PREEMP_table; /* Array to manage preemption cycles for each task */
 t_boolean synthetic_bursts = FALSE;
 struct t_queue burst_categories;
 
-extern t_boolean all_CUDA_streams_created;
-
 /*
  * Private functions
  */
@@ -527,11 +525,6 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   create_queue( &( task->th_for_in ) );
   create_queue( &( task->th_for_out ) );
 
-  task->totalCreatedStreams     = 1;      // Execution starts with default stream created
-  task->StreamSync              = NULL;   // Means no thread is waiting
-  task->StreamSync_n_elems      = 0;
-  task->HostSync                = TH_NIL; // Means no root is waiting
-  task->StreamByComm            = -1;     // Means no root is waiting for kernel
   task->threads_in_accelerator  = 0;
   task->gpu_requests            = NULL;
   task->hostThreadWaiting       = TH_NIL;
@@ -965,8 +958,6 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
   thread->seek_position            = 0;
   thread->base_priority            = 0;
 
-  thread->stream_created           = FALSE;  // stream_created field should not be checked unless it is an accelerator stream
-
   thread->sstask_id   = 0;
   thread->sstask_type = 0;
 
@@ -1013,11 +1004,7 @@ void TASK_add_thread_to_task( struct t_task *task, int thread_id )
     thread->stream = TRUE;
     thread->host   = FALSE;
 
-    thread->stream_created = ( all_CUDA_streams_created || thread_id <= 1 );  // only default stream starts created 
-
     ++task->threads_in_accelerator;
-    task->StreamSync = realloc( task->StreamSync, sizeof(struct t_thread *) * task->threads_in_accelerator );
-    task->StreamSync[ task->threads_in_accelerator - 1 ] = TH_NIL;
     task->gpu_requests = realloc( task->gpu_requests, sizeof(size_t) * ( task->threads_in_accelerator + 1 ) );
     task->gpu_requests[ task->threads_in_accelerator ] = 0;
   }

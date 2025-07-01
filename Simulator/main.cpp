@@ -136,7 +136,6 @@ t_boolean simulation_rebooted        = FALSE;
 t_boolean extra_assert           = FALSE;
 t_boolean Critical_Path_Analysis = FALSE;
 
-t_boolean all_CUDA_streams_created = FALSE;
 t_boolean is_ideal_openmp = FALSE;
 
 t_boolean simulate_openmp = TRUE;
@@ -234,8 +233,6 @@ void parse_arguments( int argc, char *argv[] )
 
   int sintetic_io_applications;
   
-  bool all_streams_created;
-
   bool ideal_openmp;
 
   namespace po = boost::program_options;
@@ -285,7 +282,6 @@ void parse_arguments( int argc, char *argv[] )
 #endif
     ( "asynch-read",              po::bool_switch( &asynch_read_bool ),                "Wakes up a new thread for read the input trace" )
     ( "asynch-max-buffer",        po::value<int>( &asynch_buffer_size_mb ),            "Max size of the asynch read buffer in MB (default: 10MB)" )
-    ( "create-cuda-streams",      po::bool_switch( &all_streams_created ),             "Force all CUDA streams to be created from the beginning." )
     ( "ideal-openmp",             po::bool_switch( &ideal_openmp ),                    "Ignores the duration of openmp runtime events. Any remaining duration is due to implicit synchronization" )
     ( "disable-openmp",           po::bool_switch( &tmp_disable_openmp ),              "OpenMP events will not be simulated." )
     ( "disable-cuda",             po::bool_switch( &tmp_disable_cuda ),                "CUDA events will not be simulated." )
@@ -502,9 +498,6 @@ void parse_arguments( int argc, char *argv[] )
     short_out_info = TRUE;
   else
     short_out_info = FALSE;
-
-  if ( all_streams_created )
-    all_CUDA_streams_created = TRUE;
 
   if ( ideal_openmp )
     is_ideal_openmp = TRUE;
