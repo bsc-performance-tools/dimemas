@@ -1228,8 +1228,8 @@ t_boolean DAP_read_offsets( app_struct *app )
 
     if ( current_task > 0 )
     {
-      app->thread_trace_sizes[ current_task - 1 ][ app->threads_count[ current_task ] - 1 ] = 
-              strtoul( current_thread_offset_str, NULL, 0 ) - app->thread_trace_sizes[ current_task - 1 ][ app->threads_count[ current_task ] - 1 ];
+      app->thread_trace_sizes[ current_task - 1 ][ app->threads_count[ current_task - 1 ] - 1 ] = 
+              strtoul( current_thread_offset_str, NULL, 0 ) - app->thread_trace_sizes[ current_task - 1 ][ app->threads_count[ current_task - 1 ] - 1 ];
     }
 
     while ( current_thread_offset_str != NULL )

@@ -279,12 +279,13 @@ void SIMULATOR_Generate_row( const char *row_filename )
   for ( struct t_Ptask *Ptask = (struct t_Ptask *)head_queue( &Ptask_queue ); Ptask != P_NIL; Ptask = (struct t_Ptask *)next_queue( &Ptask_queue ) )
   {
     for ( unsigned int i = 0; i < Ptask->tasks_count; ++i )
+    {
       for ( unsigned j = 0; j < Ptask->tasks[ i ].threads_count; ++j )
       {
-        if ( Ptask->tasks->accelerator )
+        if ( Ptask->tasks[ i ].accelerator )
         {
           char *name;
-          if ( Ptask->tasks->threads[ j ]->host )
+          if ( Ptask->tasks[ i ].threads[ j ]->host )
             name = "THREAD";
           else
             name = "CUDA";
@@ -294,6 +295,7 @@ void SIMULATOR_Generate_row( const char *row_filename )
         else
           fprintf( row_file, "THREAD %d.%d.%d\n", Ptask->Ptaskid + 1, Ptask->tasks[ i ].taskid + 1, Ptask->tasks[ i ].threads[ j ]->threadid + 1 );
       }
+    }
   }
   fprintf( row_file, "\n" );
 
