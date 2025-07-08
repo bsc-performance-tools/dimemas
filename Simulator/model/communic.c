@@ -579,11 +579,11 @@ t_nano compute_startup( struct t_thread *thread,
        */
       if ( ( CUDAEventEncoding_Is_CUDATransferBlock( thread->acc_in_block_event ) ||
              OCLEventEncoding_Is_OCLTransferBlock( thread->acc_in_block_event ) ) &&
-           mess_commid != 0 )
+           mess_commid == 0 && thread->host )
       {
         startup = send_node->acc.memory_startup;
       }
-      else if( mess_commid != 0 && thread->host )
+      else if( mess_commid == 0 && thread->host )
       {
         startup = send_node->acc.startup;
       }
@@ -3597,7 +3597,13 @@ void COMMUNIC_send( struct t_thread *thread_sender )
       PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread_sender ), current_time, thread_sender->acc_in_block_event.type, 0 );
     }
 
-    thread_sender->logical_send = current_time;
+    if( CUDAEventEncoding_Is_CUDAComm( thread_sender, thread_partner ) && thread_sender->host )
+    {
+      if( mess->communic_id == 0 )
+        thread_sender->logical_send = current_time;
+    }
+    else
+      thread_sender->logical_send = current_time;
 
     if ( startup != (t_nano)0 )
     {
