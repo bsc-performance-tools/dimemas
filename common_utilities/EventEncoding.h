@@ -1058,6 +1058,7 @@ extern "C"
 
   /* CUDA EventEncoding calls	*/
   int CUDAEventEncoding_Is_CUDABlock( long64_t type );
+  int CUDAEventEncoding_Is_CUDASimulableBlock( struct t_event_block event );
   int CUDAEventEncoding_Is_Kernel( long64_t type );
   int CUDAEventEncoding_Is_StreamSyncId_EV( struct t_even *event );
   int CUDAEventEncoding_Is_Kernel_Block( struct t_event_block event );
@@ -1076,7 +1077,6 @@ extern "C"
   int CUDAEventEncoding_Is_CUDADeviceReset( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAStreamCreateBlock( struct t_event_block event );
-  int CUDAEventEncoding_Is_CUDAStreamCreate( struct t_even *event );
 
   int CUDAEventEncoding_Is_OldLibType( long64_t type );
   int CUDAEventEncoding_Is_OldKernelType( long64_t type );
