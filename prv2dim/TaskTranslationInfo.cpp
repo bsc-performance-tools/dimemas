@@ -2024,11 +2024,23 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             }
 
             /* The actual transfer */
-            if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+            if ( AcceleratorThread == ACCELERATOR_HOST )
             {
-              SetError( true );
-              SetErrorMessage( "error writing output trace", strerror( errno ) );
-              return false;
+              if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
+            }
+            else
+            {
+              if ( Dimemas_NX_BlockingSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
             }
           }
           else if ( CurrentComm->GetType() == LOGICAL_RECV )
@@ -2055,11 +2067,23 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               }
             }
 
-            if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+            if ( AcceleratorThread == ACCELERATOR_HOST )
             {
-              SetError( true );
-              SetErrorMessage( "error writing output trace", strerror( errno ) );
-              return false;
+              if ( Dimemas_NX_Irecv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
+            }
+            else
+            {
+              if ( Dimemas_NX_Recv( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag ) < 0 )
+              {
+                SetError( true );
+                SetErrorMessage( "error writing output trace", strerror( errno ) );
+                return false;
+              }
             }
           }
 
