@@ -5580,6 +5580,10 @@ t_boolean really_send_acc_message( struct t_thread *thread, struct t_task *task_
   dimemas_timer ti, t_recursos;
   dimemas_timer tmp_timer, tmp_timer2;
 
+  struct t_thread *thread_partner;
+
+  thread_partner = locate_thread_of_task( task_partner, thread->action->desc.send.dest_thread );
+
   node = get_node_of_thread( thread );
   assert( node->accelerator );
 
@@ -5642,6 +5646,22 @@ t_boolean really_send_acc_message( struct t_thread *thread, struct t_task *task_
     /* Es programa el final de la comunicació punt a punt. */
     FLOAT_TO_TIMER( ti, tmp_timer2 );
     ADD_TIMER( current_time, tmp_timer2, tmp_timer2 );
+
+    if( thread->stream && CUDAEventEncoding_Is_CUDAMemcpyAsync( thread->acc_in_block_event ) )
+    {
+      thread->physical_recv = tmp_timer2;
+
+      PARAVER_P2P_Comm( thread->cpu->unique_number,
+                        IDENTIFIERS( thread ),
+                        thread->logical_send,
+                        thread->physical_send,
+                        thread_partner->cpu->unique_number,
+                        IDENTIFIERS(  thread_partner ),
+                        thread->logical_recv,
+                        thread->physical_recv,
+                        mess_size,
+                        mess_tag );
+    }
 
     EVENT_timer( tmp_timer, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT_RESOURCES_ACC );
     thread->event = (struct t_event *)EVENT_timer( tmp_timer2, NOT_DAEMON, M_COM, thread, COM_TIMER_OUT );

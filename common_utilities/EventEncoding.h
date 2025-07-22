@@ -1069,6 +1069,7 @@ extern "C"
   int CUDAEventEncoding_Is_CUDAMalloc( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAFree( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAMemcpyAsync( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAConfigCall( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDALaunch( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDASync( struct t_event_block event );
