@@ -3469,13 +3469,10 @@ void COMMUNIC_send( struct t_thread *thread_sender )
   /* S'obte el tipus de communicació */
   kind = get_communication_type( task, task_partner, thread_sender, thread_partner, mess->mess_tag, mess->mess_size, &connection );
 
-  if ( kind == ACCELERATOR_COM_TYPE && simulate_cuda && mess->mess_tag > CUDA_TAG && thread_sender->startup_done == FALSE )
+  if ( kind == ACCELERATOR_COM_TYPE && simulate_cuda && thread_sender->host && mess->mess_tag > CUDA_TAG && thread_sender->startup_done == FALSE )
   {
     ++thread_sender->task->gpu_requests[0];
-    if( thread_sender->host )
-      ++thread_sender->task->gpu_requests[thread_partner->threadid];
-    else
-      ++thread_sender->task->gpu_requests[thread_sender->threadid];
+    ++thread_sender->task->gpu_requests[thread_partner->threadid];
   }
 
   if ( kind == INTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
@@ -3987,6 +3984,12 @@ void COMMUNIC_recv( struct t_thread *thread_receiver )
                                  locate_thread_of_task( task_source, mess->ori_thread ), thread_receiver,
                                  mess->mess_tag, mess->mess_size, &connection );
 
+  if ( kind == ACCELERATOR_COM_TYPE && simulate_cuda && thread_receiver->host && mess->mess_tag > CUDA_TAG && thread_receiver->startup_done == FALSE )
+  {
+    ++thread_receiver->task->gpu_requests[ 0 ];
+    ++thread_receiver->task->gpu_requests[ mess->ori_thread ];
+  }
+
   if ( kind == INTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
   {
     /* JGG (28/10/2004): if the communication occurs between nodes and
@@ -4260,6 +4263,12 @@ void COMMUNIC_Irecv( struct t_thread *thread_receiver )
   kind = get_communication_type( task_source, task,
                                  locate_thread_of_task( task_source, mess->ori_thread ), thread_receiver,
                                  mess->mess_tag, mess->mess_size, &connection );
+
+  if ( kind == ACCELERATOR_COM_TYPE && simulate_cuda && thread_receiver->host && mess->mess_tag > CUDA_TAG && thread_receiver->startup_done == FALSE )
+  {
+    ++thread_receiver->task->gpu_requests[0];
+    ++thread_receiver->task->gpu_requests[mess->ori_thread];
+  }
 
   if ( kind == EXTERNAL_NETWORK_COM_TYPE && external_comm_library_loaded == TRUE )
   {
