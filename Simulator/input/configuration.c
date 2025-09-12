@@ -378,7 +378,7 @@ void CONFIGURATION_Load_FS_Configuration( void )
   }
   else
   {
-    info( "-> Loading default file sytem configuration\n" );
+    info( "-> Loading default file system configuration\n" );
   }
 
   return;
