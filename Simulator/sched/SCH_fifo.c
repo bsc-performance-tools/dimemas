@@ -92,7 +92,7 @@ void FIFO_clear_parameters( struct t_thread *thread )
   assert( thread != NULL );
 }
 
-int FIFO_info( int info )
+int FIFO_info( int info, struct t_thread *thread_s, struct t_thread *thread_r )
 {
   return ( 0 );
 }

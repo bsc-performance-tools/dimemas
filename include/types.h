@@ -1175,17 +1175,17 @@ struct t_copyseg
 struct t_scheduler_actions
 {
   char *name;
-  void ( *thread_to_ready )();
-  t_nano ( *get_execution_time )();
-  struct t_thread *( *next_thread_to_run )();
-  void ( *init_scheduler_parameters )();
-  void ( *clear_parameters )();
-  int ( *info )();
+  void ( *thread_to_ready )(struct t_thread *);
+  t_nano ( *get_execution_time )(struct t_thread *);
+  struct t_thread *( *next_thread_to_run )(struct t_node *);
+  void ( *init_scheduler_parameters )(struct t_thread *);
+  void ( *clear_parameters )(struct t_thread *);
+  int ( *info )( int, struct t_thread *, struct t_thread *);
   void ( *scheduler_init )( char *, struct t_machine * );
-  void ( *scheduler_copy_parameters )();
-  void ( *scheduler_free_parameters )();
-  void ( *modify_priority )();
-  void ( *modify_preemption )();
+  void ( *scheduler_copy_parameters )(struct t_thread *,struct t_thread *);
+  void ( *scheduler_free_parameters )(struct t_thread *);
+  void ( *modify_priority )(struct t_thread *, t_priority);
+  void ( *modify_preemption )(struct t_thread *, t_priority);
 };
 
 struct t_communic_actions

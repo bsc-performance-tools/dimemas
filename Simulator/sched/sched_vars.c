@@ -46,12 +46,12 @@
 
 #include <assert.h>
 
-void empty_modify_priority( struct t_thread *thread )
+void empty_modify_priority( struct t_thread *thread, t_priority priority )
 {
   assert( thread != NULL );
 }
 
-void empty_modify_preemption( struct t_thread *thread )
+void empty_modify_preemption( struct t_thread *thread, t_priority preemption )
 {
   assert( thread != NULL );
 }

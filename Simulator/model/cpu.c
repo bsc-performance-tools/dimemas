@@ -29,7 +29,7 @@
 #include <extern.h>
 #include <list.h>
 #include <node.h>
-#include <simulator.c>
+#include <simulator.h>
 #include <subr.h>
 #include <task.h>
 #include <types.h>

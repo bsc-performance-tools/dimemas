@@ -1162,8 +1162,6 @@ int SCHEDULER_info( int value, int info, struct t_thread *th_s, struct t_thread 
   switch ( value )
   {
     case CONTEXT_SWITCH_TIMER_OUT:
-      ( *SCH[ machine->scheduler.policy ].info )( info );
-      break;
     case COMMUNICATION_INFO:
       return_value = ( *SCH[ machine->scheduler.policy ].info )( info, th_s, th_r );
       break;

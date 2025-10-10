@@ -29,7 +29,7 @@ extern t_nano SS_MPI_CP_get_execution_time( struct t_thread *thread );
 extern struct t_thread *SS_MPI_CP_next_thread_to_run( struct t_node *node );
 extern void SS_MPI_CP_init_scheduler_parameters( struct t_thread *thread );
 extern void SS_MPI_CP_clear_parameters( struct t_thread *thread );
-extern int SS_MPI_CP_info( int info );
+extern int SS_MPI_CP_info( int info, struct t_thread *th_s, struct t_thread *th_r );
 extern void SS_MPI_CP_init( char *filename, struct t_machine *machine );
 extern void SS_MPI_CP_copy_parameters( struct t_thread *th_o, struct t_thread *th_d );
 extern void SS_MPI_CP_free_parameters( struct t_thread *thread );

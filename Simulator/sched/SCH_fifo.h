@@ -45,7 +45,7 @@ extern t_nano FIFO_get_execution_time( struct t_thread *thread );
 extern struct t_thread *FIFO_next_thread_to_run( struct t_node *node );
 extern void FIFO_init_scheduler_parameters( struct t_thread *thread );
 extern void FIFO_clear_parameters( struct t_thread *thread );
-extern int FIFO_info( int info );
+extern int FIFO_info( int info, struct t_thread *thread_s, struct t_thread *thread_r );
 extern void FIFO_init( char *filename, struct t_machine *machine );
 extern void FIFO_copy_parameters( struct t_thread *th_o, struct t_thread *th_d );
 extern void FIFO_free_parameters( struct t_thread *thread );

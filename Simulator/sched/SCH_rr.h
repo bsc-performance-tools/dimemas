@@ -48,7 +48,7 @@ extern t_nano RR_get_execution_time( struct t_thread *thread );
 extern struct t_thread *RR_next_thread_to_run( struct t_node *node );
 extern void RR_init_scheduler_parameters( struct t_thread *thread );
 extern void RR_clear_parameters( struct t_thread *thread );
-extern int RR_info( int info );
+extern int RR_info( int info, struct t_thread *thread_s, struct t_thread *thread_r );
 extern void RR_init( char *filename, struct t_machine *machine );
 extern void RR_copy_parameters( struct t_thread *th_o, struct t_thread *th_d );
 extern void RR_free_parameters( struct t_thread *thread );

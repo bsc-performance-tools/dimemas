@@ -99,6 +99,8 @@ struct t_machine
   } dedicated_connections;
 };
 
+void MACHINE_Init_Empty_Machine( struct t_machine *machine, int machine_id );
+
 void MACHINE_Fill_Machine_Fields( struct t_machine *machine,
                                   char *machine_name,
                                   char *instrumented_architecture,

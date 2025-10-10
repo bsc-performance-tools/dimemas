@@ -154,7 +154,7 @@ void SS_MPI_CP_clear_parameters( struct t_thread *thread )
   sch_ss_mpi_cp->forces_preemption = (t_priority)0;
 }
 
-int SS_MPI_CP_info( int info )
+int SS_MPI_CP_info( int info, struct t_thread *th_s, struct t_thread *th_r )
 {
   return ( 0 );
 }

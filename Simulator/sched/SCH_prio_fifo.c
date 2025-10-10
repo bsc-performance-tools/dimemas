@@ -151,7 +151,7 @@ void PRIO_FIFO_clear_parameters( struct t_thread *thread )
   sch_prio_fifo->priority = BASE_PRIO;
 }
 
-int PRIO_FIFO_info( int info )
+int PRIO_FIFO_info( int info, struct t_thread *th_s, struct t_thread *th_r )
 {
   return ( 0 );
 }

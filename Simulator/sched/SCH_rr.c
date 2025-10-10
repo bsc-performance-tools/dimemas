@@ -131,7 +131,7 @@ void RR_clear_parameters( struct t_thread *thread )
   sch_rr->last_quantum = (t_nano)0;
 }
 
-int RR_info( int info )
+int RR_info( int info, struct t_thread *thread_s, struct t_thread *thread_r )
 {
   return ( 0 );
 }

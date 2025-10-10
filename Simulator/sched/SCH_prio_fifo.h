@@ -52,7 +52,7 @@ extern t_nano PRIO_FIFO_get_execution_time( struct t_thread *thread );
 extern struct t_thread *PRIO_FIFO_next_thread_to_run( struct t_node *node );
 extern void PRIO_FIFO_init_scheduler_parameters( struct t_thread *thread );
 extern void PRIO_FIFO_clear_parameters( struct t_thread *thread );
-extern int PRIO_FIFO_info( int info );
+extern int PRIO_FIFO_info( int info, struct t_thread *th_s, struct t_thread *th_r );
 extern void PRIO_FIFO_init( char *filename, struct t_machine *machine );
 extern void PRIO_FIFO_copy_parameters( struct t_thread *th_o, struct t_thread *th_d );
 extern void PRIO_FIFO_free_parameters( struct t_thread *thread );
