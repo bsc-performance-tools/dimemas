@@ -71,4 +71,6 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
 
 scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct t_even *event );
 
+void put_thread_on_run( struct t_thread *thread, struct t_node *node );
+
 #endif

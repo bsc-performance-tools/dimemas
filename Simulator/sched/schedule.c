@@ -274,7 +274,7 @@ struct t_cpu * assign_gpu( struct t_thread *thread, struct t_node *node )
   return cpu;
 } 
 
-static void put_thread_on_run( struct t_thread *thread, struct t_node *node )
+void put_thread_on_run( struct t_thread *thread, struct t_node *node )
 {
   t_nano ti;
   struct t_account *account;

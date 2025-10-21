@@ -2459,7 +2459,7 @@ void COMMUNIC_COM_TIMER_OUT( struct t_thread *thread )
     if ( more_actions( thread ) )
     {
       thread->loose_cpu = FALSE;
-      SCHEDULER_thread_to_ready( thread );
+      put_thread_on_run(thread, thread->task->node);
     }
   }
   else if ( !thread->original_thread )
