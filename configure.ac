@@ -5,8 +5,8 @@
 dnl Process this file with autoconf to produce a configure script.
 
 m4_define([major], [5])
-m4_define([minor], [4])
-m4_define([micro], [2])
+m4_define([minor], [5])
+m4_define([micro], [0])
 
 m4_define([dimemas_version], [major.minor.micro])
 
