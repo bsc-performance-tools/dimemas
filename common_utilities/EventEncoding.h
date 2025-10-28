@@ -182,12 +182,13 @@ extern "C"
 #define OLD_CUDA_SYNCH_STREAM_EV 63300000
 
 
-#define CUDA_LIB_CALL_EV      63000000
-#define CUDA_MEMCPY_SIZE_EV   63000002
-#define CUDA_KERNEL_EV        63000006
-//#define CUDA_KERNEL_SRC_CODE_EV 63000007
-#define CUDA_SYNCH_STREAM_EV  63000008
-#define CUDA_TAG              49370 /*cuda communications tag start on this number*/
+#define CUDA_LIB_CALL_EV              63000000
+#define CUDA_MEMCPY_SIZE_EV           63000002
+#define CUDA_KERNEL_INSTANTIATION_EV  63000006
+#define CUDA_SYNCH_STREAM_EV          63000008
+#define CUDA_KERNEL_EXECUTION_EV      63000009
+#define CUDA_MEMORY_TRANSFER_EV       63000014
+#define CUDA_TAG                      49370 /*cuda communications tag start on this number*/
 
 #define CUDA_LIB_CALL_LABEL      "CUDA library call"
 #define CUDA_MEMCPY_SIZE_LABEL   "cudaMemcpy size"

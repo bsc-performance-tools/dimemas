@@ -531,7 +531,7 @@ Event_t ParaverTraceParser::ParseEvent( char* ASCIIEvent )
           CUDAEventEncoding_Is_OldSynchStream( Type ) )
         existOldCUDAcalls = true;
 
-      NewEvent->AddTypeValue( Type, Value );
+      NewEvent->AddTypeValue( Type, Value, ThreadId );
 
       CurrToken = strtok( NULL, ":" );
     }

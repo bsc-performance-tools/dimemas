@@ -247,7 +247,7 @@ class Event : public virtual ParaverRecord
 
   Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId );
 
-  void AddTypeValue( INT32 Type, INT64 Value );
+  void AddTypeValue( INT32 Type, INT64 Value, INT32 threadId = 0 );
 
   UINT32 GetTypeValueCount( void );
 

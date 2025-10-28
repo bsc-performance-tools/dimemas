@@ -703,7 +703,7 @@ Boolean CUDAEventEncoding_Is_OldSynchStream( long64_t type )
 
 Boolean CUDAEventEncoding_Is_CUDABlock( long64_t type )
 {
-  return ( type == CUDA_LIB_CALL_EV ? TRUE : FALSE );
+  return ( type == CUDA_LIB_CALL_EV || type == CUDA_MEMORY_TRANSFER_EV ? TRUE : FALSE );
 }
 
 Boolean CUDAEventEncoding_Is_CUDASimulableBlock( struct t_event_block event )
@@ -721,7 +721,7 @@ Boolean CUDAEventEncoding_Is_CUDASimulableBlock( struct t_event_block event )
 
 Boolean CUDAEventEncoding_Is_Kernel( long64_t type )
 {
-  return ( ( type == CUDA_KERNEL_EV ) ? TRUE : FALSE );
+  return ( ( type == CUDA_KERNEL_INSTANTIATION_EV || type == CUDA_KERNEL_EXECUTION_EV ) ? TRUE : FALSE );
 }
 
 Boolean CUDAEventEncoding_Is_StreamSyncId_EV( struct t_even *event )

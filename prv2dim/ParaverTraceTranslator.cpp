@@ -857,7 +857,7 @@ bool ParaverTraceTranslator::Translate( bool GenerateFirstIdle,
                                   CurrentEvent->GetTaskId(),
                                   CurrentEvent->GetThreadId() );
 
-            SubEvent->AddTypeValue( CurrentEvent->GetType( i ), CurrentEvent->GetValue( i ) );
+            SubEvent->AddTypeValue( CurrentEvent->GetType( i ), CurrentEvent->GetValue( i ), CurrentEvent->GetThreadId() );
 
             bool success = TranslationInfo[ CurrentTaskId ][ CurrentThreadId ]->PushRecord( SubEvent );
 

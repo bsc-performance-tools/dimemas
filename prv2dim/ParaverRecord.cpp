@@ -163,12 +163,17 @@ Event::~Event( void )
     delete Content[ i ];
 }
 
-void Event::AddTypeValue( INT32 Type, INT64 Value )
+void Event::AddTypeValue( INT32 Type, INT64 Value, INT32 threadId )
 {
   if( CUDAEventEncoding_Is_OldLibType( Type ) )
     Type = CUDA_LIB_CALL_EV;
   else if(CUDAEventEncoding_Is_OldKernelType( Type ) )
-    Type = CUDA_KERNEL_EV;
+  {
+    if(threadId == 1 )
+      Type = CUDA_KERNEL_INSTANTIATION_EV;
+    else
+      Type = CUDA_KERNEL_EXECUTION_EV;
+  }
   else if( CUDAEventEncoding_Is_OldSynchStream( Type ) )
     Type = CUDA_SYNCH_STREAM_EV;
 

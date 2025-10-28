@@ -126,7 +126,8 @@ t_boolean is_openmp_treated_event( unsigned long long type )
 
 t_boolean is_cuda_treated_event( unsigned long long type )
 {
-  if( type == CUDA_KERNEL_EV ||
+  if( type == CUDA_KERNEL_INSTANTIATION_EV ||
+      type == CUDA_KERNEL_EXECUTION_EV ||
       type == CUDA_LIB_CALL_EV ||
       type == CUDA_SYNCH_STREAM_EV )
     return TRUE;
@@ -148,7 +149,8 @@ void event_sync_init( void )
   EventTrait tmpEventTrait;
 #endif // PRV2DIM
 
-  validSyncTypes.insert( CUDA_KERNEL_EV );
+  validSyncTypes.insert( CUDA_KERNEL_INSTANTIATION_EV );
+  validSyncTypes.insert( CUDA_KERNEL_EXECUTION_EV );
   validSyncTypes.insert( CUDA_LIB_CALL_EV );
   validSyncTypes.insert( OMP_BARRIER );
   validSyncTypes.insert( OMP_EXECUTED_PARALLEL_FXN );
@@ -174,21 +176,21 @@ void event_sync_init( void )
   tmpEventIndex.isHost = false;
   syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-  // // ------- CUDA_LAUNCH + CUDA_KERNEL_EV -------
+  // // ------- CUDA_LAUNCH + CUDA_KERNEL_INSTANTIATION_EV -------
   // tmpEventIndex.event.type = CUDA_LIB_CALL_EV;
   // tmpEventIndex.event.value = CUDA_LAUNCH_VAL;
   // tmpEventIndex.isHost = true;
 
   // tmpEventTrait.eventHost.type = CUDA_LIB_CALL_EV;
   // tmpEventTrait.eventHost.value = CUDA_LAUNCH_VAL;
-  // tmpEventTrait.eventRest.type = CUDA_KERNEL_EV;
+  // tmpEventTrait.eventRest.type = CUDA_KERNEL_INSTANTIATION_EV;
   // tmpEventTrait.eventRest.value = CUDA_LAUNCH_VAL; //DUMMY VALUE
   // tmpEventTrait.restThreadsCanResume = false;
   // tmpEventTrait.capturePreviousEvents = true;
   // tmpEventTrait.rewriteLogicalReceive = TRUE;
   // syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
-  // tmpEventIndex.event.type = CUDA_KERNEL_EV;
+  // tmpEventIndex.event.type = CUDA_KERNEL_INSTANTIATION_EV;
   // tmpEventIndex.isHost = false;
   // syncEvents[ tmpEventIndex ] = tmpEventTrait;
 
@@ -257,7 +259,7 @@ map<EventTraitIndex, EventTrait>::iterator find_event_trait(struct t_even *which
   tmpEventTraitIndex.event.value = whichEvent->value;
   if( whichEvent->type == OMP_EXECUTED_PARALLEL_FXN && whichEvent->value != 0 )
     tmpEventTraitIndex.event.value = OMP_BEGIN_VAL;
-  else if( whichEvent->type == CUDA_KERNEL_EV && whichEvent->value != 0 )
+  else if( ( whichEvent->type == CUDA_KERNEL_INSTANTIATION_EV || whichEvent->type == CUDA_KERNEL_EXECUTION_EV ) && whichEvent->value != 0 )
     tmpEventTraitIndex.event.value = CUDA_LAUNCH_VAL;
   tmpEventTraitIndex.isHost = ( threadID == 0 );
 
