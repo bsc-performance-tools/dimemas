@@ -31,10 +31,11 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #include "ParaverCommunicator.hpp"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+
 #include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 using std::cout;
 using std::endl;
 
@@ -42,71 +43,57 @@ using std::endl;
  * Public functions
  ****************************************************************************/
 
-Communicator::Communicator(char* ASCIICommunicator)
+Communicator::Communicator( char* ASCIICommunicator )
 {
   INT32 AppId, CommId, TaskCount;
-  char* TaskList = (char*) calloc(strlen(ASCIICommunicator)+1, sizeof(char));
-  
-  if (sscanf(ASCIICommunicator,
-             "C:%d:%d:%d:%[^\n]\n",
-             &AppId,
-             &CommId,
-             &TaskCount,
-             TaskList) == 4)
+  char* TaskList = (char*)calloc( strlen( ASCIICommunicator ) + 1, sizeof( char ) );
+
+  if ( sscanf( ASCIICommunicator, "C:%d:%d:%d:%[^\n]\n", &AppId, &CommId, &TaskCount, TaskList ) == 4 )
   {
     CommunicatorId = CommId;
     ApplicationId  = AppId;
   }
-  else if (sscanf(ASCIICommunicator,
-           "c:%d:%d:%d:%[^\n]\n",
-           &AppId,
-           &CommId,
-           &TaskCount,
-           TaskList) == 4)
+  else if ( sscanf( ASCIICommunicator, "c:%d:%d:%d:%[^\n]\n", &AppId, &CommId, &TaskCount, TaskList ) == 4 )
   {
     CommunicatorId = CommId;
     ApplicationId  = AppId;
   }
-  else if (sscanf(ASCIICommunicator,
-           "c:%d:%d:%d\n",
-           &AppId,
-           &CommId,
-           &TaskCount) == 3)
-  { 
+  else if ( sscanf( ASCIICommunicator, "c:%d:%d:%d\n", &AppId, &CommId, &TaskCount ) == 3 )
+  {
     // Special case for void communicators
     //
     CommunicatorId = CommId;
     ApplicationId  = AppId;
-    if (TaskCount != 0)
+    if ( TaskCount != 0 )
     {
-      SetError(true);
+      SetError( true );
       LastError = "wrong communicator format";
       return;
     }
   }
   else
   {
-    SetError(true);
+    SetError( true );
     LastError = "wrong communicator format";
     return;
   }
-  
-  ParseTaskList(TaskList);
-  
-  if (CommunicatorTasks.size() != TaskCount)
+
+  ParseTaskList( TaskList );
+
+  if ( CommunicatorTasks.size() != TaskCount )
   {
-    SetError(true);
+    SetError( true );
     LastError = "number of task involved differs from task count";
     return;
   }
-  
-  if (CommunicatorTasks.size() == 1 && CommunicatorTasks.count(-1) == 1)
+
+  if ( CommunicatorTasks.size() == 1 && CommunicatorTasks.count( -1 ) == 1 )
     COMM_SELF = true;
-  
+
   return;
 }
 
-Communicator::Communicator(const Communicator& Comm)
+Communicator::Communicator( const Communicator& Comm )
 {
   CommunicatorId    = Comm.CommunicatorId;
   ApplicationId     = Comm.ApplicationId;
@@ -114,33 +101,30 @@ Communicator::Communicator(const Communicator& Comm)
   COMM_SELF         = Comm.COMM_SELF;
 }
 
-void
-Communicator::AddTask (INT32 TaskId) {
-
-  if (IsTaskIncluded(TaskId))
+void Communicator::AddTask( INT32 TaskId )
+{
+  if ( IsTaskIncluded( TaskId ) )
     return;
 
-  CommunicatorTasks.insert(TaskId);
+  CommunicatorTasks.insert( TaskId );
 }
 
-bool
-Communicator::IsTaskIncluded(INT32 TaskId)
+bool Communicator::IsTaskIncluded( INT32 TaskId )
 {
-  return (CommunicatorTasks.count(TaskId) == 1);
+  return ( CommunicatorTasks.count( TaskId ) == 1 );
 }
 
-void
-Communicator::Write( ostream& os) const
+void Communicator::Write( ostream& os ) const
 {
   os << "CommId: " << CommunicatorId << " ";
-  os << "AppId: "  << ApplicationId << " ";
+  os << "AppId: " << ApplicationId << " ";
   os << "Tasks: " << CommunicatorTasks.size() << " ";
   os << "COMM_SELF: " << COMM_SELF << endl;
 }
 
-ostream& operator<< (ostream& os, const Communicator& Comm)
+ostream& operator<<( ostream& os, const Communicator& Comm )
 {
-  Comm.Write(os);
+  Comm.Write( os );
   return os;
 }
 
@@ -148,21 +132,20 @@ ostream& operator<< (ostream& os, const Communicator& Comm)
  * Private functions
  ****************************************************************************/
 
-bool
-Communicator::ParseTaskList(char* ASCIITaskList)
+bool Communicator::ParseTaskList( char* ASCIITaskList )
 {
   char* CurrentTaskIdStr;
   INT32 CurrentTaskIdInt;
-  
-  CurrentTaskIdStr = strtok(ASCIITaskList, ":");
-  
-  while (CurrentTaskIdStr != NULL)
+
+  CurrentTaskIdStr = strtok( ASCIITaskList, ":" );
+
+  while ( CurrentTaskIdStr != NULL )
   {
-    CurrentTaskIdInt = atoi(CurrentTaskIdStr);
-    AddTask(CurrentTaskIdInt);
-    
-    CurrentTaskIdStr = strtok(NULL, ":");
+    CurrentTaskIdInt = atoi( CurrentTaskIdStr );
+    AddTask( CurrentTaskIdInt );
+
+    CurrentTaskIdStr = strtok( NULL, ":" );
   }
-  
+
   return true;
 }

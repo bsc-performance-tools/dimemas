@@ -33,54 +33,72 @@
 #ifndef _PARAVERCOMMUNICATOR_H
 #define _PARAVERCOMMUNICATOR_H
 
-#include <basic_types.h>
 #include <Error.hpp>
+#include <basic_types.h>
 using cepba_tools::Error;
 
 #include <ostream>
-using std::ostream;
 using std::endl;
+using std::ostream;
 #include <set>
 using std::set;
 
-class Communicator: public Error
+class Communicator : public Error
 {
-  protected:
-  
-    INT32       CommunicatorId;
-    INT32       ApplicationId;
-    set<INT32>  CommunicatorTasks;
-    bool        COMM_SELF;
-    bool        COMM_WORLD;
-  public:
-    Communicator(char* ASCIICommunicator);
-    Communicator(const Communicator& Comm);
-    
-    INT32 GetCommunicatorId(void) { return CommunicatorId; };
-    INT32 GetApplictionId(void)   { return ApplicationId; };
-    INT32 GetCommunicatorSize(void)
-    {
-      return (INT32) CommunicatorTasks.size();
-    };
-    set<INT32> GetCommunicatorTasks(void) { return CommunicatorTasks; };
-    
-    /* INT32 GetTaskId(UINT32 Index) { return CommunicatorTasks[Index]; }; */
-    
-    bool IsCOMM_SELF(void)  { return COMM_SELF; };
-    bool IsCOMM_WORLD(void) { return COMM_WORLD; };
-    bool SetCOMM_WORLD(bool COMM_WORLD) { return this->COMM_WORLD = COMM_WORLD; };
-    
-    void AddTask(INT32 TaskId);
-    
-    bool IsTaskIncluded(INT32 TaskId);
-    
-    void Write ( ostream& os) const;
+ protected:
+  INT32 CommunicatorId;
+  INT32 ApplicationId;
+  set<INT32> CommunicatorTasks;
+  bool COMM_SELF;
+  bool COMM_WORLD;
 
-  private:
-    bool ParseTaskList(char* ASCIITaskList);
+ public:
+  Communicator( char* ASCIICommunicator );
+  Communicator( const Communicator& Comm );
+
+  INT32 GetCommunicatorId( void )
+  {
+    return CommunicatorId;
+  };
+  INT32 GetApplictionId( void )
+  {
+    return ApplicationId;
+  };
+  INT32 GetCommunicatorSize( void )
+  {
+    return (INT32)CommunicatorTasks.size();
+  };
+  set<INT32> GetCommunicatorTasks( void )
+  {
+    return CommunicatorTasks;
+  };
+
+  /* INT32 GetTaskId(UINT32 Index) { return CommunicatorTasks[Index]; }; */
+
+  bool IsCOMM_SELF( void )
+  {
+    return COMM_SELF;
+  };
+  bool IsCOMM_WORLD( void )
+  {
+    return COMM_WORLD;
+  };
+  bool SetCOMM_WORLD( bool COMM_WORLD )
+  {
+    return this->COMM_WORLD = COMM_WORLD;
+  };
+
+  void AddTask( INT32 TaskId );
+
+  bool IsTaskIncluded( INT32 TaskId );
+
+  void Write( ostream& os ) const;
+
+ private:
+  bool ParseTaskList( char* ASCIITaskList );
 };
 typedef Communicator* Communicator_t;
 
-ostream& operator<< (ostream& os, const Communicator& Comm);
+ostream& operator<<( ostream& os, const Communicator& Comm );
 
 #endif /* _PARAVERCOMMUNICATOR_H */

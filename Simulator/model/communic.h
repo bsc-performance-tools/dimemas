@@ -35,6 +35,8 @@
 #ifndef __communic_h
 #define __communic_h
 
+#include "types.h"
+
 /*****************************************************************************
  * Global variables
  *****************************************************************************/
@@ -43,9 +45,9 @@
  * P2P communications fine tuning
  */
 extern t_boolean DATA_COPY_enabled;
-extern int       DATA_COPY_message_size;
+extern int DATA_COPY_message_size;
 extern t_boolean RTT_enabled;
-extern t_nano   RTT_time;
+extern t_nano RTT_time;
 
 /*
  * External network status
@@ -66,44 +68,43 @@ extern double param_external_net_gamma;   /* la influencia dels traffics*/
  * Public functions
  *****************************************************************************/
 
-void COMMUNIC_Init(const char * parameter_tracefile, float end_analysis_tpercent);
-void COMMUNIC_End(void);
+void COMMUNIC_Init( const char *parameter_tracefile, float end_analysis_tpercent );
+void COMMUNIC_End( void );
 
-void COMMUNIC_general(int value, struct t_thread *thread);
-void COMMUNIC_send(struct t_thread *thread);
-void COMMUNIC_recv(struct t_thread *thread);
-void COMMUNIC_Irecv(struct t_thread *thread);
-void COMMUNIC_wait(struct t_thread *thread);
-void COMMUNIC_block_after_busy_wait(struct t_thread *thread);
+void COMMUNIC_general( int value, struct t_thread *thread );
+void COMMUNIC_send( struct t_thread *thread );
+void COMMUNIC_recv( struct t_thread *thread );
+void COMMUNIC_Irecv( struct t_thread *thread );
+void COMMUNIC_wait( struct t_thread *thread );
+void COMMUNIC_block_after_busy_wait( struct t_thread *thread );
 
 /* It is used also in 'memory' and 'ports' */
-void transferencia(long long int size,
-                   t_boolean remote,
-                   struct t_thread *thread,
-                   struct t_dedicated_connection *connection,
-                   t_nano *temps_total,
-                   t_nano *temps_recursos);
+void transferencia( long long int size,
+                    t_boolean remote,
+                    struct t_thread *thread,
+                    struct t_dedicated_connection *connection,
+                    t_nano *temps_total,
+                    t_nano *temps_recursos );
 
-void really_send (struct t_thread *thread);
+void really_send( struct t_thread *thread );
 
-void new_global_op (int identificator, const char *name);
+void new_global_op( int identificator, const char *name );
 
-int get_global_op_id_by_name (char *name);
+int get_global_op_id_by_name( char *name );
 
-void GLOBAL_wait_operation(struct t_thread *thread);
-void GLOBAL_operation (struct t_thread *thread,
+void GLOBAL_wait_operation( struct t_thread *thread );
+void GLOBAL_operation( struct t_thread *thread,
                        int glop_id,
                        int comm_id,
-                       int root_rank,
+                       int is_root,
                        int root_thid,
                        int bytes_send,
                        int bytes_recv,
-                       int synch_type);
+                       int synch_type );
 
-struct t_communicator*
-locate_communicator(struct t_queue *communicator_queue, int commid);
+struct t_communicator *locate_communicator( struct t_queue *communicator_queue, int commid );
 
-void global_op_reserva_links (struct t_thread *thread);
+void global_op_reserva_links( struct t_thread *thread );
 
 /* JGG: Constantes para marcar el FAN_IN y el FAN_OUT */
 #define FAN_IN  0
@@ -111,7 +112,6 @@ void global_op_reserva_links (struct t_thread *thread);
 
 void COMMUNIC_reset_deadlock();
 
-void ACCELERATOR_synchronization(struct t_thread* thread, int comm_id);
-void add_global_ops (void);
+void add_global_ops( void );
 
 #endif

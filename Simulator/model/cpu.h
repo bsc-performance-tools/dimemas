@@ -34,23 +34,24 @@
 
 #ifndef __cpu_h
 #define __cpu_h
+
+#include "types.h"
+
 /**
  * External routines defined in file cpu.c
  **/
 
 
-struct t_node* get_node_of_thread(struct t_thread *thread);
+struct t_node *get_node_of_thread( struct t_thread *thread );
 
-struct t_node* get_node_of_task(struct t_task *task);
+struct t_node *get_node_of_task( struct t_task *task );
 
-struct t_node* get_node_by_id(int nodeid);
+struct t_node *get_node_by_id( int nodeid );
 
-void           check_full_nodes(void);
+int num_free_cpu( struct t_node *node );
 
-int            num_free_cpu(struct t_node *node);
+t_boolean is_thread_running( struct t_thread *thread );
 
-t_boolean      is_thread_running (struct t_thread *thread);
-
-void           CPU_Get_Unique_CPU_IDs(void);
+void CPU_Get_Unique_CPU_IDs( void );
 
 #endif

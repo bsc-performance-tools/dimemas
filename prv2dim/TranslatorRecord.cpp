@@ -31,6 +31,7 @@
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #include "TranslatorRecord.hpp"
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -42,21 +43,25 @@ using std::endl;
  * Public functions
  ****************************************************************************/
 
-PartialCommunication::PartialCommunication(INT32  Type,
-                                           UINT64 Timestamp,
-                                           INT32  SrcCPU,    INT32 SrcAppId,
-                                           INT32  SrcTaskId, INT32 SrcThreadId,
-                                           INT32  DstCPU,    INT32 DstAppId,
-                                           INT32  DstTaskId, INT32 DstThreadId,
-                                           INT32  Size,      INT32 Tag,
-                                           INT32  CommId,
-                                           UINT64 TraceOrder)
+PartialCommunication::PartialCommunication( INT32 Type,
+                                            UINT64 Timestamp,
+                                            INT32 SrcCPU,
+                                            INT32 SrcAppId,
+                                            INT32 SrcTaskId,
+                                            INT32 SrcThreadId,
+                                            INT32 DstCPU,
+                                            INT32 DstAppId,
+                                            INT32 DstTaskId,
+                                            INT32 DstThreadId,
+                                            INT32 Size,
+                                            INT32 Tag,
+                                            INT32 CommId,
+                                            UINT64 TraceOrder )
 {
   this->Type      = Type;
   this->Timestamp = Timestamp;
 
-  InitFields(SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
-             DstCPU, DstAppId, DstTaskId, DstThreadId);
+  InitFields( SrcCPU, SrcAppId, SrcTaskId, SrcThreadId, DstCPU, DstAppId, DstTaskId, DstThreadId );
 
   this->Size       = Size;
   this->Tag        = Tag;
@@ -64,14 +69,12 @@ PartialCommunication::PartialCommunication(INT32  Type,
   this->TraceOrder = TraceOrder;
 }
 
-PartialCommunication::PartialCommunication(INT32           Type,
-                                           Communication_t Comm,
-                                           INT32           CommId)
+PartialCommunication::PartialCommunication( INT32 Type, Communication_t Comm, INT32 CommId )
 {
   UINT64 InterestingTime;
-  INT32  SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
-  INT32  DstCPU, DstAppId, DstTaskId, DstThreadId;
-  INT32  ReadedSize, ReadedTag;
+  INT32 SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
+  INT32 DstCPU, DstAppId, DstTaskId, DstThreadId;
+  INT32 ReadedSize, ReadedTag;
 
   SrcCPU      = Comm->GetSrcCPU();
   SrcAppId    = Comm->GetSrcAppId();
@@ -83,12 +86,12 @@ PartialCommunication::PartialCommunication(INT32           Type,
   DstTaskId   = Comm->GetDstTaskId();
   DstThreadId = Comm->GetDstThreadId();
 
-  ReadedSize  = Comm->GetSize();
-  ReadedTag   = Comm->GetTag();
+  ReadedSize = Comm->GetSize();
+  ReadedTag  = Comm->GetTag();
 
   this->Type = Type;
 
-  switch(Type)
+  switch ( Type )
   {
     case LOGICAL_SEND:
       InterestingTime = Comm->GetLogicalSend();
@@ -118,8 +121,7 @@ PartialCommunication::PartialCommunication(INT32           Type,
   */
   Timestamp = InterestingTime;
 
-  InitFields(SrcCPU, SrcAppId, SrcTaskId, SrcThreadId,
-             DstCPU, DstAppId, DstTaskId, DstThreadId);
+  InitFields( SrcCPU, SrcAppId, SrcTaskId, SrcThreadId, DstCPU, DstAppId, DstTaskId, DstThreadId );
 
   this->Size       = ReadedSize;
   this->Tag        = ReadedTag;
@@ -127,9 +129,9 @@ PartialCommunication::PartialCommunication(INT32           Type,
   this->TraceOrder = Comm->GetRecordCount();
 }
 
-void PartialCommunication::Write ( ostream & os ) const
+void PartialCommunication::Write( ostream& os ) const
 {
-  switch (Type)
+  switch ( Type )
   {
     case LOGICAL_RECV:
       os << "LOG_RECV";
@@ -150,12 +152,12 @@ void PartialCommunication::Write ( ostream & os ) const
 
   os << " [";
 
-  os.width(3);
-  os.fill('0');
+  os.width( 3 );
+  os.fill( '0' );
   os << TaskId << ":";
 
-  os.width(2);
-  os.fill('0');
+  os.width( 2 );
+  os.fill( '0' );
   os << ThreadId << "] ";
 
   os << " T: " << Timestamp;
@@ -164,35 +166,20 @@ void PartialCommunication::Write ( ostream & os ) const
 
   os << "[";
 
-  os.width(3);
-  os.fill('0');
+  os.width( 3 );
+  os.fill( '0' );
   os << PartnerTaskId << ":";
 
-  os.width(2);
-  os.fill('0');
+  os.width( 2 );
+  os.fill( '0' );
   os << PartnerThreadId << "] ";
 
   os << "Size: " << Size << " Tag: " << Tag << " CommId: " << CommId << endl;
 }
 
-void PartialCommunication::ToFile(FILE* OutputFile)
+ostream& operator<<( ostream& os, const PartialCommunication& Comm )
 {
-  fprintf(OutputFile,
-          "%d:%lu:%d,%d:%d,%d:%d:%d\n",
-          Type,
-          Timestamp,
-          TaskId,
-          ThreadId,
-          PartnerTaskId,
-          PartnerThreadId,
-          Size,
-          Tag);
-  return;
-}
-
-ostream& operator<< (ostream& os, const PartialCommunication& Comm)
-{
-  Comm.Write(os);
+  Comm.Write( os );
   return os;
 }
 
@@ -200,12 +187,16 @@ ostream& operator<< (ostream& os, const PartialCommunication& Comm)
  * Private functions
  ****************************************************************************/
 
-void PartialCommunication::InitFields(INT32 SrcCPU,    INT32 SrcAppId,
-                                      INT32 SrcTaskId, INT32 SrcThreadId,
-                                      INT32 DstCPU,    INT32 DstAppId,
-                                      INT32 DstTaskId, INT32 DstThreadId)
+void PartialCommunication::InitFields( INT32 SrcCPU,
+                                       INT32 SrcAppId,
+                                       INT32 SrcTaskId,
+                                       INT32 SrcThreadId,
+                                       INT32 DstCPU,
+                                       INT32 DstAppId,
+                                       INT32 DstTaskId,
+                                       INT32 DstThreadId )
 {
-  switch(this->Type)
+  switch ( this->Type )
   {
     case LOGICAL_SEND:
     case PHYSICAL_SEND:
@@ -229,74 +220,4 @@ void PartialCommunication::InitFields(INT32 SrcCPU,    INT32 SrcAppId,
       PartnerTaskId   = SrcTaskId;
       PartnerThreadId = SrcThreadId;
   }
-}
-
-/*****************************************************************************
- * class TranslationCommunicator
- ****************************************************************************/
-/*****************************************************************************
- * Public functions
- ****************************************************************************/
-
-bool
-TranslationCommunicator::AddGlobalOp(GlobalOp_t NewGlobalOp)
-{
-  if (!PendingGlobalOp)
-  {
-    FinishedGlobalOp = false;
-    PendingGlobalOp  = true;
-  }
-
-  if (CommunicatorTasks.count(NewGlobalOp->GetTaskId()) != 1)
-  {
-    char CurrentError[128];
-
-    sprintf(CurrentError,
-      "Adding operation from task %02d not associated with communicator %02d",
-      NewGlobalOp->GetTaskId(),
-      CommunicatorId);
-
-    LastError = CurrentError;
-    return false;
-  }
-
-  /*
-  if (TaskIdArrived.count(NewGlobalOp->GetTaskId()) == 1)
-  {
-    char CurrentError[128];
-
-    sprintf(CurrentError,
-      "Arrived two global op operations from task %02d on communicator %02d",
-      NewGlobalOp->GetTaskId(),
-      CommunicatorId);
-
-    LastError = CurrentError;
-    return false;
-  }
-  */
-
-  TaskIdArrived.insert(NewGlobalOp->GetTaskId());
-  GlobalOpsArrived.push_back(NewGlobalOp);
-
-  if (NewGlobalOp->GetIsRoot())
-  {
-    RootTaskId = NewGlobalOp->GetTaskId();
-  }
-
-  if (TaskIdArrived.size() == CommunicatorTasks.size())
-  { /* Global Op finished!! */
-    for (UINT32 i = 0; i < GlobalOpsArrived.size(); i++)
-    { /* Root TaskId distribution */
-      GlobalOpsArrived[i]->SetRootTaskId(RootTaskId);
-    }
-
-    /* Clear all containers */
-    GlobalOpsArrived.clear();
-    TaskIdArrived.clear();
-
-    PendingGlobalOp  = false;
-    FinishedGlobalOp = true;
-  }
-
-  return true;
 }

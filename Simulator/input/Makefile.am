@@ -24,5 +24,4 @@ libDimemasInput_la_SOURCES = \
 	file_data_access.h \
 	read.c \
 	read.h \
-	sddf_records.h \
 	ts.h 

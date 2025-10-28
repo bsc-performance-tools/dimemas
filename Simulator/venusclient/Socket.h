@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -38,20 +38,20 @@
 #define Socket_class
 
 
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <netdb.h>
-#include <unistd.h>
 #include <string>
-#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 
-const int MAXHOSTNAME = 200;
+const int MAXHOSTNAME    = 200;
 const int MAXCONNECTIONS = 5;
-const int MAXRECV = 500;
-//const int MSG_NOSIGNAL = 0; // defined by dgame
+const int MAXRECV        = 500;
+// const int MSG_NOSIGNAL = 0; // defined by dgame
 
 class Socket
 {
@@ -61,28 +61,28 @@ class Socket
 
   // Server initialization
   bool create();
-  bool bind ( const int port );
+  bool bind( const int port );
   bool listen() const;
-  bool accept ( Socket& ) const;
+  bool accept( Socket& ) const;
 
   // Client initialization
-  bool connect ( const std::string host, const int port );
+  bool connect( const std::string host, const int port );
 
   // Data Transimission
-  bool send ( const std::string ) const;
-  int recv ( std::string& ) const;
+  bool send( const std::string ) const;
+  int recv( std::string& ) const;
 
 
-  void set_non_blocking ( const bool );
+  void set_non_blocking( const bool );
 
-  bool is_valid() const { return m_sock != -1; }
+  bool is_valid() const
+  {
+    return m_sock != -1;
+  }
 
  private:
-
   int m_sock;
   sockaddr_in m_addr;
-
-
 };
 
 

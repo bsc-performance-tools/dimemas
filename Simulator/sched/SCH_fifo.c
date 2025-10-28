@@ -38,129 +38,115 @@
 #include "cpu.h"
 #include "extern.h"
 #include "list.h"
-#include "subr.h"
-#include "read.h"
-
-#include "simulator.h"
 #include "machine.h"
 #include "node.h"
+#include "read.h"
+#include "simulator.h"
+#include "subr.h"
 
-void FIFO_thread_to_ready (struct t_thread *thread)
+void FIFO_thread_to_ready( struct t_thread *thread )
 {
-  struct t_node    *node;
+  struct t_node *node;
   struct t_machine *machine;
 
-  node = get_node_of_thread (thread);
+  node    = get_node_of_thread( thread );
   machine = node->machine;
 
-  if ( (thread->loose_cpu) || (machine->scheduler.lost_cpu_on_send) )
-    inFIFO_queue (& (node->ready), (char *) thread);
+  if ( thread->stream || thread->loose_cpu || machine->scheduler.lost_cpu_on_send )
+    inFIFO_queue( &( node->ready ), (char *)thread );
   else
-    inLIFO_queue (& (node->ready), (char *) thread);
+    inLIFO_queue( &( node->ready ), (char *)thread );
 }
 
-t_nano FIFO_get_execution_time (struct t_thread *thread)
+t_nano FIFO_get_execution_time( struct t_thread *thread )
 {
   struct t_action *action;
-  t_nano           ex_time;
+  t_nano ex_time;
 
   action = thread->action;
-  if (action->action != WORK && action->action != GPU_BURST)
+  if ( action->action != WORK && action->action != GPU_BURST )
   {
-    printf ("Must be work for P%02d T%02d t%02d but it was %d\n",
-            IDENTIFIERS (thread),
-            action->action);
+    printf( "Must be work for P%02d T%02d t%02d but it was %d\n", IDENTIFIERS( thread ), action->action );
   }
 
   ex_time = action->desc.compute.cpu_time;
 
   thread->action = action->next;
-  READ_free_action(action);
+  READ_free_action( action );
 
   return ex_time;
 }
 
-struct t_thread *
-FIFO_next_thread_to_run (struct t_node *node)
+struct t_thread *FIFO_next_thread_to_run( struct t_node *node )
 {
-  return ( (struct t_thread *) outFIFO_queue (& (node->ready) ) );
+  return ( (struct t_thread *)outFIFO_queue( &( node->ready ) ) );
 }
 
-void
-FIFO_init_scheduler_parameters (struct t_thread *thread)
+void FIFO_init_scheduler_parameters( struct t_thread *thread )
 {
   thread->sch_parameters = A_NIL;
 }
 
-void
-FIFO_clear_parameters (struct t_thread *thread)
+void FIFO_clear_parameters( struct t_thread *thread )
 {
-  assert (thread != NULL);
+  assert( thread != NULL );
 }
 
-int
-FIFO_info (int info)
+int FIFO_info( int info, struct t_thread *thread_s, struct t_thread *thread_r )
 {
-  return (0);
+  return ( 0 );
 }
 
-void
-FIFO_init (char *filename, struct t_machine  *machine)
+void FIFO_init( char *filename, struct t_machine *machine )
 {
   FILE *fp;
   int j;
-  char buf[256];
-  char str[256];
+  char buf[ 256 ];
+  char str[ 256 ];
   double fl;
 
-  if (filename == (char *) 0)
+  if ( filename == (char *)0 )
     return;
 
-  if (strcmp (filename, "") == 0)
+  if ( strcmp( filename, "" ) == 0 )
     return;
 
-  printf ("   * FIFO scheduler init with file %s\n", filename);
+  printf( "   * FIFO scheduler init with file %s\n", filename );
 
-  fp = IO_fopen (filename, "r");
-  if (fp == NULL)
+  fp = IO_fopen( filename, "r" );
+  if ( fp == NULL )
   {
-    printf ("   * WARNING: Can't open FIFO configuration file %s\n", filename);
+    printf( "   * WARNING: Can't open FIFO configuration file %s\n", filename );
     return;
   }
 
-  fgets (str, 256, fp);
-  j = sscanf (str, "Policy: %s", buf);
-  if (j != 1)
-    die ("Invalid format in file %s.\nInvalid policy name %s\n",
-         filename,
-         buf);
+  fgets( str, 256, fp );
+  j = sscanf( str, "Policy: %s", buf );
+  if ( j != 1 )
+    die( "Invalid format in file %s.\nInvalid policy name %s\n", filename, buf );
 
-  fgets (str, 256, fp);
-  j = sscanf (str, "Context switch cost (seconds): %le", &fl);
-  if ( (j != 1) || (fl < 0) )
-    die ("Invalid format in file %s.\nInvalid context switch cost %f\n",
-           filename, fl);
+  fgets( str, 256, fp );
+  j = sscanf( str, "Context switch cost (seconds): %le", &fl );
+  if ( ( j != 1 ) || ( fl < 0 ) )
+    die( "Invalid format in file %s.\nInvalid context switch cost %f\n", filename, fl );
   machine->scheduler.context_switch = fl * 1e9;
 
-  fgets (str, 256, fp);
-  j = sscanf (str, "Busy wait (seconds):  %le", &fl);
-  if ( (j != 1) || (fl < 0) )
-    die ("Invalid format in file %s.\nInvalid busy wait %f\n",
-           filename, fl);
+  fgets( str, 256, fp );
+  j = sscanf( str, "Busy wait (seconds):  %le", &fl );
+  if ( ( j != 1 ) || ( fl < 0 ) )
+    die( "Invalid format in file %s.\nInvalid busy wait %f\n", filename, fl );
   machine->scheduler.busywait_before_block = fl * 1e9;
 
-  IO_fclose (fp);
+  IO_fclose( fp );
 }
 
-void
-FIFO_copy_parameters (struct t_thread *th_o, struct t_thread *th_d)
+void FIFO_copy_parameters( struct t_thread *th_o, struct t_thread *th_d )
 {
-  assert (th_o != NULL);
-  assert (th_d != NULL);
+  assert( th_o != NULL );
+  assert( th_d != NULL );
 }
 
-void
-FIFO_free_parameters (struct t_thread *thread)
+void FIFO_free_parameters( struct t_thread *thread )
 {
-  assert (thread != NULL);
+  assert( thread != NULL );
 }

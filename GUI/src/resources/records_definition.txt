@@ -85,6 +85,18 @@
   14: double "latency time (s) of inter-machines (WAN) communications model"
 };;
 
+"accelerator node information" {
+  1 : int     "node ID"
+  2 : double  "latency time (s) of GPU communications model"
+  3 : double  "memory_latency time (s) GPU communication model"
+  4 : double  "bandwidth (MBps) of GPU communications model"
+              "0 means instantaneous communication"
+  5 : int     "num of accelerator buses"
+              "if no accelerator nodes info and CUDA/OpenCL records -> error"
+  6 : double  "accelerator speed ratio wrt. original execution (divisive factor)"
+              "0 means instantaneous | negative value means fixed duration in s."
+};;
+
 "mapping information" {
   1: char[] "application tracefile name"
   2: int    "number of tasks in application"

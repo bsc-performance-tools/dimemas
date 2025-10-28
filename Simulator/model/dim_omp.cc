@@ -22,202 +22,213 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
- 
 
-#include <vector>
+extern "C" {
+  #include "types.h"
+  #include "dim_omp.h"
+  #include "define.h"
+  #include "EventEncoding.h"
+  #include "paraver.h"
+  #include "schedule.h"
+}
+
 #include <map>
-#include "types.h"
-#include "dim_omp.h"
-#include "define.h"
-#include <iostream>
+#include <vector>
 
-using std::vector;
-using std::map;
 using namespace std; 
 
-struct t_omp_worker_info 
+
+extern t_boolean simulate_openmp;
+struct OMPTasks
 {
-    t_omp_worker_info()
+  std::vector< struct t_thread * > taskWaitThreads;
+  unsigned int pendingExeTasks = 0;
+
+  std::map< unsigned long long, struct t_thread * > waitingExeTasks;
+};
+
+struct OMPTasks_ThreadInfo
+{
+  bool keep_capturing_events = false;
+  std::vector< t_even > captured_events;
+};
+
+struct OMPTasks *createOpenMPTasks()
+{
+  return new struct OMPTasks;
+}
+
+struct OMPTasks_ThreadInfo *createOpenMPTasks_ThreadInfo()
+{
+  return new struct OMPTasks_ThreadInfo;
+}
+
+void dumpOMPTaskCapturedEvents( struct t_thread * thread )
+{
+  struct t_cpu *cpu;
+  cpu = get_cpu_of_thread( thread );
+  
+  for( auto ev: thread->omp_tasks_thread_info->captured_events )
+    PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, ev.type, ev.value );
+
+  thread->omp_tasks_thread_info->captured_events.clear();
+}
+
+bool treatOMPBlock( struct t_thread *thread, struct t_even *event )
+{
+  if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
+  {
+    return false;
+  }
+
+  struct t_cpu *cpu;
+  cpu = get_cpu_of_thread( thread );
+
+  if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
+  {
+    PARAVER_Running( cpu->unique_number,
+                     IDENTIFIERS( thread ),
+                     thread->omp_in_block_event.paraver_time,
+                     current_time );
+  }
+  else if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
+  {
+    PARAVER_Thread_Sync( cpu->unique_number,
+                         IDENTIFIERS( thread ),
+                         thread->omp_in_block_event.paraver_time,
+                         current_time );
+  }
+  else if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
+  {
+    PARAVER_Thread_Sched( cpu->unique_number,
+                          IDENTIFIERS(thread),
+                          thread->omp_in_block_event.paraver_time,
+                          current_time);
+  }
+  else if( thread->omp_master_thread )
+  {
+    if( OMPEventEncoding_Is_OMP_fork_begin( thread->omp_in_block_event ) || 
+        OMPEventEncoding_Is_OMP_fork_end( thread->omp_in_block_event ) )
     {
-        identifier = -1;
-        init_master_time = -1.0;
+      PARAVER_Thread_Sched( cpu->unique_number,
+                            IDENTIFIERS( thread ),
+                            thread->omp_in_block_event.paraver_time,
+                            current_time );
     }
-    int                             identifier;
-    dimemas_timer                   init_master_time;
-    map< int, dimemas_timer >       worker_duration;
-    map< int, bool>                 worker_printed;
-    map< int, bool>                 worker_event_printed;
-    map< int, vector< t_event > >   init_worker_events;
-    map< int,  vector< t_event > >  end_worker_events;
-};
-struct t_omp_queue
-{
-    map< int, struct t_omp_worker_info > winfo;  
-};
+  }
 
-//(omp_worker.init_worker_events[threadid]).push_back(event)
-void set_omp_worker_info_identifier(struct t_omp_queue *q, int omp_it, int identifier) 
-{
-    struct t_omp_worker_info &omp_worker = q->winfo[omp_it];
-    omp_worker.identifier = identifier;
+  if( ( event->type == OMP_TASKWAIT && event->value == OMP_BEGIN_VAL ) ||
+      ( event->type == OMP_BARRIER && event->value == OMP_BEGIN_VAL ) )
+    thread->omp_in_block_event.inWaitBlock = TRUE;
+  else if( ( event->type == OMP_TASKWAIT && event->value == OMP_END_VAL ) ||
+           ( event->type == OMP_BARRIER && event->value == OMP_END_VAL ) )
+    thread->omp_in_block_event.inWaitBlock = FALSE;
 
+  if( ( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL ) ||
+      ( event->type == OMP_EXE_TASK_FXN && event->value == OMP_END_VAL && thread->omp_in_block_event.inWaitBlock == FALSE ) )
+  {
+    thread->omp_in_block_event.type = 0;
+  }
+  else
+    thread->omp_in_block_event.type = event->type;
+  
+  thread->omp_in_block_event.value = event->value;
+  thread->omp_in_block_event.paraver_time = current_time;
+
+  return TRUE;
 }
 
-struct t_omp_queue *create_omp_queue()
-{
-    return new t_omp_queue();
-}
-
-/** 
- *saving time information of the master_thread when the
- * work distribution events ends. 60000001:3
+/**
+ * Treating the OpenMP events
+ * If any OpenMP states exist we have to print as they were
+ * else we will print the events as they were.
  */
-void set_omp_master_time( struct t_omp_queue *q, int omp_it, dimemas_timer master_time )
+scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time )
 {
-    struct t_omp_worker_info &omp_worker = q->winfo[omp_it];
-    omp_worker.init_master_time = master_time;
+  if( !simulate_openmp )
+  {
+    if( treatOMPBlock(thread, event) && thread->threadid != 0 )
+      return NO_PRINT_EVENT;
 
-}
-/* saving working information */
-void set_omp_worker_info_duration(struct t_omp_queue *q, int omp_it, int thread_id, dimemas_timer duration)
-{
-    struct t_omp_worker_info &omp_worker = q->winfo[omp_it];
-    omp_worker.worker_duration[thread_id] = duration;
-}
+    return CONTINUE;
+  }
 
-void set_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id)
-{
-    struct t_omp_worker_info &omp_worker = q->winfo[omp_it];
-    omp_worker.worker_printed[thread_id] = true;
-}
+  if( thread->omp_tasks_thread_info->keep_capturing_events && event->type != OMP_TASK_IDENTIFIER )
+  {
+    thread->omp_tasks_thread_info->captured_events.push_back( *event );
+    return NO_PRINT_EVENT;
+  }
 
-dimemas_timer get_omp_master_time( struct t_omp_queue *q, int omp_it )
-{
-    return q->winfo[omp_it].init_master_time;
-}
-
-dimemas_timer get_omp_worker_duration( struct t_omp_queue *q, int omp_it, int thread_id )
-{
-    return q->winfo[omp_it].worker_duration[thread_id];
-}
-
-bool is_omp_worker_printed(struct t_omp_queue *q, int omp_it, int thread_id)
-{
-    struct t_omp_worker_info &omp_worker = q->winfo[omp_it];
-    
-    if( omp_worker.worker_printed.find( thread_id ) == omp_worker.worker_printed.end() )
-        return false;
-
-    return true;
-}
-
-bool is_omp_worker_info_ready( struct t_omp_queue *q, int omp_it, int thread_id )
-{
-    map< int, struct t_omp_worker_info >::iterator itr = q->winfo.find( omp_it );
-
-    if( itr == q->winfo.end() )
-        return false;
- 
-    struct t_omp_worker_info &omp_worker = itr->second;
-
-    if( omp_worker.init_master_time == -1.0 )
-        return false;
-
-    if( omp_worker.worker_duration.find( thread_id ) == omp_worker.worker_duration.end() )
-        return false;
-
-    return true;
-}
-
-/**************************
- * For OMP syncronization*
- **************************/
-struct t_omp_worker_syncro_info
-{
-    t_omp_worker_syncro_info()
+  if( OMPEventEncoding_Is_InitTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
+  {
+    auto tmpThread = thread->task->omp_tasks->waitingExeTasks.find( event->value );
+    if( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
     {
-        identifier = -1;
-        syncro_end_time  = -1.0;
+      tmpThread->second->event_sync_reentry = TRUE;
+      tmpThread->second->loose_cpu = TRUE;
+      SCHEDULER_thread_to_ready( tmpThread->second );
     }
-    int                         identifier;
-    dimemas_timer               syncro_end_time;
-    map<int, bool>              worker_printed;
-    map<int, bool>              run_after_barrier_printed;
-};
+    else
+      thread->task->omp_tasks->waitingExeTasks.insert( { event->value, nullptr } );
 
-struct t_omp_queue_syncro
-{
-    map< int, struct t_omp_worker_syncro_info > winfo; 
-};
+    ++thread->task->omp_tasks->pendingExeTasks;
 
+    return CONTINUE;
+  }
 
-struct t_omp_queue_syncro *create_omp_queue_syncro()
-{
-    return new t_omp_queue_syncro();
-}
+  if( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
+  {
+    auto tmpThread = thread->task->omp_tasks->waitingExeTasks.find( event->value );
+    if( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
+    {
+      thread->task->omp_tasks->waitingExeTasks.erase( tmpThread );
+      dumpOMPTaskCapturedEvents( thread );
+      thread->omp_tasks_thread_info->keep_capturing_events = false;
+      thread->omp_in_block_event.paraver_time = current_time;
+      return CONTINUE;
+    }
+    else
+    {
+      thread->task->omp_tasks->waitingExeTasks.insert( { event->value, thread } );
+      return WAIT_FOR_SYNC;
+    }
+  }
+  
+  if( OMPEventEncoding_Is_ExeTask_End( event ) )
+  {
+    if( !OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
+    {
+      fprintf( stderr, "WARNING: OpenMP task execution end event without entry.\n" );
+      return CONTINUE;
+    }
 
-void set_omp_worker_syncro_identifier(struct t_omp_queue_syncro *q, int omp_it, int identifier) 
-{
-    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
-    omp_worker.identifier = identifier;
-}
+    if( --thread->task->omp_tasks->pendingExeTasks == 0 )
+    {
+      for( auto waitThread : thread->task->omp_tasks->taskWaitThreads )
+      {
+        waitThread->event_sync_reentry = TRUE;
+        waitThread->loose_cpu = TRUE;
+        SCHEDULER_thread_to_ready( waitThread );
+      }
+      thread->task->omp_tasks->taskWaitThreads.clear();
+    }
+  }
 
-void set_omp_syncro_end_time( struct t_omp_queue_syncro *q, int omp_it, dimemas_timer syncro_end_time )
-{
-    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
-    omp_worker.syncro_end_time = syncro_end_time;
-}
+  if( OMPEventEncoding_Is_TaskWait_End( event ) && thread->task->omp_tasks->pendingExeTasks > 0 )
+  {
+    thread->task->omp_tasks->taskWaitThreads.push_back( thread );
+    return WAIT_FOR_SYNC;
+  }
 
-void set_omp_worker_syncro_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
-{
-    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
-    omp_worker.worker_printed[thread_id] = true;
-}
+  if ( !treatOMPBlock( thread, event ) ) 
+    return CONTINUE;
 
-dimemas_timer get_omp_syncro_end_time( struct t_omp_queue_syncro *q, int omp_it )
-{
-    return q->winfo[omp_it].syncro_end_time;
-}
+  if( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
+  {
+    thread->omp_tasks_thread_info->keep_capturing_events = true;
+    thread->omp_tasks_thread_info->captured_events.push_back( *event );
+    return NO_PRINT_EVENT;
+  }
 
-bool is_omp_worker_syncro_info_ready( struct t_omp_queue_syncro *q, int omp_it, int thread_id )
-{
-    map< int, struct t_omp_worker_syncro_info >::iterator itr = q->winfo.find( omp_it );
-
-    if( itr == q->winfo.end() )
-        return false;
- 
-    struct t_omp_worker_syncro_info &omp_worker = itr->second;
-
-    if( omp_worker.syncro_end_time == -1.0 )
-        return false;
-
-    return true;
-}
-
-bool is_omp_worker_syncro_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
-{
-    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
-    
-    if( omp_worker.worker_printed.find( thread_id ) == omp_worker.worker_printed.end() )
-        return false;
-
-    return true;
-}
-
-/* After Barrier Info*/
-
-void set_omp_worker_after_barrier_run_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
-{
-    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
-    omp_worker.run_after_barrier_printed[thread_id] = true;
-}
-
-bool is_omp_worker_after_barrier_run_printed(struct t_omp_queue_syncro *q, int omp_it, int thread_id)
-{
-    struct t_omp_worker_syncro_info &omp_worker = q->winfo[omp_it];
-    
-    if( omp_worker.run_after_barrier_printed.find( thread_id ) == omp_worker.run_after_barrier_printed.end() )
-        return false;
-
-    return true;
+  return CONTINUE;
 }

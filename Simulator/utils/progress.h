@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -23,34 +23,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
+#pragma once
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+#ifdef __cplusplus
 
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+extern "C"
+{
+#endif
+  void updateProgress( double newProgress );
 
-#ifndef __sddf_h
-#define __sddf_h
-
-/**
- * External routines defined in file sddf.c
- **/
-extern void SDDF_start(int cpuid, int taskid, dimemas_timer time);
-extern void SDDF_stop(int cpuid, int taskid, dimemas_timer time);
-extern void SDDF_recv_start (int cpuid_r, int taskid_r, 
-			     dimemas_timer logical_time);
-extern void SDDF_recv_block (int cpuid_r, int taskid_r, 
-			     dimemas_timer logical_time);
-extern void SDDF_recv_stop(int cpuid_r, int taskid_r, dimemas_timer tim,
-			   int tag, int size, int cpuid_s, int taskid_s);
-extern void SDDF_send_start(int cpuid_s, int taskid_s, dimemas_timer physical);
-extern void SDDF_send_stop(int cpuid_s, int taskid_s, dimemas_timer physical,
-			   int tag, int size, int cpuid_r, int taskid_r);
-extern void SDDF_in_message (int by);
-extern void SDDF_out_message(int by);
-extern void SDDF_do(void);
-
+#ifdef __cplusplus
+}
 #endif

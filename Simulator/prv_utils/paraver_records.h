@@ -23,14 +23,6 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/DIMEMAS/trunk/s#$:  File
-  $Rev:: 35                                       $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2012-01-11 19:45:04 +0100 (Wed, 11 Jan #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef _PARAVER_RECORDS_H_
 #define _PARAVER_RECORDS_H_
@@ -41,8 +33,7 @@ using std::string;
 
 typedef unsigned long long prv_time_t;
 
-#define TIMER_TO_PRV_TIME_T(x,y) \
-        y = static_cast<unsigned long long> (round(TIMER_TO_DOUBLE(x)))
+#define TIMER_TO_PRV_TIME_T( x, y ) y = static_cast<unsigned long long>( round( TIMER_TO_DOUBLE( x ) ) )
 
 /*
  * Class to store the ASCII records before flushing them to disc
@@ -51,87 +42,88 @@ static int TotalRecordsCreated = 0;
 
 class SimpleParaverRecord
 {
-  private:
-    int        _TYPE;
+ private:
+  int _TYPE;
 
-    int        _CPU;
-    int        _Ptask;
-    int        _Task;
-    int        _Thread;
+  int _CPU;
+  int _Ptask;
+  int _Task;
+  int _Thread;
 
-    prv_time_t _Timestamp;
-    string     _ascii_record;
+  prv_time_t _Timestamp;
+  string _ascii_record;
 
-  public:
+ public:
+  SimpleParaverRecord( void )
+  {
+    TotalRecordsCreated++;
+  }
 
-    SimpleParaverRecord(void)
-    {
-      TotalRecordsCreated++;
-    }
 
+  SimpleParaverRecord( int TYPE, int CPU, int Ptask, int Task, int Thread, prv_time_t timestamp, string ascii_record )
+    : _TYPE( TYPE ), _CPU( CPU ), _Ptask( Ptask ), _Task( Task ), _Thread( Thread ), _Timestamp( timestamp ), _ascii_record( ascii_record )
+  {
+    TotalRecordsCreated++;
+  }
 
-    SimpleParaverRecord(int        TYPE,
-                        int        CPU,
-                        int        Ptask,
-                        int        Task,
-                        int        Thread,
-                        prv_time_t timestamp,
-                        string     ascii_record)
-      :_TYPE(TYPE),
-       _CPU(CPU),
-       _Ptask(Ptask),
-       _Task(Task),
-       _Thread(Thread),
-       _Timestamp(timestamp),
-       _ascii_record(ascii_record)
-    {
-      TotalRecordsCreated++;
-    }
+  void FillRecord( int TYPE, int CPU, int Ptask, int Task, int Thread, prv_time_t timestamp, string ascii_record )
+  {
+    _TYPE         = TYPE;
+    _CPU          = CPU;
+    _Ptask        = Ptask;
+    _Task         = Task;
+    _Thread       = Thread;
+    _Timestamp    = timestamp;
+    _ascii_record = string( ascii_record );
+  }
 
-    void FillRecord(int        TYPE,
-                    int        CPU,
-                    int        Ptask,
-                    int        Task,
-                    int        Thread,
-                    prv_time_t timestamp,
-                    string     ascii_record)
-    {
-      _TYPE         = TYPE;
-      _CPU          = CPU;
-      _Ptask        = Ptask;
-      _Task         = Task;
-      _Thread       = Thread;
-      _Timestamp    = timestamp;
-      _ascii_record = string(ascii_record);
-    }
+  /*
+   * 'toTrecfile' and 'serialize' methods are similar, but 'serialize'
+   * distinguishes between RUNNING / NO RUNNING states and 'toTracefile' does
+   * not so:
+   *
+   * 'serialize'   -> temporal files
+   * 'toTracefile' -> final trace
+   */
 
-    /*
-     * 'toTrecfile' and 'serialize' methods are similar, but 'serialize'
-     * distinguishes between RUNNING / NO RUNNING states and 'toTracefile' does
-     * not so:
-     *
-     * 'serialize'   -> temporal files
-     * 'toTracefile' -> final trace
-     */
+  void toTracefile( FILE* prv_file );
 
-    void toTracefile(FILE* prv_file);
+  void serialize( FILE* prv_file );
 
-    void serialize(FILE* prv_file);
+  bool deserialize( const char* ascii_record );
 
-    bool deserialize(const char* ascii_record);
-
-    int        TYPE(void)         const { return _TYPE; }
-    int        CPU(void)          const { return _CPU; }
-    int        Ptask(void)        const { return _Ptask; }
-    int        Task(void)         const { return _Task; }
-    int        Thread(void)       const { return _Thread; }
-    prv_time_t Timestamp(void)    const { return _Timestamp; }
-    string     ascii_record(void) const { return _ascii_record; }
-
+  int TYPE( void ) const
+  {
+    return _TYPE;
+  }
+  int CPU( void ) const
+  {
+    return _CPU;
+  }
+  int Ptask( void ) const
+  {
+    return _Ptask;
+  }
+  int Task( void ) const
+  {
+    return _Task;
+  }
+  int Thread( void ) const
+  {
+    return _Thread;
+  }
+  prv_time_t Timestamp( void ) const
+  {
+    return _Timestamp;
+  }
+  string ascii_record( void ) const
+  {
+    return _ascii_record;
+  }
 };
 
-bool operator< (const SimpleParaverRecord& R1, const SimpleParaverRecord& R2);
+bool operator<( const SimpleParaverRecord& R1, const SimpleParaverRecord& R2 );
 
-std::ostream & operator << (std::ostream& o, const SimpleParaverRecord& obj);
+std::ostream& operator<<( std::ostream& o, const SimpleParaverRecord& obj );
 
 #endif

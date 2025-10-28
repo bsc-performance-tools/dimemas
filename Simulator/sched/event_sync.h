@@ -21,78 +21,67 @@
  * The GNU LEsser General Public License is contained in the file COPYING.   *
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
-\*****************************************************************************/
+ \****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
+#ifndef __event_sync_h
+#define __event_sync_h
 
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
+#include "types.h"
 
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+#define PARTNER_ID_BARRIER -1
 
-#include <stdlib.h>
+#ifdef __cplusplus
 
-#include "thread_states.h"
+#include <unordered_set>
+#include <vector>
 
-t_boolean init_thread_state (struct t_thread* thread, int state)
+enum class t_treat_acc_events_behavior
 {
-  // t_thread_state new_state;
-  t_boolean      result;
+  ALL = 0,
+  STATES_AND_BLOCK,
+  PARAVER_TIME
+};
 
-  result = TRUE;
-
-  if (thread->current_state != STATE_NIL)
-  {
-    result   = FALSE;
-    errorStr = "Initalizing new thread state with previous state open\n";
-  }
-  else
-  {
-    new_state = (t_thread_state) malloc(sizeof(struct thread_state));
-
-    new_state->state      = state;
-    new_state->init_time  = current_time;
-    thread->current_state = new_state;
-  }
-  return result;
-}
-
-t_boolean
-end_thread_state (struct t_thread* thread, int state)
+struct TCapturedEvents
 {
-  t_boolean result = TRUE;
+  bool captureEvents;
+  std::vector<struct t_even > events;
+  t_treat_acc_events_behavior treatAccEventBehavior;
+};
 
-  if (thread->current_state == STATE_NIL)
-  {
-    result   = FALSE;
-    errorStr = "Trying to close an uninitialized state\n";
-  }
-  else if (thread->current_state->state != state)
-  {
-    result   = FALSE;
-    errorStr = "Trying to close different state that initialized one\n";
-  }
-  else
-  {
-    /* JGG (02/05/2005) */
-    SUB_TIMER (current_time, thread->current_state->init_time, last_state_time);
+const std::unordered_set<unsigned long long>& getValidSyncTypes();
 
-    free( thread->current_state);
-    thread->current_state = STATE_NIL;
-  }
-  return result;
-}
-
-char*
-get_last_state_error(void)
+extern "C"
 {
-  return errorStr;
-}
+#else // __cplusplus
+struct TCapturedEvents;
+#endif // __cplusplus
+struct TEventSyncQueue;
 
-extern dimemas_timer
-get_last_state_time(void)
-{
-  return last_state_time;
+void event_sync_init( void );
+
+#ifndef PRV2DIM
+struct TEventSyncQueue *createEventSyncQueue();
+struct TCapturedEvents *createCapturedEvents();
+
+t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
+
+t_boolean capture_previous_events( struct t_thread *whichThread,
+                                   struct t_even *whichEvent,
+                                   int threadID );
+
+void print_pending_syncs( struct t_task *whichTask );
+
+t_boolean is_openmp_treated_event( unsigned long long type );
+
+t_boolean is_cuda_treated_event( unsigned long long type );
+
+t_boolean is_cuda_comm ( unsigned long long commTag );
+
+#endif // PRV2DIM
+
+#ifdef __cplusplus
 }
+#endif // __cplusplus
+
+#endif // __event_sync_h

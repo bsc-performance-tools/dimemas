@@ -37,36 +37,37 @@
  */
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-#define PRINT_VENUS_INFO     0
-#define PRINT_VENUS_SENDS    0 
-#define VENUS_STATS          0
+#define PRINT_VENUS_INFO  0
+#define PRINT_VENUS_SENDS 0
+#define VENUS_STATS       0
 
-/* extern int channel_socket; */
-extern int venusmsgs_in_flight;
+  /* extern int channel_socket; */
+  extern int venusmsgs_in_flight;
 
-extern void      VC_enable(const char* venus_conn_url);
-extern t_boolean VC_is_enabled(void);
+  extern void VC_enable( const char *venus_conn_url );
+  extern t_boolean VC_is_enabled( void );
 
-extern void VC_Init(void);
-extern void VC_End(void);
+  extern void VC_Init( void );
+  extern void VC_End( void );
 
-extern int VC_send(char *s);
-extern int VC_recv(char *s, int maxlen);
+  extern int VC_send( char *s );
+  extern int VC_recv( char *s, int maxlen );
 
-int print_event (struct t_event *event);
-struct t_event* EVENT_venus_timer(dimemas_timer when, int daemon, int module, struct t_thread *thread, int info);
+  int print_event( struct t_event *event );
+  struct t_event *EVENT_venus_timer( dimemas_timer when, int daemon, int module, struct t_thread *thread, int info );
 #ifdef USE_EQUEUE
-int venus_outFIFO_event (Equeue *q, struct t_event *e);
+  int venus_outFIFO_event( Equeue *q, struct t_event *e );
 #else
-int venus_outFIFO_event (struct t_queue *q, struct t_event *e);
+int venus_outFIFO_event( struct t_queue *q, struct t_event *e );
 #endif
 
-int VC_command_send(double dtime, int src, int dest, int tag, int size, void *event, void *out_resources_event, int src_app, int dest_app);
-int VC_command_rdvz_send (double dtime, int src, int dest, int tag, int size, int src_app, int dest_app);
-int VC_command_rdvz_ready (double dtime, int src, int dest, int tag, int size, void *event, void *event_resources_out, int src_app, int dest_app);
+  int VC_command_send( double dtime, int src, int dest, int tag, int size, void *event, void *out_resources_event, int src_app, int dest_app );
+  int VC_command_rdvz_send( double dtime, int src, int dest, int tag, int size, int src_app, int dest_app );
+  int VC_command_rdvz_ready( double dtime, int src, int dest, int tag, int size, void *event, void *event_resources_out, int src_app, int dest_app );
 
 
 #ifdef __cplusplus

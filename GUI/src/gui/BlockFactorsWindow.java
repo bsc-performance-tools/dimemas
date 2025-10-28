@@ -129,20 +129,6 @@ public class BlockFactorsWindow extends GUIWindow
       DefinedModules++;
     }
 
-    /* JGG (2012/04/02) DEPRECATED!
-    // Panel de información de BLOCK FACTORS (Nombre -- Valor).
-    JPanel top = new JPanel(new GridLayout(data.block.getNumberOfBlocks(),2));
-    blockValue = new JTextField[data.block.getNumberOfBlocks()];
-
-    for(int i = 0; i < data.block.getNumberOfBlocks(); i++)
-    {
-      top.add(new JLabel(data.block.factors[i].getId() + " - " + data.block.factors[i].getName()));
-      blockValue[i] = new JTextField(18);
-      blockValue[i].setText(data.block.factors[i].getValue());
-      top.add(blockValue[i]);
-    }
-    */
-
     infoPanel = new JScrollPane(top,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
   }
 

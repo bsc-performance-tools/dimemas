@@ -23,26 +23,90 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-#ifndef __dim_omp_h
-#define __dim_omp_h
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <iterator>
+#include "progress.h"
 
-#include "define.h"
-#include "types.h"
+using namespace std;
 
-#ifdef __cplusplus
-extern "C"
+constexpr unsigned int STEPS_LIMIT = 1000;
+constexpr unsigned int BAR_WIDTH = 30;
+
+class ProgressManager
 {
-#endif
+  private:
+    static ProgressManager *instance;
+    ProgressManager();
 
-  struct OMPTasks;
-  struct OMPTasks_ThreadInfo;
-  struct OMPTasks *createOpenMPTasks();
-  struct OMPTasks_ThreadInfo *createOpenMPTasks_ThreadInfo();
+    double currentProgress;
+    unsigned int countSteps;
 
-  scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time );
+  public:
+    ~ProgressManager();
 
-#ifdef __cplusplus
+    static ProgressManager *getInstance();
+
+    bool updateProgress( double newProgress );
+    void printProgress();
+};
+
+ProgressManager *ProgressManager::instance = nullptr;
+
+ProgressManager::ProgressManager() : currentProgress( 0.0 ), countSteps( 0 )
+{
 }
-#endif
 
-#endif // __dim_omp_h
+ProgressManager::~ProgressManager()
+{
+}
+
+ProgressManager *ProgressManager::getInstance()
+{
+  if( instance == nullptr )
+    instance = new ProgressManager();
+
+  return instance;
+}
+
+bool ProgressManager::updateProgress( double newProgress )
+{
+  if( newProgress > currentProgress )
+  {
+    currentProgress = newProgress;
+    return true;
+  }
+  return false;
+}
+
+void ProgressManager::printProgress()
+{
+  if( ++countSteps % STEPS_LIMIT == 0 || currentProgress == 1.0 )
+  {
+    std::cout << "[";
+
+    std::fill_n( std::ostream_iterator<char>( std::cout ), std::floor( currentProgress * BAR_WIDTH ), '#' );
+    std::fill_n( std::ostream_iterator<char>( std::cout ), BAR_WIDTH - std::floor( currentProgress * BAR_WIDTH ), ' ' );
+
+    std::cout << "] ";
+
+    std::cout << std::fixed;
+    std::cout.precision( 1 );
+    std::cout.width( 5 );
+    std::cout << currentProgress * 100 << "%";
+    if( currentProgress == 1.0 ) 
+      std::cout << "\n";
+    else
+    {
+      std::cout << "\r";
+      std::cout.flush();
+    }
+  }
+}
+
+void updateProgress( double newProgress )
+{
+  if ( ProgressManager::getInstance()->updateProgress( newProgress ) )
+    ProgressManager::getInstance()->printProgress();
+}

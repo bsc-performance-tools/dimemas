@@ -395,7 +395,7 @@ public class NodeData
     int currentNode  = 0;
     int previousNode = 0;
     int summarized   = 0;
-    
+
     while (currentNode < node.length)
     {
       if (node[currentNode].equals(node[previousNode]))
@@ -715,7 +715,7 @@ public class NodeData
     }
     else                          // #nodos nuevos < #nodos existentes.
     {
-      for(int i = 0; i < node.length; i++)
+      for(int i = 0; i < nNodes; i++)
       {
         if(node[i].getMachine_id().equalsIgnoreCase(aux[l].getMachine_id()))
         {
@@ -747,6 +747,7 @@ public class NodeData
     node = null;
     node = aux;
     aux = null;
+
     System.gc();
   }
 }

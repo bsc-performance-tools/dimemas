@@ -967,6 +967,31 @@ void PARAVER_Thread_Sync (int cpu, int ptask, int task, int thread,
 					 PRV_SYNC_ST);
 }
 
+void PARAVER_Mem_Alloc (int cpu, int ptask, int task, int thread,
+									 				dimemas_timer init_time,
+													dimemas_timer end_time)
+{
+	VERIFICA_GENERACIO_PARAVER;
+
+	if EQ_TIMER (init_time, end_time)
+		return;
+
+	if (debug&D_PRV)
+	{
+		PRINT_TIMER (current_time);
+		printf (": Paraver Thread Synchronization Printed\n\tOBJECT   "\
+						"CPU %d P%02d T%02d (t%02d)\n",
+						cpu, ptask, task, thread);
+	}
+
+	NewState(cpu, ptask, task, thread,
+					 init_time,
+					 end_time,
+					 PRV_MEM_ALLOC_ST);
+}
+
+
+
 /*****************************************************************************
  * Private functions implementation
  ****************************************************************************/
@@ -1131,18 +1156,25 @@ void GenerateParaverHeader(FILE* ParaverTraceFile)
   /*  
    * Iterate through nodes to print the number of CPUs
    */
-  Header << nodes_size << "(";
-  int node_id = 0;
-  node = &nodes[node_id];
-  while (node_id < nodes_size)
+  unsigned int nodes_used = 0;
+  for ( unsigned int i = 0; i < SIMULATOR_get_number_of_nodes(); ++i )
+    if( nodes[i].used_node == TRUE ) ++nodes_used;
+  Header << nodes_used << "(";
+  
+  unsigned int nodes_used_i = 0;
+  for ( int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id )
   {
-      Header << (unsigned int) count_queue(&(node->Cpus)); // Number of CPUs
-
-    node = &nodes[++node_id];
-
-    if (node != NULL)
+    node = &nodes[ node_id ];
+    if( node->used_node == TRUE )
     {
-      Header << ",";
+      ++nodes_used_i;
+
+      Header << (unsigned int) count_queue( &( node->Cpus ) );
+
+      if ( nodes_used_i < nodes_used )
+      {
+        Header << ",";
+      }
     }
   }
   Header << "):";

@@ -5,8 +5,8 @@
 dnl Process this file with autoconf to produce a configure script.
 
 m4_define([major], [5])
-m4_define([minor], [4])
-m4_define([micro], [2])
+m4_define([minor], [5])
+m4_define([micro], [0])
 
 m4_define([dimemas_version], [major.minor.micro])
 
@@ -14,7 +14,7 @@ AC_INIT(dimemas, [dimemas_version], tools@bsc.es)
 AC_CANONICAL_SYSTEM
 
 #AM_INIT_AUTOMAKE([silent-rules])
-AM_INIT_AUTOMAKE([tar-ustar subdir-objects no-dependencies])
+AM_INIT_AUTOMAKE([tar-ustar subdir-objects])
 
 AC_PREFIX_DEFAULT(${DIMEMASDIR:-/usr/local})
 AC_CONFIG_MACRO_DIR([m4])

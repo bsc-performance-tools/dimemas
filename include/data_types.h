@@ -3,7 +3,7 @@
  *                                  Dimemas                                  *
  *       Simulation tool for the parametric analysis of the behaviour of     *
  *       message-passing applications on a configurable parallel platform    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************
  *     ___     This library is free software; you can redistribute it and/or *
  *    /  __         modify it under the terms of the GNU LGPL as published   *
@@ -37,27 +37,31 @@
  *the records in the configuration file and trace file
  */
 
-typedef enum {
+typedef enum
+{
   CONFIGURATION,
   TRACEFILE
 } t_configuration_or_tracefile;
 
-typedef enum {
+typedef enum
+{
   TYPES_INTEGER,
   TYPES_DOUBLE,
   TYPES_CHAR
 } t_variable_types;
-                
-struct t_record_elements{
+
+struct t_record_elements
+{
   char *name;
   t_variable_types variable_type;
   int dimension;
-};        
+};
 
-struct t_record{
+struct t_record
+{
   t_configuration_or_tracefile configuration_or_tracefile;
-  int   number;
+  int number;
   char *name;
-  int   num_elements;
+  int num_elements;
   struct t_queue Elements;
 };

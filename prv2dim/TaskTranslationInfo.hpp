@@ -21,17 +21,12 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-   $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-   $Rev:: 1044                                     $:  Revision of last commit
-   $Author:: jgonzale                              $:  Author of last commit
-   $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-   \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 #ifndef _TASKTRANSLATIONINFO_H
 #define _TASKTRANSLATIONINFO_H
+
+#include <unordered_set>
+#include <map>
 
 #include <Error.hpp>
 using cepba_tools::Error;
@@ -42,167 +37,192 @@ using cepba_tools::Error;
 using std::pair;
 
 #ifdef NEW_DIMEMAS_TRACE
-typedef pair<INT32, INT64> Block_t;
+typedef pair<UINT32, INT64> Block_t;
 #else
-typedef DimBlock           Block_t;
+typedef DimBlock Block_t;
 #endif
 
-class TaskTranslationInfo: public Error
+class TaskTranslationInfo : public Error
 {
-    private:
-        INT32                   TaskId;
-        INT32                   ThreadId;
-        double                  TimeFactor;  /* To adjust CPU Burst values */
-        vector<ParaverRecord_t> RecordStack;
-        vector<Block_t>         MPIBlockIdStack;
-        vector<Block_t>         UserBlockIdStack;
-        vector<Block_t>         ClusterBlockIdStack;
-        UINT64                  LastBlockEnd;
+ private:
+  INT32 TaskId;
+  INT32 ThreadId;
+  double TimeFactor; /* To adjust CPU Burst values */
+  vector<ParaverRecord_t> RecordStack;
+  vector<Block_t> MPIBlockIdStack;
+  vector<Block_t> UserBlockIdStack;
+  vector<Block_t> ClusterBlockIdStack;
+  UINT64 LastBlockEnd;
 
-        // For matching non-block collectives with its MPI_Wait
-        vector<GlobalOp_t>      NonBlockingGlopsInFlight;
-        bool                    MPIWaitWithCommunication;
+  std::unordered_set<INT32> validSyncTypesFirstZeroArrived;
+  vector<INT32> validSyncTypesStack;
 
-        /* For CUDA / OpenCL version */
-        UINT64					LastGPUBurstBlock;
-        bool                    FirstCUDARead;
-        bool                    FirstOCLRead;
-        bool                    OngoingDeviceSync;
-        INT32                   StreamIdToSync;
-        INT32                   AcceleratorThread;
-        vector<Block_t>         CUDABlockIdStack;
-        vector<Block_t>         OCLBlockIdStack;
-        bool                    OCLFinishComm;
-        /* For OMP version */
-       // vector<Block_t>         OMPBlockIdStack;
-        INT32                   OpenMP_thread;
+  // For matching non-block collectives with its MPI_Wait
+  vector<GlobalOp_t> NonBlockingGlopsInFlight;
+  bool MPIWaitWithCommunication;
 
-        /* MPI_Event_Values type is defined in 'EventEncoding.h', on common-files */
-        GlobalOp_t              PartialGlobalOp;
-        INT32                   GlobalOpFields;
-        bool                    PendingGlobalOp;
-        bool                    OutsideComms;
-        bool                    WrongComms;
-        bool                    NonDeterministicComms;
-        bool                    DisorderedRecords;
-        bool                    FlushClusterStack;
+  std::map< INT32, UINT32 > MPICollectivesCount; // number of MPI Collectives per communicator
+  const std::map< std::tuple<INT32, UINT32>, INT32>& MPICollectiveRoots;
 
-        bool                    CommunicationPrimitivePrinted;
+  /* For CUDA / OpenCL version */
+  UINT64 LastGPUBurstBlock;
+  bool FirstCUDARead;
+  bool FirstOCLRead;
+  INT32 AcceleratorThread;
+  vector<Block_t> CUDABlockIdStack;
+  vector<Block_t> OCLBlockIdStack;
+  bool OCLFinishComm;
+  bool commInCudaLaunch;
 
-        bool                    GenerateFirstIdle;
-        bool                    FirstClusterRead;
+  /* For OMP version */
+  INT32 OpenMP_thread;
+  UINT32 OpenMP_nesting_level;
 
-        FILE* TemporaryFile;
-        char* TemporaryFileName;
+  /* MPI_Event_Values type is defined in 'EventEncoding.h', on common-files */
+  GlobalOp_t PartialGlobalOp;
+  INT32 GlobalOpFields;
+  bool PendingGlobalOp;
+  bool OutsideComms;
+  bool WrongComms;
+  bool NonDeterministicComms;
+  bool DisorderedRecords;
+  bool FlushClusterStack;
 
-        double IprobeMissesThreshold;
-        double TestMissesThreshold;
+  bool CommunicationPrimitivePrinted;
 
-        bool   GenerateMPIInitBarrier;
-        bool   MPIInitBarrierWritten;
+  bool GenerateFirstIdle;
+  bool FirstClusterRead;
 
-        bool   PreviouslySimulatedTrace;
+  FILE* TemporaryFile;
+  char* TemporaryFileName;
 
-        bool   BurstCounterGeneration;
-        INT32  BurstCounterType;
-        double BurstCounterFactor;
+  double IprobeMissesThreshold;
+  double TestMissesThreshold;
 
-        bool  OngoingIprobe;
-        bool  OngoingTest;
-        bool  IprobeBurstFlushed;
-        bool  TestBurstFlushed;
-        bool  FilePointerAvailable;
-        bool  FirstPrint;
+  bool GenerateMPIInitBarrier;
+  bool MPIInitBarrierWritten;
 
-        /* Needed to access counters from others TaskTranslators */
-        vector<vector<TaskTranslationInfo*> > * AllTranslationInfo;
+  bool PreviouslySimulatedTrace;
+
+  bool BurstCounterGeneration;
+  INT32 BurstCounterType;
+  double BurstCounterFactor;
+
+  bool OngoingIprobe;
+  bool OngoingTest;
+  bool IprobeBurstFlushed;
+  bool TestBurstFlushed;
+  bool FilePointerAvailable;
+  bool FirstPrint;
+
+  /* Needed to access counters from others TaskTranslators */
+  vector<vector<TaskTranslationInfo*> >* AllTranslationInfo;
 
 
-    public:
-        TaskTranslationInfo(INT32   TaskId,
-                INT32   ThreadId,
-                double  TimeFactor,
-                UINT64  InitialTime,
-                bool    GenerateFirstIdle,
-                bool    EmptyTask,
-                double  IprobeMissesThreshold,
-                double  TestMissesThreshold,
-                bool    BurstCounterGeneration,
-                INT32   BurstCounterType,
-                double  BurstCounterFactor,
-                bool    GenerateMPIInitBarrier,
-                bool    PreviouslySimulatedTrace,
-                vector<vector<TaskTranslationInfo*> > * AllTranslationInfo,
-                INT32		AcceleratorThread,
-                INT32       OpenMP_thread,
-                char*   TemporaryFileName = NULL,
-                FILE*   TemporaryFile = NULL);
+ public:
+  TaskTranslationInfo( INT32 TaskId,
+                       INT32 ThreadId,
+                       double TimeFactor,
+                       UINT64 InitialTime,
+                       bool GenerateFirstIdle,
+                       bool EmptyTask,
+                       double IprobeMissesThreshold,
+                       double TestMissesThreshold,
+                       bool BurstCounterGeneration,
+                       INT32 BurstCounterType,
+                       double BurstCounterFactor,
+                       bool GenerateMPIInitBarrier,
+                       bool PreviouslySimulatedTrace,
+                       vector<vector<TaskTranslationInfo*> >* AllTranslationInfo,
+                       INT32 AcceleratorThread,
+                       INT32 OpenMP_thread,
+                       const std::map< std::tuple<INT32, UINT32>, INT32>& whichMPICollectiveRoots,
+                       char* TemporaryFileName = NULL,
+                       FILE* TemporaryFile     = NULL );
 
-        ~TaskTranslationInfo();
+  ~TaskTranslationInfo();
 
-        INT32 GetTaskId (void ) { return TaskId; };
+  INT32 GetTaskId( void )
+  {
+    return TaskId;
+  };
 
-        bool PushRecord ( ParaverRecord_t Record );
+  bool PushRecord( ParaverRecord_t Record );
 
-        void SetPendingGlobalOp(bool PendingGlobalOp)
-        {
-            this->PendingGlobalOp = PendingGlobalOp;
-        }
-        bool LastFlush(void);
+  void SetPendingGlobalOp( bool PendingGlobalOp )
+  {
+    this->PendingGlobalOp = PendingGlobalOp;
+  }
+  bool LastFlush( void );
 
-        bool Merge(FILE* DimemasFile);
+  bool Merge( FILE* DimemasFile );
 
-        bool GetOutsideComms (void)         { return OutsideComms; };
+  bool GetOutsideComms( void )
+  {
+    return OutsideComms;
+  };
 
-        bool GetWrongComms (void)           { return WrongComms; };
+  bool GetWrongComms( void )
+  {
+    return WrongComms;
+  };
 
-        bool GetNonDeterministicComms(void) { return NonDeterministicComms; };
+  bool GetNonDeterministicComms( void )
+  {
+    return NonDeterministicComms;
+  };
 
-        bool GetDisorderedRecords(void)     { return DisorderedRecords; };
+  bool GetDisorderedRecords( void )
+  {
+    return DisorderedRecords;
+  };
 
-        bool GetMPIInitBarrierWritten(void) { return MPIInitBarrierWritten; };
+  bool GetMPIInitBarrierWritten( void )
+  {
+    return MPIInitBarrierWritten;
+  };
 
-        /* Some other statistics */
-        unsigned int send_counter;
-        unsigned int isend_counter;
-        unsigned int recv_counter;
-        unsigned int irecv_counter;
-        unsigned int wait_counter;
-        unsigned int glop_counter;
+  /* Some other statistics */
+  unsigned int send_counter;
+  unsigned int isend_counter;
+  unsigned int recv_counter;
+  unsigned int irecv_counter;
+  unsigned int wait_counter;
+  unsigned int glop_counter;
 
-        unsigned int pendent_i_Send_counter;
-        unsigned int pendent_i_Recv_counter;
-        unsigned int pendent_Glop_counter;
-        int pseudo_logic_recv_events;
-    private:
-        bool ReorderAndFlush(void);
+  unsigned int pendent_i_Send_counter;
+  unsigned int pendent_i_Recv_counter;
+  unsigned int pendent_Glop_counter;
+  int pseudo_logic_recv_events;
 
-        bool ToDimemas(ParaverRecord_t Record);
-        bool ToDimemas(Event_t CurrentEvent);
-        bool ToDimemas(PartialCommunication_t CurrentComm);
-        bool ToDimemas(GlobalOp_t CurrentGlobOp);
+ private:
+  bool ReorderAndFlush( void );
 
-        void Event2GlobalOp(Event_t CurrentEvent);
-        void FinalizeGlobalOp(void);
-        bool CheckIprobeCounters(Event_t CurrentEvent);
-        bool CheckTestCounters(Event_t CurrentEvent);
-        bool GenerateBurst(INT32 TaskId, INT32 ThreadId, UINT64 Timestamp);
+  bool ToDimemas( ParaverRecord_t Record );
+  bool ToDimemas( Event_t CurrentEvent );
+  bool ToDimemas( PartialCommunication_t CurrentComm );
+  bool ToDimemas( GlobalOp_t CurrentGlobOp );
 
-        bool PrintPseudoCommunicationEndpoint(INT32 CommType,
-                INT32 TaskId,
-                INT32 ThreadId,
-                INT32 PartnerTaskId,
-                INT32 PartnerThreadId,
-                INT32 Size,
-                INT32 Tag,
-                INT32 CommId);
+  void Event2GlobalOp( Event_t CurrentEvent );
+  void FinalizeGlobalOp( void );
+  bool CheckIprobeCounters( Event_t CurrentEvent );
+  bool CheckTestCounters( Event_t CurrentEvent );
+  bool GenerateBurst( INT32 TaskId, INT32 ThreadId, UINT64 Timestamp );
 
-        bool GenerateGPUBurst(INT32 TaskId,
-                INT32 ThreadId,
-                UINT64 Timestamp,
-                UINT64 LastBlock);
+  bool PrintPseudoCommunicationEndpoint( INT32 CommType,
+                                         INT32 TaskId,
+                                         INT32 ThreadId,
+                                         INT32 PartnerTaskId,
+                                         INT32 PartnerThreadId,
+                                         INT32 Size,
+                                         INT32 Tag,
+                                         INT32 CommId );
 
-        void PrintStack(void);
+  bool GenerateGPUBurst( INT32 TaskId, INT32 ThreadId, UINT64 Timestamp, UINT64 LastBlock );
+
+  void PrintStack( void );
+
+  bool checkClosingValidSyncTypes( INT32 whichType, INT64 whichValue );
 };
 
 typedef TaskTranslationInfo* TaskTranslationInfo_t;

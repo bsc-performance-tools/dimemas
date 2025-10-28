@@ -37,26 +37,18 @@
 /**
  * External routines defined in file ports.c
  **/
-void PORT_general (int value, struct t_thread *thread);
+void PORT_general( int value, struct t_thread *thread );
 
-void PORT_Init(void);
-void PORT_End(void);
+void PORT_Init( void );
+void PORT_End( void );
 
-t_boolean PORT_create(int portid, struct t_thread *thread);
-t_boolean PORT_delete(int portid);
+t_boolean PORT_create( int portid, struct t_thread *thread );
+t_boolean PORT_delete( int portid );
 
-t_boolean PORT_send (int              module,
-                            int              portid,
-                            struct t_thread *thread,
-                            int              siz);
+t_boolean PORT_send( int module, int portid, struct t_thread *thread, int siz );
 
-t_boolean PORT_receive(int              module,
-                              int              portid,
-                              struct t_thread *thread,
-                              int              siz);
+t_boolean PORT_receive( int module, int portid, struct t_thread *thread, int siz );
 
-void really_port_send(struct t_port   *port,
-                             struct t_thread *thread_s,
-                             struct t_thread *thread_r);
+void really_port_send( struct t_port *port, struct t_thread *thread_s, struct t_thread *thread_r );
 
 #endif

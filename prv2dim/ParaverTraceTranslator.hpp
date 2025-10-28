@@ -21,22 +21,12 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL:: https://svn.bsc.es/repos/ptools/prv2dim/#$:  File
-  $Rev:: 1044                                     $:  Revision of last commit
-  $Author:: jgonzale                              $:  Author of last commit
-  $Date:: 2012-03-27 17:58:59 +0200 (Tue, 27 Mar #$:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #ifndef _PARAVERTRACETRANSLATOR_H
 #define _PARAVERTRACETRANSLATOR_H
 
+#include <Error.hpp>
 #include <cerrno>
 #include <cstdio>
-
-#include <Error.hpp>
 using cepba_tools::Error;
 
 #include <iostream>
@@ -46,89 +36,102 @@ using std::endl;
 #include <string>
 using std::string;
 
+#include <map>
+
 #include "ParaverTraceParser.hpp"
-#include "TranslatorRecord.hpp"
 #include "TaskTranslationInfo.hpp"
+#include "TranslatorRecord.hpp"
 
-class ParaverTraceTranslator: public Error
+class ParaverTraceTranslator : public Error
 {
-  private:
+ private:
+  string ParaverTraceName;
+  string DimemasTraceName;
+  string ExtraStatsName;
 
-    string ParaverTraceName;
-    string DimemasTraceName;
-	string ExtraStatsName;
+  FILE* RowTraceFile;
+  FILE* PcfTraceFile;
 
-    FILE* RowTraceFile;
-    FILE* PcfTraceFile;
+  FILE* ParaverTraceFile;
+  FILE* DimemasTraceFile;
 
-    FILE* ParaverTraceFile;
-    FILE* DimemasTraceFile;
+  bool withExtraStats;
+  bool DescriptorShared;
 
-    bool  withExtraStats;
-    bool  DescriptorShared;
+  vector<PartialCommunication_t> Communications;
+  vector<TranslationCommunicator_t> Communicators;
+  vector<vector<TaskTranslationInfo_t> > TranslationInfo;
+  std::map< std::tuple<INT32, UINT32>, INT32> MPICollectiveRoots; // index->CommunicatorId,CollectiveCount data->RootTaskId
 
-    char* CommunicationsFileName;
-    FILE* CommunicationsFile;
+  ParaverTraceParser_t Parser;
 
-    vector<PartialCommunication_t>    Communications;
-    vector<TranslationCommunicator_t> Communicators;
-    vector<vector<TaskTranslationInfo_t> > TranslationInfo;
+  bool MultiThreadTrace;
 
-    ParaverTraceParser_t Parser;
+  bool PreviouslySimulatedTrace;
 
-    bool MultiThreadTrace;
+  INT32 WrongRecordsFound;
+  bool is_openmp_trace;
+  /* Indicates if OpenMP will be translated */
+  vector<bool> omp_tasks;
+  INT32 omp_tasks_count;
+  /* Indicates if CUDA or OpenCL will be translated */
+  INT32 AcceleratorType;
+  vector<bool> acc_tasks;
+  INT32 acc_tasks_count;
 
-    bool PreviouslySimulatedTrace;
+ public:
+  ParaverTraceTranslator( void ){};
+  ParaverTraceTranslator( string ParaverTraceName, string DimemasTraceName, string ExtraStatsName );
+  ParaverTraceTranslator( string ParaverTraceName, string DimemasTraceName );
+  ParaverTraceTranslator( FILE* ParaverTraceFile, FILE* DimemasTraceFile );
 
-    INT32 WrongRecordsFound;
-    bool is_openmp_trace;
-    /* Indicates if OpenMP will be translated */
-    vector<bool>	omp_tasks;
-    INT32 omp_tasks_count;
-    /* Indicates if CUDA or OpenCL will be translated */
-    INT32 AcceleratorType;	
-    vector<bool>	acc_tasks;
-    INT32 acc_tasks_count;
-    
+  bool InitTranslator( void );
+  bool EndTranslator( void );
+  bool SplitCommunications( void );
+  bool Translate( bool GenerateFirstIdle,
+                  double IprobeMissesThreshold,
+                  double TestMissesThreshold,
+                  INT32 BurstCounterType,
+                  double BurstCounterFactor,
+                  bool GenerateMPIInitBarrier );
 
-  public:
+ private:
+  ParaverRecord_t SelectNextRecord( void );
+  TranslationCommunicator_t GetCommunicator( INT32 CommId );
 
-    ParaverTraceTranslator(void){};
-    ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName, 
-            string ExtraStatsName);
-    ParaverTraceTranslator(string ParaverTraceName, string DimemasTraceName);
-    ParaverTraceTranslator(FILE* ParaverTraceFile, FILE* DimemasTraceFile);
+  bool InitTranslationStructures( ApplicationDescription_t AppDescription,
+                                  double TimeFactor,
+                                  bool GenerateFirstIdle,
+                                  double IprobeMissesThreshold,
+                                  double TestMissesThreshold,
+                                  INT32 BurstCounterType,
+                                  double BurstCounterFactor,
+                                  bool GenerateMPIInitBarrier );
 
-    bool InitTranslator(void);
-    bool EndTranslator(void);
-    bool SplitCommunications(void);
-    bool Translate(bool GenerateFirstIdle,double IprobeMissesThreshold,
-            double TestMissesThreshold,INT32  BurstCounterType,
-            double BurstCounterFactor,bool   GenerateMPIInitBarrier);
+  void treatMultiEvent( const Event_t& CurrentEvent );
+  void createPartialCommunication( const Event_t& CurrentEvent,
+                                   INT32 Type,
+                                   INT32 PartnerTaskId,
+                                   INT32 PartnerThreadId,
+                                   INT32 Size,
+                                   INT32 Tag,
+                                   INT32 CommId );
 
-  private:
-    ParaverRecord_t SelectNextRecord(void);
-    TranslationCommunicator_t GetCommunicator(INT32 CommId);
+  void createMPICollectiveRoots( const Event_t& CurrentEvent,
+                                 INT32 CommunicatorId );
 
-    bool InitTranslationStructures(ApplicationDescription_t AppDescription,
-                                   double TimeFactor,
-                                   bool   GenerateFirstIdle,
-                                   double IprobeMissesThreshold,
-		   		                   double TestMissesThreshold,
-                                   INT32  BurstCounterType,
-                                   double BurstCounterFactor,
-                                   bool   GenerateMPIInitBarrier);
-
-    bool TranslateCommunicators(ApplicationDescription_t AppDescription);
-    bool IsDimemasBlockBegin(Event_t EventRecord);
-    bool IsDimemasBlockEnd(Event_t EventRecord);
-    bool ShareDescriptor(void);
-    bool WriteNewFormatHeader(ApplicationDescription_t AppDescription, 
-            int acc_tasks_count, const vector<bool> *acc_tasks, 
-            int omp_tasks_count, const vector<bool> *omp_tasks, 
-            off_t OffsetsOffset = 0);
-    bool AcceleratorTasksInfo(INT32 tasks_count);
-    bool OpenMPTasksInfo(INT32 tasks_count);
+  bool TranslateCommunicators( ApplicationDescription_t AppDescription );
+  bool IsDimemasBlockBegin( Event_t EventRecord );
+  bool IsDimemasBlockEnd( Event_t EventRecord );
+  bool ShareDescriptor( void );
+  bool WriteNewFormatHeader( ApplicationDescription_t AppDescription,
+                             int acc_tasks_count,
+                             const vector<bool>& acc_tasks,
+                             int omp_tasks_count,
+                             const vector<bool>& omp_tasks,
+                             off_t OffsetsOffset = 0 );
+  bool AcceleratorTasksInfo( INT32 tasks_count );
+  bool OpenMPTasksInfo( INT32 tasks_count );
 };
 
 #endif /* _PARAVERTRACETRANSLATOR_H */

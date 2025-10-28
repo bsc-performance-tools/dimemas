@@ -23,181 +23,55 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
-
-  $URL::                  $:  File
-  $Rev::                  $:  Revision of last commit
-  $Author::               $:  Author of last commit
-  $Date::                 $:  Date of last commit
-
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #ifndef MACROS_H
 #define MACROS_H
 
-/*#   include "utils/CallStack.h" */
+#include <stdio.h>
+#include <stdlib.h>
+#include "define.h"
 
-#   include <stdio.h>
-#   include <stdlib.h>
-#   include <errno.h>
-
-#   ifdef ERROR
-#     undef ERROR
-#   endif
-
-#   ifdef CALLSTACK
-#     include "CallStack.h"
-#     define BEGINFN( x ) { CallStackEnter( #x ); }
-#     define ENDFN( x )   { CallStackLeave( #x ); }
-#   else
-#     define BEGINFN( x )
-#     define ENDFN( x )
-#   endif
-
-#   define SWAP( a, b, tmp ) { (tmp)= (a); (a) = (b); (b) = (tmp); }
-
-/* << ERROR >> Not needed now!
-#   define ERROR( x ) \
-    {\
-      fflush(NULL);\
-      fprintf( stderr, "\n");\
-      fprintf( stderr, "* Error: %s\n", x );\
-      if (errno) fprintf( stderr, "* Error: %s\n", strerror(errno) );\
-      fprintf( stderr, "* Error: %s (%d)\n",  __FILE__, __LINE__ );\
-      fprintf( stderr, "*\n");\
-      fflush(NULL);\
-      exit( EXIT_FAILURE );\
-      abort();\
-    }
-*/
-
-/* << WARNING >> */
-#   define WARNING( x ) \
-    {\
-      fprintf( stderr, "Warning message (process %d): %s, file %s (%d)\n", \
-                       getpid(), x, __FILE__, __LINE__ );\
-    }
-
-/* << DEBUGMESSAGE >> */
-#if 0
-
-#   define DEBUGMESSAGE( x ) \
-    {\
-      fprintf( stderr, "Debug message : %s, file %s (%d)\n", \
-                       x, __FILE__, __LINE__ );\
-      fflush( stderr );\
-    }
-
-extern int StackNumber;
-
-#   define BEGINFNS( x ) \
-    {\
-      int ii;\
-      \
-      StackNumber++;\
-      for( ii=0; ii<StackNumber; ii++)\
-      {\
-        fprintf( stderr, " " );\
-      }\
-      fprintf( stderr, "-" );\
-      fprintf( stderr, ">" );\
-      fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ );\
-      fflush( stderr );\
-    }
-
-#   define ENDFNS( x ) \
-    {\
-      int ii;\
-      \
-      for( ii=0; ii<StackNumber; ii++)\
-      {\
-        fprintf( stderr, " " );\
-      }\
-      fprintf( stderr, "<" );\
-      fprintf( stderr, "-" );\
-      StackNumber--;\
-      fprintf( stderr, "%s, file %s (%d)\n", x, __FILE__, __LINE__ );\
-      fflush( stderr );\
-    }
-
-#else
-
-#   define DEBUGMESSAGE( x )
-
-#   define BEGINFN1( x )
-
-#   define ENDFN1( x )
-
-#endif
-
-
-#include <assert.h>
-
-/* << ASSERT_ERROR >> */
-#   define ASSERT_ERROR( x ) \
-    {\
-      fflush(NULL);\
-      fprintf( stderr, "\n");\
-      fprintf( stderr, "* Assertion failed: %s at %s (%d)\n", x, __FILE__, __LINE__ );\
-      fprintf( stderr, "*\n");\
-      fflush(NULL);\
-      exit( EXIT_FAILURE );\
-      abort();\
-    }
-
-/* << ASSERT_CONDITION >> */
-#define ASSERT_CONDITION( condition )  assert( (condition) )
-
-/* << ASSERT >> */
-#define ASSERT( x ) if (!(x)) ASSERT_ERROR( #x )
-
-
-#define BZERO( nelem, type, ptr ) \
-   bzero ( ptr, ((size_t)(nelem)) * sizeof(type) )
-
-#if defined( DEBUG_MEMORY_ALLOC )
-
-#include <Memory.h>
-
-#else
-/* << ALLOC >> */
-#   define ALLOC( nelem, type, var ) \
-      malloc ( ((size_t)(nelem)) * sizeof(type) )
-
-# define REALLOC( ptr, nelem, type, var )\
-      realloc ( ptr, ((size_t)(nelem)) * sizeof(type) )
-
-# define FREE( x )\
-{\
-  free( (void *)x );\
-  x = NULL;\
+#define MSG_DEBUG(D_MASK, thread, format, ...)             \
+{                                                      \
+  { \
+    if ( debug & D_MASK )                                \
+    {                                                    \
+      PRINT_TIMER( current_time );                       \
+      printf( ": [P:%d T:%d THD:%d] " format "\n", IDENTIFIERS( thread ), ##__VA_ARGS__ );\
+    }                                                    \
+  } \
 }
 
+#define ASSERT_ERROR( x )                                                            \
+  {                                                                                  \
+    fflush( NULL );                                                                  \
+    fprintf( stderr, "\n" );                                                         \
+    fprintf( stderr, "* Assertion failed: %s at %s (%d)\n", x, __FILE__, __LINE__ ); \
+    fprintf( stderr, "*\n" );                                                        \
+    fflush( NULL );                                                                  \
+    exit( EXIT_FAILURE );                                                            \
+  }
+
+#define ASSERT( x ) \
+  if ( !( x ) )     \
+  ASSERT_ERROR( #x )
+
 /* PROGRESS MESSAGE */
-#define SHOW_PROGRESS(channel, message, current, total) \
-  fprintf(channel, "\r%s %03d/%03ld", message, current, total); \
-  fflush(channel)
+#define SHOW_PROGRESS( channel, message, current, total )         \
+    fprintf( channel, "\r%s %03d/%03ld", message, current, total ); \
+    fflush( channel )
 
 
-#define SHOW_PROGRESS_END(channel, message, total) \
-  fprintf(channel, "\r%s %03ld/%03ld", message, total, total); \
-  fflush(channel)
+#define SHOW_PROGRESS_END( channel, message, total )             \
+    fprintf( channel, "\r%s %03ld/%03ld", message, total, total ); \
+    fflush( channel )
 
-#define SHOW_PERCENTAGE_PROGRESS(channel, message, percentage) \
-  fprintf(channel, "\r%s %03d %%", message, percentage); \
-  fflush(channel)
+#define SHOW_PERCENTAGE_PROGRESS( channel, message, percentage ) \
+    fprintf( channel, "\r%s %03d %%", message, percentage );       \
+    fflush( channel )
 
 
-#define SHOW_PERCENTAGE_PROGRESS_END(channel, message) \
-  fprintf(channel, "\r%s 100 %%", message); \
-  fflush(channel)
-
-#endif
-
-#define DEBUG0( x )
-#define DEBUG1( x, y )
-#define DEBUG2( x, y, z )
-#define DEBUG3( x, y, z, w )
-#define DEBUG4( x, y, z, w, v )
+#define SHOW_PERCENTAGE_PROGRESS_END( channel, message ) \
+    fprintf( channel, "\r%s 100 %%", message );            \
+    fflush( channel )
 
 #endif

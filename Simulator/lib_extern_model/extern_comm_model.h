@@ -39,12 +39,12 @@
 #ifndef __define_h
 
 /* Allowed point-to-point communication types */
-#define DIMEMAS_P2P_COMM_MODEL   1
-#define EXTERNAL_P2P_COMM_MODEL  4
+#  define DIMEMAS_P2P_COMM_MODEL  1
+#  define EXTERNAL_P2P_COMM_MODEL 4
 
 /* Allowed global operation communication types */
-#define DIMEMAS_GLOBAL_OP  0
-#define EXTERNAL_GLOBAL_OP 1
+#  define DIMEMAS_GLOBAL_OP  0
+#  define EXTERNAL_GLOBAL_OP 1
 #endif
 
 /* Identifiers of the global operations simulated */
@@ -70,7 +70,7 @@ typedef double t_nano;
 #endif
 
 /******************************************************************************
- * FUNCTION:  'external_get_communication_type'                               *  
+ * FUNCTION:  'external_get_communication_type'                               *
  *****************************************************************************/
 /*
  * DESCRIPTION: Evaluates if a p2p communication that uses the internal cluster
@@ -78,85 +78,67 @@ typedef double t_nano;
  *
  * inputs: identifiers of the nodes and tasks involved in the communication plus
  * the message tag and the size of the message to be transmitted
- *  
+ *
  * return value: DIMEMAS_P2P_COMM_MODEL if the communication must be modelled
  * using the Dimemas model. EXTERNAL_P2P_COMM_MODEL if the communication will
  * be modeled using the current library.
  */
-int external_get_communication_type(int sender_nodeid,
-                                    int receiver_nodeid,
-                                    int sender_taskid,
-                                    int receiver_taskid,
-                                    int mess_tag,
-                                    int mess_size);
+int external_get_communication_type( int sender_nodeid, int receiver_nodeid, int sender_taskid, int receiver_taskid, int mess_tag, int mess_size );
 
 /******************************************************************************
- * FUNCTION:  'get_startup_value'                                             *  
+ * FUNCTION:  'get_startup_value'                                             *
  *****************************************************************************/
 /*
  * DESCRIPTION: Returns the startup value of a p2p communication in
  * *nanoseconds*
- * 
+ *
  * inputs: identifiers of the nodes and tasks involved in the communication plus
  * the message tag and the size of the message to be transmitted
  *
  * return value: startup latency of the p2p communication in nanoseconds
  */
-t_nano get_startup_value(int sender_nodeid,
-                         int receiver_nodeid,
-                         int sender_taskid,
-                         int receiver_taskid,
-                         int mess_tag, 
-                         int mess_size);
+t_nano get_startup_value( int sender_nodeid, int receiver_nodeid, int sender_taskid, int receiver_taskid, int mess_tag, int mess_size );
 
 /******************************************************************************
- * FUNCTION:  'get_bandwidth_value'                                           *  
+ * FUNCTION:  'get_bandwidth_value'                                           *
  *****************************************************************************/
 /*
  * DESCRIPTION: Computes the effective bandwidth to be used in a p2p
  * communication
- * 
+ *
  * inputs: identifiers of the nodes and tasks involved in the communication plus
  * the message tag and the size of the message to be transmitted
  *
  * return value: bandwidth in MB/s to be used in the p2p communication
  */
-t_nano get_bandwidth_value(int sender_nodeid,
-                           int receiver_nodeid,
-                           int sender_taskid,
-                           int receiver_taskid,
-                           int mess_tag, 
-                           int mess_size);
+t_nano get_bandwidth_value( int sender_nodeid, int receiver_nodeid, int sender_taskid, int receiver_taskid, int mess_tag, int mess_size );
 
 /******************************************************************************
- * FUNCTION:  'external_get_global_op_type'                                   *  
+ * FUNCTION:  'external_get_global_op_type'                                   *
  *****************************************************************************/
 /*
- * DESCRIPTION: Evaluates if a collective communication should be modeled 
+ * DESCRIPTION: Evaluates if a collective communication should be modeled
  * externally
  *
  * inputs:
  *   - 'comm_id': identifier of the communicator used in the collective
  *                communication
- * 
+ *
  *   - 'global_op_id': identifier of collective communication (see definitions
  *                     at the beginning of this file)
  *
  *   - 'bytes_send': total bytes to be scattered in the collective operation
  *
  *   - 'bytes_recv': total bytes to be gathered in the collective operation
- *  
+ *
  * return value: DIMEMAS_GLOBAL_OP if the collective communication should be
  * simulated using the Dimemas model. EXTERNAL_GLOBAL_OP if the collective
  * communication will use an external modellization defined in this library
  */
-int external_get_global_op_type(int comm_id,
-                                int global_op_id,
-                                int bytes_send,
-                                int bytes_recv);
+int external_get_global_op_type( int comm_id, int global_op_id, int bytes_send, int bytes_recv );
 
 /******************************************************************************
- * FUNCTION:  'external_compute_global_operation_time'                        *  
+ * FUNCTION:  'external_compute_global_operation_time'                        *
  *****************************************************************************/
 /*
  * DESCRIPTION: computes the startup latency and the transmission time of a
@@ -165,14 +147,14 @@ int external_get_global_op_type(int comm_id,
  * inputs:
  *   - 'comm_id': identifier of the communicator used in the collective
  *                communication
- * 
+ *
  *   - 'global_op_id': identifier of collective communication (see definitions
  *                     at the beginning of this file)
  *
  *   - 'bytes_send': total bytes to be scattered in the collective operation
  *
  *   - 'bytes_recv': total bytes to be gathered in the collective operation
- *  
+ *
  * outputs:
  *   - latency_time: startup latency of the collective communication in
  *                   *nanoseconds*
@@ -180,11 +162,6 @@ int external_get_global_op_type(int comm_id,
  *   - op_time: transmission time of the collective communication in
  *              *nanoseconds*
  */
-void external_compute_global_operation_time(int     comm_id,
-                                            int     global_op_id,
-                                            int     bytes_send,
-                                            int     bytes_recv,
-                                            t_nano *latency_time,
-                                            t_nano *op_time);
+void external_compute_global_operation_time( int comm_id, int global_op_id, int bytes_send, int bytes_recv, t_nano *latency_time, t_nano *op_time );
 
 #endif

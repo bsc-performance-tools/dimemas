@@ -37,6 +37,6 @@
 
 #include <types.h>
 
-extern t_boolean MakeParaverPCFandROW(const char *nom, const char *pcf_include);
+extern t_boolean MakeParaverPCFandROW( const char *nom, const char *pcf_include );
 
 #endif
