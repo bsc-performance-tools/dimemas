@@ -45,6 +45,7 @@ extern "C"
 
 #define SPECIAL_EVENT_TYPE 0
 #define IDLE_EVENT_TYPE    0
+#define DUMMY_EVENT_TYPE   0
 
 /* ==========================================================================
    ==== User Function/Calls
@@ -508,6 +509,7 @@ extern "C"
     MPI_MRECV_VAL,
     MPI_IMRECV_VAL,
     MPI_INIT_THREAD_VAL,
+    MPI_EXSCAN_VAL = 214,
     // new MPI_EVENTS will be added here...
     NUM_MPICALLS // number of MPI calls is defined by this table.
   } MPI_Event_Values;
@@ -744,7 +746,9 @@ extern "C"
     BLOCK_ID_LAPI__Address_Init,
     BLOCK_ID_LAPI__Amsend,
     BLOCK_ID_LAPI__Rmw,
-    BLOCK_ID_LAPI__Waitcntr
+    BLOCK_ID_LAPI__Waitcntr,
+
+    BLOCK_ID_MPI_Exscan = 214
   } DimBlock;
 
   /* ==========================================================================
@@ -770,22 +774,44 @@ extern "C"
     GLOP_ID_MPI_Reduce_scatter_block  = 13,
     GLOP_ID_MPI_Scan                  = 14,
     GLOP_ID_MPI_Alltoallw             = 15,
-    GLOP_ID_MPI_Ibarrier              = 16,
-    GLOP_ID_MPI_Ibcast                = 17,
-    GLOP_ID_MPI_Igather               = 18,
-    GLOP_ID_MPI_Igatherv              = 19,
-    GLOP_ID_MPI_Iscatter              = 20,
-    GLOP_ID_MPI_Iscatterv             = 21,
-    GLOP_ID_MPI_Iallgather            = 22,
-    GLOP_ID_MPI_Iallgatherv           = 23,
-    GLOP_ID_MPI_Ialltoall             = 24,
-    GLOP_ID_MPI_Ialltoallv            = 25,
-    GLOP_ID_MPI_Ireduce               = 26,
-    GLOP_ID_MPI_Iallreduce            = 27,
-    GLOP_ID_MPI_Ireduce_scatter       = 28,
-    GLOP_ID_MPI_Ireduce_scatter_block = 29,
-    GLOP_ID_MPI_Iscan                 = 30,
-    GLOP_ID_MPI_Ialltoallw            = 31,
+    
+    GLOP_ID_MPI_Exscan                = 16, // WARNING not inmmediate
+
+    // GLOP_ID_MPI_Ibarrier              = 16,
+    // GLOP_ID_MPI_Ibcast                = 17,
+    // GLOP_ID_MPI_Igather               = 18,
+    // GLOP_ID_MPI_Igatherv              = 19,
+    // GLOP_ID_MPI_Iscatter              = 20,
+    // GLOP_ID_MPI_Iscatterv             = 21,
+    // GLOP_ID_MPI_Iallgather            = 22,
+    // GLOP_ID_MPI_Iallgatherv           = 23,
+    // GLOP_ID_MPI_Ialltoall             = 24,
+    // GLOP_ID_MPI_Ialltoallv            = 25,
+    // GLOP_ID_MPI_Ireduce               = 26,
+    // GLOP_ID_MPI_Iallreduce            = 27,
+    // GLOP_ID_MPI_Ireduce_scatter       = 28,
+    // GLOP_ID_MPI_Ireduce_scatter_block = 29,
+    // GLOP_ID_MPI_Iscan                 = 30,
+    // GLOP_ID_MPI_Ialltoallw            = 31
+
+//     GLOP_ID_MPI_Exscan                = 32, // WARNING not inmmediate
+    GLOP_ID_MPI_Ibarrier              = 17,
+    GLOP_ID_MPI_Ibcast                = 18,
+    GLOP_ID_MPI_Igather               = 19,
+    GLOP_ID_MPI_Igatherv              = 20,
+    GLOP_ID_MPI_Iscatter              = 21,
+    GLOP_ID_MPI_Iscatterv             = 22,
+    GLOP_ID_MPI_Iallgather            = 23,
+    GLOP_ID_MPI_Iallgatherv           = 24,
+    GLOP_ID_MPI_Ialltoall             = 25,
+    GLOP_ID_MPI_Ialltoallv            = 26,
+    GLOP_ID_MPI_Ireduce               = 27,
+    GLOP_ID_MPI_Iallreduce            = 28,
+    GLOP_ID_MPI_Ireduce_scatter       = 29,
+    GLOP_ID_MPI_Ireduce_scatter_block = 30,
+    GLOP_ID_MPI_Iscan                 = 31,
+    GLOP_ID_MPI_Ialltoallw            = 32
+
   } DimCollectiveOp;
 
   /* Start position for immediate collectives */
@@ -818,6 +844,7 @@ extern "C"
 #define MPI_SCATTERV_LABEL             "MPI_Scatterv"
 #define MPI_REDUCE_SCATTER_LABEL       "MPI_Reduce_scatter"
 #define MPI_SCAN_LABEL                 "MPI_Scan"
+#define MPI_EXSCAN_LABEL               "MPI_Exscan"
 #define MPI_REDUCE_SCATTER_BLOCK_LABEL "MPI_Reduce_scatter_block"
 
 #define MPI_IREDUCE_LABEL               "MPI_Ireduce"
