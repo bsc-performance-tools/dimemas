@@ -1934,6 +1934,8 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
           }
           break;
         case CUDA_MEMCPY_VAL:
+        case CUDAMEMCPYTOSYMBOL_VAL:
+        case CUDAMEMCPYFROMSYMBOL_VAL:
         {
           if ( CurrentComm->GetType() == LOGICAL_SEND )
           {

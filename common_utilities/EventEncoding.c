@@ -714,7 +714,9 @@ Boolean CUDAEventEncoding_Is_CUDASimulableBlock( struct t_event_block event )
              event.value == CUDA_DEVICESYNCHRONIZE_VAL ||
              event.value == CUDA_STREAMSYNCHRONIZE_VAL ||
              event.value == CUDA_STREAM_CREATE_VAL ||
-             event.value == CUDA_MEMCPY_ASYNC_VAL
+             event.value == CUDA_MEMCPY_ASYNC_VAL ||
+             event.value == CUDAMEMCPYTOSYMBOL_VAL ||
+             event.value == CUDAMEMCPYFROMSYMBOL_VAL
            )
          );
 }
@@ -751,7 +753,7 @@ Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread 
 
 Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
 {
-  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL || event.value == CUDAMEMCPYTOSYMBOL_VAL || event.value == CUDAMEMCPYFROMSYMBOL_VAL ) )
     return TRUE;
   return FALSE;
 }
@@ -780,7 +782,7 @@ Boolean CUDAEventEncoding_Is_CUDAFree( struct t_event_block event )
 
 Boolean CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event )
 {
-  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_MEMCPY_VAL )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDAMEMCPYTOSYMBOL_VAL || event.value == CUDAMEMCPYFROMSYMBOL_VAL) )
     return TRUE;
   return FALSE;
 }
