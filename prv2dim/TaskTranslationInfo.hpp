@@ -25,10 +25,9 @@
 #ifndef _TASKTRANSLATIONINFO_H
 #define _TASKTRANSLATIONINFO_H
 
-#include <unordered_set>
-#include <map>
-
 #include <Error.hpp>
+#include <map>
+#include <unordered_set>
 using cepba_tools::Error;
 
 #include "ParaverRecord.hpp"
@@ -61,8 +60,8 @@ class TaskTranslationInfo : public Error
   vector<GlobalOp_t> NonBlockingGlopsInFlight;
   bool MPIWaitWithCommunication;
 
-  std::map< INT32, UINT32 > MPICollectivesCount; // number of MPI Collectives per communicator
-  const std::map< std::tuple<INT32, UINT32>, INT32>& MPICollectiveRoots;
+  std::map<INT32, UINT32> MPICollectivesCount; // number of MPI Collectives per communicator
+  const std::map<std::tuple<INT32, UINT32>, INT32>& MPICollectiveRoots;
 
   /* For CUDA / OpenCL version */
   UINT64 LastGPUBurstBlock;
@@ -72,7 +71,7 @@ class TaskTranslationInfo : public Error
   vector<Block_t> CUDABlockIdStack;
   vector<Block_t> OCLBlockIdStack;
   bool OCLFinishComm;
-  bool commInCudaLaunch;
+  bool existCommInCudaBurst = false;
 
   /* For OMP version */
   INT32 OpenMP_thread;
@@ -136,7 +135,7 @@ class TaskTranslationInfo : public Error
                        vector<vector<TaskTranslationInfo*> >* AllTranslationInfo,
                        INT32 AcceleratorThread,
                        INT32 OpenMP_thread,
-                       const std::map< std::tuple<INT32, UINT32>, INT32>& whichMPICollectiveRoots,
+                       const std::map<std::tuple<INT32, UINT32>, INT32>& whichMPICollectiveRoots,
                        char* TemporaryFileName = NULL,
                        FILE* TemporaryFile     = NULL );
 

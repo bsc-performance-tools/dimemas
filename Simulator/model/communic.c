@@ -1568,6 +1568,24 @@ static void message_received( struct t_thread *thread_sender )
 
     if ( paraver_comm )
     {
+      if( simulate_cuda && transf_comm )
+      {
+        struct t_thread *stream_thread = thread_sender->host == FALSE ? thread_sender : partner;
+        if ( thread_sender->task->gpu_requests[ stream_thread->threadid ] == 1 || thread_sender->task->gpu_requests[ 0 ] == 1 )
+        {
+          struct t_thread *tmpThread = thread_sender->task->hostThreadWaiting;
+          if ( tmpThread != TH_NIL )
+          {
+            tmpThread->event_sync_reentry   = TRUE;
+            tmpThread->loose_cpu            = TRUE;
+            thread_sender->task->hostThreadWaiting = NULL;
+            SCHEDULER_thread_to_ready( tmpThread );
+          }
+        }
+        --thread_sender->task->gpu_requests[ stream_thread->threadid ];
+        --thread_sender->task->gpu_requests[ 0 ];
+      }
+
       PARAVER_P2P_Comm( cpu->unique_number,
                         IDENTIFIERS( thread_sender ),
                         thread_sender->logical_send,
@@ -5660,6 +5678,23 @@ t_boolean really_send_acc_message( struct t_thread *thread, struct t_task *task_
 
     if( thread->stream && CUDAEventEncoding_Is_CUDAMemcpyAsync( thread->acc_in_block_event ) )
     {
+      if( simulate_cuda )
+      {
+        if ( thread->task->gpu_requests[ thread->threadid ] == 1 || thread->task->gpu_requests[ 0 ] == 1 )
+        {
+          struct t_thread *tmpThread = thread->task->hostThreadWaiting;
+          if ( tmpThread != TH_NIL )
+          {
+            tmpThread->event_sync_reentry   = TRUE;
+            tmpThread->loose_cpu            = TRUE;
+            thread->task->hostThreadWaiting = NULL;
+            SCHEDULER_thread_to_ready( tmpThread );
+          }
+        }
+        --thread->task->gpu_requests[ thread->threadid ];
+        --thread->task->gpu_requests[ 0 ];
+      }
+
       thread->physical_recv = tmp_timer2;
 
       PARAVER_P2P_Comm( thread->cpu->unique_number,
