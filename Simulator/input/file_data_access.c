@@ -1801,7 +1801,7 @@ t_boolean DAP_read_action( app_struct *app, int task_id, int thread_id, struct t
   if ( sscanf( line, ACTION_REGEXP, &op_id, &read_task_id, &read_thread_id, op_fields ) != 4 )
   {
     /* Check if it is a NOOP! */
-    if ( sscanf( line, NOOP_REGEXP, &read_task_id, &read_thread_id ) == 2 )
+    if( op_id == NO_ACTION )
     {
       if ( read_task_id != task_id || read_thread_id != thread_id )
       {
@@ -1839,10 +1839,10 @@ t_boolean DAP_read_action( app_struct *app, int task_id, int thread_id, struct t
       }
     }
 
-    if ( sscanf( line, OFFSET_REGEXP, &read_task_id, op_fields ) == 2 )
+    if( line[ 0 ] == 's' )
     {
       /* 'line' contains an offset record. We have finished the records for
-       * last task/thread */
+      * last task/thread */
       *no_more_actions = TRUE;
       ( *action )      = NULL;
       free( op_fields );

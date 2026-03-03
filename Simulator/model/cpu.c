@@ -87,9 +87,20 @@ int num_free_cpu( struct t_node *node )
   for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
   {
     if ( cpu->current_thread == TH_NIL && cpu->is_gpu == FALSE )
-      i++;
+      ++i;
   }
   return ( i );
+}
+
+t_boolean any_free_cpu( struct t_node * node )
+{
+  struct t_cpu *cpu;
+  for ( cpu = (struct t_cpu *)head_queue( &( node->Cpus ) ); cpu != C_NIL; cpu = (struct t_cpu *)next_queue( &( node->Cpus ) ) )
+  {
+    if ( cpu->current_thread == TH_NIL && cpu->is_gpu == FALSE )
+      return TRUE;
+  }
+  return FALSE;
 }
 
 t_boolean is_thread_running( struct t_thread *thread )

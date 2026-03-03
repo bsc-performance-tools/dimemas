@@ -363,7 +363,7 @@ void TASK_End()
     free( Ptask->tasks );
   }
 
-  DATA_ACCESS_end();
+  // DATA_ACCESS_end();
 }
 /**
  * Create a new Ptask. Ptask is a queue whose elements are tasks
