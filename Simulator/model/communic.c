@@ -53,9 +53,8 @@
 #include <types.h>
 #ifdef USE_EQUEUE
 #  include <listE.h>
-#else
-#  include <list.h>
 #endif
+#include <list.h>
 
 #ifdef VENUS_ENABLED
 #  include <venusclient.h>
