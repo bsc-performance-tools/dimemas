@@ -23,34 +23,36 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
  \*****************************************************************************/
 
-extern "C" {
-  #include "types.h"
-  #include "dim_omp.h"
-  #include "define.h"
-  #include "EventEncoding.h"
-  #include "paraver.h"
-  #include "schedule.h"
+extern "C"
+{
+#include "dim_omp.h"
+
+#include "EventEncoding.h"
+#include "define.h"
+#include "paraver.h"
+#include "schedule.h"
+#include "types.h"
 }
 
 #include <map>
 #include <vector>
 
-using namespace std; 
+using namespace std;
 
 
 extern t_boolean simulate_openmp;
 struct OMPTasks
 {
-  std::vector< struct t_thread * > taskWaitThreads;
+  std::vector<struct t_thread *> taskWaitThreads;
   unsigned int pendingExeTasks = 0;
 
-  std::map< unsigned long long, struct t_thread * > waitingExeTasks;
+  std::map<unsigned long long, struct t_thread *> waitingExeTasks;
 };
 
 struct OMPTasks_ThreadInfo
 {
   bool keep_capturing_events = false;
-  std::vector< t_even > captured_events;
+  std::vector<t_even> captured_events;
 };
 
 struct OMPTasks *createOpenMPTasks()
@@ -63,12 +65,12 @@ struct OMPTasks_ThreadInfo *createOpenMPTasks_ThreadInfo()
   return new struct OMPTasks_ThreadInfo;
 }
 
-void dumpOMPTaskCapturedEvents( struct t_thread * thread )
+void dumpOMPTaskCapturedEvents( struct t_thread *thread )
 {
   struct t_cpu *cpu;
   cpu = get_cpu_of_thread( thread );
-  
-  for( auto ev: thread->omp_tasks_thread_info->captured_events )
+
+  for ( auto ev : thread->omp_tasks_thread_info->captured_events )
     PARAVER_Event( cpu->unique_number, IDENTIFIERS( thread ), current_time, ev.type, ev.value );
 
   thread->omp_tasks_thread_info->captured_events.clear();
@@ -76,7 +78,7 @@ void dumpOMPTaskCapturedEvents( struct t_thread * thread )
 
 bool treatOMPBlock( struct t_thread *thread, struct t_even *event )
 {
-  if( !OMPEventEncoding_Is_OMPBlock( event->type ) )
+  if ( !OMPEventEncoding_Is_OMPBlock( event->type ) )
   {
     return false;
   }
@@ -84,55 +86,40 @@ bool treatOMPBlock( struct t_thread *thread, struct t_even *event )
   struct t_cpu *cpu;
   cpu = get_cpu_of_thread( thread );
 
-  if( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
+  if ( OMPEventEncoding_Is_OMP_Running( thread->omp_in_block_event ) )
   {
-    PARAVER_Running( cpu->unique_number,
-                     IDENTIFIERS( thread ),
-                     thread->omp_in_block_event.paraver_time,
-                     current_time );
+    PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->omp_in_block_event.paraver_time, current_time );
   }
-  else if(OMPEventEncoding_Is_OMPSync(thread->omp_in_block_event))
+  else if ( OMPEventEncoding_Is_OMPSync( thread->omp_in_block_event ) )
   {
-    PARAVER_Thread_Sync( cpu->unique_number,
-                         IDENTIFIERS( thread ),
-                         thread->omp_in_block_event.paraver_time,
-                         current_time );
+    PARAVER_Thread_Sync( cpu->unique_number, IDENTIFIERS( thread ), thread->omp_in_block_event.paraver_time, current_time );
   }
-  else if(OMPEventEncoding_Is_OMPSched(thread->omp_in_block_event))
+  else if ( OMPEventEncoding_Is_OMPSched( thread->omp_in_block_event ) )
   {
-    PARAVER_Thread_Sched( cpu->unique_number,
-                          IDENTIFIERS(thread),
-                          thread->omp_in_block_event.paraver_time,
-                          current_time);
+    PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->omp_in_block_event.paraver_time, current_time );
   }
-  else if( thread->omp_master_thread )
+  else if ( thread->omp_master_thread )
   {
-    if( OMPEventEncoding_Is_OMP_fork_begin( thread->omp_in_block_event ) || 
-        OMPEventEncoding_Is_OMP_fork_end( thread->omp_in_block_event ) )
+    if ( OMPEventEncoding_Is_OMP_fork_begin( thread->omp_in_block_event ) || OMPEventEncoding_Is_OMP_fork_end( thread->omp_in_block_event ) )
     {
-      PARAVER_Thread_Sched( cpu->unique_number,
-                            IDENTIFIERS( thread ),
-                            thread->omp_in_block_event.paraver_time,
-                            current_time );
+      PARAVER_Thread_Sched( cpu->unique_number, IDENTIFIERS( thread ), thread->omp_in_block_event.paraver_time, current_time );
     }
   }
 
-  if( ( event->type == OMP_TASKWAIT && event->value == OMP_BEGIN_VAL ) ||
-      ( event->type == OMP_BARRIER && event->value == OMP_BEGIN_VAL ) )
+  if ( ( event->type == OMP_TASKWAIT && event->value == OMP_BEGIN_VAL ) || ( event->type == OMP_BARRIER && event->value == OMP_BEGIN_VAL ) )
     thread->omp_in_block_event.inWaitBlock = TRUE;
-  else if( ( event->type == OMP_TASKWAIT && event->value == OMP_END_VAL ) ||
-           ( event->type == OMP_BARRIER && event->value == OMP_END_VAL ) )
+  else if ( ( event->type == OMP_TASKWAIT && event->value == OMP_END_VAL ) || ( event->type == OMP_BARRIER && event->value == OMP_END_VAL ) )
     thread->omp_in_block_event.inWaitBlock = FALSE;
 
-  if( ( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL ) ||
-      ( event->type == OMP_EXE_TASK_FXN && event->value == OMP_END_VAL && thread->omp_in_block_event.inWaitBlock == FALSE ) )
+  if ( ( event->type == OMP_PARALLEL_EV && event->value == OMP_END_VAL ) ||
+       ( event->type == OMP_EXE_TASK_FXN && event->value == OMP_END_VAL && thread->omp_in_block_event.inWaitBlock == FALSE ) )
   {
     thread->omp_in_block_event.type = 0;
   }
   else
     thread->omp_in_block_event.type = event->type;
-  
-  thread->omp_in_block_event.value = event->value;
+
+  thread->omp_in_block_event.value        = event->value;
   thread->omp_in_block_event.paraver_time = current_time;
 
   return TRUE;
@@ -145,27 +132,27 @@ bool treatOMPBlock( struct t_thread *thread, struct t_even *event )
  */
 scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_even *event, dimemas_timer current_time )
 {
-  if( !simulate_openmp )
+  if ( !simulate_openmp )
   {
-    if( treatOMPBlock(thread, event) && thread->threadid != 0 )
+    if ( treatOMPBlock( thread, event ) && thread->threadid != 0 )
       return NO_PRINT_EVENT;
 
     return CONTINUE;
   }
 
-  if( thread->omp_tasks_thread_info->keep_capturing_events && event->type != OMP_TASK_IDENTIFIER )
+  if ( thread->omp_tasks_thread_info->keep_capturing_events && event->type != OMP_TASK_IDENTIFIER )
   {
     thread->omp_tasks_thread_info->captured_events.push_back( *event );
     return NO_PRINT_EVENT;
   }
 
-  if( OMPEventEncoding_Is_InitTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
+  if ( OMPEventEncoding_Is_InitTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
   {
     auto tmpThread = thread->task->omp_tasks->waitingExeTasks.find( event->value );
-    if( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
+    if ( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
     {
       tmpThread->second->event_sync_reentry = TRUE;
-      tmpThread->second->loose_cpu = TRUE;
+      tmpThread->second->loose_cpu          = TRUE;
       SCHEDULER_thread_to_ready( tmpThread->second );
     }
     else
@@ -176,15 +163,15 @@ scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_ev
     return CONTINUE;
   }
 
-  if( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
+  if ( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) && event->type == OMP_TASK_IDENTIFIER )
   {
     auto tmpThread = thread->task->omp_tasks->waitingExeTasks.find( event->value );
-    if( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
+    if ( tmpThread != thread->task->omp_tasks->waitingExeTasks.end() )
     {
       thread->task->omp_tasks->waitingExeTasks.erase( tmpThread );
       dumpOMPTaskCapturedEvents( thread );
       thread->omp_tasks_thread_info->keep_capturing_events = false;
-      thread->omp_in_block_event.paraver_time = current_time;
+      thread->omp_in_block_event.paraver_time              = current_time;
       return CONTINUE;
     }
     else
@@ -193,37 +180,39 @@ scheduler_synchronization treat_omp_events( struct t_thread *thread, struct t_ev
       return WAIT_FOR_SYNC;
     }
   }
-  
-  if( OMPEventEncoding_Is_ExeTask_End( event ) )
+
+  if ( OMPEventEncoding_Is_ExeTask_End( event ) )
   {
-    if( !OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
+    if ( !OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
     {
       fprintf( stderr, "WARNING: OpenMP task execution end event without entry.\n" );
       return CONTINUE;
     }
 
-    if( --thread->task->omp_tasks->pendingExeTasks == 0 )
+    if ( --thread->task->omp_tasks->pendingExeTasks == 0 )
     {
-      for( auto waitThread : thread->task->omp_tasks->taskWaitThreads )
+      for ( auto waitThread : thread->task->omp_tasks->taskWaitThreads )
       {
         waitThread->event_sync_reentry = TRUE;
-        waitThread->loose_cpu = TRUE;
+        waitThread->loose_cpu          = TRUE;
         SCHEDULER_thread_to_ready( waitThread );
       }
       thread->task->omp_tasks->taskWaitThreads.clear();
     }
+
+    thread->event_sync_reentry = FALSE;
   }
 
-  if( OMPEventEncoding_Is_TaskWait_End( event ) && thread->task->omp_tasks->pendingExeTasks > 0 )
+  if ( OMPEventEncoding_Is_TaskWait_End( event ) && thread->task->omp_tasks->pendingExeTasks > 0 )
   {
     thread->task->omp_tasks->taskWaitThreads.push_back( thread );
     return WAIT_FOR_SYNC;
   }
 
-  if ( !treatOMPBlock( thread, event ) ) 
+  if ( !treatOMPBlock( thread, event ) )
     return CONTINUE;
 
-  if( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
+  if ( OMPEventEncoding_Is_ExeTask( thread->omp_in_block_event ) )
   {
     thread->omp_tasks_thread_info->keep_capturing_events = true;
     thread->omp_tasks_thread_info->captured_events.push_back( *event );
