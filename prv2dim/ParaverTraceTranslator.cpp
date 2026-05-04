@@ -1713,9 +1713,10 @@ bool ParaverTraceTranslator::AcceleratorTasksInfo( INT32 tasks_count )
   string Line;
   size_t current_line_length = 0;
 
-  string pattern_thread_lvl = "LEVEL THREAD SIZE";
-  string pattern_opencl_tag = "OpenCL";
-  string pattern_cuda_tag   = "CUDA";
+  string pattern_thread_lvl   = "LEVEL THREAD SIZE";
+  string pattern_opencl_tag   = "OpenCL";
+  string pattern_cuda_tag     = "CUDA";
+  string pattern_new_cuda_tag = "GPU";
 
   INT32 task_id = -1;
 
@@ -1755,7 +1756,9 @@ bool ParaverTraceTranslator::AcceleratorTasksInfo( INT32 tasks_count )
       while ( getline( &line, &current_line_length, RowTraceFile ) != -1 )
       { /* Application, task, thread info line	*/
         Line = (string)line;
-        if ( Line.find( pattern_opencl_tag ) != std::string::npos || Line.find( pattern_cuda_tag ) != std::string::npos )
+        if ( Line.find( pattern_opencl_tag )   != std::string::npos ||
+             Line.find( pattern_cuda_tag )     != std::string::npos ||
+             Line.find( pattern_new_cuda_tag ) != std::string::npos )
         {
           if ( task_id - 1 < tasks_count )
           {
