@@ -25,12 +25,13 @@
 
 #include "Dimemas_Generation.h"
 #include "EventEncoding.h"
+#include "ParaverColors.h"
 #include "define.h"
 
 #include <limits.h>
 // #include "UIParaverTraceConfig.h"
-#include <assert.h>
 #include <Macros.h>
+#include <assert.h>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -188,10 +189,10 @@ void ParaverTraceTranslator::createPartialCommunication( const Event_t& CurrentE
   INT32 SrcCPU, SrcAppId, SrcTaskId, SrcThreadId;
   INT32 DstCPU, DstAppId, DstTaskId, DstThreadId;
 
-  SrcCPU      = 0;
-  SrcAppId    = CurrentEvent->GetAppId();
-  DstCPU      = 0;
-  DstAppId    = CurrentEvent->GetAppId();
+  SrcCPU   = 0;
+  SrcAppId = CurrentEvent->GetAppId();
+  DstCPU   = 0;
+  DstAppId = CurrentEvent->GetAppId();
   if ( Type == PHYSICAL_RECV || Type == LOGICAL_RECV )
   {
     SrcTaskId   = PartnerTaskId;
@@ -208,27 +209,27 @@ void ParaverTraceTranslator::createPartialCommunication( const Event_t& CurrentE
   }
 
   PreviouslySimulatedTrace = true;
-  SplittedCommunication = new PartialCommunication( Type,
-                                                    CurrentEvent->GetTimestamp(),
-                                                    SrcCPU,
-                                                    SrcAppId,
-                                                    SrcTaskId,
-                                                    SrcThreadId,
-                                                    DstCPU,
-                                                    DstAppId,
-                                                    DstTaskId,
-                                                    DstThreadId,
-                                                    Size,
-                                                    Tag,
-                                                    CommId,
-                                                    CurrentEvent->GetRecordCount() );
+  SplittedCommunication    = new PartialCommunication( Type,
+                                                       CurrentEvent->GetTimestamp(),
+                                                       SrcCPU,
+                                                       SrcAppId,
+                                                       SrcTaskId,
+                                                       SrcThreadId,
+                                                       DstCPU,
+                                                       DstAppId,
+                                                       DstTaskId,
+                                                       DstThreadId,
+                                                       Size,
+                                                       Tag,
+                                                       CommId,
+                                                       CurrentEvent->GetRecordCount() );
   Communications.push_back( SplittedCommunication );
 }
 
 void ParaverTraceTranslator::treatMultiEvent( const Event_t& CurrentEvent )
 {
   INT32 Type, PartnerTaskId, PartnerThreadId, Size, Tag, CommId, CommunicatorId;
-  bool isRoot = false;
+  bool isRoot               = false;
   bool isCollectiveWithRoot = false;
 
   Type = PartnerTaskId = PartnerThreadId = Size = Tag = CommId = CommunicatorId = -1;
@@ -256,7 +257,7 @@ void ParaverTraceTranslator::treatMultiEvent( const Event_t& CurrentEvent )
         CommId = CurrentEvent->GetValue( i );
         break;
       case MPITYPE_COLLECTIVE:
-        if( CurrentEvent->GetValue( i ) == MPI_REDUCE_VAL )
+        if ( CurrentEvent->GetValue( i ) == MPI_REDUCE_VAL )
           isCollectiveWithRoot = true;
         break;
       case MPI_GLOBAL_OP_ROOT:
@@ -268,19 +269,18 @@ void ParaverTraceTranslator::treatMultiEvent( const Event_t& CurrentEvent )
     }
   }
 
-  if( isCollectiveWithRoot && isRoot && CommunicatorId != -1 )
-    createMPICollectiveRoots(CurrentEvent, CommunicatorId);
+  if ( isCollectiveWithRoot && isRoot && CommunicatorId != -1 )
+    createMPICollectiveRoots( CurrentEvent, CommunicatorId );
 
   if ( Type != -1 && PartnerTaskId != -1 && Size != -1 && Tag != -1 && CommId != -1 )
     createPartialCommunication( CurrentEvent, Type, PartnerTaskId, PartnerThreadId, Size, Tag, CommId );
 }
 
-void ParaverTraceTranslator::createMPICollectiveRoots( const Event_t& CurrentEvent,
-                                                       INT32 CommunicatorId )
+void ParaverTraceTranslator::createMPICollectiveRoots( const Event_t& CurrentEvent, INT32 CommunicatorId )
 {
-  static std::map< INT32, UINT32 > MPICollectivesCount; // Number of collectives per communicator: index->CommunicatorId, data->count
+  static std::map<INT32, UINT32> MPICollectivesCount; // Number of collectives per communicator: index->CommunicatorId, data->count
 
-  if( MPICollectivesCount.find( CommunicatorId ) == MPICollectivesCount.end() )
+  if ( MPICollectivesCount.find( CommunicatorId ) == MPICollectivesCount.end() )
     MPICollectivesCount[ CommunicatorId ] = 0;
 
   MPICollectiveRoots[ std::make_tuple( CommunicatorId, ++MPICollectivesCount[ CommunicatorId ] ) ] = CurrentEvent->GetTaskId();
@@ -293,9 +293,9 @@ bool ParaverTraceTranslator::SplitCommunications( void )
   Communication_t CurrentCommunication;
   PartialCommunication_t SplittedCommunication;
 
-  INT32 PseudoCommId = 0;
+  INT32 PseudoCommId      = 0;
   INT32 CurrentPercentage = 0;
-  INT32 PercentageRead = 0;
+  INT32 PercentageRead    = 0;
 
   if ( !Parser->Reload() )
   {
@@ -893,7 +893,7 @@ bool ParaverTraceTranslator::Translate( bool GenerateFirstIdle,
         {
 
         }*/
-        if ( state_value == 0 ) // idle
+        if ( state_value == 0 || state_value == PRV_STREAM_REG_ST ) // idle
         {
           Event_t BeginIdleEvent =
             new Event( state_begin_time, CurrentState->GetCPU(), CurrentState->GetAppId(), CurrentState->GetTaskId(), CurrentState->GetThreadId() );
@@ -1756,8 +1756,7 @@ bool ParaverTraceTranslator::AcceleratorTasksInfo( INT32 tasks_count )
       while ( getline( &line, &current_line_length, RowTraceFile ) != -1 )
       { /* Application, task, thread info line	*/
         Line = (string)line;
-        if ( Line.find( pattern_opencl_tag )   != std::string::npos ||
-             Line.find( pattern_cuda_tag )     != std::string::npos ||
+        if ( Line.find( pattern_opencl_tag ) != std::string::npos || Line.find( pattern_cuda_tag ) != std::string::npos ||
              Line.find( pattern_new_cuda_tag ) != std::string::npos )
         {
           if ( task_id - 1 < tasks_count )
