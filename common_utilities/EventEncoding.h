@@ -100,9 +100,9 @@ extern "C"
 #define MPITYPE_TEST_SOFTCOUNTER_LABEL  "MPI Test/Testsome software counter"
 
 
-/* ==========================================================================
-==== MISC Event Types
-========================================================================== */
+  /* ==========================================================================
+  ==== MISC Event Types
+  ========================================================================== */
 
 #define TRACE_INIT_EV    40000002
 #define FLUSHING_EV      40000003
@@ -181,13 +181,14 @@ extern "C"
 #define OLD_CUDA_SYNCH_STREAM_EV 63300000
 
 
-#define CUDA_LIB_CALL_EV              63000000
-#define CUDA_MEMCPY_SIZE_EV           63000002
-#define CUDA_KERNEL_EXECUTION_EV      63000006
-#define CUDA_SYNCH_STREAM_EV          63000008
-#define CUDA_KERNEL_INSTANTIATION_EV  63000009
-#define CUDA_MEMORY_TRANSFER_EV       63000001
-#define CUDA_TAG                      49370 /*cuda communications tag start on this number*/
+#define CUDA_LIB_CALL_EV             63000000
+#define CUDA_MEMORY_TRANSFER_EV      63000001
+#define CUDA_MEMCPY_SIZE_EV          63000002
+#define CUDA_KERNEL_EXECUTION_EV     63000006
+#define CUDA_SYNCH_STREAM_EV         63000008
+#define CUDA_KERNEL_INSTANTIATION_EV 63000009
+#define CUDA_EVENT_ID_EV             63000014
+#define CUDA_TAG                     49370 /*cuda communications tag start on this number*/
 
 #define CUDA_LIB_CALL_LABEL      "CUDA library call"
 #define CUDA_MEMCPY_SIZE_LABEL   "cudaMemcpy size"
@@ -209,10 +210,12 @@ extern "C"
     CUDA_THREADEXIT_VAL,
     CUDASTREAMDESTROY_VAL,
     CUDAMALLOC_VAL,
-    CUDAFREE_VAL = 13,
-    CUDAMEMCPYTOSYMBOL_VAL = 25,
+    CUDAFREE_VAL             = 13,
+    CUDAMEMCPYTOSYMBOL_VAL   = 25,
     CUDAMEMCPYFROMSYMBOL_VAL = 26,
-    CUDA_MEMSET_VAL = 34
+    CUDA_MEMSET_VAL          = 34,
+    CUDA_EVENT_RECORD        = 36,
+    CUDA_EVENT_SYNCHRONIZE   = 37
   } CUDA_Event_Values;
 
   /* ==========================================================================
@@ -790,8 +793,8 @@ extern "C"
     GLOP_ID_MPI_Ialltoallw            = 31,
   } DimCollectiveOp;
 
-  /* Start position for immediate collectives */
-  #define GLOP_ID_IMMEDIATE GLOP_ID_MPI_Ibarrier
+/* Start position for immediate collectives */
+#define GLOP_ID_IMMEDIATE GLOP_ID_MPI_Ibarrier
 
   /* ==========================================================================
      ==== MPI Event Labels
@@ -1063,6 +1066,7 @@ extern "C"
   int CUDAEventEncoding_Is_CUDASimulableBlock( struct t_event_block event );
   int CUDAEventEncoding_Is_Kernel( long64_t type );
   int CUDAEventEncoding_Is_StreamSyncId_EV( struct t_even *event );
+  int CUDAEventEncoding_Is_CudaEventID( struct t_even *event );
   int CUDAEventEncoding_Is_Kernel_Block( struct t_event_block event );
   int CUDAEventEncoding_Is_BlockBegin( long64_t Op );
   int CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread *receiver );
@@ -1080,6 +1084,8 @@ extern "C"
   int CUDAEventEncoding_Is_CUDADeviceReset( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAStreamCreateBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAEventRecordBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAEventSyncBlock( struct t_event_block event );
 
   int CUDAEventEncoding_Is_OldLibType( long64_t type );
   int CUDAEventEncoding_Is_OldKernelType( long64_t type );

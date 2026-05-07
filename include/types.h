@@ -770,11 +770,13 @@ struct t_task
 
   int threads_in_accelerator;   /* Number of threads (e.g. CUDA streams) executed in gpu */
 
-  // gpu_requests stores the number of memory copies and kernel excutions on each stream of the task.
+  // gpu_requests stores the number of memory copies and kernel executions on each stream of the task.
   // The first position (0) stores the total number of device operations performed. Used in cudaDeviceSynchronize
   size_t *gpu_requests;
   size_t streamid_to_synchronize;
   struct t_thread *hostThreadWaiting;    /* Host thread waiting a streamsync or devicesync */
+  struct TCUDAEventID_Info *eventID_To_Info; /* Stores the information associated with a Event ID */
+  int lastEventID;
 
   // event synchronization
   struct TEventSyncQueue *event_sync_queue;

@@ -33,6 +33,16 @@
 extern "C"
 {
 #endif
+  struct TCUDAEventID_Info;
+
+  struct TCUDAEventID_Info *createCUDAEventID_StreamID();
+  void insertCUDAEventID_info( struct TCUDAEventID_Info *whichMap, int eventID, int streamID, size_t gpu_requests );
+  int getStreamID_from_CUDAEventID( struct TCUDAEventID_Info *whichMap, int eventID );
+  size_t getGPURequests_from_CUDAEventID( struct TCUDAEventID_Info *whichMap, int eventID );
+  size_t substract_GPURequests_from_CUDAEventID( struct TCUDAEventID_Info *whichMap, int eventID );
+  int getStream_CurrentEventID( struct TCUDAEventID_Info *whichMap, int streamID );
+  void remove_EventID_info( struct TCUDAEventID_Info *whichMap, int eventID );
+  void remove_CurrentEventID_forStream( struct TCUDAEventID_Info *whichMap, int streamID );
 
   scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_even *event );
 
