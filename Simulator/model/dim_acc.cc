@@ -47,7 +47,6 @@ using std::vector;
 
 struct TCUDAEventInfo
 {
-  int streamID;
   size_t gpu_requests;
 };
 
@@ -66,17 +65,11 @@ struct TCUDAEventID_Info *createCUDAEventID_StreamID()
 
 void insertCUDAEventID_info( struct TCUDAEventID_Info *whichMap, int eventID, int streamID, size_t gpu_requests )
 {
-  whichMap->eventID_info[ eventID ].streamID     = streamID;
   whichMap->eventID_info[ eventID ].gpu_requests = gpu_requests;
 
   auto eventIt = std::find( whichMap->eventIDs_per_stream[ streamID ].begin(), whichMap->eventIDs_per_stream[ streamID ].end(), eventID );
   if ( eventIt == whichMap->eventIDs_per_stream[ streamID ].end() )
     whichMap->eventIDs_per_stream[ streamID ].push_back( eventID );
-}
-
-int getStreamID_from_CUDAEventID( struct TCUDAEventID_Info *whichMap, int eventID )
-{
-  return whichMap->eventID_info[ eventID ].streamID;
 }
 
 size_t getGPURequests_from_CUDAEventID( struct TCUDAEventID_Info *whichMap, int eventID )
