@@ -48,6 +48,8 @@ using std::vector;
 struct TCUDAEventInfo
 {
   size_t gpu_requests;
+
+  std::vector<struct t_thread *> streams_waiting;
 };
 
 struct TCUDAEventID_Info
@@ -55,6 +57,8 @@ struct TCUDAEventID_Info
   map<int, struct TCUDAEventInfo> eventID_info;
 
   map<int, vector<int> > eventIDs_per_stream;
+
+  std::map<int, int> streams_called_for_wait_eventID;
 };
 
 
@@ -93,6 +97,30 @@ void remove_EventID_forStream( struct TCUDAEventID_Info *whichMap, int streamID,
   whichMap->eventIDs_per_stream[ streamID ].erase( whichEvent );
 }
 
+void insert_stream_called_for_wait_eventID( struct TCUDAEventID_Info *whichMap, int eventID, int streamID )
+{
+  whichMap->streams_called_for_wait_eventID[ streamID ] = eventID;
+}
+
+std::pair<bool, int> is_stream_called_for_wait_eventID( struct TCUDAEventID_Info *whichMap, int streamID )
+{
+  auto it = whichMap->streams_called_for_wait_eventID.find( streamID );
+  if ( it == whichMap->streams_called_for_wait_eventID.end() )
+    return { false, 0 };
+
+  return { true, it->second };
+}
+
+void remove_stream_called_for_wait_eventID( struct TCUDAEventID_Info *whichMap, int streamID )
+{
+  whichMap->streams_called_for_wait_eventID.erase( streamID );
+}
+
+void insert_stream_waiting_for_eventID( struct TCUDAEventID_Info *whichMap, int eventID, struct t_thread *stream )
+{
+  whichMap->eventID_info[ eventID ].streams_waiting.push_back( stream );
+}
+
 
 void checkSyncAndSetHostToReady( struct t_thread *thread )
 {
@@ -101,7 +129,7 @@ void checkSyncAndSetHostToReady( struct t_thread *thread )
   auto streamID                  = thread->threadid;
   bool putHostToReady            = false;
 
-  auto do_put_host_to_ready = [ & ]( struct t_thread *hostThread )
+  auto do_put_thread_to_ready = [ & ]( struct t_thread *hostThread )
   {
     hostThread->event_sync_reentry  = TRUE;
     hostThread->loose_cpu           = TRUE;
@@ -121,6 +149,9 @@ void checkSyncAndSetHostToReady( struct t_thread *thread )
            thread->task->lastEventID == *itEvent )
         putHostToReady = true;
 
+      for ( auto &th : eventInfoMap->eventID_info[ *itEvent ].streams_waiting )
+        do_put_thread_to_ready( th );
+
       remove_EventID_info( thread->task->eventID_To_Info, *itEvent );
       eventsToErase.push_back( itEvent );
     }
@@ -137,7 +168,7 @@ void checkSyncAndSetHostToReady( struct t_thread *thread )
   }
 
   if ( putHostToReady )
-    do_put_host_to_ready( tmpHostThread );
+    do_put_thread_to_ready( tmpHostThread );
 
   --thread->task->gpu_requests[ thread->threadid ];
   --thread->task->gpu_requests[ 0 ];
@@ -167,6 +198,8 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
                               thread->task->lastEventID,
                               event->value - 1,
                               thread->task->gpu_requests[ event->value - 1 ] );
+    else if ( CUDAEventEncoding_Is_CUDAStreamWaitEventBlock( thread->acc_in_block_event ) )
+      insert_stream_called_for_wait_eventID( thread->task->eventID_To_Info, thread->task->lastEventID, event->value - 1 );
   }
 
   if ( !CUDAEventEncoding_Is_CUDABlock( event->type ) && !OCLEventEncoding_Is_OCLBlock( event->type ) &&
@@ -258,6 +291,19 @@ scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_eve
         checkSyncAndSetHostToReady( thread );
 
       PARAVER_Running( cpu->unique_number, IDENTIFIERS( thread ), thread->acc_in_block_event.paraver_time, current_time );
+    }
+    else if ( thread->stream && block_begin && CUDAEventEncoding_Is_Kernel( event->type ) )
+    {
+      auto stream_for_wait_eventID = is_stream_called_for_wait_eventID( thread->task->eventID_To_Info, thread->threadid );
+      if ( stream_for_wait_eventID.first )
+      {
+        remove_stream_called_for_wait_eventID( thread->task->eventID_To_Info, thread->threadid );
+        if ( getGPURequests_from_CUDAEventID( thread->task->eventID_To_Info, stream_for_wait_eventID.second ) > 0 )
+        {
+          insert_stream_waiting_for_eventID( thread->task->eventID_To_Info, stream_for_wait_eventID.second, thread );
+          return WAIT_FOR_SYNC;
+        }
+      }
     }
     /* CUDA cpu states */
 

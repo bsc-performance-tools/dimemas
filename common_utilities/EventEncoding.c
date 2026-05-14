@@ -870,6 +870,13 @@ Boolean CUDAEventEncoding_Is_CUDAEventSyncBlock( struct t_event_block event )
   return FALSE;
 }
 
+Boolean CUDAEventEncoding_Is_CUDAStreamWaitEventBlock( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_STREAM_WAIT_EVENT )
+    return TRUE;
+  return FALSE;
+}
+
 /* ---------------------------------------------------- Global Variables ----*/
 #define NUM_OCLTYPES 2
 CUDATypeInfo OCLType_Table[ NUM_OCLTYPES ] = {

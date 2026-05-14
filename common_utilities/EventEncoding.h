@@ -215,7 +215,8 @@ extern "C"
     CUDAMEMCPYFROMSYMBOL_VAL = 26,
     CUDA_MEMSET_VAL          = 34,
     CUDA_EVENT_RECORD        = 36,
-    CUDA_EVENT_SYNCHRONIZE   = 37
+    CUDA_EVENT_SYNCHRONIZE   = 37,
+    CUDA_STREAM_WAIT_EVENT   = 38
   } CUDA_Event_Values;
 
   /* ==========================================================================
@@ -1086,6 +1087,7 @@ extern "C"
   int CUDAEventEncoding_Is_CUDAStreamCreateBlock( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAEventRecordBlock( struct t_event_block event );
   int CUDAEventEncoding_Is_CUDAEventSyncBlock( struct t_event_block event );
+  int CUDAEventEncoding_Is_CUDAStreamWaitEventBlock( struct t_event_block event );
 
   int CUDAEventEncoding_Is_OldLibType( long64_t type );
   int CUDAEventEncoding_Is_OldKernelType( long64_t type );
