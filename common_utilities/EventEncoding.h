@@ -106,6 +106,7 @@ extern "C"
 
 #define TRACE_INIT_EV    40000002
 #define FLUSHING_EV      40000003
+#define IO_EV            40000004
 #define TRACING_DISABLED 40000012
 #define SET_TRACE_EV     40000014
 

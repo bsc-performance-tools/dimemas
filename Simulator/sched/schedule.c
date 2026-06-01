@@ -622,7 +622,7 @@ scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct 
   struct t_cpu *cpu;
   cpu = get_cpu_of_thread( thread );
 
-  if( event->type == FLUSHING_EV && event->value == BLOCK_END_VAL )
+  if( ( event->type == FLUSHING_EV || event->type == IO_EV ) && event->value == BLOCK_END_VAL )
     PARAVER_Wait( cpu->unique_number, IDENTIFIERS( thread ), thread->last_generic_event_time, current_time, PRV_IO_ST );
   else if ( event->type == TRACE_INIT_EV  && event->value == BLOCK_END_VAL )
     PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->last_generic_event_time, current_time );
