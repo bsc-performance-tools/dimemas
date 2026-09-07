@@ -515,8 +515,32 @@ extern "C"
     MPI_IMPROBE_VAL,
     MPI_MRECV_VAL,
     MPI_IMRECV_VAL,
+
+    MPI_COMM_SPLIT_TYPE_VAL,
+    MPI_FILE_WRITE_ALL_BEGIN_VAL, /* 195 */
+    MPI_FILE_WRITE_ALL_END_VAL,
+    MPI_FILE_READ_ALL_BEGIN_VAL,
+    MPI_FILE_READ_ALL_END_VAL,
+    MPI_FILE_WRITE_AT_ALL_BEGIN_VAL,
+    MPI_FILE_WRITE_AT_ALL_END_VAL, /* 200 */
+    MPI_FILE_READ_AT_ALL_BEGIN_VAL,
+    MPI_FILE_READ_AT_ALL_END_VAL,
+    MPI_FILE_READ_ORDERED_VAL,
+    MPI_FILE_READ_ORDERED_BEGIN_VAL,
+    MPI_FILE_READ_ORDERED_END_VAL, /* 205 */
+    MPI_FILE_READ_SHARED_VAL,
+    MPI_FILE_WRITE_ORDERED_VAL,
+    MPI_FILE_WRITE_ORDERED_BEGIN_VAL,
+    MPI_FILE_WRITE_ORDERED_END_VAL,
+    MPI_FILE_WRITE_SHARED_VAL, /* 210 */
+    MPI_COMM_DUP_WITH_INFO_VAL,
+    MPI_DIST_GRAPH_CREATE_ADJACENT_VAL,
+    MPI_COMM_CREATE_GROUP_VAL,
+    MPI_EXSCAN_VAL,
+    MPI_IEXSCAN_VAL, /* 215 */
+
     MPI_INIT_THREAD_VAL,
-    MPI_EXSCAN_VAL = 214,
+    // MPI_EXSCAN_VAL = 214,
     // new MPI_EVENTS will be added here...
     NUM_MPICALLS // number of MPI calls is defined by this table.
   } MPI_Event_Values;
@@ -733,11 +757,35 @@ extern "C"
     BLOCK_ID_MPI_Win_flush_all,
     BLOCK_ID_MPI_Win_flush_local,
     BLOCK_ID_MPI_Win_flush_local_all,
-    BLOCK_ID_MPI_Mprobe,
+    BLOCK_ID_MPI_Mprobe, /*190*/
     BLOCK_ID_MPI_Improbe,
     BLOCK_ID_MPI_Mrecv,
     BLOCK_ID_MPI_Imrecv,
-    BLOCK_ID_MPI_Init_thread,
+
+    BLOCK_ID_MPI_COMM_SPLIT_TYPE_VAL,
+    BLOCK_ID_MPI_FILE_WRITE_ALL_BEGIN_VAL, /* 195 */
+    BLOCK_ID_MPI_FILE_WRITE_ALL_END_VAL,
+    BLOCK_ID_MPI_FILE_READ_ALL_BEGIN_VAL,
+    BLOCK_ID_MPI_FILE_READ_ALL_END_VAL,
+    BLOCK_ID_MPI_FILE_WRITE_AT_ALL_BEGIN_VAL,
+    BLOCK_ID_MPI_FILE_WRITE_AT_ALL_END_VAL, /* 200 */
+    BLOCK_ID_MPI_FILE_READ_AT_ALL_BEGIN_VAL,
+    BLOCK_ID_MPI_FILE_READ_AT_ALL_END_VAL,
+    BLOCK_ID_MPI_FILE_READ_ORDERED_VAL,
+    BLOCK_ID_MPI_FILE_READ_ORDERED_BEGIN_VAL,
+    BLOCK_ID_MPI_FILE_READ_ORDERED_END_VAL, /* 205 */
+    BLOCK_ID_MPI_FILE_READ_SHARED_VAL,
+    BLOCK_ID_MPI_FILE_WRITE_ORDERED_VAL,
+    BLOCK_ID_MPI_FILE_WRITE_ORDERED_BEGIN_VAL,
+    BLOCK_ID_MPI_FILE_WRITE_ORDERED_END_VAL,
+    BLOCK_ID_MPI_FILE_WRITE_SHARED_VAL, /* 210 */
+    BLOCK_ID_MPI_COMM_DUP_WITH_INFO_VAL,
+    BLOCK_ID_MPI_DIST_GRAPH_CREATE_ADJACENT_VAL,
+    BLOCK_ID_MPI_COMM_CREATE_GROUP_VAL,
+    BLOCK_ID_MPI_EXSCAN_VAL,
+    BLOCK_ID_MPI_IEXSCAN_VAL, /* 215 */
+
+    BLOCK_ID_MPI_Init_thread, 
 
     BLOCK_ID_TRACE_ON,
     BLOCK_ID_IO_Read,
@@ -745,7 +793,7 @@ extern "C"
     BLOCK_ID_IO,
 
     BLOCK_ID_LAPI__Init,
-    BLOCK_ID_LAPI__Term, /* 200 */
+    BLOCK_ID_LAPI__Term, /* 222 */
     BLOCK_ID_LAPI__Put,
     BLOCK_ID_LAPI__Get,
     BLOCK_ID_LAPI__Fence,
@@ -755,7 +803,7 @@ extern "C"
     BLOCK_ID_LAPI__Rmw,
     BLOCK_ID_LAPI__Waitcntr,
 
-    BLOCK_ID_MPI_Exscan = 214
+    // BLOCK_ID_MPI_Exscan = 214
   } DimBlock;
 
   /* ==========================================================================
@@ -834,6 +882,7 @@ extern "C"
 #define MPI_REDUCE_SCATTER_LABEL       "MPI_Reduce_scatter"
 #define MPI_SCAN_LABEL                 "MPI_Scan"
 #define MPI_EXSCAN_LABEL               "MPI_Exscan"
+#define MPI_IEXSCAN_LABEL              "MPI_IExscan"
 #define MPI_REDUCE_SCATTER_BLOCK_LABEL "MPI_Reduce_scatter_block"
 
 #define MPI_IREDUCE_LABEL               "MPI_Ireduce"
@@ -864,43 +913,44 @@ extern "C"
 #define MPI_NEIGHBOR_ALLTOALLW_LABEL   "MPI_Neighbor_alltoallw"
 #define MPI_INEIGHBOR_ALLTOALLW_LABEL  "MPI_Ineighbor_alltoallw"
 
-#define MPI_INIT_LABEL                  "MPI_Init"
-#define MPI_FINALIZE_LABEL              "MPI_Finalize"
-#define MPI_BSEND_LABEL                 "MPI_Bsend"
-#define MPI_SSEND_LABEL                 "MPI_Ssend"
-#define MPI_RSEND_LABEL                 "MPI_Rsend"
-#define MPI_IBSEND_LABEL                "MPI_Ibsend"
-#define MPI_ISSEND_LABEL                "MPI_Issend"
-#define MPI_IRSEND_LABEL                "MPI_Irsend"
-#define MPI_TEST_LABEL                  "MPI_Test"
-#define MPI_CANCEL_LABEL                "MPI_Cancel"
-#define MPI_SENDRECV_LABEL              "MPI_Sendrecv"
-#define MPI_SENDRECV_REPLACE_LABEL      "MPI_Sendrecv_replace"
-#define MPI_CART_CREATE_LABEL           "MPI_Cart_create"
-#define MPI_CART_SHIFT_LABEL            "MPI_Cart_shift"
-#define MPI_CART_COORDS_LABEL           "MPI_Cart_coords"
-#define MPI_CART_GET_LABEL              "MPI_Cart_get"
-#define MPI_CART_MAP_LABEL              "MPI_Cart_map"
-#define MPI_CART_RANK_LABEL             "MPI_Cart_rank"
-#define MPI_CART_SUB_LABEL              "MPI_Cart_sub"
-#define MPI_CARTDIM_GET_LABEL           "MPI_Cartdim_get"
-#define MPI_DIMS_CREATE_LABEL           "MPI_Dims_create"
-#define MPI_GRAPH_GET_LABEL             "MPI_Graph_get"
-#define MPI_GRAPH_MAP_LABEL             "MPI_Graph_map"
-#define MPI_GRAPH_CREATE_LABEL          "MPI_Graph_create"
-#define MPI_DIST_GRAPH_CREATE_LABEL     "MPI_Dist_graph_create"
-#define MPI_GRAPH_NEIGHBORS_LABEL       "MPI_Graph_neighbors"
-#define MPI_GRAPHDIMS_GET_LABEL         "MPI_Graphdims_get"
-#define MPI_GRAPH_NEIGHBORS_COUNT_LABEL "MPI_Graph_neighbors_count"
-#define MPI_WAITANY_LABEL               "MPI_Waitany"
-#define MPI_TOPO_TEST_LABEL             "MPI_Topo_test"
-#define MPI_WAITSOME_LABEL              "MPI_Waitsome"
-#define MPI_PROBE_LABEL                 "MPI_Probe"
-#define MPI_IPROBE_LABEL                "MPI_Iprobe"
-#define MPI_MPROBE_LABEL                "MPI_Mprobe"
-#define MPI_IMPROBE_LABEL               "MPI_Improbe"
-#define MPI_MRECV_LABEL                 "MPI_Mrecv"
-#define MPI_IMRECV_LABEL                "MPI_Imrecv"
+#define MPI_INIT_LABEL                       "MPI_Init"
+#define MPI_FINALIZE_LABEL                   "MPI_Finalize"
+#define MPI_BSEND_LABEL                      "MPI_Bsend"
+#define MPI_SSEND_LABEL                      "MPI_Ssend"
+#define MPI_RSEND_LABEL                      "MPI_Rsend"
+#define MPI_IBSEND_LABEL                     "MPI_Ibsend"
+#define MPI_ISSEND_LABEL                     "MPI_Issend"
+#define MPI_IRSEND_LABEL                     "MPI_Irsend"
+#define MPI_TEST_LABEL                       "MPI_Test"
+#define MPI_CANCEL_LABEL                     "MPI_Cancel"
+#define MPI_SENDRECV_LABEL                   "MPI_Sendrecv"
+#define MPI_SENDRECV_REPLACE_LABEL           "MPI_Sendrecv_replace"
+#define MPI_CART_CREATE_LABEL                "MPI_Cart_create"
+#define MPI_CART_SHIFT_LABEL                 "MPI_Cart_shift"
+#define MPI_CART_COORDS_LABEL                "MPI_Cart_coords"
+#define MPI_CART_GET_LABEL                   "MPI_Cart_get"
+#define MPI_CART_MAP_LABEL                   "MPI_Cart_map"
+#define MPI_CART_RANK_LABEL                  "MPI_Cart_rank"
+#define MPI_CART_SUB_LABEL                   "MPI_Cart_sub"
+#define MPI_CARTDIM_GET_LABEL                "MPI_Cartdim_get"
+#define MPI_DIMS_CREATE_LABEL                "MPI_Dims_create"
+#define MPI_GRAPH_GET_LABEL                  "MPI_Graph_get"
+#define MPI_GRAPH_MAP_LABEL                  "MPI_Graph_map"
+#define MPI_GRAPH_CREATE_LABEL               "MPI_Graph_create"
+#define MPI_DIST_GRAPH_CREATE_LABEL          "MPI_Dist_graph_create"
+#define MPI_DIST_GRAPH_CREATE_ADJACENT_LABEL "MPI_Dist_graph_create_adjacent_label"
+#define MPI_GRAPH_NEIGHBORS_LABEL            "MPI_Graph_neighbors"
+#define MPI_GRAPHDIMS_GET_LABEL              "MPI_Graphdims_get"
+#define MPI_GRAPH_NEIGHBORS_COUNT_LABEL      "MPI_Graph_neighbors_count"
+#define MPI_WAITANY_LABEL                    "MPI_Waitany"
+#define MPI_TOPO_TEST_LABEL                  "MPI_Topo_test"
+#define MPI_WAITSOME_LABEL                   "MPI_Waitsome"
+#define MPI_PROBE_LABEL                      "MPI_Probe"
+#define MPI_IPROBE_LABEL                     "MPI_Iprobe"
+#define MPI_MPROBE_LABEL                     "MPI_Mprobe"
+#define MPI_IMPROBE_LABEL                    "MPI_Improbe"
+#define MPI_MRECV_LABEL                      "MPI_Mrecv"
+#define MPI_IMRECV_LABEL                     "MPI_Imrecv"
 
 #define MPI_WIN_CREATE_LABEL          "MPI_Win_create"
 #define MPI_WIN_FREE_LABEL            "MPI_Win_free"
@@ -936,8 +986,11 @@ extern "C"
 #define MPI_COMM_RANK_LABEL           "MPI_Comm_rank"
 #define MPI_COMM_SIZE_LABEL           "MPI_Comm_size"
 #define MPI_COMM_CREATE_LABEL         "MPI_Comm_create"
+#define MPI_COMM_CREATE_GROUP_LABEL   "MPI_Comm_create_group"
 #define MPI_COMM_DUP_LABEL            "MPI_Comm_dup"
+#define MPI_COMM_DUP_WITH_INFO_LABEL  "MPI_Comm_dup_with_info"
 #define MPI_COMM_SPLIT_LABEL          "MPI_Comm_split"
+#define MPI_COMM_SPLIT_TYPE_LABEL     "MPI_Comm_split_type"
 #define MPI_COMM_SPAWN_LABEL          "MPI_Comm_spawn"
 #define MPI_COMM_SPAWN_MULTIPLE_LABEL "MPI_Comm_spawn_multiple"
 #define MPI_COMM_GROUP_LABEL          "MPI_Comm_group"
@@ -1005,17 +1058,35 @@ extern "C"
 #define MPI_TYPE_STRUCT_LABEL        "MPI_Type_struct"
 #define MPI_TYPE_UB_LABEL            "MPI_Type_ub"
 #define MPI_TYPE_VECTOR_LABEL        "MPI_Type_vector"
-#define MPI_FILE_OPEN_LABEL          "MPI_File_open"
-#define MPI_FILE_CLOSE_LABEL         "MPI_File_close"
-#define MPI_FILE_READ_LABEL          "MPI_File_read"
-#define MPI_FILE_READ_ALL_LABEL      "MPI_File_read_all"
-#define MPI_FILE_WRITE_LABEL         "MPI_File_write"
-#define MPI_FILE_WRITE_ALL_LABEL     "MPI_File_write_all"
-#define MPI_FILE_READ_AT_LABEL       "MPI_File_read_at"
-#define MPI_FILE_READ_AT_ALL_LABEL   "MPI_File_read_at_all"
-#define MPI_FILE_WRITE_AT_LABEL      "MPI_File_write_at"
-#define MPI_FILE_WRITE_AT_ALL_LABEL  "MPI_File_write_at_all"
-#define MPI_REQUEST_GET_STATUS_LABEL "MPI_Request_get_status"
+
+#define MPI_FILE_OPEN_LABEL                 "MPI_File_open"
+#define MPI_FILE_CLOSE_LABEL                "MPI_File_close"
+#define MPI_FILE_READ_LABEL                 "MPI_File_read"
+#define MPI_FILE_READ_ALL_LABEL             "MPI_File_read_all"
+#define MPI_FILE_READ_ALL_BEGIN_LABEL       "MPI_File_read_all"
+#define MPI_FILE_READ_ALL_END_LABEL         "MPI_File_read_all"
+#define MPI_FILE_WRITE_LABEL                "MPI_File_write"
+#define MPI_FILE_WRITE_ALL_LABEL            "MPI_File_write_all"
+#define MPI_FILE_WRITE_ALL_BEGIN_LABEL      "MPI_File_write_all"
+#define MPI_FILE_WRITE_ALL_END_LABEL        "MPI_File_write_all"
+#define MPI_FILE_READ_AT_LABEL              "MPI_File_read_at"
+#define MPI_FILE_READ_AT_ALL_LABEL          "MPI_File_read_at_all"
+#define MPI_FILE_READ_AT_ALL_BEGIN_LABEL    "MPI_File_read_at_all_begin"
+#define MPI_FILE_READ_AT_ALL_END_LABEL      "MPI_File_read_at_all_end"
+#define MPI_FILE_WRITE_AT_LABEL             "MPI_File_write_at"
+#define MPI_FILE_WRITE_AT_ALL_LABEL         "MPI_File_write_at_all"
+#define MPI_FILE_WRITE_AT_ALL_BEGIN_LABEL   "MPI_File_write_at_all_begin"
+#define MPI_FILE_WRITE_AT_ALL_END_LABEL     "MPI_File_write_at_all_end"
+#define MPI_FILE_READ_ORDERED_LABEL,        "MPI_File_read_ordered"
+#define MPI_FILE_READ_ORDERED_BEGIN_LABEL,  "MPI_File_read_ordered_begin"
+#define MPI_FILE_READ_ORDERED_END_LABEL,    "MPI_File_read_ordered_end"
+#define MPI_FILE_READ_SHARED_LABEL,         "MPI_File_read_shared"
+#define MPI_FILE_WRITE_ORDERED_LABEL,       "MPI_File_write_ordered"
+#define MPI_FILE_WRITE_ORDERED_BEGIN_LABEL, "MPI_File_write_ordered_begin"
+#define MPI_FILE_WRITE_ORDERED_END_LABEL,   "MPI_File_write_ordered_end"
+#define MPI_FILE_WRITE_SHARED_LABEL,        "MPI_File_write_shared"
+
+#define MPI_REQUEST_GET_STATUS_LABEL      "MPI_Request_get_status"
 
 /*
  * MPI 2
