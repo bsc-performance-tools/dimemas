@@ -33,6 +33,9 @@
 extern "C"
 {
 #endif
+  struct TCUDAEventID_Info;
+
+  struct TCUDAEventID_Info *createCUDAEventID_StreamID();
 
   scheduler_synchronization treat_acc_event( struct t_thread *thread, struct t_even *event );
 

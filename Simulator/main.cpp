@@ -23,6 +23,8 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
+#include "event_sync.h"
+
 #include <assert.h>
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
@@ -32,7 +34,6 @@
 #include <csignal>
 #include <ctime>
 #include <iostream>
-#include "event_sync.h"
 
 extern "C"
 {
@@ -46,6 +47,7 @@ extern "C"
 #include "eee_configuration.h"
 #include "events.h"
 #include "extern.h"
+#include "file_data_access.h"
 #include "fs.h"
 #include "list.h"
 #include "memory.h"
@@ -139,7 +141,7 @@ t_boolean Critical_Path_Analysis = FALSE;
 t_boolean is_ideal_openmp = FALSE;
 
 t_boolean simulate_openmp = TRUE;
-t_boolean simulate_cuda = TRUE;
+t_boolean simulate_cuda   = TRUE;
 
 using namespace std;
 
@@ -232,12 +234,12 @@ void parse_arguments( int argc, char *argv[] )
   bool tmp_disable_cuda;
 
   int sintetic_io_applications;
-  
+
   bool ideal_openmp;
 
   namespace po = boost::program_options;
 
-// clang-format off
+  // clang-format off
   po::options_description general( "Miscellany options" );
   general.add_options()
     ( "help,h",    "Show this help message" )
@@ -324,12 +326,13 @@ void parse_arguments( int argc, char *argv[] )
      .add( output )
      .add( debug_args )
      .add( general );
-// clang-format on
+  // clang-format on
 
   po::positional_options_description pd;
   pd.add( "config-file", 1 );
 
-  auto usageMessage = [&argv]() { 
+  auto usageMessage = [ &argv ]()
+  {
     cout << "USAGE: " << argv[ 0 ] << " --dim [--dim-trace] ARG -p [--prv-trace] ARG [--config-file] CONFIG" << endl;
   };
 
@@ -502,10 +505,10 @@ void parse_arguments( int argc, char *argv[] )
   if ( ideal_openmp )
     is_ideal_openmp = TRUE;
 
-  if( tmp_disable_openmp )
+  if ( tmp_disable_openmp )
     simulate_openmp = FALSE;
 
-  if( tmp_disable_cuda )
+  if ( tmp_disable_cuda )
     simulate_cuda = FALSE;
 }
 
@@ -609,11 +612,20 @@ int main( int argc, char *argv[] )
 
 REBOOT:
 
-#ifdef VENUS_ENABLED
+#ifdef USE_EQUEUE
+#  ifdef VENUS_ENABLED
+  while ( ( top_Eevent( &Event_queue ) != E_NIL ) ||
+          ( VC_is_enabled() && ( top_Eevent( &Interactive_event_queue ) != E_NIL ) ) && !simulation_rebooted )
+#  else
+  while ( top_Eevent( &Event_queue ) != E_NIL && !simulation_rebooted )
+#  endif
+#else // USE_EQUEUE
+#  ifdef VENUS_ENABLED
   while ( ( top_event( &Event_queue ) != E_NIL ) ||
           ( VC_is_enabled() && ( top_event( &Interactive_event_queue ) != E_NIL ) ) && !simulation_rebooted )
-#else
+#  else
   while ( top_event( &Event_queue ) != E_NIL && !simulation_rebooted )
+#  endif
 #endif
   {
     struct t_event *current_event;
@@ -624,7 +636,11 @@ REBOOT:
       break;
     }
 
+#ifdef USE_EQUEUE
+    current_event = (t_event *)outFIFO_Eevent( &Event_queue );
+#else
     current_event = outFIFO_event( &Event_queue );
+#endif
     event_manager( current_event );
   }
 
@@ -633,7 +649,11 @@ REBOOT:
     if ( simulation_rebooted || DEADLOCK_check_end() )
     {
       // this events must be freed
+#ifdef USE_EQUEUE
+      remove_Equeue_elements( &Event_queue );
+#else
       remove_queue_elements( &Event_queue );
+#endif
 
       SIMULATOR_reset_state();
       COMMUNIC_reset_deadlock();
@@ -691,9 +711,11 @@ REBOOT:
     show_CP_graph();
   }
 
+  DATA_ACCESS_end();
+
   PARAVER_End( TRUE );
 
-  if ( paraver_file != NULL)
+  if ( paraver_file != NULL )
   {
     std::string row_file( paraver_file );
     row_file.replace( row_file.end() - 4, row_file.end(), ".row" );

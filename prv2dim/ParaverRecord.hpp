@@ -67,7 +67,7 @@ class ParaverRecord
 
   ParaverRecord( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId );
 
-  virtual ~ParaverRecord( void ){};
+  virtual ~ParaverRecord( void ) {};
 
   virtual bool operator<( const ParaverRecord& T1 )
   {
@@ -154,7 +154,7 @@ class State : public virtual ParaverRecord
   INT32 StateValue;
 
  public:
-  State(){};
+  State() {};
   State( INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId, UINT64 BeginTime, UINT64 EndTime, INT32 StateValue );
 
   UINT64 GetBeginTime( void )
@@ -192,7 +192,7 @@ class EventTypeValue
   static INT64 CurrentTraceOrder;
 
  public:
-  EventTypeValue(){};
+  EventTypeValue() {};
 
   EventTypeValue( INT32 Type, INT64 Value )
   {
@@ -201,22 +201,22 @@ class EventTypeValue
     this->TraceOrder = EventTypeValue::NewTraceOrder();
   }
 
-  INT32 GetType( void )
+  INT32 GetType( void ) const
   {
     return Type;
   };
-  INT64 GetValue( void )
+  INT64 GetValue( void ) const
   {
     return Value;
   };
-  INT64 GetTraceOrder( void )
+  INT64 GetTraceOrder( void ) const
   {
     return TraceOrder;
   };
 
   bool ToDimemas( FILE* DimemasTrace, INT32 TaskId, INT32 ThreadId );
 
-  bool IsMPIEvent( void )
+  bool IsMPIEvent( void ) const
   {
     if ( MPIEventEncoding_Is_MPIBlock( this->Type ) == TRUE )
       return true;
@@ -224,25 +224,25 @@ class EventTypeValue
       return false;
   }
 
-  bool IsUserBlockBegin( void );
-  bool IsMPIBlockBegin( void );
-  bool IsUserBlockEnd( void );
-  bool IsMPIBlockEnd( void );
-  bool IsCaller( void );
-  bool IsCallerLine( void );
+  bool IsUserBlockBegin( void ) const;
+  bool IsMPIBlockBegin( void ) const;
+  bool IsUserBlockEnd( void ) const;
+  bool IsMPIBlockEnd( void ) const;
+  bool IsCaller( void ) const;
+  bool IsCallerLine( void ) const;
 
   static INT64 NewTraceOrder( void );
 };
-typedef EventTypeValue* EventTypeValue_t;
 
 class Event : public virtual ParaverRecord
 {
  private:
-  vector<EventTypeValue_t> Content;
+  vector<EventTypeValue> Content;
 
  public:
   Event()
-  {}
+  {
+  }
   ~Event();
 
   Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId );
@@ -392,7 +392,6 @@ class GlobalOp : public virtual ParaverRecord
   bool Root;
 
  public:
-
   GlobalOp( UINT64 Timestamp,
             INT32 CPU,
             INT32 AppId,
@@ -404,7 +403,7 @@ class GlobalOp : public virtual ParaverRecord
             INT32 GlobalOpId,
             bool IsRoot );
 
-  ~GlobalOp( void ){};
+  ~GlobalOp( void ) {};
 
   void SetCommunicatorId( INT32 CommunicatorId )
   {

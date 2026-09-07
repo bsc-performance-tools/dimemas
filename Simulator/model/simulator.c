@@ -125,11 +125,11 @@ void SIMULATOR_Init( const char *simulator_configuration_filename,
   SIMULATOR_dedicated_connections_loaded = 0;
 
   /* Initialize global queues */
-#ifndef USE_EQUEUE
+// #ifndef USE_EQUEUE
   create_queue( &Ptask_queue );
-#else
-  create_Equeue( &Ptask_queue );
-#endif
+// #else
+//   create_Equeue( &Ptask_queue );
+// #endif
 
   create_queue( &Port_queue );
   create_queue( &Global_op );

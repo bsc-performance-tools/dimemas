@@ -20,220 +20,139 @@ extern "C"
 
 #define PRV_IDLE_ST  0
 #define PRV_IDLE_LBL "Idle"
-#define PRV_IDLE_CLR \
-  {                  \
-    117, 195, 255    \
-  }
+#define PRV_IDLE_CLR { 117, 195, 255 }
 
 #define PRV_RUNNING_ST  1
 #define PRV_RUNNING_LBL "Running"
-#define PRV_RUNNING_CLR \
-  {                     \
-    0, 0, 255           \
-  }
+#define PRV_RUNNING_CLR { 0, 0, 255 }
 
 #define PRV_NOT_CREATED_ST  2
 #define PRV_NOT_CREATED_LBL "Not created"
-#define PRV_NOT_CREATED_CLR \
-  {                         \
-    255, 255, 255           \
-  }
+#define PRV_NOT_CREATED_CLR { 255, 255, 255 }
 
 #define PRV_WAITING_MESG_ST  3
 #define PRV_WAITING_MESG_LBL "Waiting a message"
-#define PRV_WAITING_MESG_CLR \
-  {                          \
-    255, 0, 0                \
-  }
+#define PRV_WAITING_MESG_CLR { 255, 0, 0 }
 
 #define PRV_BLOCKING_SEND_ST  4
 #define PRV_BLOCKING_SEND_LBL "Blocking send"
-#define PRV_BLOCKING_SEND_CLR \
-  {                           \
-    255, 0, 174               \
-  }
+#define PRV_BLOCKING_SEND_CLR { 255, 0, 174 }
 
 #define PRV_SYNC_ST  5
 #define PRV_SYNC_LBL "Synchronization"
-#define PRV_SYNC_CLR \
-  {                  \
-    179, 0, 0        \
-  }
+#define PRV_SYNC_CLR { 179, 0, 0 }
 
 #define PRV_TEST_PROBE_ST  6
 #define PRV_TEST_PROBE_LBL "Test/Probe"
-#define PRV_TEST_PROBE_CLR \
-  {                        \
-    0, 255, 0              \
-  }
+#define PRV_TEST_PROBE_CLR { 0, 255, 0 }
 
 #define PRV_THREAD_SCHED_ST  7
 #define PRV_THREAD_SCHED_LBL "Sched. and Fork/Join"
-#define PRV_THREAD_SCHED_CLR \
-  {                          \
-    255, 255, 0              \
-  }
+#define PRV_THREAD_SCHED_CLR { 255, 255, 0 }
 
 #define PRV_WAIT_ST  8
 #define PRV_WAIT_LBL "Wait/WaitAll"
-#define PRV_WAIT_CLR \
-  {                  \
-    235, 0, 0        \
-  }
+#define PRV_WAIT_CLR { 235, 0, 0 }
 
 #define PRV_BLOCKED_ST  9
 #define PRV_BLOCKED_LBL "Blocked"
-#define PRV_BLOCKED_CLR \
-  {                     \
-    0, 162, 0           \
-  }
+#define PRV_BLOCKED_CLR { 0, 162, 0 }
 
 #define PRV_ISEND_ST  10
 #define PRV_ISEND_LBL "Immediate Send"
-#define PRV_ISEND_CLR \
-  {                   \
-    255, 0, 255       \
-  }
+#define PRV_ISEND_CLR { 255, 0, 255 }
 
 #define PRV_IRECV_ST  11
 #define PRV_IRECV_LBL "Immediate Receive"
-#define PRV_IRECV_CLR \
-  {                   \
-    100, 100, 177     \
-  }
+#define PRV_IRECV_CLR { 100, 100, 177 }
 
 #define PRV_IO_ST  12
 #define PRV_IO_LBL "I/O"
-#define PRV_IO_CLR \
-  {                \
-    172, 174, 41   \
-  }
+#define PRV_IO_CLR { 172, 174, 41 }
 
 #define PRV_GLOBAL_OP_ST  13
 #define PRV_GLOBAL_OP_LBL "Group Communication"
-#define PRV_GLOBAL_OP_CLR \
-  {                       \
-    255, 144, 26          \
-  }
+#define PRV_GLOBAL_OP_CLR { 255, 144, 26 }
 
 #define PRV_NOT_TRACING_ST  14
 #define PRV_NOT_TRACING_LBL "Tracing Disabled"
-#define PRV_NOT_TRACING_CLR \
-  {                         \
-    2, 255, 177             \
-  }
+#define PRV_NOT_TRACING_CLR { 2, 255, 177 }
 
 #define PRV_OTHERS_ST  15
 #define PRV_OTHERS_LBL "Others"
-#define PRV_OTHERS_CLR \
-  {                    \
-    192, 224, 0        \
-  }
+#define PRV_OTHERS_CLR { 192, 224, 0 }
 
 #define PRV_SENDRECV_ST  16
 #define PRV_SENDRECV_LBL "Send Receive"
-#define PRV_SENDRECV_CLR \
-  {                      \
-    66, 66, 66           \
-  }
+#define PRV_SENDRECV_CLR { 66, 66, 66 }
 
 #define PRV_MEMORY_TRNSF_ST  17
 #define PRV_MEMORY_TRNSF_LBL "Memory transfer"
-#define PRV_MEMORY_TRNSF_CLR \
-  {                          \
-    255, 0, 96               \
-  }
+#define PRV_MEMORY_TRNSF_CLR { 255, 0, 96 }
 
 #define PRV_PROFILING_ST  18
 #define PRV_PROFILING_LBL "Profiling"
-#define PRV_PROFILING_CLR \
-  {                       \
-    169, 169, 169         \
-  }
+#define PRV_PROFILING_CLR { 169, 169, 169 }
 
 #define PRV_ONLINE_ANALYSIS_ST  19
 #define PRV_ONLINE_ANALYSIS_LBL "On-line analysis"
-#define PRV_ONLINE_ANALYSIS_CLR \
-  {                             \
-    169, 0, 0                   \
-  }
+#define PRV_ONLINE_ANALYSIS_CLR { 169, 0, 0 }
 
 #define PRV_REMOTE_MEM_ACC_ST  20
 #define PRV_REMOTE_MEM_ACC_LBL "Remote memory access"
-#define PRV_REMOTE_MEM_ACC_CLR \
-  {                            \
-    0, 109, 255                \
-  }
+#define PRV_REMOTE_MEM_ACC_CLR { 0, 109, 255 }
 
 #define PRV_ATOMIC_MEM_OP_ST  21
 #define PRV_ATOMIC_MEM_OP_LBL "Atomic memory operation"
-#define PRV_ATOMIC_MEM_OP_CLR \
-  {                           \
-    200, 61, 68               \
-  }
+#define PRV_ATOMIC_MEM_OP_CLR { 200, 61, 68 }
 
 #define PRV_MEM_ORDER_OP_ST  22
 #define PRV_MEM_ORDER_OP_LBL "Memory ordering operation"
-#define PRV_MEM_ORDER_OP_CLR \
-  {                          \
-    200, 66, 0               \
-  }
+#define PRV_MEM_ORDER_OP_CLR { 200, 66, 0 }
 
 #define PRV_DISTRIB_LCK_ST  23
 #define PRV_DISTRIB_LCK_LBL "Distributed locking"
-#define PRV_DISTRIB_LCK_CLR \
-  {                         \
-    0, 41, 0                \
-  }
+#define PRV_DISTRIB_LCK_CLR { 0, 41, 0 }
 
 #define PRV_OVERHEAD_ST  24
 #define PRV_OVERHEAD_LBL "Overhead"
-#define PRV_OVERHEAD_CLR \
-  {                      \
-    139, 121, 177        \
-  }
+#define PRV_OVERHEAD_CLR { 139, 121, 177 }
 
 #define PRV_ONESIDED_OP_ST  25
 #define PRV_ONESIDED_OP_LBL "One Sided OP"
-#define PRV_ONESIDED_OP_CLR \
-  {                         \
-    116, 116, 116           \
-  }
+#define PRV_ONESIDED_OP_CLR { 116, 116, 116 }
 
 #define PRV_STARTUP_LAT_ST  26
 #define PRV_STARTUP_LAT_LBL "Startup Latency"
-#define PRV_STARTUP_LAT_CLR \
-  {                         \
-    200, 50, 89             \
-  }
+#define PRV_STARTUP_LAT_CLR { 200, 50, 89 }
 
 #define PRV_WAITING_LNKS_ST  27
 #define PRV_WAITING_LNKS_LBL "Waiting links"
-#define PRV_WAITING_LNKS_CLR \
-  {                          \
-    255, 171, 98             \
-  }
+#define PRV_WAITING_LNKS_CLR { 255, 171, 98 }
 
 #define PRV_DATA_COPY_ST  28
 #define PRV_DATA_COPY_LBL "Data copy"
-#define PRV_DATA_COPY_CLR \
-  {                       \
-    0, 68, 189            \
-  }
+#define PRV_DATA_COPY_CLR { 0, 68, 189 }
 
 #define PRV_RTT_ST  29
 #define PRV_RTT_LBL "Round Trip Time"
-#define PRV_RTT_CLR \
-  {                 \
-    52, 43, 0       \
-  }
+#define PRV_RTT_CLR { 52, 43, 0 }
 
 #define PRV_MEM_ALLOC_ST  30
 #define PRV_MEM_ALLOC_LBL "Allocating memory"
-#define PRV_MEM_ALLOC_CLR \
-  {                 \
-    255, 46, 0       \
-  }
+#define PRV_MEM_ALLOC_CLR { 255, 46, 0 }
+
+#define PRV_MEM_FREEING_ST  31
+#define PRV_MEM_FREEING_LBL "Freeing memory"
+#define PRV_MEM_FREEING_CLR { 100, 216, 32 }
+
+#define PRV_CONFIG_ACC_ST  32
+#define PRV_CONFIG_ACC_LBL "Configuring accelerator"
+#define PRV_CONFIG_ACC_CLR { 118, 185, 0 }
+
+#define PRV_STREAM_REG_ST  33
+#define PRV_STREAM_REG_LBL "Stream Registration"
+#define PRV_STREAM_REG_CLR { 80, 185, 160 }
 
 
 #define PRV_NOT_USED_LBL "Not used"
@@ -273,9 +192,9 @@ extern "C"
     /* 28 */ { PRV_DATA_COPY_CLR, PRV_DATA_COPY_LBL },
     /* 29 */ { PRV_RTT_CLR, PRV_RTT_LBL },
     /* 30 */ { PRV_MEM_ALLOC_CLR, PRV_MEM_ALLOC_LBL },
-    /* 31 */ { { 100, 216, 32 }, PRV_NOT_USED_LBL },
-    /* 32 */ { { 0, 0, 112 }, PRV_NOT_USED_LBL },
-    /* 33 */ { { 105, 105, 0 }, PRV_NOT_USED_LBL },
+    /* 31 */ { PRV_MEM_FREEING_CLR, PRV_MEM_FREEING_LBL },
+    /* 32 */ { PRV_CONFIG_ACC_CLR, PRV_CONFIG_ACC_LBL },
+    /* 33 */ { PRV_STREAM_REG_CLR, PRV_STREAM_REG_LBL },
     /* 34 */ { { 132, 75, 255 }, PRV_NOT_USED_LBL },
     /* 35 */ { { 184, 232, 0 }, PRV_NOT_USED_LBL },
     /* 36 */ { { 0, 109, 112 }, PRV_NOT_USED_LBL },

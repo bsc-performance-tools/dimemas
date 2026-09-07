@@ -127,7 +127,7 @@
 */
 
 /* USE NEW QUEUE CONTAINERS */
-//#define USE_EQUEUE
+#define USE_EQUEUE
 
 /*
  * Possible actions in trace files.

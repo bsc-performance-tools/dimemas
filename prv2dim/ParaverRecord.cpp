@@ -108,27 +108,27 @@ ostream& operator<<( ostream& os, const State& Comm )
 
 INT64 EventTypeValue::CurrentTraceOrder = 0;
 
-bool EventTypeValue::IsUserBlockBegin( void )
+bool EventTypeValue::IsUserBlockBegin( void ) const
 {
   return MPIEventEncoding_Is_UserBlock( (INT64)Type ) && MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool EventTypeValue::IsMPIBlockBegin( void )
+bool EventTypeValue::IsMPIBlockBegin( void ) const
 {
   return MPIEventEncoding_Is_MPIBlock( (INT64)Type ) && MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool EventTypeValue::IsUserBlockEnd( void )
+bool EventTypeValue::IsUserBlockEnd( void ) const
 {
   return MPIEventEncoding_Is_UserBlock( (INT64)Type ) && !MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool EventTypeValue::IsMPIBlockEnd( void )
+bool EventTypeValue::IsMPIBlockEnd( void ) const
 {
   return MPIEventEncoding_Is_MPIBlock( (INT64)Type ) && !MPIEventEncoding_Is_BlockBegin( Value );
 }
 
-bool EventTypeValue::IsCaller( void )
+bool EventTypeValue::IsCaller( void ) const
 {
   if ( Type >= MPI_CALLER_EV && Type <= MPI_CALLER_EV_END )
     return true;
@@ -136,7 +136,7 @@ bool EventTypeValue::IsCaller( void )
   return false;
 }
 
-bool EventTypeValue::IsCallerLine( void )
+bool EventTypeValue::IsCallerLine( void ) const
 {
   if ( Type >= MPI_CALLER_LINE_EV && Type <= MPI_CALLER_LINE_EV_END )
     return true;
@@ -146,39 +146,36 @@ bool EventTypeValue::IsCallerLine( void )
 
 INT64 EventTypeValue::NewTraceOrder( void )
 {
-  return CurrentTraceOrder++;
+  return ++CurrentTraceOrder;
 }
 
 /*****************************************************************************
  * class Event
  ****************************************************************************/
 
-Event::Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId ) 
-  : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
-{}
+Event::Event( UINT64 Timestamp, INT32 CPU, INT32 AppId, INT32 TaskId, INT32 ThreadId ) : ParaverRecord( Timestamp, CPU, AppId, TaskId, ThreadId )
+{
+}
 
 Event::~Event( void )
 {
-  for ( unsigned int i = 0; i < Content.size(); i++ )
-    delete Content[ i ];
 }
 
 void Event::AddTypeValue( INT32 Type, INT64 Value, INT32 threadId )
 {
-  if( CUDAEventEncoding_Is_OldLibType( Type ) )
+  if ( CUDAEventEncoding_Is_OldLibType( Type ) )
     Type = CUDA_LIB_CALL_EV;
-  else if(CUDAEventEncoding_Is_OldKernelType( Type ) )
+  else if ( CUDAEventEncoding_Is_OldKernelType( Type ) )
   {
-    if(threadId == 1 )
+    if ( threadId == 1 )
       Type = CUDA_KERNEL_INSTANTIATION_EV;
     else
       Type = CUDA_KERNEL_EXECUTION_EV;
   }
-  else if( CUDAEventEncoding_Is_OldSynchStream( Type ) )
+  else if ( CUDAEventEncoding_Is_OldSynchStream( Type ) )
     Type = CUDA_SYNCH_STREAM_EV;
 
-  EventTypeValue_t newTypeValue = new EventTypeValue( Type, Value );
-  Content.push_back( newTypeValue );
+  Content.emplace_back( Type, Value );
 };
 
 UINT32
@@ -197,7 +194,7 @@ INT32
 Event::GetType( UINT32 Index )
 {
   if ( Index < Content.size() )
-    return Content[ Index ]->GetType();
+    return Content[ Index ].GetType();
   else
     return -1;
 }
@@ -212,7 +209,7 @@ INT64
 Event::GetValue( UINT32 Index )
 {
   if ( Index < Content.size() )
-    return Content[ Index ]->GetValue();
+    return Content[ Index ].GetValue();
   else
     return -1;
 }
@@ -227,7 +224,7 @@ INT64
 Event::GetTraceOrder( UINT32 Index )
 {
   if ( Index < Content.size() )
-    return Content[ Index ]->GetTraceOrder();
+    return Content[ Index ].GetTraceOrder();
   else
     return -1;
 }
@@ -237,7 +234,7 @@ bool Event::IsUserBlockBegin( void )
   if ( Content.size() < 1 )
     return false;
   else
-    return Content[ 0 ]->IsUserBlockBegin();
+    return Content[ 0 ].IsUserBlockBegin();
 }
 
 bool Event::IsMPIBlockBegin( void )
@@ -245,7 +242,7 @@ bool Event::IsMPIBlockBegin( void )
   if ( Content.size() < 1 )
     return false;
   else
-    return Content[ 0 ]->IsMPIBlockBegin();
+    return Content[ 0 ].IsMPIBlockBegin();
 }
 
 bool Event::IsUserBlockEnd( void )
@@ -253,7 +250,7 @@ bool Event::IsUserBlockEnd( void )
   if ( Content.size() < 1 )
     return false;
   else
-    return Content[ 0 ]->IsUserBlockEnd();
+    return Content[ 0 ].IsUserBlockEnd();
 }
 
 bool Event::IsMPIBlockEnd( void )
@@ -261,7 +258,7 @@ bool Event::IsMPIBlockEnd( void )
   if ( Content.size() < 1 )
     return false;
   else
-    return Content[ 0 ]->IsMPIBlockEnd();
+    return Content[ 0 ].IsMPIBlockEnd();
 }
 
 bool Event::IsCaller( void )
@@ -269,7 +266,7 @@ bool Event::IsCaller( void )
   if ( Content.size() < 1 )
     return false;
   else
-    return Content[ 0 ]->IsCaller();
+    return Content[ 0 ].IsCaller();
 }
 
 bool Event::IsCallerLine( void )
@@ -277,7 +274,7 @@ bool Event::IsCallerLine( void )
   if ( Content.size() < 1 )
     return false;
   else
-    return Content[ 0 ]->IsCallerLine();
+    return Content[ 0 ].IsCallerLine();
 }
 
 void Event::Write( ostream& os ) const
@@ -294,10 +291,10 @@ void Event::Write( ostream& os ) const
 
   os << "T:" << Timestamp;
 
-  for ( UINT32 i = 0; i < Content.size(); i++ )
+  for ( const auto el : Content )
   {
-    os << " [" << Content[ i ]->GetTraceOrder() << "]: ";
-    os << Content[ i ]->GetType() << ":" << Content[ i ]->GetValue();
+    os << " [" << el.GetTraceOrder() << "]: ";
+    os << el.GetType() << ":" << el.GetValue();
   }
 
   os << endl;

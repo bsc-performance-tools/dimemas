@@ -29,6 +29,7 @@
 #include <communic.h>
 #include <cpu.h>
 #include <define.h>
+#include <dim_acc.h>
 #include <dim_omp.h>
 #include "event_sync.h"
 #include <events.h>
@@ -363,7 +364,7 @@ void TASK_End()
     free( Ptask->tasks );
   }
 
-  DATA_ACCESS_end();
+  // DATA_ACCESS_end();
 }
 /**
  * Create a new Ptask. Ptask is a queue whose elements are tasks
@@ -529,6 +530,8 @@ void TASK_New_Task( struct t_Ptask *Ptask, int taskid, t_boolean acc_task )
   task->gpu_requests            = NULL;
   task->hostThreadWaiting       = TH_NIL;
   task->streamid_to_synchronize = 0;
+  task->eventID_To_Info         = createCUDAEventID_StreamID();
+  task->lastEventID             = 0;
 }
 
 void TASK_OpenMP_Task( struct t_Ptask *Ptask, int taskid, t_boolean omp_task )
