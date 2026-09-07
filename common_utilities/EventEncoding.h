@@ -784,24 +784,6 @@ extern "C"
     
     GLOP_ID_MPI_Exscan                = 16, // WARNING not inmmediate
 
-    // GLOP_ID_MPI_Ibarrier              = 16,
-    // GLOP_ID_MPI_Ibcast                = 17,
-    // GLOP_ID_MPI_Igather               = 18,
-    // GLOP_ID_MPI_Igatherv              = 19,
-    // GLOP_ID_MPI_Iscatter              = 20,
-    // GLOP_ID_MPI_Iscatterv             = 21,
-    // GLOP_ID_MPI_Iallgather            = 22,
-    // GLOP_ID_MPI_Iallgatherv           = 23,
-    // GLOP_ID_MPI_Ialltoall             = 24,
-    // GLOP_ID_MPI_Ialltoallv            = 25,
-    // GLOP_ID_MPI_Ireduce               = 26,
-    // GLOP_ID_MPI_Iallreduce            = 27,
-    // GLOP_ID_MPI_Ireduce_scatter       = 28,
-    // GLOP_ID_MPI_Ireduce_scatter_block = 29,
-    // GLOP_ID_MPI_Iscan                 = 30,
-    // GLOP_ID_MPI_Ialltoallw            = 31
-
-//     GLOP_ID_MPI_Exscan                = 32, // WARNING not inmmediate
     GLOP_ID_MPI_Ibarrier              = 17,
     GLOP_ID_MPI_Ibcast                = 18,
     GLOP_ID_MPI_Igather               = 19,
