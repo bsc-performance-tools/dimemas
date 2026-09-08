@@ -538,9 +538,10 @@ extern "C"
     MPI_EXSCAN_VAL,
     MPI_IEXSCAN_VAL, /* 215 */
 
-    MPI_INIT_THREAD_VAL,
-    // MPI_EXSCAN_VAL = 214,
     // new MPI_EVENTS will be added here...
+
+    MPI_INIT_THREAD_VAL,
+
     NUM_MPICALLS // number of MPI calls is defined by this table.
   } MPI_Event_Values;
 
@@ -826,8 +827,7 @@ extern "C"
     GLOP_ID_MPI_Reduce_scatter_block  = 13,
     GLOP_ID_MPI_Scan                  = 14,
     GLOP_ID_MPI_Alltoallw             = 15,
-    
-    GLOP_ID_MPI_Exscan                = 16, // WARNING not inmmediate
+    GLOP_ID_MPI_Exscan                = 16, // WARNING: last non immmediate
 
     GLOP_ID_MPI_Ibarrier              = 17, // First immediate collective
     GLOP_ID_MPI_Ibcast                = 18,
@@ -844,7 +844,8 @@ extern "C"
     GLOP_ID_MPI_Ireduce_scatter       = 29,
     GLOP_ID_MPI_Ireduce_scatter_block = 30,
     GLOP_ID_MPI_Iscan                 = 31,
-    GLOP_ID_MPI_Ialltoallw            = 32
+    GLOP_ID_MPI_Ialltoallw            = 32,
+    GLOP_ID_MPI_IExscan               = 33
 
   } DimCollectiveOp;
 
@@ -1056,34 +1057,34 @@ extern "C"
 #define MPI_TYPE_UB_LABEL            "MPI_Type_ub"
 #define MPI_TYPE_VECTOR_LABEL        "MPI_Type_vector"
 
-#define MPI_FILE_OPEN_LABEL                 "MPI_File_open"
-#define MPI_FILE_CLOSE_LABEL                "MPI_File_close"
-#define MPI_FILE_READ_LABEL                 "MPI_File_read"
-#define MPI_FILE_READ_ALL_LABEL             "MPI_File_read_all"
-#define MPI_FILE_READ_ALL_BEGIN_LABEL       "MPI_File_read_all_begin"
-#define MPI_FILE_READ_ALL_END_LABEL         "MPI_File_read_all_end"
-#define MPI_FILE_WRITE_LABEL                "MPI_File_write"
-#define MPI_FILE_WRITE_ALL_LABEL            "MPI_File_write_all"
-#define MPI_FILE_WRITE_ALL_BEGIN_LABEL      "MPI_File_write_all_begin"
-#define MPI_FILE_WRITE_ALL_END_LABEL        "MPI_File_write_all_end"
-#define MPI_FILE_READ_AT_LABEL              "MPI_File_read_at"
-#define MPI_FILE_READ_AT_ALL_LABEL          "MPI_File_read_at_all"
-#define MPI_FILE_READ_AT_ALL_BEGIN_LABEL    "MPI_File_read_at_all_begin"
-#define MPI_FILE_READ_AT_ALL_END_LABEL      "MPI_File_read_at_all_end"
-#define MPI_FILE_WRITE_AT_LABEL             "MPI_File_write_at"
-#define MPI_FILE_WRITE_AT_ALL_LABEL         "MPI_File_write_at_all"
-#define MPI_FILE_WRITE_AT_ALL_BEGIN_LABEL   "MPI_File_write_at_all_begin"
-#define MPI_FILE_WRITE_AT_ALL_END_LABEL     "MPI_File_write_at_all_end"
-#define MPI_FILE_READ_ORDERED_LABEL,        "MPI_File_read_ordered"
-#define MPI_FILE_READ_ORDERED_BEGIN_LABEL,  "MPI_File_read_ordered_begin"
-#define MPI_FILE_READ_ORDERED_END_LABEL,    "MPI_File_read_ordered_end"
-#define MPI_FILE_READ_SHARED_LABEL,         "MPI_File_read_shared"
-#define MPI_FILE_WRITE_ORDERED_LABEL,       "MPI_File_write_ordered"
-#define MPI_FILE_WRITE_ORDERED_BEGIN_LABEL, "MPI_File_write_ordered_begin"
-#define MPI_FILE_WRITE_ORDERED_END_LABEL,   "MPI_File_write_ordered_end"
-#define MPI_FILE_WRITE_SHARED_LABEL,        "MPI_File_write_shared"
+#define MPI_FILE_OPEN_LABEL                "MPI_File_open"
+#define MPI_FILE_CLOSE_LABEL               "MPI_File_close"
+#define MPI_FILE_READ_LABEL                "MPI_File_read"
+#define MPI_FILE_READ_ALL_LABEL            "MPI_File_read_all"
+#define MPI_FILE_READ_ALL_BEGIN_LABEL      "MPI_File_read_all_begin"
+#define MPI_FILE_READ_ALL_END_LABEL        "MPI_File_read_all_end"
+#define MPI_FILE_WRITE_LABEL               "MPI_File_write"
+#define MPI_FILE_WRITE_ALL_LABEL           "MPI_File_write_all"
+#define MPI_FILE_WRITE_ALL_BEGIN_LABEL     "MPI_File_write_all_begin"
+#define MPI_FILE_WRITE_ALL_END_LABEL       "MPI_File_write_all_end"
+#define MPI_FILE_READ_AT_LABEL             "MPI_File_read_at"
+#define MPI_FILE_READ_AT_ALL_LABEL         "MPI_File_read_at_all"
+#define MPI_FILE_READ_AT_ALL_BEGIN_LABEL   "MPI_File_read_at_all_begin"
+#define MPI_FILE_READ_AT_ALL_END_LABEL     "MPI_File_read_at_all_end"
+#define MPI_FILE_WRITE_AT_LABEL            "MPI_File_write_at"
+#define MPI_FILE_WRITE_AT_ALL_LABEL        "MPI_File_write_at_all"
+#define MPI_FILE_WRITE_AT_ALL_BEGIN_LABEL  "MPI_File_write_at_all_begin"
+#define MPI_FILE_WRITE_AT_ALL_END_LABEL    "MPI_File_write_at_all_end"
+#define MPI_FILE_READ_ORDERED_LABEL        "MPI_File_read_ordered"
+#define MPI_FILE_READ_ORDERED_BEGIN_LABEL  "MPI_File_read_ordered_begin"
+#define MPI_FILE_READ_ORDERED_END_LABEL    "MPI_File_read_ordered_end"
+#define MPI_FILE_READ_SHARED_LABEL         "MPI_File_read_shared"
+#define MPI_FILE_WRITE_ORDERED_LABEL       "MPI_File_write_ordered"
+#define MPI_FILE_WRITE_ORDERED_BEGIN_LABEL "MPI_File_write_ordered_begin"
+#define MPI_FILE_WRITE_ORDERED_END_LABEL   "MPI_File_write_ordered_end"
+#define MPI_FILE_WRITE_SHARED_LABEL        "MPI_File_write_shared"
 
-#define MPI_REQUEST_GET_STATUS_LABEL      "MPI_Request_get_status"
+#define MPI_REQUEST_GET_STATUS_LABEL "MPI_Request_get_status"
 
 /*
  * MPI 2
