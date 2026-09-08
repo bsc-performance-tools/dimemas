@@ -45,7 +45,6 @@ extern "C"
 
 #define SPECIAL_EVENT_TYPE 0
 #define IDLE_EVENT_TYPE    0
-#define DUMMY_EVENT_TYPE   0
 
 /* ==========================================================================
    ==== User Function/Calls
@@ -757,33 +756,33 @@ extern "C"
     BLOCK_ID_MPI_Win_flush_all,
     BLOCK_ID_MPI_Win_flush_local,
     BLOCK_ID_MPI_Win_flush_local_all,
-    BLOCK_ID_MPI_Mprobe, /*190*/
+    BLOCK_ID_MPI_Mprobe, /* 190*/
     BLOCK_ID_MPI_Improbe,
     BLOCK_ID_MPI_Mrecv,
     BLOCK_ID_MPI_Imrecv,
 
-    BLOCK_ID_MPI_COMM_SPLIT_TYPE_VAL,
-    BLOCK_ID_MPI_FILE_WRITE_ALL_BEGIN_VAL, /* 195 */
-    BLOCK_ID_MPI_FILE_WRITE_ALL_END_VAL,
-    BLOCK_ID_MPI_FILE_READ_ALL_BEGIN_VAL,
-    BLOCK_ID_MPI_FILE_READ_ALL_END_VAL,
-    BLOCK_ID_MPI_FILE_WRITE_AT_ALL_BEGIN_VAL,
-    BLOCK_ID_MPI_FILE_WRITE_AT_ALL_END_VAL, /* 200 */
-    BLOCK_ID_MPI_FILE_READ_AT_ALL_BEGIN_VAL,
-    BLOCK_ID_MPI_FILE_READ_AT_ALL_END_VAL,
-    BLOCK_ID_MPI_FILE_READ_ORDERED_VAL,
-    BLOCK_ID_MPI_FILE_READ_ORDERED_BEGIN_VAL,
-    BLOCK_ID_MPI_FILE_READ_ORDERED_END_VAL, /* 205 */
-    BLOCK_ID_MPI_FILE_READ_SHARED_VAL,
-    BLOCK_ID_MPI_FILE_WRITE_ORDERED_VAL,
-    BLOCK_ID_MPI_FILE_WRITE_ORDERED_BEGIN_VAL,
-    BLOCK_ID_MPI_FILE_WRITE_ORDERED_END_VAL,
-    BLOCK_ID_MPI_FILE_WRITE_SHARED_VAL, /* 210 */
-    BLOCK_ID_MPI_COMM_DUP_WITH_INFO_VAL,
-    BLOCK_ID_MPI_DIST_GRAPH_CREATE_ADJACENT_VAL,
-    BLOCK_ID_MPI_COMM_CREATE_GROUP_VAL,
-    BLOCK_ID_MPI_EXSCAN_VAL,
-    BLOCK_ID_MPI_IEXSCAN_VAL, /* 215 */
+    BLOCK_ID_MPI_Comm_split_type,
+    BLOCK_ID_MPI_File_write_all_begin, /* 195 */
+    BLOCK_ID_MPI_File_write_all_end,
+    BLOCK_ID_MPI_File_read_all_begin,
+    BLOCK_ID_MPI_File_read_all_end,
+    BLOCK_ID_MPI_File_write_at_all_begin,
+    BLOCK_ID_MPI_File_write_at_all_end, /* 200 */
+    BLOCK_ID_MPI_File_read_at_all_begin,
+    BLOCK_ID_MPI_File_read_at_all_end,
+    BLOCK_ID_MPI_File_read_ordered,
+    BLOCK_ID_MPI_File_read_ordered_begin,
+    BLOCK_ID_MPI_File_read_ordered_end, /* 205 */
+    BLOCK_ID_MPI_File_read_shared,
+    BLOCK_ID_MPI_File_write_ordered,
+    BLOCK_ID_MPI_File_write_ordered_begin,
+    BLOCK_ID_MPI_File_write_ordered_end,
+    BLOCK_ID_MPI_File_write_shared, /* 210 */
+    BLOCK_ID_MPI_Comm_dup_with_info,
+    BLOCK_ID_MPI_Dist_graph_create_adjacent,
+    BLOCK_ID_MPI_Comm_create_group,
+    BLOCK_ID_MPI_Exscan,
+    BLOCK_ID_MPI_Iexscan, /* 215 */
 
     BLOCK_ID_MPI_Init_thread, 
 
@@ -802,8 +801,6 @@ extern "C"
     BLOCK_ID_LAPI__Amsend,
     BLOCK_ID_LAPI__Rmw,
     BLOCK_ID_LAPI__Waitcntr,
-
-    // BLOCK_ID_MPI_Exscan = 214
   } DimBlock;
 
   /* ==========================================================================
@@ -832,7 +829,7 @@ extern "C"
     
     GLOP_ID_MPI_Exscan                = 16, // WARNING not inmmediate
 
-    GLOP_ID_MPI_Ibarrier              = 17,
+    GLOP_ID_MPI_Ibarrier              = 17, // First immediate collective
     GLOP_ID_MPI_Ibcast                = 18,
     GLOP_ID_MPI_Igather               = 19,
     GLOP_ID_MPI_Igatherv              = 20,
