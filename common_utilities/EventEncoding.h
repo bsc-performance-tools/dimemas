@@ -880,7 +880,7 @@ extern "C"
 #define MPI_REDUCE_SCATTER_LABEL       "MPI_Reduce_scatter"
 #define MPI_SCAN_LABEL                 "MPI_Scan"
 #define MPI_EXSCAN_LABEL               "MPI_Exscan"
-#define MPI_IEXSCAN_LABEL              "MPI_IExscan"
+#define MPI_IEXSCAN_LABEL              "MPI_Iexscan"
 #define MPI_REDUCE_SCATTER_BLOCK_LABEL "MPI_Reduce_scatter_block"
 
 #define MPI_IREDUCE_LABEL               "MPI_Ireduce"
