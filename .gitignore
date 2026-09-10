@@ -30,6 +30,7 @@ GUI/DimemasGUI_tmp
 GUI/MANIFEST.MF
 GUI/src/classnoinst.stamp
 GUI/src/new_DIST_NOINST_JAVA.include
+GUI/src/data/Version.java
 Simulator/Dimemas
 Simulator/input/lex.c
 Simulator/input/yacc.c
