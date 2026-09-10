@@ -222,13 +222,14 @@ t_boolean events_for_thread( struct t_thread *thread )
 
 void reload_events()
 {
-  register struct t_node *node;
+  struct t_node *node;
+  int num_nodes = SIMULATOR_get_number_of_nodes();
 
-  for ( int node_id = 0; node_id < SIMULATOR_get_number_of_nodes(); ++node_id )
+  for ( int node_id = 0; node_id < num_nodes; ++node_id )
   {
     node = &nodes[ node_id ];
 
-    while ( ( count_queue( &( node->ready ) ) != 0 ) && ( num_free_cpu( node ) > 0 ) )
+    while ( ( node->ready.count != 0 ) && ( any_free_cpu( node ) == TRUE ) )
     {
       SCHEDULER_next_thread_to_run( node );
     }

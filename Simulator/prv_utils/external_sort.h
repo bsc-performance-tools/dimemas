@@ -37,6 +37,7 @@
 
 #include "paraver_records.h"
 
+#include <fstream>
 #include <vector>
 using std::vector;
 
@@ -44,7 +45,7 @@ using std::vector;
 /*
  * That could be changed for actual memory usage
  */
-#define MAX_IN_FLIGHT_RECORDS 10000
+#define MAX_IN_FLIGHT_RECORDS 10000000
 
 class ExternalSort
 {
@@ -73,7 +74,7 @@ class ExternalSort
   FILE* EventsFile;
   FILE* StatesAndCommsFile;
 
-  ExternalSort(){};
+  ExternalSort() {};
 
   void Init();
 
@@ -94,7 +95,7 @@ class ExternalSort
   */
   void SortStatesAndComms( void );
 
-  void Merge( string InFileName1, string InFileName2, string OutFileName );
+  void MergeFileName( string InFileName1, string InFileName2, string OutFileName );
 
   void Merge( string InFileName1, string InFileName2, FILE* OutFile );
 

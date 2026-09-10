@@ -56,14 +56,14 @@ class SimpleParaverRecord
  public:
   SimpleParaverRecord( void )
   {
-    TotalRecordsCreated++;
+    ++TotalRecordsCreated;
   }
 
 
   SimpleParaverRecord( int TYPE, int CPU, int Ptask, int Task, int Thread, prv_time_t timestamp, string ascii_record )
     : _TYPE( TYPE ), _CPU( CPU ), _Ptask( Ptask ), _Task( Task ), _Thread( Thread ), _Timestamp( timestamp ), _ascii_record( ascii_record )
   {
-    TotalRecordsCreated++;
+    ++TotalRecordsCreated;
   }
 
   void FillRecord( int TYPE, int CPU, int Ptask, int Task, int Thread, prv_time_t timestamp, string ascii_record )

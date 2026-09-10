@@ -411,60 +411,104 @@ MPI_Enable MPI_Table[ NUM_MPICALLS ] = {
   { MPITYPE_COLLECTIVE, MPI_ISCAN_VAL, MPI_ISCAN_LABEL, BLOCK_ID_MPI_Iscan, GLOP_ID_MPI_Iscan, FALSE },
   /* 168 */
   { MPITYPE_COLLECTIVE, MPI_REDUCE_SCATTER_BLOCK_VAL, MPI_REDUCE_SCATTER_BLOCK_LABEL, BLOCK_ID_MPI_Reduce_scatter_block, GLOP_ID_MPI_Reduce_scatter_block, FALSE },
-  /*169 */
+  /* 169 */
   { MPITYPE_COLLECTIVE, MPI_IREDUCE_SCATTER_BLOCK_VAL, MPI_IREDUCE_SCATTER_BLOCK_LABEL, BLOCK_ID_MPI_Ireduce_scatter_block, GLOP_ID_MPI_Ireduce_scatter_block, FALSE },
-  /*170 */
+  /* 170 */
   { MPITYPE_COLLECTIVE, MPI_ALLTOALLW_VAL, MPI_ALLTOALLW_LABEL, BLOCK_ID_MPI_Alltoallw, GLOP_ID_MPI_Alltoallw, FALSE },
-  /*171 */
+  /* 171 */
   { MPITYPE_COLLECTIVE, MPI_IALLTOALLW_VAL, MPI_IALLTOALLW_LABEL, BLOCK_ID_MPI_Ialltoallw, GLOP_ID_MPI_Ialltoallw, FALSE },
-  /*172 */
+  /* 172 */
   { MPITYPE_RMA, MPI_GET_ACCUMULATE_VAL, MPI_GET_ACCUMULATE_LABEL, BLOCK_ID_MPI_Get_accumulate, GLOP_ID_NULL, FALSE },
-  /*173 */
+  /* 173 */
   { MPITYPE_TOPOLOGIES, MPI_DIST_GRAPH_CREATE_VAL, MPI_DIST_GRAPH_CREATE_LABEL, BLOCK_ID_MPI_Dist_graph_create, GLOP_ID_NULL, FALSE },
-  /*174 */
+  /* 174 */
   { MPITYPE_COLLECTIVE, MPI_NEIGHBOR_ALLGATHER_VAL, MPI_NEIGHBOR_ALLGATHER_LABEL, BLOCK_ID_MPI_Neighbor_allgather, GLOP_ID_NULL, FALSE },
-  /*175 */
+  /* 175 */
   { MPITYPE_COLLECTIVE, MPI_INEIGHBOR_ALLGATHER_VAL, MPI_INEIGHBOR_ALLGATHER_LABEL, BLOCK_ID_MPI_Ineighbor_allgather, GLOP_ID_NULL, FALSE },
-  /*176*/
+  /* 176 */
   { MPITYPE_COLLECTIVE, MPI_NEIGHBOR_ALLGATHERV_VAL, MPI_NEIGHBOR_ALLGATHERV_LABEL, BLOCK_ID_MPI_Neighbor_allgatherv, GLOP_ID_NULL, FALSE },
-  /* 177*/
+  /* 177 */
   { MPITYPE_COLLECTIVE, MPI_INEIGHBOR_ALLGATHERV_VAL, MPI_INEIGHBOR_ALLGATHERV_LABEL, BLOCK_ID_MPI_Ineighbor_allgatherv, GLOP_ID_NULL, FALSE },
-  /* 178*/
+  /* 178 */
   { MPITYPE_COLLECTIVE, MPI_NEIGHBOR_ALLTOALL_VAL, MPI_NEIGHBOR_ALLTOALL_LABEL, BLOCK_ID_MPI_Neighbor_alltoall, GLOP_ID_NULL, FALSE },
-  /* 179*/
+  /* 179 */
   { MPITYPE_COLLECTIVE, MPI_INEIGHBOR_ALLTOALL_VAL, MPI_NEIGHBOR_ALLTOALL_LABEL, BLOCK_ID_MPI_Ineighbor_alltoall, GLOP_ID_NULL, FALSE },
-  /* 180*/
+  /* 180 */
   { MPITYPE_COLLECTIVE, MPI_NEIGHBOR_ALLTOALLV_VAL, MPI_NEIGHBOR_ALLTOALLV_LABEL, BLOCK_ID_MPI_Neighbor_alltoallv, GLOP_ID_NULL, FALSE },
   /* 181 */
   { MPITYPE_COLLECTIVE, MPI_INEIGHBOR_ALLTOALLV_VAL, MPI_INEIGHBOR_ALLTOALLV_LABEL, BLOCK_ID_MPI_Ineighbor_alltoallv, GLOP_ID_NULL, FALSE },
-  /* 182*/
+  /* 182 */
   { MPITYPE_COLLECTIVE, MPI_NEIGHBOR_ALLTOALLW_VAL, MPI_NEIGHBOR_ALLTOALLW_LABEL, BLOCK_ID_MPI_Neighbor_alltoallw, GLOP_ID_NULL, FALSE },
-  /*183 */
+  /* 183 */
   { MPITYPE_COLLECTIVE, MPI_INEIGHBOR_ALLTOALLW_VAL, MPI_INEIGHBOR_ALLTOALLW_LABEL, BLOCK_ID_MPI_Ineighbor_alltoallw, GLOP_ID_NULL, FALSE },
-  /*184*/
+  /* 184*/
   { MPITYPE_RMA, MPI_FETCH_AND_OP_VAL, MPI_FETCH_AND_OP_LABEL, BLOCK_ID_MPI_Fetch_and_op, GLOP_ID_NULL, FALSE },
-  /*185 */
+  /* 185 */
   { MPITYPE_RMA, MPI_COMPARE_AND_SWAP_VAL, MPI_COMPARE_AND_SWAP_LABEL, BLOCK_ID_MPI_Compare_and_swap, GLOP_ID_NULL, FALSE },
   /* 186 */
   { MPITYPE_RMA, MPI_WIN_FLUSH_VAL, MPI_WIN_FLUSH_LABEL, BLOCK_ID_MPI_Win_flush, GLOP_ID_NULL, FALSE },
-  /*187 */
+  /* 187 */
   { MPITYPE_RMA, MPI_WIN_FLUSH_ALL_VAL, MPI_WIN_FLUSH_ALL_LABEL, BLOCK_ID_MPI_Win_flush_all, GLOP_ID_NULL, FALSE },
-  /*188 */
+  /* 188 */
   { MPITYPE_RMA, MPI_WIN_FLUSH_LOCAL_VAL, MPI_WIN_FLUSH_LOCAL_LABEL, BLOCK_ID_MPI_Win_flush_local, GLOP_ID_NULL, FALSE },
-  /*189 */
+  /* 189 */
   { MPITYPE_RMA, MPI_WIN_FLUSH_LOCAL_ALL_VAL, MPI_WIN_FLUSH_LOCAL_ALL_LABEL, BLOCK_ID_MPI_Win_flush_local_all, GLOP_ID_NULL, FALSE },
-  /*190 */
+  /* 190 */
   { MPITYPE_PTOP, MPI_MPROBE_VAL, MPI_MPROBE_LABEL, BLOCK_ID_MPI_Mprobe, GLOP_ID_NULL, FALSE },
-  /*191 */
+  /* 191 */
   { MPITYPE_PTOP, MPI_IMPROBE_VAL, MPI_IMPROBE_LABEL, BLOCK_ID_MPI_Improbe, GLOP_ID_NULL, FALSE },
-  /*192*/
+  /* 192 */
   { MPITYPE_PTOP, MPI_MRECV_VAL, MPI_MRECV_LABEL, BLOCK_ID_MPI_Mrecv, GLOP_ID_NULL, FALSE },
-  /*193 */
+  /* 193 */
   { MPITYPE_PTOP, MPI_IMRECV_VAL, MPI_IMRECV_LABEL, BLOCK_ID_MPI_Imrecv, GLOP_ID_NULL, FALSE },
-  // In order to have the same Ids than extrae I've moved this
-  // MPI from 141 to here.
-  /*194*/
-  { MPITYPE_OTHER, MPI_INIT_THREAD_VAL, MPI_INIT_THREAD_LABEL, BLOCK_ID_MPI_Init_thread, GLOP_ID_NULL, FALSE }
+
+  /* 194 */
+  { MPITYPE_COMM, MPI_COMM_SPLIT_TYPE_VAL, MPI_COMM_SPLIT_TYPE_LABEL, BLOCK_ID_MPI_Comm_split_type, GLOP_ID_NULL, FALSE },
+  /* 195 */
+  { MPITYPE_IO, MPI_FILE_WRITE_ALL_BEGIN_VAL, MPI_FILE_WRITE_ALL_BEGIN_LABEL, BLOCK_ID_MPI_File_write_all_begin, GLOP_ID_NULL, FALSE },
+  /* 196 */
+  { MPITYPE_IO, MPI_FILE_WRITE_ALL_END_VAL, MPI_FILE_WRITE_ALL_END_LABEL, BLOCK_ID_MPI_File_write_all_end, GLOP_ID_NULL, FALSE },
+  /* 197 */
+  { MPITYPE_IO, MPI_FILE_READ_ALL_BEGIN_VAL, MPI_FILE_READ_ALL_BEGIN_LABEL, BLOCK_ID_MPI_File_read_all_begin, GLOP_ID_NULL, FALSE },
+  /* 198 */
+  { MPITYPE_IO, MPI_FILE_READ_ALL_END_VAL, MPI_FILE_READ_ALL_END_LABEL, BLOCK_ID_MPI_File_read_all_end, GLOP_ID_NULL, FALSE },
+  /* 199 */
+  { MPITYPE_IO, MPI_FILE_WRITE_AT_ALL_BEGIN_VAL, MPI_FILE_WRITE_AT_ALL_BEGIN_LABEL, BLOCK_ID_MPI_File_write_at_all_begin, GLOP_ID_NULL, FALSE },
+  /* 200 */ 
+  { MPITYPE_IO, MPI_FILE_WRITE_AT_ALL_END_VAL, MPI_FILE_WRITE_AT_ALL_END_LABEL, BLOCK_ID_MPI_File_write_at_all_end, GLOP_ID_NULL, FALSE },
+  /* 201 */
+  { MPITYPE_IO, MPI_FILE_READ_AT_ALL_BEGIN_VAL, MPI_FILE_READ_AT_ALL_BEGIN_LABEL, BLOCK_ID_MPI_File_read_at_all_begin, GLOP_ID_NULL, FALSE },
+  /* 202 */
+  { MPITYPE_IO, MPI_FILE_READ_AT_ALL_END_VAL, MPI_FILE_READ_AT_ALL_END_LABEL, BLOCK_ID_MPI_File_read_at_all_end, GLOP_ID_NULL, FALSE },
+  /* 203 */
+  { MPITYPE_IO, MPI_FILE_READ_ORDERED_VAL, MPI_FILE_READ_ORDERED_LABEL, BLOCK_ID_MPI_File_read_ordered, GLOP_ID_NULL, FALSE },
+  /* 204 */
+  { MPITYPE_IO, MPI_FILE_READ_ORDERED_BEGIN_VAL, MPI_FILE_READ_ORDERED_BEGIN_LABEL, BLOCK_ID_MPI_File_read_ordered_begin, GLOP_ID_NULL, FALSE },
+  /* 205 */
+  { MPITYPE_IO, MPI_FILE_READ_ORDERED_END_VAL, MPI_FILE_READ_ORDERED_END_LABEL,  BLOCK_ID_MPI_File_read_ordered_end, GLOP_ID_NULL, FALSE },
+  /* 206 */
+  { MPITYPE_IO, MPI_FILE_READ_SHARED_VAL, MPI_FILE_READ_SHARED_LABEL, BLOCK_ID_MPI_File_read_shared, GLOP_ID_NULL, FALSE },
+  /* 207 */
+  { MPITYPE_IO, MPI_FILE_WRITE_ORDERED_VAL, MPI_FILE_WRITE_ORDERED_LABEL, BLOCK_ID_MPI_File_write_ordered, GLOP_ID_NULL, FALSE },
+  /* 208 */
+  { MPITYPE_IO, MPI_FILE_WRITE_ORDERED_BEGIN_VAL, MPI_FILE_WRITE_ORDERED_BEGIN_LABEL, BLOCK_ID_MPI_File_write_ordered_begin, GLOP_ID_NULL, FALSE },
+  /* 209 */
+  { MPITYPE_IO, MPI_FILE_WRITE_ORDERED_END_VAL, MPI_FILE_WRITE_ORDERED_END_LABEL, BLOCK_ID_MPI_File_write_ordered_end, GLOP_ID_NULL, FALSE },
+  /* 210 */
+  { MPITYPE_IO, MPI_FILE_WRITE_SHARED_VAL, MPI_FILE_WRITE_SHARED_LABEL, BLOCK_ID_MPI_File_write_shared, GLOP_ID_NULL, FALSE },
+  /* 211 */
+  { MPITYPE_COMM, MPI_COMM_DUP_WITH_INFO_VAL, MPI_COMM_DUP_WITH_INFO_LABEL, BLOCK_ID_MPI_Comm_dup_with_info, GLOP_ID_NULL, FALSE },
+  /* 212 */
+  { MPITYPE_TOPOLOGIES, MPI_DIST_GRAPH_CREATE_ADJACENT_VAL, MPI_DIST_GRAPH_CREATE_ADJACENT_LABEL, BLOCK_ID_MPI_Dist_graph_create_adjacent, GLOP_ID_NULL, FALSE },
+  /* 213 */
+  { MPITYPE_COMM, MPI_COMM_CREATE_GROUP_VAL, MPI_COMM_CREATE_GROUP_LABEL, BLOCK_ID_MPI_Comm_create_group, GLOP_ID_NULL, FALSE },
+  /* 214 */
+  { MPITYPE_COLLECTIVE, MPI_EXSCAN_VAL, MPI_EXSCAN_LABEL, BLOCK_ID_MPI_Exscan, GLOP_ID_MPI_Exscan, FALSE },
+  /* 215 */
+  { MPITYPE_COLLECTIVE, MPI_IEXSCAN_VAL, MPI_IEXSCAN_LABEL, BLOCK_ID_MPI_Iexscan, GLOP_ID_MPI_IExscan, FALSE },
+
+  /* 216 */
+  { MPITYPE_OTHER, MPI_INIT_THREAD_VAL, MPI_INIT_THREAD_LABEL, BLOCK_ID_MPI_Init_thread, GLOP_ID_NULL, FALSE },
 };
 
 
@@ -688,7 +732,7 @@ typedef struct
 
 Boolean CUDAEventEncoding_Is_OldLibType( long64_t type )
 {
-  return ( ( type == OLD_CUDA_LIB_CALL_EV || type == OLDEST_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
+  return ( ( type == OLD_CUDA_LIB_CALL_EV ) ? TRUE : FALSE );
 }
 
 Boolean CUDAEventEncoding_Is_OldKernelType( long64_t type )
@@ -714,7 +758,9 @@ Boolean CUDAEventEncoding_Is_CUDASimulableBlock( struct t_event_block event )
              event.value == CUDA_DEVICESYNCHRONIZE_VAL ||
              event.value == CUDA_STREAMSYNCHRONIZE_VAL ||
              event.value == CUDA_STREAM_CREATE_VAL ||
-             event.value == CUDA_MEMCPY_ASYNC_VAL
+             event.value == CUDA_MEMCPY_ASYNC_VAL ||
+             event.value == CUDAMEMCPYTOSYMBOL_VAL ||
+             event.value == CUDAMEMCPYFROMSYMBOL_VAL
            )
          );
 }
@@ -727,6 +773,11 @@ Boolean CUDAEventEncoding_Is_Kernel( long64_t type )
 Boolean CUDAEventEncoding_Is_StreamSyncId_EV( struct t_even *event )
 {
   return ( ( event->type == CUDA_SYNCH_STREAM_EV ) ? TRUE : FALSE );
+}
+
+Boolean CUDAEventEncoding_Is_CudaEventID( struct t_even *event )
+{
+  return ( ( event->type == CUDA_EVENT_ID_EV ) ? TRUE : FALSE );
 }
 
 Boolean CUDAEventEncoding_Is_Kernel_Block( struct t_event_block event )
@@ -751,7 +802,7 @@ Boolean CUDAEventEncoding_Is_CUDAComm( struct t_thread *sender, struct t_thread 
 
 Boolean CUDAEventEncoding_Is_CUDATransferBlock( struct t_event_block event )
 {
-  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL ) )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDA_MEMCPY_ASYNC_VAL || event.value == CUDAMEMCPYTOSYMBOL_VAL || event.value == CUDAMEMCPYFROMSYMBOL_VAL ) )
     return TRUE;
   return FALSE;
 }
@@ -780,7 +831,7 @@ Boolean CUDAEventEncoding_Is_CUDAFree( struct t_event_block event )
 
 Boolean CUDAEventEncoding_Is_CUDAMemcpy( struct t_event_block event )
 {
-  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_MEMCPY_VAL )
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && ( event.value == CUDA_MEMCPY_VAL || event.value == CUDAMEMCPYTOSYMBOL_VAL || event.value == CUDAMEMCPYFROMSYMBOL_VAL) )
     return TRUE;
   return FALSE;
 }
@@ -845,6 +896,27 @@ Boolean CUDAEventEncoding_Is_CUDAMemset( struct t_event_block event )
 Boolean CUDAEventEncoding_Is_CUDAStreamCreateBlock( struct t_event_block event )
 {
   if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_STREAM_CREATE_VAL )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean CUDAEventEncoding_Is_CUDAEventRecordBlock( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_EVENT_RECORD )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean CUDAEventEncoding_Is_CUDAEventSyncBlock( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_EVENT_SYNCHRONIZE )
+    return TRUE;
+  return FALSE;
+}
+
+Boolean CUDAEventEncoding_Is_CUDAStreamWaitEventBlock( struct t_event_block event )
+{
+  if ( CUDAEventEncoding_Is_CUDABlock( event.type ) == TRUE && event.value == CUDA_STREAM_WAIT_EVENT )
     return TRUE;
   return FALSE;
 }

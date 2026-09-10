@@ -32,8 +32,8 @@
 
 #ifdef __cplusplus
 
-#include <unordered_set>
-#include <vector>
+#  include <unordered_set>
+#  include <vector>
 
 enum class t_treat_acc_events_behavior
 {
@@ -45,38 +45,37 @@ enum class t_treat_acc_events_behavior
 struct TCapturedEvents
 {
   bool captureEvents;
-  std::vector<struct t_even > events;
+  std::vector<struct t_even> events;
   t_treat_acc_events_behavior treatAccEventBehavior;
 };
 
-const std::unordered_set<unsigned long long>& getValidSyncTypes();
+const std::unordered_set<unsigned long long> &getValidSyncTypes();
 
 extern "C"
 {
-#else // __cplusplus
+#else  // __cplusplus
 struct TCapturedEvents;
 #endif // __cplusplus
-struct TEventSyncQueue;
+  struct TEventSyncQueue;
 
-void event_sync_init( void );
+  void event_sync_init( void );
 
 #ifndef PRV2DIM
-struct TEventSyncQueue *createEventSyncQueue();
-struct TCapturedEvents *createCapturedEvents();
 
-t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
+  struct TEventSyncQueue *createEventSyncQueue();
+  struct TCapturedEvents *createCapturedEvents();
 
-t_boolean capture_previous_events( struct t_thread *whichThread,
-                                   struct t_even *whichEvent,
-                                   int threadID );
+  t_boolean event_sync_add( struct t_task *whichTask, struct t_even *whichEvent, int threadID, int partnerThreadID, t_boolean isCommCall );
 
-void print_pending_syncs( struct t_task *whichTask );
+  t_boolean capture_previous_events( struct t_thread *whichThread, struct t_even *whichEvent, int threadID );
 
-t_boolean is_openmp_treated_event( unsigned long long type );
+  void print_pending_syncs( struct t_task *whichTask );
 
-t_boolean is_cuda_treated_event( unsigned long long type );
+  t_boolean is_openmp_treated_event( unsigned long long type );
 
-t_boolean is_cuda_comm ( unsigned long long commTag );
+  t_boolean is_cuda_treated_event( unsigned long long type );
+
+  t_boolean is_cuda_comm( unsigned long long commTag );
 
 #endif // PRV2DIM
 

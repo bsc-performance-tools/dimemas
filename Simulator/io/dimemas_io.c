@@ -101,7 +101,6 @@ FILE *IO_fopen( const char *path, const char *mode )
 
   if ( IO_OpenedFileDescriptors == IO_MaximumFileDescriptors )
   {
-    printf( " here a return null report \n" );
     IO_report_error( "no file pointers available, please check OS limits (total: %zu)", IO_MaximumFileDescriptors );
     result = NULL;
   }
@@ -113,7 +112,7 @@ FILE *IO_fopen( const char *path, const char *mode )
     }
     else
     {
-      IO_OpenedFileDescriptors++;
+      ++IO_OpenedFileDescriptors;
     }
   }
 
@@ -140,7 +139,7 @@ int IO_fclose( FILE *fp )
     }
     else
     {
-      IO_OpenedFileDescriptors--;
+      --IO_OpenedFileDescriptors;
     }
   }
 

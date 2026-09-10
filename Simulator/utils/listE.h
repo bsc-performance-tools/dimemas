@@ -71,6 +71,11 @@ extern "C"
    */
   char *query_prio_Equeue( Equeue *q, t_priority prio );
 
+  /*
+   * Remove all queue elements
+   */
+  void remove_Equeue_elements( Equeue *q );
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

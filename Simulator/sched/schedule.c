@@ -622,7 +622,7 @@ scheduler_synchronization scheduler_treat_event(struct t_thread *thread, struct 
   struct t_cpu *cpu;
   cpu = get_cpu_of_thread( thread );
 
-  if( event->type == FLUSHING_EV && event->value == BLOCK_END_VAL )
+  if( ( event->type == FLUSHING_EV || event->type == IO_EV ) && event->value == BLOCK_END_VAL )
     PARAVER_Wait( cpu->unique_number, IDENTIFIERS( thread ), thread->last_generic_event_time, current_time, PRV_IO_ST );
   else if ( event->type == TRACE_INIT_EV  && event->value == BLOCK_END_VAL )
     PARAVER_Others( cpu->unique_number, IDENTIFIERS( thread ), thread->last_generic_event_time, current_time );
@@ -1086,7 +1086,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
         // put_thread_on_run( thread, node );
         SCHEDULER_next_thread_to_run( node );
       }
-      else if ( count_queue( &( node->ready ) ) != 0 && ( num_free_cpu( node ) > 0 || thread->stream == TRUE ) )
+      else if ( count_queue( &( node->ready ) ) != 0 && ( any_free_cpu( node ) == TRUE || thread->stream == TRUE ) )
       {
         SCHEDULER_next_thread_to_run( node );
       }
@@ -1094,7 +1094,7 @@ void SCHEDULER_general( int value, struct t_thread *thread )
     }
     case SCH_NEW_JOB:
     {
-      if ( num_free_cpu( node ) > 0 || thread->stream == TRUE )
+      if ( any_free_cpu( node ) == TRUE || thread->stream == TRUE )
       {
         /* The new one is the unique one */
         SCHEDULER_next_thread_to_run( node );

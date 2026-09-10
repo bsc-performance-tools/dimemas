@@ -65,7 +65,7 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
                                           vector<vector<TaskTranslationInfo *> > *AllTranslationInfo,
                                           INT32 AcceleratorThread,
                                           INT32 OpenMP_thread,
-                                          const std::map< std::tuple<INT32, UINT32>, INT32>& whichMPICollectiveRoots,
+                                          const std::map<std::tuple<INT32, UINT32>, INT32> &whichMPICollectiveRoots,
                                           char *TemporaryFileName,
                                           FILE *TemporaryFile )
   : MPICollectiveRoots( whichMPICollectiveRoots )
@@ -109,7 +109,6 @@ TaskTranslationInfo::TaskTranslationInfo( INT32 TaskId,
   FirstClusterRead        = false;
   FirstCUDARead           = false;
   FirstOCLRead            = false;
-  commInCudaLaunch        = false;
   this->AcceleratorThread = AcceleratorThread;
   this->OpenMP_thread     = OpenMP_thread;
   OpenMP_nesting_level    = 0;
@@ -262,7 +261,7 @@ bool TaskTranslationInfo::PushRecord( ParaverRecord_t Record )
   {
     LastRecord = RecordStack.back();
 
-    if( Record->GetTimestamp() < LastRecord->GetTimestamp() )
+    if ( Record->GetTimestamp() < LastRecord->GetTimestamp() )
     {
       cout << "WARNING: disordered records in Task " << Record->GetTaskId() << " Thread " << Record->GetThreadId() << endl;
       cout << "Simulation of this trace could be inconsistent." << endl;
@@ -514,29 +513,29 @@ bool TaskTranslationInfo::ToDimemas( ParaverRecord_t Record )
   }
 }
 
-/** 
+/**
  * ValidSyncTypes are the Event Types used by the simulator to synchronize in runtimes like
  * CUDA and OpenMP.
  * This function checks for unmatched closing events to be skipped.
  * First occurrences are accepted.
- * This is common in cutted traces. 
+ * This is common in cutted traces.
  */
 bool TaskTranslationInfo::checkClosingValidSyncTypes( INT32 whichType, INT64 whichValue )
 {
-  if( getValidSyncTypes().find( whichType ) != getValidSyncTypes().end() )
+  if ( getValidSyncTypes().find( whichType ) != getValidSyncTypes().end() )
   {
-    if( whichValue > 0 )
+    if ( whichValue > 0 )
       validSyncTypesStack.push_back( whichType );
     else
     {
       vector<INT32>::iterator it;
-      if( ( it = std::find( validSyncTypesStack.begin(), validSyncTypesStack.end(), whichType ) ) != validSyncTypesStack.end() )
+      if ( ( it = std::find( validSyncTypesStack.begin(), validSyncTypesStack.end(), whichType ) ) != validSyncTypesStack.end() )
       {
         validSyncTypesStack.erase( it );
       }
       else
       {
-        if( validSyncTypesFirstZeroArrived.find( whichType ) != validSyncTypesFirstZeroArrived.end() )
+        if ( validSyncTypesFirstZeroArrived.find( whichType ) != validSyncTypesFirstZeroArrived.end() )
         {
           return false;
         }
@@ -585,7 +584,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   Timestamp = CurrentEvent->GetTimestamp();
 
   // CUDA Launch must be removed from streams due to new Extrae >4.0 behaviour
-  if( Type == CUDA_LIB_CALL_EV && Value == CUDA_LAUNCH_VAL && AcceleratorThread == ACCELERATOR_KERNEL )
+  if ( Type == CUDA_LIB_CALL_EV && Value == CUDA_LAUNCH_VAL && AcceleratorThread == ACCELERATOR_KERNEL )
     return true;
 
   // While we are in a Global operation block, we must fill all the
@@ -658,7 +657,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
             return false;
           }
         }
-        else if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) ) 
+        else if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
         {
           return false;
         }
@@ -675,12 +674,11 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
   }
   /* It is a CUDA event*/
   if ( AcceleratorThread != ACCELERATOR_NULL &&
-       ( CUDAEventEncoding_Is_Kernel( Type ) && AcceleratorThread == ACCELERATOR_KERNEL ||
-         CUDAEventEncoding_Is_CUDABlock( Type ) ) )
+       ( CUDAEventEncoding_Is_Kernel( Type ) && AcceleratorThread == ACCELERATOR_KERNEL || CUDAEventEncoding_Is_CUDABlock( Type ) ) )
   {
     if ( CUDAEventEncoding_Is_BlockBegin( Value ) )
     {
-      if( CUDABlockIdStack.size() != 0 )
+      if ( CUDABlockIdStack.size() != 0 )
       {
         cout << "WARNING: overlapped CUDA calls in original trace. Simulation could be inconsistent" << endl;
         cout << "\t Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " Time " << Timestamp << endl;
@@ -693,7 +691,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
         if ( AcceleratorThread == ACCELERATOR_HOST )
         {
           /* Burst are only generated in the Host thread,
-          * not in the device threads */
+           * not in the device threads */
           if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
             return false;
         }
@@ -782,15 +780,18 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
             return false;
         }
 
-        if ( !commInCudaLaunch && 
-             ( CUDAEventEncoding_Is_CUDABlock(CurrentBlock.first) && CurrentBlock.second == CUDA_LAUNCH_VAL ||
-               AcceleratorThread == ACCELERATOR_KERNEL && CUDAEventEncoding_Is_Kernel( CurrentBlock.first ) ) )
+        t_event_block tmpCurrentBlock{ CurrentBlock.first, CurrentBlock.second };
+        if ( CUDAEventEncoding_Is_CUDATransferBlock( tmpCurrentBlock ) && AcceleratorThread == ACCELERATOR_HOST && !existCommInCudaBurst )
         {
-          cout << "WARNING: CUDA LAUNCH exit without communication in original trace" << endl;
-          cout << "Task " << TaskId + 1 << " Thread: " << ThreadId + 1 << " ";
-          cout << "Time " << Timestamp << endl;
+          if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, TaskId, 1, 0, 0, (INT64)CUDA_TAG ) < 0 )
+          // CommId and Size are set to 0
+          {
+            SetError( true );
+            SetErrorMessage( "error writing output trace", strerror( errno ) );
+            return false;
+          }
         }
-        commInCudaLaunch = false;
+        existCommInCudaBurst = false;
 
         if ( debug )
           cout << "Printing CUDA Closing Event: " << *CurrentEvent;
@@ -1047,7 +1048,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
                  CurrentEvent->GetThreadId(),
                  CurrentEvent->GetTimestamp(),
                  (INT64)CurrentBlock.second,
-                 MPIEventEncoding_GetBlockLabel( ( MPI_Event_Values )( CurrentBlock.second ) ) );
+                 MPIEventEncoding_GetBlockLabel( (MPI_Event_Values)( CurrentBlock.second ) ) );
 
       /* CPU Burst */
       if ( !( Value == MPI_IPROBE_VAL && IprobeBurstFlushed ) && !( Value == MPI_TEST_VAL && TestBurstFlushed ) )
@@ -1279,8 +1280,7 @@ bool TaskTranslationInfo::ToDimemas( Event_t CurrentEvent )
     {
       if ( Timestamp > LastBlockEnd )
       {
-        if ( ( OpenMP_thread == MASTER && LastBlockEnd > 0 ) || 
-             ( OpenMP_thread == WORKER && OpenMP_nesting_level > 0 ) )
+        if ( ( OpenMP_thread == MASTER && LastBlockEnd > 0 ) || ( OpenMP_thread == WORKER && OpenMP_nesting_level > 0 ) )
         {
           if ( !GenerateBurst( TaskId, ThreadId, Timestamp ) )
             return false;
@@ -1879,12 +1879,11 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
   {
     CurrentBlock = CUDABlockIdStack.back();
 
-    if( CUDAEventEncoding_Is_Kernel( CurrentBlock.first ) )
+    if ( CUDAEventEncoding_Is_Kernel( CurrentBlock.first ) )
     {
-      if( CurrentComm->GetType() == LOGICAL_RECV )
+      if ( CurrentComm->GetType() == LOGICAL_RECV )
       {
-
-        commInCudaLaunch = true;
+        existCommInCudaBurst = true;
 
         /* Kernel side cudaLaunch (RECV) */
         if ( debug )
@@ -1908,7 +1907,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
             if ( debug )
               cout << "Printing CUDA Host Launch: " << *CurrentComm;
 
-            commInCudaLaunch = true;
+            existCommInCudaBurst = true;
 
             if ( Dimemas_NX_ImmediateSend( TemporaryFile,
                                            TaskId,
@@ -1934,18 +1933,22 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
           }
           break;
         case CUDA_MEMCPY_VAL:
+        case CUDAMEMCPYTOSYMBOL_VAL:
+        case CUDAMEMCPYFROMSYMBOL_VAL:
         {
           if ( CurrentComm->GetType() == LOGICAL_SEND )
           {
             // Old versions of extrae generates communication lines for Host to Host cuda memcopy
             // that should be ignored in dimemas simulation
-            if ( !(AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId) )
+            if ( !( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId ) )
             {
               if ( debug )
                 cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;
 
               if ( AcceleratorThread == ACCELERATOR_HOST )
               {
+                existCommInCudaBurst = true;
+
                 /* In the Host thread, first a synchronization */
                 if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
                 // CommId and Size are set to 0
@@ -1968,7 +1971,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
           {
             // Old versions of extrae generates communication lines for Host to Host cuda memcopy
             // that should be ignored in dimemas simulation
-            if ( !(AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId) )
+            if ( !( AcceleratorThread == ACCELERATOR_HOST && PartnerThreadId == ThreadId ) )
             {
               if ( debug )
                 cout << "Printing CUDA Memory Transfer (Sync): " << *CurrentComm;
@@ -1976,6 +1979,8 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               CommunicationPrimitivePrinted = true;
               if ( AcceleratorThread == ACCELERATOR_HOST )
               {
+                existCommInCudaBurst = true;
+
                 /* In the Host thread, first a synchronization */
                 if ( Dimemas_NX_ImmediateSend( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, 0, 0, (INT64)CUDA_TAG ) < 0 )
                 // CommId and Size are set to 0
@@ -2112,14 +2117,14 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
               SetErrorMessage( "error writing output trace", strerror( errno ) );
               return false;
             }
-            if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, RD_ASYNC ) < 0 ) 
+            if ( Dimemas_NX_Generic_Send( TemporaryFile, TaskId, ThreadId, PartnerTaskId, PartnerThreadId, CommId, Size, (INT64)Tag, RD_ASYNC ) < 0 )
             {
               SetError( true );
               SetErrorMessage( "error writing output trace", strerror( errno ) );
               return false;
             }
           }
-          else if( CurrentComm->GetType() == LOGICAL_RECV )
+          else if ( CurrentComm->GetType() == LOGICAL_RECV )
           {
             if ( debug )
               cout << "Printing CUDA Kernel configureCall: " << *CurrentComm;
@@ -2307,7 +2312,7 @@ bool TaskTranslationInfo::ToDimemas( PartialCommunication_t CurrentComm )
         cout << ", second:" << CurrentBlock.second << endl;
         break;
     } /* end switch CurrentBlock.first */
-  }   // end OCLBlockIdStack if
+  } // end OCLBlockIdStack if
 
   return true;
 }
@@ -2326,12 +2331,14 @@ bool TaskTranslationInfo::ToDimemas( GlobalOp_t CurrentGlobOp )
   if ( debug )
     cout << "Printing GlobalOP " << *CurrentGlobOp;
 
-  if( MPICollectivesCount.find( CurrentGlobOp->GetCommunicatorId() ) == MPICollectivesCount.end() )
+  if ( MPICollectivesCount.find( CurrentGlobOp->GetCommunicatorId() ) == MPICollectivesCount.end() )
     MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] = 0;
- 
-  if( CurrentGlobOp->GetGlobalOpId() == GLOP_ID_MPI_Reduce )
-    RootTaskId = MPICollectiveRoots.find( std::make_tuple( CurrentGlobOp->GetCommunicatorId(),
-                                                           ++MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] ) )->second - 1;
+
+  if ( CurrentGlobOp->GetGlobalOpId() == GLOP_ID_MPI_Reduce )
+    RootTaskId =
+      MPICollectiveRoots.find( std::make_tuple( CurrentGlobOp->GetCommunicatorId(), ++MPICollectivesCount[ CurrentGlobOp->GetCommunicatorId() ] ) )
+        ->second -
+      1;
   else
   {
     if ( CurrentGlobOp->GetIsRoot() )

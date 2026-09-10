@@ -192,7 +192,8 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
     JPanel fan_out;
     JPanel MPI_names;
     // JPanel Synchronize;
-
+    int numRows = data.DEFAULT_MPI_ITEMS + 1 + 1; // collectives + separator + apply all
+    
     buttonPanelTop = new JPanel(new FlowLayout());
     buttonPanelTop.add(new JLabel("Machine number"));
     buttonPanelTop.add(b_left);
@@ -210,17 +211,17 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
     buttonPanelBottom.add(b_close);
 
     MPI_panel = new JPanel(new GridLayout(1,1));
-    MPI_names = new JPanel(new GridLayout(17,1));
+    MPI_names = new JPanel(new GridLayout(numRows,1));
 
-    fan_in = new JPanel(new GridLayout(1,2));
+    fan_in  = new JPanel(new GridLayout(1,2));
     fan_out = new JPanel(new GridLayout(1,2));
     // Synchronize = new JPanel(new GridLayout(1,2));
 
-    colModelIn = new JPanel(new GridLayout(17,1));
-    colSizeIn = new JPanel(new GridLayout(17,1));
-    colModelOut = new JPanel(new GridLayout(17,1));
-    colSizeOut = new JPanel(new GridLayout(17,1));
-    colSync    = new JPanel(new GridLayout(17,1));
+    colModelIn  = new JPanel(new GridLayout(numRows, 1));
+    colSizeIn   = new JPanel(new GridLayout(numRows, 1));
+    colModelOut = new JPanel(new GridLayout(numRows, 1));
+    colSizeOut  = new JPanel(new GridLayout(numRows, 1));
+    colSync     = new JPanel(new GridLayout(numRows, 1));
 
     fan_in.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"FAN IN"));
     fan_out.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"FAN OUT"));
@@ -258,24 +259,25 @@ private JCheckBox[] createCheckBox(boolean synch, int elements)
     fan_out.add(colModelOut);
     fan_out.add(colSizeOut);
     // Synchronize.add(colSync);
-    
-    MPI_names.add(new JLabel("  MPI_Barrier",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Bcast",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Gather",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Gatherv",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Scatter",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Scatterv",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Allgather",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Allgatherv",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Alltoall",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Alltoallv",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Alltoallw",JLabel.LEFT));
-    JLabel tmpLabel = new JLabel("  MPI_Reduce",JLabel.LEFT);
+    MPI_names.add(new JLabel("  MPI_Barrier",    JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Bcast",      JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Gather",     JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Gatherv",    JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Scatter",    JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Scatterv",   JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Allgather",  JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Allgatherv", JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Alltoall",   JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Alltoallv",  JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Alltoallw",  JLabel.LEFT));
+    JLabel tmpLabel = new JLabel("  MPI_Reduce", JLabel.LEFT);
     tmpLabel.setEnabled( false );
     MPI_names.add( tmpLabel );
     MPI_names.add( new JLabel("  MPI_Allreduce",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Reduce_Scatter",JLabel.LEFT));
-    MPI_names.add(new JLabel("  MPI_Scan",JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Reduce_Scatter",       JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Reduce_Scatter_block", JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Scan",                 JLabel.LEFT));
+    MPI_names.add(new JLabel("  MPI_Exscan",               JLabel.LEFT));
     MPI_names.add(new JLabel("--------------------",JLabel.CENTER));
     MPI_names.add(new JLabel("Apply to all:",JLabel.CENTER));
     MPI_names.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"Name"));
